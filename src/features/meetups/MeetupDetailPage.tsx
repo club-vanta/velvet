@@ -62,14 +62,14 @@ function UndoDialog({
             onChange={(e) => setReason(e.target.value)}
             rows={3}
           />
-          <p className="text-xs text-muted-foreground">{reason.length}/500</p>
+          <p className="text-xs text-muted-foreground">{reason.trim().length}/500</p>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
-            disabled={reason.length < 5 || reason.length > 500 || mutation.isPending}
+            disabled={reason.trim().length < 5 || reason.trim().length > 500 || mutation.isPending}
           >
             {mutation.isPending ? "Undoing…" : "Undo check-in"}
           </Button>
