@@ -1,73 +1,114 @@
-# React + TypeScript + Vite
+# velvet — Alter Tracker Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Staff portal for Club Vanta's Alter meetup door management. Checks people in, manages the guest list, tracks arrivals.
 
-Currently, two official plugins are available:
+**Tech Stack:** React 19 + TypeScript (strict), Vite, Tailwind v4, shadcn/ui, React Router v7, TanStack Query v5, openapi-fetch
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**API Documentation:** Backend at `api-alter-tracker.club-vanta.com/docs` — or run locally (see backend README).
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Quick Start
 
-## Expanding the ESLint configuration
+```bash
+# Install dependencies
+npm install
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# Install pre-commit hooks
+pre-commit install
 
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+# Copy env file (optional — defaults to production backend)
+cp .env.example .env.local
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+# Start dev server
+npm run dev
+# → http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+## API Types
 
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+Types are auto-generated from the backend OpenAPI schema. Regenerate whenever the backend API changes:
+
+```bash
+# Preferred: backend running locally
+npm run generate:api
+
+# Or directly from deployed URL
+npx openapi-typescript https://api-alter-tracker.club-vanta.com/openapi.json -o src/api/types.ts
 ```
+
+Commit the updated `src/api/types.ts`. If the backend changes an endpoint and you don't regenerate, the frontend will fail to compile at every stale callsite.
+
+---
+
+## Available Commands
+
+| Script | What it does |
+|--------|-------------|
+| `npm run dev` | Dev server at `localhost:5173` with HMR |
+| `npm run build` | Production build → `dist/` (what Cloudflare Pages runs) |
+| `npm run preview` | Preview production build locally |
+| `npm run typecheck` | TypeScript check only |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier (write) |
+| `npm run format:check` | Prettier (check) |
+| `npm run check` | Full quality gate: typecheck + prettier + eslint |
+| `npm run test` | Vitest watch mode |
+| `npm run test:run` | Vitest single run (CI) |
+| `npm run test:e2e` | Playwright E2E |
+| `npm run generate:api` | Regenerate `src/api/types.ts` from backend schema |
+
+---
+
+## Project Structure
+
+```
+src/
+├── api/
+│   ├── client.ts          ← openapi-fetch instance + auth middleware
+│   └── types.ts           ← auto-generated — never edit manually
+├── auth/
+│   ├── AuthContext.tsx    ← memory-only JWT, login/logout, useAuth()
+│   └── LoginPage.tsx      ← login screen
+├── layout/
+│   └── Shell.tsx          ← topbar + sidebar + role-based nav
+├── features/
+│   ├── dashboard/         ← /dashboard
+│   ├── meetups/           ← /meetups, /meetups/:id
+│   ├── guests/            ← /guests
+│   ├── staff/             ← /staff (admin only)
+│   └── events/            ← /events (admin only)
+├── components/ui/         ← shadcn/ui components (source, not a package)
+├── lib/
+│   ├── utils.ts           ← shadcn cn() helper
+│   └── format.ts          ← date formatting (es-AR locale)
+└── tests/
+    ├── setup.ts
+    └── e2e/               ← Playwright tests
+```
+
+---
+
+## Auth
+
+JWT is stored **in memory only** — not localStorage. The token is cleared on page reload; staff log in once per session. This is intentional per the project spec.
+
+The token is held in a module-level variable in `api/client.ts` and injected as `Authorization: Bearer <token>` on every request via middleware. `AuthContext` manages the React user state and calls `setAuthToken()` on login/logout.
+
+---
+
+## Environment Variables
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `VITE_API_BASE_URL` | Backend API base URL | `https://api-alter-tracker.club-vanta.com` |
+
+Copy `.env.example` → `.env.local` to override for local dev.
+
+---
+
+## Deployment
+
+Cloudflare Pages. Build command: `npm run build`. Output: `dist/`. No special config needed.
