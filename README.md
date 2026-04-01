@@ -40,7 +40,7 @@ Types are auto-generated from the backend OpenAPI schema. Regenerate whenever th
 # Preferred: backend running locally
 npm run generate:api
 
-# Or directly from deployed URL
+# Or directly from deployed URL (not recommended, the backend infrastructure is usually down in order to save costs)
 npx openapi-typescript https://api-alter-tracker.club-vanta.com/openapi.json -o src/api/types.ts
 ```
 
