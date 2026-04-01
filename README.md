@@ -23,7 +23,12 @@ cp .env.example .env.local
 # Start dev server
 npm run dev
 # → http://localhost:5173
+
+# If port 5173 is taken by another project
+npx vite --port 5200 --host
 ```
+
+> **Phone/LAN testing:** set `VITE_API_BASE_URL=http://<your-mac-ip>:8000` in `.env.local` and make sure the backend CORS list includes your Vite port. Revert to `localhost:8000` for normal Mac dev.
 
 ---
 
@@ -106,6 +111,14 @@ The token is held in a module-level variable in `api/client.ts` and injected as 
 | `VITE_API_BASE_URL` | Backend API base URL | `https://api-alter-tracker.club-vanta.com` |
 
 Copy `.env.example` → `.env.local` to override for local dev.
+
+---
+
+## Walk-in Guests
+
+Staff can add guests who have a Mazmo profile but didn't RSVP to the event. On the meetup detail page, click **"Add walk-in"** → search by name or @username → click Add. The guest appears in the list with a "Walk-in" badge. Walk-in events are recorded in the audit log.
+
+The guest must already exist in the system (i.e. they've RSVPed to a previous event and been synced before). Truly anonymous guests (no Mazmo profile) are not supported.
 
 ---
 
