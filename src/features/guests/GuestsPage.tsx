@@ -6,8 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
@@ -27,7 +40,8 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
         params: { path: { mazmo_user_id: guest.mazmo_user_id } },
         body: { reason },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Ban failed");
+      if (error)
+        throw new Error((error as { detail?: string }).detail ?? "Ban failed");
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
@@ -45,21 +59,32 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
           <DialogTitle>Ban {guest.displayname}?</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label htmlFor="ban-reason" className="text-sm font-medium">Reason (required)</label>
-          <Textarea id="ban-reason"
+          <label htmlFor="ban-reason" className="text-sm font-medium">
+            Reason (required)
+          </label>
+          <Textarea
+            id="ban-reason"
             placeholder="e.g. Aggressive behaviour at Alter #40"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
           />
-          <p className="text-xs text-muted-foreground">{reason.trim().length}/500</p>
+          <p className="text-xs text-muted-foreground">
+            {reason.trim().length}/500
+          </p>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
-            disabled={reason.trim().length < 5 || reason.trim().length > 500 || mutation.isPending}
+            disabled={
+              reason.trim().length < 5 ||
+              reason.trim().length > 500 ||
+              mutation.isPending
+            }
           >
             {mutation.isPending ? "Banning…" : "Ban guest"}
           </Button>
@@ -87,7 +112,9 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             Failed to load guests.
-            <Button variant="ghost" size="sm" onClick={() => refetch()}>Retry</Button>
+            <Button variant="ghost" size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -103,18 +130,34 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                {isAdmin && <TableCell><Skeleton className="h-4 w-12" /></TableCell>}
-              </TableRow>
-            ))}
+            {isLoading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Skeleton className="h-4 w-12" />
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={isAdmin ? 5 : 4}
+                  className="text-center text-muted-foreground py-8"
+                >
                   No guests yet.
                 </TableCell>
               </TableRow>
@@ -122,15 +165,25 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             {data?.guests.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium">{g.displayname}</TableCell>
-                <TableCell className="text-muted-foreground">@{g.username}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">{g.mazmo_user_id}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  @{g.username}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {g.mazmo_user_id}
+                </TableCell>
                 <TableCell>
                   {g.is_banned && <Badge variant="destructive">Banned</Badge>}
                 </TableCell>
                 {isAdmin && (
                   <TableCell>
                     {!g.is_banned && (
-                      <Button variant="ghost" size="sm" onClick={() => setBanTarget(g)}>Ban</Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setBanTarget(g)}
+                      >
+                        Ban
+                      </Button>
                     )}
                   </TableCell>
                 )}
@@ -139,7 +192,9 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
           </TableBody>
         </Table>
       </div>
-      {banTarget && <BanDialog guest={banTarget} onClose={() => setBanTarget(null)} />}
+      {banTarget && (
+        <BanDialog guest={banTarget} onClose={() => setBanTarget(null)} />
+      )}
     </>
   );
 }
@@ -161,7 +216,10 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       const { error } = await api.PATCH("/guests/{mazmo_user_id}/unban", {
         params: { path: { mazmo_user_id: guest.mazmo_user_id } },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Unban failed");
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Unban failed",
+        );
       return guest;
     },
     onSuccess: (guest) => {
@@ -178,7 +236,9 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             Failed to load banned guests.
-            <Button variant="ghost" size="sm" onClick={() => refetch()}>Retry</Button>
+            <Button variant="ghost" size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -194,30 +254,52 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                {isAdmin && <TableCell><Skeleton className="h-4 w-16" /></TableCell>}
-              </TableRow>
-            ))}
+            {isLoading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={isAdmin ? 5 : 4}
+                  className="text-center text-muted-foreground py-8"
+                >
                   No banned guests.
                 </TableCell>
               </TableRow>
             )}
             {data?.guests.map((g) => (
               <TableRow key={g.mazmo_user_id}>
-                <TableCell className="font-medium text-destructive">{g.displayname}</TableCell>
-                <TableCell className="text-muted-foreground">@{g.username}</TableCell>
+                <TableCell className="font-medium text-destructive">
+                  {g.displayname}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  @{g.username}
+                </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {g.banned_at ? formatDateTime(g.banned_at) : "—"}
                 </TableCell>
-                <TableCell className="text-sm max-w-xs truncate">{g.banned_reason}</TableCell>
+                <TableCell className="text-sm max-w-xs truncate">
+                  {g.banned_reason}
+                </TableCell>
                 {isAdmin && (
                   <TableCell>
                     <Button

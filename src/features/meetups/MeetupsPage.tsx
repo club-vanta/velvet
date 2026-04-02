@@ -4,14 +4,33 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { formatDate } from "@/lib/format";
 
-function NewMeetupDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function NewMeetupDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const queryClient = useQueryClient();
@@ -21,7 +40,10 @@ function NewMeetupDialog({ open, onClose }: { open: boolean; onClose: () => void
       const { data, error } = await api.POST("/meetups/", {
         body: { name, mazmo_meetup_url: url },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Failed to create meetup");
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Failed to create meetup",
+        );
       return data;
     },
     onSuccess: () => {
@@ -42,7 +64,9 @@ function NewMeetupDialog({ open, onClose }: { open: boolean; onClose: () => void
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1">
-            <label htmlFor="meetup-name" className="text-sm font-medium">Name</label>
+            <label htmlFor="meetup-name" className="text-sm font-medium">
+              Name
+            </label>
             <Input
               id="meetup-name"
               placeholder="Alter #42 — Octubre"
@@ -51,7 +75,9 @@ function NewMeetupDialog({ open, onClose }: { open: boolean; onClose: () => void
             />
           </div>
           <div className="space-y-1">
-            <label htmlFor="meetup-url" className="text-sm font-medium">Mazmo URL</label>
+            <label htmlFor="meetup-url" className="text-sm font-medium">
+              Mazmo URL
+            </label>
             <Input
               id="meetup-url"
               placeholder="https://mazmo.net/eventos-reuniones-argentina/alter-..."
@@ -61,7 +87,9 @@ function NewMeetupDialog({ open, onClose }: { open: boolean; onClose: () => void
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             onClick={() => mutation.mutate()}
             disabled={!name || !url || mutation.isPending}
@@ -98,7 +126,9 @@ export function MeetupsPage() {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             Failed to load meetups.
-            <Button variant="ghost" size="sm" onClick={() => refetch()}>Retry</Button>
+            <Button variant="ghost" size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -117,16 +147,27 @@ export function MeetupsPage() {
             {isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-56" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-56" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
                 </TableRow>
               ))}
 
             {!isLoading && (data?.meetups.length ?? 0) === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-muted-foreground py-8"
+                >
                   No meetups yet. Create the first one.
                 </TableCell>
               </TableRow>
@@ -135,7 +176,9 @@ export function MeetupsPage() {
             {data?.meetups.map((meetup) => (
               <TableRow key={meetup.id}>
                 <TableCell className="font-medium">{meetup.name}</TableCell>
-                <TableCell className="text-muted-foreground">{formatDate(meetup.date)}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatDate(meetup.date)}
+                </TableCell>
                 <TableCell className="text-muted-foreground max-w-xs truncate">
                   <a
                     href={meetup.mazmo_meetup_url}
@@ -147,7 +190,11 @@ export function MeetupsPage() {
                   </a>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/meetups/${meetup.id}`)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/meetups/${meetup.id}`)}
+                  >
                     View
                   </Button>
                 </TableCell>

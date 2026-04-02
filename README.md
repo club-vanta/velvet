@@ -50,20 +50,20 @@ Commit the updated `src/api/types.ts`. If the backend changes an endpoint and yo
 
 ## Available Commands
 
-| Script | What it does |
-|--------|-------------|
-| `npm run dev` | Dev server at `localhost:5173` with HMR |
-| `npm run build` | Production build → `dist/` (what Cloudflare Pages runs) |
-| `npm run preview` | Preview production build locally |
-| `npm run typecheck` | TypeScript check only |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier (write) |
-| `npm run format:check` | Prettier (check) |
-| `npm run check` | Full quality gate: typecheck + prettier + eslint |
-| `npm run test` | Vitest watch mode |
-| `npm run test:run` | Vitest single run (CI) |
-| `npm run test:e2e` | Playwright E2E |
-| `npm run generate:api` | Regenerate `src/api/types.ts` from backend schema |
+| Script                 | What it does                                            |
+| ---------------------- | ------------------------------------------------------- |
+| `npm run dev`          | Dev server at `localhost:5173` with HMR                 |
+| `npm run build`        | Production build → `dist/` (what Cloudflare Pages runs) |
+| `npm run preview`      | Preview production build locally                        |
+| `npm run typecheck`    | TypeScript check only                                   |
+| `npm run lint`         | ESLint                                                  |
+| `npm run format`       | Prettier (write)                                        |
+| `npm run format:check` | Prettier (check)                                        |
+| `npm run check`        | Full quality gate: typecheck + prettier + eslint        |
+| `npm run test`         | Vitest watch mode                                       |
+| `npm run test:run`     | Vitest single run (CI)                                  |
+| `npm run test:e2e`     | Playwright E2E                                          |
+| `npm run generate:api` | Regenerate `src/api/types.ts` from backend schema       |
 
 ---
 
@@ -106,8 +106,8 @@ The token is held in a module-level variable in `api/client.ts` and injected as 
 
 ## Environment Variables
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
+| Variable            | Purpose              | Default                                    |
+| ------------------- | -------------------- | ------------------------------------------ |
 | `VITE_API_BASE_URL` | Backend API base URL | `https://api-alter-tracker.club-vanta.com` |
 
 Copy `.env.example` → `.env.local` to override for local dev.

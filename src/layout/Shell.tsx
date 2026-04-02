@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, LayoutDashboard, CalendarDays, Users, ShieldCheck, ScrollText, Menu } from "lucide-react";
+import {
+  LogOut,
+  LayoutDashboard,
+  CalendarDays,
+  Users,
+  ShieldCheck,
+  ScrollText,
+  Menu,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -11,7 +19,12 @@ import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, adminOnly: false },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    adminOnly: false,
+  },
   { label: "Meetups", href: "/meetups", icon: CalendarDays, adminOnly: false },
   { label: "Guests", href: "/guests", icon: Users, adminOnly: false },
   { label: "Staff", href: "/staff", icon: ShieldCheck, adminOnly: true },
@@ -32,7 +45,8 @@ function NavLinks({
   return (
     <>
       {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
-        const active = location === item.href || location.startsWith(item.href + "/");
+        const active =
+          location === item.href || location.startsWith(item.href + "/");
         return (
           <Link
             key={item.href}
@@ -104,13 +118,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Button>
           {/* Logo badge */}
           <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-sm leading-none">V</span>
+            <span className="text-primary-foreground font-bold text-sm leading-none">
+              V
+            </span>
           </div>
-          <span className="font-semibold text-sm tracking-tight">Alter Tracker</span>
+          <span className="font-semibold text-sm tracking-tight">
+            Alter Tracker
+          </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{user?.username}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+          <span className="text-sm text-muted-foreground">
+            {user?.username}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-2"
+          >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Logout</span>
           </Button>
@@ -135,7 +160,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         {/* Drawer — mobile only */}
         <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-          <SheetContent side="left" className="w-64 p-2 pt-10 flex flex-col gap-1">
+          <SheetContent
+            side="left"
+            className="w-64 p-2 pt-10 flex flex-col gap-1"
+          >
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <NavLinks
               isAdmin={isAdmin}
@@ -153,9 +181,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Sheet>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

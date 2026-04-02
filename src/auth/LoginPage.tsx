@@ -32,7 +32,9 @@ export function LoginPage() {
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl leading-none">V</span>
+            <span className="text-primary-foreground font-bold text-xl leading-none">
+              V
+            </span>
           </div>
           <div className="text-center space-y-0.5">
             <h1 className="text-2xl font-semibold">Alter Tracker</h1>
@@ -42,7 +44,9 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="username" className="text-sm font-medium">Username</label>
+            <label htmlFor="username" className="text-sm font-medium">
+              Username
+            </label>
             <Input
               id="username"
               type="text"
@@ -56,7 +60,9 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium">Password</label>
+            <label htmlFor="password" className="text-sm font-medium">
+              Password
+            </label>
             <div className="relative">
               <Input
                 id="password"
@@ -74,7 +80,11 @@ export function LoginPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>

@@ -8,8 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
@@ -34,14 +47,24 @@ function UndoDialog({
       const { error } = await api.PATCH(
         "/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin",
         {
-          params: { path: { meetup_id: meetupId, mazmo_user_id: guest.guest.mazmo_user_id } },
+          params: {
+            path: {
+              meetup_id: meetupId,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
+          },
           body: { reason },
         },
       );
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Failed to undo check-in");
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Failed to undo check-in",
+        );
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["meetup-guests", meetupId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", meetupId],
+      });
       toast.success("Undone — check-in reversed");
       onClose();
     },
@@ -52,10 +75,14 @@ function UndoDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Undo check-in for {guest.guest.displayname}?</DialogTitle>
+          <DialogTitle>
+            Undo check-in for {guest.guest.displayname}?
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label htmlFor="undo-reason" className="text-sm font-medium">Reason (required)</label>
+          <label htmlFor="undo-reason" className="text-sm font-medium">
+            Reason (required)
+          </label>
           <Textarea
             id="undo-reason"
             placeholder="e.g. Checked in by mistake"
@@ -63,14 +90,22 @@ function UndoDialog({
             onChange={(e) => setReason(e.target.value)}
             rows={3}
           />
-          <p className="text-xs text-muted-foreground">{reason.trim().length}/500</p>
+          <p className="text-xs text-muted-foreground">
+            {reason.trim().length}/500
+          </p>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
-            disabled={reason.trim().length < 5 || reason.trim().length > 500 || mutation.isPending}
+            disabled={
+              reason.trim().length < 5 ||
+              reason.trim().length > 500 ||
+              mutation.isPending
+            }
           >
             {mutation.isPending ? "Undoing…" : "Undo check-in"}
           </Button>
@@ -95,14 +130,28 @@ function CheckInBannedDialog({
     mutationFn: async () => {
       const { data, error } = await api.POST(
         "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
-        { params: { path: { meetup_id: meetupId, mazmo_user_id: guest.guest.mazmo_user_id } } },
+        {
+          params: {
+            path: {
+              meetup_id: meetupId,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
+          },
+        },
       );
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Check-in failed");
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Check-in failed",
+        );
       return data;
     },
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["meetup-guests", meetupId] });
-      toast.success(`${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`);
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", meetupId],
+      });
+      toast.success(
+        `${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`,
+      );
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -115,11 +164,15 @@ function CheckInBannedDialog({
           <DialogTitle>Check in banned guest?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground py-2">
-          <span className="font-medium text-destructive">{guest.guest.displayname}</span> is on the banned list.
-          Do you want to check them in anyway?
+          <span className="font-medium text-destructive">
+            {guest.guest.displayname}
+          </span>{" "}
+          is on the banned list. Do you want to check them in anyway?
         </p>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
@@ -169,12 +222,15 @@ export function MeetupDetailPage() {
       const { data, error } = await api.POST("/meetups/{meetup_id}/sync", {
         params: { path: { meetup_id: id! } },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Sync failed");
+      if (error)
+        throw new Error((error as { detail?: string }).detail ?? "Sync failed");
       return data;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["meetup-guests", id] });
-      toast.success(`Synced — ${data!.inserted} new guests added, ${data!.skipped} skipped`);
+      toast.success(
+        `Synced — ${data!.inserted} new guests added, ${data!.skipped} skipped`,
+      );
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -183,14 +239,23 @@ export function MeetupDetailPage() {
     mutationFn: async (guest: MeetupGuest) => {
       const { data, error } = await api.POST(
         "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
-        { params: { path: { meetup_id: id!, mazmo_user_id: guest.guest.mazmo_user_id } } },
+        {
+          params: {
+            path: { meetup_id: id!, mazmo_user_id: guest.guest.mazmo_user_id },
+          },
+        },
       );
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Check-in failed");
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Check-in failed",
+        );
       return data;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["meetup-guests", id] });
-      toast.success(`${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`);
+      toast.success(
+        `${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`,
+      );
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -216,7 +281,9 @@ export function MeetupDetailPage() {
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold">{meetup?.name}</h1>
-            <p className="text-sm text-muted-foreground">{formatDate(meetup?.date ?? "")}</p>
+            <p className="text-sm text-muted-foreground">
+              {formatDate(meetup?.date ?? "")}
+            </p>
             <a
               href={meetup?.mazmo_meetup_url}
               target="_blank"
@@ -233,7 +300,9 @@ export function MeetupDetailPage() {
             disabled={syncMutation.isPending}
             className="gap-2 shrink-0"
           >
-            <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
+            />
             Sync from Mazmo
           </Button>
         </div>
@@ -243,7 +312,9 @@ export function MeetupDetailPage() {
       {!guestsQ.isLoading && totalCount > 0 && (
         <div className="space-y-1">
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{arrivedCount} / {totalCount} guests checked in</span>
+            <span>
+              {arrivedCount} / {totalCount} guests checked in
+            </span>
             <span>{Math.round((arrivedCount / totalCount) * 100)}%</span>
           </div>
           <Progress value={(arrivedCount / totalCount) * 100} />
@@ -255,7 +326,9 @@ export function MeetupDetailPage() {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             Failed to load guest list.
-            <Button variant="ghost" size="sm" onClick={() => guestsQ.refetch()}>Retry</Button>
+            <Button variant="ghost" size="sm" onClick={() => guestsQ.refetch()}>
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -275,36 +348,66 @@ export function MeetupDetailPage() {
             {guestsQ.isLoading &&
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-8" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
                 </TableRow>
               ))}
 
             {!guestsQ.isLoading && guests.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={5}
+                  className="text-center text-muted-foreground py-8"
+                >
                   No guests yet. Sync from Mazmo to load the RSVP list.
                 </TableCell>
               </TableRow>
             )}
 
             {guests.map((mg) => (
-              <TableRow key={mg.guest.mazmo_user_id} className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}>
+              <TableRow
+                key={mg.guest.mazmo_user_id}
+                className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}
+              >
                 <TableCell className="text-muted-foreground text-sm">
                   {mg.rsvp.arrival_order != null ? (
-                    <Badge variant="secondary">{ordinal(mg.rsvp.arrival_order)}</Badge>
-                  ) : "—"}
+                    <Badge variant="secondary">
+                      {ordinal(mg.rsvp.arrival_order)}
+                    </Badge>
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className={mg.guest.is_banned ? "text-destructive font-medium" : "font-medium"}>
+                    <span
+                      className={
+                        mg.guest.is_banned
+                          ? "text-destructive font-medium"
+                          : "font-medium"
+                      }
+                    >
                       {mg.guest.displayname}
                     </span>
-                    <span className="text-muted-foreground text-sm">@{mg.guest.username}</span>
-                    {mg.guest.is_banned && <Badge variant="destructive">Banned</Badge>}
+                    <span className="text-muted-foreground text-sm">
+                      @{mg.guest.username}
+                    </span>
+                    {mg.guest.is_banned && (
+                      <Badge variant="destructive">Banned</Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
@@ -315,7 +418,9 @@ export function MeetupDetailPage() {
                     <div className="space-y-0.5">
                       <Badge>✓ Checked in</Badge>
                       <p className="text-xs text-muted-foreground">
-                        {mg.rsvp.arrival_time ? formatDateTime(mg.rsvp.arrival_time) : ""}
+                        {mg.rsvp.arrival_time
+                          ? formatDateTime(mg.rsvp.arrival_time)
+                          : ""}
                       </p>
                     </div>
                   ) : (
@@ -325,7 +430,11 @@ export function MeetupDetailPage() {
                 <TableCell>
                   <div className="flex gap-2 justify-end">
                     {mg.rsvp.has_arrived ? (
-                      <Button variant="ghost" size="sm" onClick={() => setUndoTarget(mg)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setUndoTarget(mg)}
+                      >
                         Undo
                       </Button>
                     ) : (
@@ -353,10 +462,18 @@ export function MeetupDetailPage() {
       </div>
 
       {undoTarget && (
-        <UndoDialog guest={undoTarget} meetupId={id!} onClose={() => setUndoTarget(null)} />
+        <UndoDialog
+          guest={undoTarget}
+          meetupId={id!}
+          onClose={() => setUndoTarget(null)}
+        />
       )}
       {bannedTarget && (
-        <CheckInBannedDialog guest={bannedTarget} meetupId={id!} onClose={() => setBannedTarget(null)} />
+        <CheckInBannedDialog
+          guest={bannedTarget}
+          meetupId={id!}
+          onClose={() => setBannedTarget(null)}
+        />
       )}
     </div>
   );

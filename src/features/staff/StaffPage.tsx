@@ -5,9 +5,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
@@ -33,7 +52,10 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
         params: { path: { user_id: user.id } },
         body: { reason },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Failed to disable account");
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Failed to disable account",
+        );
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -50,8 +72,11 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
           <DialogTitle>Disable {user.username}?</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label htmlFor="disable-reason" className="text-sm font-medium">Reason (required)</label>
-          <Textarea id="disable-reason"
+          <label htmlFor="disable-reason" className="text-sm font-medium">
+            Reason (required)
+          </label>
+          <Textarea
+            id="disable-reason"
             placeholder="e.g. Left the organisation"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -59,7 +84,9 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
           />
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
@@ -73,7 +100,11 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
   );
 }
 
-function StaffTable({ users, currentUserId, isLoading }: {
+function StaffTable({
+  users,
+  currentUserId,
+  isLoading,
+}: {
   users: User[];
   currentUserId: number;
   isLoading: boolean;
@@ -87,7 +118,8 @@ function StaffTable({ users, currentUserId, isLoading }: {
         params: { path: { user_id: id } },
         body: { is_approved: approve },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Failed");
+      if (error)
+        throw new Error((error as { detail?: string }).detail ?? "Failed");
     },
     onSuccess: (_, { approve }) => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -97,12 +129,19 @@ function StaffTable({ users, currentUserId, isLoading }: {
   });
 
   const roleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: number; role: "STAFF" | "ADMIN" }) => {
+    mutationFn: async ({
+      id,
+      role,
+    }: {
+      id: number;
+      role: "STAFF" | "ADMIN";
+    }) => {
       const { error } = await api.PATCH("/staff/{user_id}/role", {
         params: { path: { user_id: id } },
         body: { role },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Failed");
+      if (error)
+        throw new Error((error as { detail?: string }).detail ?? "Failed");
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -116,7 +155,8 @@ function StaffTable({ users, currentUserId, isLoading }: {
       const { error } = await api.PATCH("/staff/{user_id}/enable", {
         params: { path: { user_id: id } },
       });
-      if (error) throw new Error((error as { detail?: string }).detail ?? "Failed");
+      if (error)
+        throw new Error((error as { detail?: string }).detail ?? "Failed");
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -139,16 +179,22 @@ function StaffTable({ users, currentUserId, isLoading }: {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 5 }).map((__, j) => (
-                  <TableCell key={j}><Skeleton className="h-4 w-24" /></TableCell>
-                ))}
-              </TableRow>
-            ))}
+            {isLoading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 5 }).map((__, j) => (
+                    <TableCell key={j}>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
             {!isLoading && users.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell
+                  colSpan={5}
+                  className="text-center text-muted-foreground py-8"
+                >
                   No staff accounts.
                 </TableCell>
               </TableRow>
@@ -165,7 +211,10 @@ function StaffTable({ users, currentUserId, isLoading }: {
                       <Select
                         defaultValue={u.role.name}
                         onValueChange={(val) =>
-                          roleMutation.mutate({ id: u.id, role: val as "STAFF" | "ADMIN" })
+                          roleMutation.mutate({
+                            id: u.id,
+                            role: val as "STAFF" | "ADMIN",
+                          })
                         }
                         disabled={roleMutation.isPending}
                       >
@@ -179,15 +228,21 @@ function StaffTable({ users, currentUserId, isLoading }: {
                       </Select>
                     )}
                   </TableCell>
-                  <TableCell><StatusBadge user={u} /></TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{formatDate(u.created_at)}</TableCell>
+                  <TableCell>
+                    <StatusBadge user={u} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDate(u.created_at)}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       {!isSelf && u.is_approved && !u.is_disabled && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => approveMutation.mutate({ id: u.id, approve: false })}
+                          onClick={() =>
+                            approveMutation.mutate({ id: u.id, approve: false })
+                          }
                           disabled={approveMutation.isPending}
                         >
                           Revoke
@@ -197,7 +252,9 @@ function StaffTable({ users, currentUserId, isLoading }: {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => approveMutation.mutate({ id: u.id, approve: true })}
+                          onClick={() =>
+                            approveMutation.mutate({ id: u.id, approve: true })
+                          }
                           disabled={approveMutation.isPending}
                         >
                           Approve
@@ -231,7 +288,10 @@ function StaffTable({ users, currentUserId, isLoading }: {
         </Table>
       </div>
       {disableTarget && (
-        <DisableDialog user={disableTarget} onClose={() => setDisableTarget(null)} />
+        <DisableDialog
+          user={disableTarget}
+          onClose={() => setDisableTarget(null)}
+        />
       )}
     </>
   );
@@ -240,7 +300,12 @@ function StaffTable({ users, currentUserId, isLoading }: {
 export function StaffPage() {
   const { user: currentUser } = useAuth();
 
-  const { data: allStaff, isLoading: loadingAll, isError: errorAll, refetch: refetchAll } = useQuery({
+  const {
+    data: allStaff,
+    isLoading: loadingAll,
+    isError: errorAll,
+    refetch: refetchAll,
+  } = useQuery({
     queryKey: ["staff"],
     queryFn: async () => {
       const { data, error } = await api.GET("/staff/");
@@ -266,7 +331,9 @@ export function StaffPage() {
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             Failed to load staff.
-            <Button variant="ghost" size="sm" onClick={() => refetchAll()}>Retry</Button>
+            <Button variant="ghost" size="sm" onClick={() => refetchAll()}>
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       )}

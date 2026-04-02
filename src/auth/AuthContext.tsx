@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import { api, API_BASE_URL, setAuthToken } from "@/api/client";
 import type { components } from "@/api/types";
 
@@ -32,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { detail?: string };
+      const body = (await res.json().catch(() => ({}))) as { detail?: string };
       throw new Error(body.detail ?? "Login failed");
     }
 
