@@ -50,8 +50,8 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
           <DialogTitle>Disable {user.username}?</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label className="text-sm font-medium">Reason (required)</label>
-          <Textarea
+          <label htmlFor="disable-reason" className="text-sm font-medium">Reason (required)</label>
+          <Textarea id="disable-reason"
             placeholder="e.g. Left the organisation"
             value={reason}
             onChange={(e) => setReason(e.target.value)}

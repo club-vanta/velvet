@@ -42,16 +42,18 @@ function NewMeetupDialog({ open, onClose }: { open: boolean; onClose: () => void
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1">
-            <label className="text-sm font-medium">Name</label>
+            <label htmlFor="meetup-name" className="text-sm font-medium">Name</label>
             <Input
+              id="meetup-name"
               placeholder="Alter #42 — Octubre"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">Mazmo URL</label>
+            <label htmlFor="meetup-url" className="text-sm font-medium">Mazmo URL</label>
             <Input
+              id="meetup-url"
               placeholder="https://mazmo.net/eventos-reuniones-argentina/alter-..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}

@@ -55,8 +55,9 @@ function UndoDialog({
           <DialogTitle>Undo check-in for {guest.guest.displayname}?</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label className="text-sm font-medium">Reason (required)</label>
+          <label htmlFor="undo-reason" className="text-sm font-medium">Reason (required)</label>
           <Textarea
+            id="undo-reason"
             placeholder="e.g. Checked in by mistake"
             value={reason}
             onChange={(e) => setReason(e.target.value)}

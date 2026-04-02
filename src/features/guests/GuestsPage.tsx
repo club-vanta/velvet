@@ -45,8 +45,8 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
           <DialogTitle>Ban {guest.displayname}?</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label className="text-sm font-medium">Reason (required)</label>
-          <Textarea
+          <label htmlFor="ban-reason" className="text-sm font-medium">Reason (required)</label>
+          <Textarea id="ban-reason"
             placeholder="e.g. Aggressive behaviour at Alter #40"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
