@@ -39,6 +39,7 @@ const EVENT_BADGE: Record<
   UNBAN: { label: "Unban", variant: "outline" },
   MEETUP_FINALIZED: { label: "Finalized", variant: "secondary" },
   MEETUP_UNFINALIZED: { label: "Unfinalized", variant: "outline" },
+  WALKIN: { label: "Walk-in", variant: "outline" },
 };
 
 const PAGE_SIZE = 50;
@@ -85,6 +86,7 @@ export function EventsPage() {
             <SelectItem value="UNDO_CHECK_IN">Undo</SelectItem>
             <SelectItem value="BAN">Ban</SelectItem>
             <SelectItem value="UNBAN">Unban</SelectItem>
+            <SelectItem value="WALKIN">Walk-in</SelectItem>
           </SelectContent>
         </Select>
       </div>
