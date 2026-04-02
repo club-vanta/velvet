@@ -367,6 +367,34 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add a walk-in guest to this meetup
+     * @description Manually add a guest who has a Mazmo profile but didn't RSVP to this event.
+     *
+     *     Creates a MeetupRsvp row with the current time as rsvp_time.
+     *     The guest must already exist in the system (fetched via a previous sync
+     *     for any meetup, or visible in GET /guests/).
+     *
+     *     Returns 404 if the guest doesn't exist in the system.
+     *     Returns 409 if the guest already has an RSVP for this meetup.
+     *     Returns 409 if the meetup is finalized.
+     */
+    post: operations["add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin": {
     parameters: {
       query?: never;
@@ -618,6 +646,26 @@ export interface paths {
     };
     /** Ping */
     get: operations["ping_ping_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Prometheus metrics
+     * @description Endpoint that serves Prometheus metrics.
+     */
+    get: operations["metrics_metrics_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -2227,6 +2275,38 @@ export interface operations {
       };
     };
   };
+  add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupGuestPublic"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post: {
     parameters: {
       query?: never;
@@ -2881,6 +2961,26 @@ export interface operations {
           "application/json": {
             [key: string]: unknown;
           };
+        };
+      };
+    };
+  };
+  metrics_metrics_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns the metrics collected by Prometheus instrumentator */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };
