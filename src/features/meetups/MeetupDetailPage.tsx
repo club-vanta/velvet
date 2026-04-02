@@ -405,6 +405,9 @@ export function MeetupDetailPage() {
                     <span className="text-muted-foreground text-sm">
                       @{mg.guest.username}
                     </span>
+                    {mg.rsvp.is_walkin && (
+                      <Badge variant="outline">Walk-in</Badge>
+                    )}
                     {mg.guest.is_banned && (
                       <Badge variant="destructive">Banned</Badge>
                     )}

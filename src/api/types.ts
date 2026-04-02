@@ -1020,6 +1020,11 @@ export interface components {
       arrival_time?: string | null;
       /** Arrival Order */
       arrival_order?: number | null;
+      /**
+       * Is Walkin
+       * @default false
+       */
+      is_walkin: boolean;
     };
     /**
      * ServiceCheck
