@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LoginPage } from "./auth/LoginPage";
+import { SignupPage } from "./auth/SignupPage";
 import { Shell } from "./layout/Shell";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { MeetupsPage } from "./features/meetups/MeetupsPage";
@@ -36,6 +37,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
