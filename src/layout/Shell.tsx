@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -8,12 +7,10 @@ import {
   Users,
   ShieldCheck,
   ScrollText,
-  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/lib/utils";
@@ -35,12 +32,10 @@ function NavLinks({
   isAdmin,
   pending,
   location,
-  onNavigate,
 }: {
   isAdmin: boolean;
   pending: number;
   location: string;
-  onNavigate?: () => void;
 }) {
   return (
     <>
@@ -51,7 +46,6 @@ function NavLinks({
           <Link
             key={item.href}
             to={item.href}
-            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               active
@@ -79,7 +73,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isAdmin = user?.role.name === "ADMIN";
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: pending } = useQuery({
     queryKey: ["staff", "pending"],
@@ -103,19 +96,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {/* Topbar */}
       <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
-          {/* Hamburger — mobile only */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-            {pendingCount > 0 && isAdmin && (
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
-            )}
-          </Button>
           {/* Logo badge */}
           <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-sm leading-none">
@@ -158,31 +138,43 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
 
-        {/* Drawer — mobile only */}
-        <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-          <SheetContent
-            side="left"
-            className="w-64 p-2 pt-10 flex flex-col gap-1"
-          >
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <NavLinks
-              isAdmin={isAdmin}
-              pending={pendingCount}
-              location={location.pathname}
-              onNavigate={() => setDrawerOpen(false)}
-            />
-            <div className="mt-auto">
-              <Separator className="my-2" />
-              <div className="px-3 py-2 text-xs text-muted-foreground">
-                {isAdmin ? "Admin" : "Staff"}
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-6">
+          {children}
+        </main>
       </div>
+
+      {/* Bottom nav — mobile only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t border-border bg-background flex items-stretch">
+        {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+          const active =
+            location.pathname === item.href ||
+            location.pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors relative",
+                active ? "text-foreground" : "text-muted-foreground",
+              )}
+            >
+              <div className="relative">
+                <item.icon className="h-5 w-5" />
+                {item.href === "/staff" && isAdmin && pendingCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px]"
+                  >
+                    {pendingCount}
+                  </Badge>
+                )}
+              </div>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
