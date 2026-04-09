@@ -27,11 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     api
       .GET("/auth/userinfo")
-      .then(({ data }) => {
-        if (data) setUser(data);
+      .then(({ data, response }) => {
+        if (data) {
+          setUser(data);
+        } else if (response.status === 401) {
+          setAuthToken(null);
+        }
       })
       .catch(() => {
-        setAuthToken(null);
+        // Error de red — el token puede seguir siendo válido, no lo borramos.
       })
       .finally(() => {
         setIsLoading(false);
