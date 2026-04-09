@@ -4,11 +4,18 @@ import type { paths } from "./types";
 // Run `npm run generate:api` to regenerate types from the backend OpenAPI schema.
 // If the backend URL changes, update VITE_API_BASE_URL in your .env file.
 
-let _token: string | null = null;
+const TOKEN_KEY = "auth_token";
+
+let _token: string | null = localStorage.getItem(TOKEN_KEY);
 
 /** Called by AuthContext when the token is set or cleared. */
 export function setAuthToken(token: string | null): void {
   _token = token;
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 }
 
 const authMiddleware: Middleware = {
