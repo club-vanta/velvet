@@ -4,3164 +4,3164 @@
  */
 
 export interface paths {
-    "/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register a new staff account (pending admin approval) */
-        post: operations["register_auth_register_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/auth/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/token": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login - returns a JWT bearer token */
-        post: operations["login_auth_token_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Register a new staff account (pending admin approval) */
+    post: operations["register_auth_register_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/token": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/userinfo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return the currently authenticated user's profile */
-        get: operations["get_me_auth_userinfo_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Login - returns a JWT bearer token */
+    post: operations["login_auth_token_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/userinfo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/staff/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all staff accounts (admin only) */
-        get: operations["list_staff_staff__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Return the currently authenticated user's profile */
+    get: operations["get_me_auth_userinfo_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/staff/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/staff/pending": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List unapproved staff accounts (admin only) */
-        get: operations["list_pending_staff_pending_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List all staff accounts (admin only) */
+    get: operations["list_staff_staff__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/staff/pending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/staff/{user_id}/approve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Approve or revoke a staff account (admin only) */
-        patch: operations["set_approval_staff__user_id__approve_patch"];
-        trace?: never;
+    /** List unapproved staff accounts (admin only) */
+    get: operations["list_pending_staff_pending_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/staff/{user_id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/staff/{user_id}/role": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Promote or demote a staff member's role (admin only) */
-        patch: operations["set_role_staff__user_id__role_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Approve or revoke a staff account (admin only) */
+    patch: operations["set_approval_staff__user_id__approve_patch"];
+    trace?: never;
+  };
+  "/staff/{user_id}/role": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/staff/{user_id}/disable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Disable a staff account (admin only)
-         * @description Disable a staff account (soft-delete).
-         *
-         *     Disabled accounts cannot log in but their data is preserved for
-         *     audit trails. Records who disabled the account, when, and why.
-         */
-        patch: operations["disable_staff_staff__user_id__disable_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Promote or demote a staff member's role (admin only) */
+    patch: operations["set_role_staff__user_id__role_patch"];
+    trace?: never;
+  };
+  "/staff/{user_id}/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/staff/{user_id}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Re-enable a disabled staff account (admin only)
-         * @description Re-enable a previously disabled staff account.
-         *
-         *     Clears the disable fields, allowing the user to log in again.
-         */
-        patch: operations["enable_staff_staff__user_id__enable_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Disable a staff account (admin only)
+     * @description Disable a staff account (soft-delete).
+     *
+     *     Disabled accounts cannot log in but their data is preserved for
+     *     audit trails. Records who disabled the account, when, and why.
+     */
+    patch: operations["disable_staff_staff__user_id__disable_patch"];
+    trace?: never;
+  };
+  "/staff/{user_id}/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/guests/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List all known guests (identity only)
-         * @description List all guests in the system (identity only, no RSVP state).
-         */
-        get: operations["list_guests_guests__get"];
-        put?: never;
-        /**
-         * Create a guest by Mazmo username
-         * @description Register a guest using their Mazmo username handle.
-         *
-         *     Looks up the canonical Mazmo user ID and profile data automatically,
-         *     so staff at the door only need to know the handle (e.g. "cindydark").
-         *
-         *     Returns 404 if the username doesn't exist on Mazmo.
-         *     Returns 409 if the guest is already registered in the system.
-         *     Returns 504 if Mazmo is unreachable.
-         */
-        post: operations["create_guest_guests__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Re-enable a disabled staff account (admin only)
+     * @description Re-enable a previously disabled staff account.
+     *
+     *     Clears the disable fields, allowing the user to log in again.
+     */
+    patch: operations["enable_staff_staff__user_id__enable_patch"];
+    trace?: never;
+  };
+  "/guests/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/guests/banned": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List all banned guests
-         * @description List all banned guests with their ban details.
-         */
-        get: operations["list_banned_guests_guests_banned_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List all known guests (identity only)
+     * @description List all guests in the system (identity only, no RSVP state).
+     */
+    get: operations["list_guests_guests__get"];
+    put?: never;
+    /**
+     * Create a guest by Mazmo username
+     * @description Register a guest using their Mazmo username handle.
+     *
+     *     Looks up the canonical Mazmo user ID and profile data automatically,
+     *     so staff at the door only need to know the handle (e.g. "cindydark").
+     *
+     *     Returns 404 if the username doesn't exist on Mazmo.
+     *     Returns 409 if the guest is already registered in the system.
+     *     Returns 504 if Mazmo is unreachable.
+     */
+    post: operations["create_guest_guests__post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/guests/banned": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/guests/{mazmo_user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a single guest's identity
-         * @description Get a single guest by their Mazmo user ID.
-         */
-        get: operations["get_guest_guests__mazmo_user_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List all banned guests
+     * @description List all banned guests with their ban details.
+     */
+    get: operations["list_banned_guests_guests_banned_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/guests/{mazmo_user_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/guests/by-username/{username}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a single guest by Mazmo username
-         * @description Get a single guest by their Mazmo username handle.
-         */
-        get: operations["get_guest_by_username_guests_by_username__username__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get a single guest's identity
+     * @description Get a single guest by their Mazmo user ID.
+     */
+    get: operations["get_guest_guests__mazmo_user_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/guests/by-username/{username}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/guests/{mazmo_user_id}/ban": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Ban a guest (admin only)
-         * @description Ban a guest. Records the admin who performed the ban and the reason.
-         *
-         *     Returns 404 if the guest doesn't exist.
-         *     Returns 409 if the guest is already banned.
-         */
-        patch: operations["ban_guest_guests__mazmo_user_id__ban_patch"];
-        trace?: never;
+    /**
+     * Get a single guest by Mazmo username
+     * @description Get a single guest by their Mazmo username handle.
+     */
+    get: operations["get_guest_by_username_guests_by_username__username__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/guests/{mazmo_user_id}/ban": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/guests/{mazmo_user_id}/unban": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Unban a guest (admin only)
-         * @description Unban a guest. Clears all ban-related fields.
-         *
-         *     Returns 404 if the guest doesn't exist.
-         *     Returns 409 if the guest is not currently banned.
-         */
-        patch: operations["unban_guest_guests__mazmo_user_id__unban_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Ban a guest (admin only)
+     * @description Ban a guest. Records the admin who performed the ban and the reason.
+     *
+     *     Returns 404 if the guest doesn't exist.
+     *     Returns 409 if the guest is already banned.
+     */
+    patch: operations["ban_guest_guests__mazmo_user_id__ban_patch"];
+    trace?: never;
+  };
+  "/guests/{mazmo_user_id}/unban": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List all meetups
-         * @description List all meetups ordered by date descending.
-         */
-        get: operations["list_meetups_meetups__get"];
-        put?: never;
-        /**
-         * Create a new meetup
-         * @description Create a new meetup linked to a Mazmo event thread.
-         *
-         *     The Mazmo URL is validated and the event date is fetched from Mazmo.
-         *     Returns 422 if URL format is invalid, 502 if Mazmo returns an error,
-         *     504 if Mazmo is unreachable.
-         */
-        post: operations["create_meetup_meetups__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Unban a guest (admin only)
+     * @description Unban a guest. Clears all ban-related fields.
+     *
+     *     Returns 404 if the guest doesn't exist.
+     *     Returns 409 if the guest is not currently banned.
+     */
+    patch: operations["unban_guest_guests__mazmo_user_id__unban_patch"];
+    trace?: never;
+  };
+  "/meetups/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get a single meetup
-         * @description Get a single meetup by ID.
-         */
-        get: operations["get_meetup_meetups__meetup_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List all meetups
+     * @description List all meetups ordered by date descending.
+     */
+    get: operations["list_meetups_meetups__get"];
+    put?: never;
+    /**
+     * Create a new meetup
+     * @description Create a new meetup linked to a Mazmo event thread.
+     *
+     *     The Mazmo URL is validated and the event date is fetched from Mazmo.
+     *     Returns 422 if URL format is invalid, 502 if Mazmo returns an error,
+     *     504 if Mazmo is unreachable.
+     */
+    post: operations["create_meetup_meetups__post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sync guest list from Mazmo for this meetup
-         * @description Fetches the latest RSVP list from Mazmo and upserts it into the local DB.
-         *
-         *     Safe to call at any time:
-         *       - New guests are inserted.
-         *       - Existing RSVPs have their rsvp_time updated.
-         *       - `has_arrived`, `arrival_time`, and `arrival_order` are NEVER modified.
-         */
-        post: operations["sync_meetup_guests_meetups__meetup_id__sync_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Get a single meetup
+     * @description Get a single meetup by ID.
+     */
+    get: operations["get_meetup_meetups__meetup_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/guests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List guests RSVPed to this meetup
-         * @description List all guests who have RSVPed to this meetup with their RSVP state.
-         */
-        get: operations["list_meetup_guests_meetups__meetup_id__guests_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Sync guest list from Mazmo for this meetup
+     * @description Fetches the latest RSVP list from Mazmo and upserts it into the local DB.
+     *
+     *     Safe to call at any time:
+     *       - New guests are inserted.
+     *       - Existing RSVPs have their rsvp_time updated.
+     *       - `has_arrived`, `arrival_time`, and `arrival_order` are NEVER modified.
+     */
+    post: operations["sync_meetup_guests_meetups__meetup_id__sync_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/guests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Add a walk-in guest to this meetup
-         * @description Manually add a guest who has a Mazmo profile but didn't RSVP to this event.
-         *
-         *     Creates a MeetupRsvp row with the current time as rsvp_time.
-         *     The guest must already exist in the system (fetched via a previous sync
-         *     for any meetup, or visible in GET /guests/).
-         *
-         *     Returns 404 if the guest doesn't exist in the system.
-         *     Returns 409 if the guest already has an RSVP for this meetup.
-         *     Returns 409 if the meetup is finalized.
-         */
-        post: operations["add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List guests RSVPed to this meetup
+     * @description List all guests who have RSVPed to this meetup with their RSVP state.
+     */
+    get: operations["list_meetup_guests_meetups__meetup_id__guests_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check in a guest at this meetup
-         * @description Mark a guest as arrived at this meetup.
-         *
-         *     The arrival_order and arrival_time are set automatically by a database trigger.
-         *     The staff member performing the check-in is recorded for audit purposes.
-         *     Returns 404 if guest not RSVPed, 409 if already checked in or meetup finalized.
-         */
-        post: operations["checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Add a walk-in guest to this meetup
+     * @description Manually add a guest who has a Mazmo profile but didn't RSVP to this event.
+     *
+     *     Creates a MeetupRsvp row with the current time as rsvp_time.
+     *     The guest must already exist in the system (fetched via a previous sync
+     *     for any meetup, or visible in GET /guests/).
+     *
+     *     Returns 404 if the guest doesn't exist in the system.
+     *     Returns 409 if the guest already has an RSVP for this meetup.
+     *     Returns 409 if the meetup is finalized.
+     */
+    post: operations["add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Undo a guest check-in at this meetup
-         * @description Undo a check-in for a guest at this meetup.
-         *
-         *     Use this when a guest was checked in by mistake. Requires a reason
-         *     for the audit trail. Clears has_arrived, arrival_time, arrival_order,
-         *     and checked_in_by_id.
-         *
-         *     Returns 404 if guest not RSVPed to this meetup.
-         *     Returns 409 if guest is not currently checked in.
-         */
-        patch: operations["undo_checkin_guest_meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Check in a guest at this meetup
+     * @description Mark a guest as arrived at this meetup.
+     *
+     *     The arrival_order and arrival_time are set automatically by a database trigger.
+     *     The staff member performing the check-in is recorded for audit purposes.
+     *     Returns 404 if guest not RSVPed, 409 if already checked in or meetup finalized.
+     */
+    post: operations["checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Finalize a meetup
-         * @description Mark a meetup as finalized. No further check-ins or syncs will be allowed.
-         *
-         *     Returns 409 if the meetup is already finalized.
-         */
-        patch: operations["finalize_meetup_meetups__meetup_id__finalize_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Undo a guest check-in at this meetup
+     * @description Undo a check-in for a guest at this meetup.
+     *
+     *     Use this when a guest was checked in by mistake. Requires a reason
+     *     for the audit trail. Clears has_arrived, arrival_time, arrival_order,
+     *     and checked_in_by_id.
+     *
+     *     Returns 404 if guest not RSVPed to this meetup.
+     *     Returns 409 if guest is not currently checked in.
+     */
+    patch: operations["undo_checkin_guest_meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch"];
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/finalize": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/meetups/{meetup_id}/unfinalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Un-finalize a meetup
-         * @description Revert a meetup's finalized status (e.g., finalized by accident).
-         *
-         *     Returns 409 if the meetup is not finalized.
-         */
-        patch: operations["unfinalize_meetup_meetups__meetup_id__unfinalize_patch"];
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Finalize a meetup
+     * @description Mark a meetup as finalized. No further check-ins or syncs will be allowed.
+     *
+     *     Returns 409 if the meetup is already finalized.
+     */
+    patch: operations["finalize_meetup_meetups__meetup_id__finalize_patch"];
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/unfinalize": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List all events (admin only)
-         * @description List all events in the system with optional filtering.
-         *
-         *     Admin-only endpoint for full audit trail access. Supports filtering
-         *     by event type, timestamp range, guest, meetup, and actor.
-         *
-         *     Returns paginated results ordered by timestamp descending (newest first).
-         */
-        get: operations["list_all_events_events__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Un-finalize a meetup
+     * @description Revert a meetup's finalized status (e.g., finalized by accident).
+     *
+     *     Returns 409 if the meetup is not finalized.
+     */
+    patch: operations["unfinalize_meetup_meetups__meetup_id__unfinalize_patch"];
+    trace?: never;
+  };
+  "/events/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/meetups/{meetup_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List events at a specific meetup
-         * @description List events at a specific meetup.
-         *
-         *     All staff can view meetup events to see check-in activity,
-         *     who checked in guests, and any undone check-ins.
-         *
-         *     Commonly used filters:
-         *       - ?type=CHECK_IN,UNDO_CHECK_IN → check-in activity only
-         */
-        get: operations["list_meetup_events_events_meetups__meetup_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List all events (admin only)
+     * @description List all events in the system with optional filtering.
+     *
+     *     Admin-only endpoint for full audit trail access. Supports filtering
+     *     by event type, timestamp range, guest, meetup, and actor.
+     *
+     *     Returns paginated results ordered by timestamp descending (newest first).
+     */
+    get: operations["list_all_events_events__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/meetups/{meetup_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/guests/{guest_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List events for a specific guest
-         * @description List events for a specific guest.
-         *
-         *     Authorization:
-         *       - Staff: Can only see BAN/UNBAN events (need to know who's banned)
-         *       - Admin: Can see all events for this guest
-         *
-         *     Common use case: Staff checking why a guest is on the banned list.
-         */
-        get: operations["list_guest_events_events_guests__guest_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List events at a specific meetup
+     * @description List events at a specific meetup.
+     *
+     *     All staff can view meetup events to see check-in activity,
+     *     who checked in guests, and any undone check-ins.
+     *
+     *     Commonly used filters:
+     *       - ?type=CHECK_IN,UNDO_CHECK_IN → check-in activity only
+     */
+    get: operations["list_meetup_events_events_meetups__meetup_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/guests/{guest_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/events/staff/{staff_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List events by a specific staff member
-         * @description List events performed by a specific staff member.
-         *
-         *     Authorization:
-         *       - Staff: Can only view their own events (staff_id must match current user)
-         *       - Admin: Can view any staff member's events
-         *
-         *     Use case: Staff reviewing their own activity, or admin auditing staff actions.
-         */
-        get: operations["list_staff_events_events_staff__staff_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List events for a specific guest
+     * @description List events for a specific guest.
+     *
+     *     Authorization:
+     *       - Staff: Can only see BAN/UNBAN events (need to know who's banned)
+     *       - Admin: Can see all events for this guest
+     *
+     *     Common use case: Staff checking why a guest is on the banned list.
+     */
+    get: operations["list_guest_events_events_guests__guest_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/events/staff/{staff_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/ping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Ping */
-        get: operations["ping_ping_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * List events by a specific staff member
+     * @description List events performed by a specific staff member.
+     *
+     *     Authorization:
+     *       - Staff: Can only view their own events (staff_id must match current user)
+     *       - Admin: Can view any staff member's events
+     *
+     *     Use case: Staff reviewing their own activity, or admin auditing staff actions.
+     */
+    get: operations["list_staff_events_events_staff__staff_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ping": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Check health of all dependencies
-         * @description Comprehensive health check that verifies connectivity to:
-         *     - **Database**: Critical - app cannot function without it
-         *     - **Mazmo API**: Non-critical - app works but can't sync new guests
-         *
-         *     Returns HTTP 200 if all critical services are healthy.
-         *     Returns HTTP 503 if any critical service is unhealthy.
-         *
-         *     The response body includes individual service status and latency.
-         */
-        get: operations["health_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        /**
-         * Health check (no body) — used by UptimeRobot
-         * @description Same health logic as `GET /health` but returns no response body, as required
-         *     by RFC 9110 for HEAD requests.
-         *
-         *     **Used by UptimeRobot** for uptime monitoring. UptimeRobot sends HEAD
-         *     requests to avoid downloading the response body on every check. Returns
-         *     200 if healthy, 503 if any critical service is down.
-         */
-        head: operations["health_head_health_head"];
-        patch?: never;
-        trace?: never;
+    /** Ping */
+    get: operations["ping_ping_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /**
+     * Check health of all dependencies
+     * @description Comprehensive health check that verifies connectivity to:
+     *     - **Database**: Critical - app cannot function without it
+     *     - **Mazmo API**: Non-critical - app works but can't sync new guests
+     *
+     *     Returns HTTP 200 if all critical services are healthy.
+     *     Returns HTTP 503 if any critical service is unhealthy.
+     *
+     *     The response body includes individual service status and latency.
+     */
+    get: operations["health_health_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    /**
+     * Health check (no body) — used by UptimeRobot
+     * @description Same health logic as `GET /health` but returns no response body, as required
+     *     by RFC 9110 for HEAD requests.
+     *
+     *     **Used by UptimeRobot** for uptime monitoring. UptimeRobot sends HEAD
+     *     requests to avoid downloading the response body on every check. Returns
+     *     200 if healthy, 503 if any critical service is down.
+     */
+    head: operations["health_head_health_head"];
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /**
-         * ApproveUserRequest
-         * @description Request body for approving or revoking a user's access.
-         *
-         *     Admins use this to flip the is_approved flag on staff accounts.
-         *     New registrations start unapproved and require admin action.
-         */
-        ApproveUserRequest: {
-            /** Is Approved */
-            is_approved: boolean;
-        };
-        /**
-         * BanGuestRequest
-         * @description Request body for banning a guest.
-         */
-        BanGuestRequest: {
-            /** Reason */
-            reason: string;
-        };
-        /**
-         * BannedGuestListResponse
-         * @description Response for listing all banned guests.
-         */
-        BannedGuestListResponse: {
-            /** Total */
-            total: number;
-            /** Guests */
-            guests: components["schemas"]["BannedGuestPublic"][];
-        };
-        /**
-         * BannedGuestPublic
-         * @description Extended guest info including ban details for the banned list.
-         *
-         *     Used in the banned guests list endpoint where admins need to see
-         *     the full audit trail (when banned, why, by whom).
-         */
-        BannedGuestPublic: {
-            /** Mazmo User Id */
-            mazmo_user_id: number;
-            /** Username */
-            username: string;
-            /** Displayname */
-            displayname: string;
-            /** Is Banned */
-            is_banned: boolean;
-            /** Banned At */
-            banned_at: string | null;
-            /** Banned Reason */
-            banned_reason: string | null;
-            /** Banned By Id */
-            banned_by_id: number | null;
-        };
-        /** Body_login_auth_token_post */
-        Body_login_auth_token_post: {
-            /** Grant Type */
-            grant_type?: string | null;
-            /** Username */
-            username: string;
-            /**
-             * Password
-             * Format: password
-             */
-            password: string;
-            /**
-             * Scope
-             * @default
-             */
-            scope: string;
-            /** Client Id */
-            client_id?: string | null;
-            /**
-             * Client Secret
-             * Format: password
-             */
-            client_secret?: string | null;
-        };
-        /**
-         * CheckInResponse
-         * @description Response after successfully checking in a guest.
-         *
-         *     Confirms the check-in with the guest's identity and their assigned
-         *     arrival order for this meetup. arrival_order is gap-free per meetup.
-         *     Includes the staff member who performed the check-in for audit purposes.
-         */
-        CheckInResponse: {
-            guest: components["schemas"]["GuestPublic"];
-            /** Arrival Order */
-            arrival_order: number;
-            /**
-             * Arrival Time
-             * Format: date-time
-             */
-            arrival_time: string;
-            checked_in_by: components["schemas"]["CheckedInByPublic"];
-        };
-        /**
-         * CheckedInByPublic
-         * @description Minimal staff representation for check-in attribution.
-         *
-         *     Only includes the essential fields needed to identify who performed
-         *     a check-in, without exposing sensitive fields like approval status.
-         */
-        CheckedInByPublic: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
-        };
-        /**
-         * CreateGuestRequest
-         * @description Request body for creating a guest by Mazmo username.
-         *
-         *     Staff only need to know the handle (e.g. "cindydark"). The endpoint looks
-         *     up the canonical ID and profile data from Mazmo automatically.
-         */
-        CreateGuestRequest: {
-            /**
-             * Username
-             * @description Mazmo username to look up (e.g. 'cindydark')
-             */
-            username: string;
-        };
-        /**
-         * DisableUserRequest
-         * @description Request body for disabling a staff account.
-         *
-         *     A reason is required for audit trail purposes. Disabled accounts
-         *     cannot log in but their data is preserved for historical reference.
-         */
-        DisableUserRequest: {
-            /** Reason */
-            reason: string;
-        };
-        /**
-         * EventActorPublic
-         * @description Minimal staff representation in event logs.
-         *
-         *     Shows who performed an action without exposing sensitive account details.
-         */
-        EventActorPublic: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
-        };
-        /**
-         * EventGuestPublic
-         * @description Minimal guest representation in event logs.
-         *
-         *     Provides enough info to identify the guest without full profile data.
-         */
-        EventGuestPublic: {
-            /** Mazmo User Id */
-            mazmo_user_id: number;
-            /** Username */
-            username: string;
-            /** Displayname */
-            displayname: string;
-        };
-        /**
-         * EventLogListResponse
-         * @description Paginated list of event log entries.
-         *
-         *     Pagination fields:
-         *       - total: Total number of events matching the filter (for UI pagination)
-         *       - limit: Maximum events per page (default 50, max 100)
-         *       - offset: Number of events skipped (for page calculation)
-         *
-         *     Example: Page 2 with 50 per page → offset=50, limit=50
-         */
-        EventLogListResponse: {
-            /** Total */
-            total: number;
-            /** Limit */
-            limit: number;
-            /** Offset */
-            offset: number;
-            /** Events */
-            events: components["schemas"]["EventLogPublic"][];
-        };
-        /**
-         * EventLogPublic
-         * @description Single event log entry for API responses.
-         *
-         *     Contains the full context of what happened: who did what to whom,
-         *     when, and why. Relationships are expanded for convenience.
-         *
-         *     Fields:
-         *       - id: Unique event identifier
-         *       - event_type: What happened (CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN)
-         *       - timestamp: When it happened (UTC)
-         *       - actor: Staff member who performed the action
-         *       - guest: Guest who was affected (if applicable)
-         *       - meetup_id: Related meetup UUID (for check-in events)
-         *       - reason: Why the action was taken (required for bans, optional for undos)
-         */
-        EventLogPublic: {
-            /** Id */
-            id: number;
-            /** Event Type */
-            event_type: string;
-            /**
-             * Timestamp
-             * Format: date-time
-             */
-            timestamp: string;
-            actor?: components["schemas"]["EventActorPublic"] | null;
-            guest?: components["schemas"]["EventGuestPublic"] | null;
-            /** Meetup Id */
-            meetup_id?: string | null;
-            /** Reason */
-            reason?: string | null;
-        };
-        /**
-         * GuestListResponse
-         * @description Response for listing all known guests.
-         *
-         *     Returns identity-only data. For RSVP state at a specific meetup,
-         *     use the /meetups/{id}/guests endpoint instead.
-         */
-        GuestListResponse: {
-            /** Total */
-            total: number;
-            /** Guests */
-            guests: components["schemas"]["GuestPublic"][];
-        };
-        /**
-         * GuestPublic
-         * @description A Mazmo user's identity (cached locally).
-         *
-         *     This is identity-only data - no RSVP or check-in state.
-         *     The same guest can appear at multiple meetups with different RSVP states.
-         *     Maps directly to the Guest model via from_attributes.
-         *
-         *     Includes is_banned so the frontend can render banned guests differently
-         *     (e.g., name in red).
-         */
-        GuestPublic: {
-            /** Mazmo User Id */
-            mazmo_user_id: number;
-            /** Username */
-            username: string;
-            /** Displayname */
-            displayname: string;
-            /**
-             * Is Banned
-             * @default false
-             */
-            is_banned: boolean;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /**
-         * HealthResponse
-         * @description Full health check response.
-         *
-         *     The overall status is "healthy" only if all critical services are healthy.
-         *     Non-critical services being down results in "degraded" status.
-         */
-        HealthResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "healthy" | "unhealthy" | "degraded";
-            /** Services */
-            services: {
-                [key: string]: components["schemas"]["ServiceCheck"];
-            };
-        };
-        /**
-         * MeetupCreate
-         * @description Request body for creating a new meetup.
-         *
-         *     The mazmo_meetup_url is validated to match the expected Mazmo format.
-         *     During creation, the API calls Mazmo to fetch the event date, which
-         *     also verifies the URL points to a real event.
-         */
-        MeetupCreate: {
-            /** Name */
-            name: string;
-            /**
-             * Mazmo Meetup Url
-             * Format: uri
-             */
-            mazmo_meetup_url: string;
-        };
-        /**
-         * MeetupGuestListResponse
-         * @description Response for listing guests at a specific meetup.
-         *
-         *     Each entry includes both the guest's identity and their RSVP state
-         *     for this particular meetup.
-         */
-        MeetupGuestListResponse: {
-            /** Total */
-            total: number;
-            /** Guests */
-            guests: components["schemas"]["MeetupGuestPublic"][];
-        };
-        /**
-         * MeetupGuestPublic
-         * @description Combined view of a guest at a specific meetup.
-         *
-         *     Nests the guest identity and their RSVP state separately for clarity.
-         *     Frontend can access guest.displayname vs rsvp.has_arrived.
-         */
-        MeetupGuestPublic: {
-            guest: components["schemas"]["GuestPublic"];
-            rsvp: components["schemas"]["RsvpPublic"];
-        };
-        /**
-         * MeetupListResponse
-         * @description Response for listing all meetups.
-         *
-         *     Returns meetups ordered by date descending (most recent first).
-         */
-        MeetupListResponse: {
-            /** Total */
-            total: number;
-            /** Meetups */
-            meetups: components["schemas"]["MeetupPublic"][];
-        };
-        /**
-         * MeetupPublic
-         * @description Public representation of a meetup.
-         *
-         *     Returned when fetching meetup details. The mazmo_meetup_url is the
-         *     source URL used for syncing RSVPs from the Mazmo platform.
-         */
-        MeetupPublic: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Mazmo Meetup Url */
-            mazmo_meetup_url: string;
-            /**
-             * Date
-             * Format: date-time
-             */
-            date: string;
-            /** Is Finalized */
-            is_finalized: boolean;
-            /** Finalized At */
-            finalized_at: string | null;
-        };
-        /**
-         * PossibleRoles
-         * @description Used for Python/Pydantic validation only.
-         *     The actual role name is stored as a VARCHAR in the `user_roles` table
-         *     and referenced via a foreign key from `users.role_id`.
-         * @enum {string}
-         */
-        PossibleRoles: "STAFF" | "ADMIN";
-        /**
-         * RolePublic
-         * @description Public representation of a user role.
-         *
-         *     Used when returning user data that includes their role information.
-         *     Maps directly to the Role model via from_attributes.
-         */
-        RolePublic: {
-            /** Id */
-            id: number;
-            name: components["schemas"]["PossibleRoles"];
-        };
-        /**
-         * RoleRequest
-         * @description Request body for changing a user's role.
-         *
-         *     Used by admins to promote staff to admin or demote admins to staff.
-         */
-        RoleRequest: {
-            role: components["schemas"]["PossibleRoles"];
-        };
-        /**
-         * RsvpPublic
-         * @description Event-specific RSVP state for a guest at a meetup.
-         *
-         *     This data lives in the MeetupRsvp association table, not on the Guest.
-         *     arrival_time and arrival_order are set by a database trigger when
-         *     has_arrived flips to True during check-in.
-         */
-        RsvpPublic: {
-            /**
-             * Rsvp Time
-             * Format: date-time
-             */
-            rsvp_time: string;
-            /** Cancelled Rsvp */
-            cancelled_rsvp: boolean;
-            /** Has Arrived */
-            has_arrived: boolean;
-            /** Arrival Time */
-            arrival_time?: string | null;
-            /** Arrival Order */
-            arrival_order?: number | null;
-            /**
-             * Is Walkin
-             * @default false
-             */
-            is_walkin: boolean;
-        };
-        /**
-         * ServiceCheck
-         * @description Result of a single service health check.
-         */
-        ServiceCheck: {
-            status: components["schemas"]["ServiceStatus"];
-            /** Latency Ms */
-            latency_ms: number;
-            /** Message */
-            message?: string | null;
-        };
-        /**
-         * ServiceStatus
-         * @description Status of an individual service check.
-         * @enum {string}
-         */
-        ServiceStatus: "healthy" | "unhealthy" | "degraded";
-        /**
-         * StaffRegisterRequest
-         * @description Request body for staff registration.
-         *
-         *     Strict mode ensures exact type matching - no coercion from strings to ints, etc.
-         *     Password has a minimum length of 15 characters for security.
-         */
-        StaffRegisterRequest: {
-            /** Username */
-            username: string;
-            /** Password */
-            password: string;
-        };
-        /**
-         * SyncResponse
-         * @description Response after syncing guests from Mazmo.
-         *
-         *     Reports how many new guests/RSVPs were inserted vs already existed.
-         *     The sync is idempotent - running it multiple times is safe.
-         */
-        SyncResponse: {
-            /** Inserted */
-            inserted: number;
-            /** Skipped */
-            skipped: number;
-            /** Total In Db */
-            total_in_db: number;
-        };
-        /**
-         * TokenResponse
-         * @description Response returned after successful authentication.
-         *
-         *     Contains the JWT access token that the client should include in
-         *     subsequent requests via the Authorization header.
-         */
-        TokenResponse: {
-            /** Access Token */
-            access_token: string;
-            /**
-             * Token Type
-             * @default bearer
-             */
-            token_type: string;
-        };
-        /**
-         * UndoCheckInRequest
-         * @description Request body for undoing a check-in.
-         */
-        UndoCheckInRequest: {
-            /** Reason */
-            reason: string;
-        };
-        /**
-         * UserPublic
-         * @description Public representation of a staff user.
-         *
-         *     Returned when fetching user details. Includes the nested role object
-         *     for convenience. Never includes the hashed password.
-         */
-        UserPublic: {
-            /** Id */
-            id: number;
-            /** Username */
-            username: string;
-            /** Is Approved */
-            is_approved: boolean;
-            role: components["schemas"]["RolePublic"];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Is Disabled
-             * @default false
-             */
-            is_disabled: boolean;
-            /** Disabled At */
-            disabled_at?: string | null;
-            /** Disabled Reason */
-            disabled_reason?: string | null;
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
-        };
+  schemas: {
+    /**
+     * ApproveUserRequest
+     * @description Request body for approving or revoking a user's access.
+     *
+     *     Admins use this to flip the is_approved flag on staff accounts.
+     *     New registrations start unapproved and require admin action.
+     */
+    ApproveUserRequest: {
+      /** Is Approved */
+      is_approved: boolean;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /**
+     * BanGuestRequest
+     * @description Request body for banning a guest.
+     */
+    BanGuestRequest: {
+      /** Reason */
+      reason: string;
+    };
+    /**
+     * BannedGuestListResponse
+     * @description Response for listing all banned guests.
+     */
+    BannedGuestListResponse: {
+      /** Total */
+      total: number;
+      /** Guests */
+      guests: components["schemas"]["BannedGuestPublic"][];
+    };
+    /**
+     * BannedGuestPublic
+     * @description Extended guest info including ban details for the banned list.
+     *
+     *     Used in the banned guests list endpoint where admins need to see
+     *     the full audit trail (when banned, why, by whom).
+     */
+    BannedGuestPublic: {
+      /** Mazmo User Id */
+      mazmo_user_id: number;
+      /** Username */
+      username: string;
+      /** Displayname */
+      displayname: string;
+      /** Is Banned */
+      is_banned: boolean;
+      /** Banned At */
+      banned_at: string | null;
+      /** Banned Reason */
+      banned_reason: string | null;
+      /** Banned By Id */
+      banned_by_id: number | null;
+    };
+    /** Body_login_auth_token_post */
+    Body_login_auth_token_post: {
+      /** Grant Type */
+      grant_type?: string | null;
+      /** Username */
+      username: string;
+      /**
+       * Password
+       * Format: password
+       */
+      password: string;
+      /**
+       * Scope
+       * @default
+       */
+      scope: string;
+      /** Client Id */
+      client_id?: string | null;
+      /**
+       * Client Secret
+       * Format: password
+       */
+      client_secret?: string | null;
+    };
+    /**
+     * CheckInResponse
+     * @description Response after successfully checking in a guest.
+     *
+     *     Confirms the check-in with the guest's identity and their assigned
+     *     arrival order for this meetup. arrival_order is gap-free per meetup.
+     *     Includes the staff member who performed the check-in for audit purposes.
+     */
+    CheckInResponse: {
+      guest: components["schemas"]["GuestPublic"];
+      /** Arrival Order */
+      arrival_order: number;
+      /**
+       * Arrival Time
+       * Format: date-time
+       */
+      arrival_time: string;
+      checked_in_by: components["schemas"]["CheckedInByPublic"];
+    };
+    /**
+     * CheckedInByPublic
+     * @description Minimal staff representation for check-in attribution.
+     *
+     *     Only includes the essential fields needed to identify who performed
+     *     a check-in, without exposing sensitive fields like approval status.
+     */
+    CheckedInByPublic: {
+      /** Id */
+      id: number;
+      /** Username */
+      username: string;
+    };
+    /**
+     * CreateGuestRequest
+     * @description Request body for creating a guest by Mazmo username.
+     *
+     *     Staff only need to know the handle (e.g. "cindydark"). The endpoint looks
+     *     up the canonical ID and profile data from Mazmo automatically.
+     */
+    CreateGuestRequest: {
+      /**
+       * Username
+       * @description Mazmo username to look up (e.g. 'cindydark')
+       */
+      username: string;
+    };
+    /**
+     * DisableUserRequest
+     * @description Request body for disabling a staff account.
+     *
+     *     A reason is required for audit trail purposes. Disabled accounts
+     *     cannot log in but their data is preserved for historical reference.
+     */
+    DisableUserRequest: {
+      /** Reason */
+      reason: string;
+    };
+    /**
+     * EventActorPublic
+     * @description Minimal staff representation in event logs.
+     *
+     *     Shows who performed an action without exposing sensitive account details.
+     */
+    EventActorPublic: {
+      /** Id */
+      id: number;
+      /** Username */
+      username: string;
+    };
+    /**
+     * EventGuestPublic
+     * @description Minimal guest representation in event logs.
+     *
+     *     Provides enough info to identify the guest without full profile data.
+     */
+    EventGuestPublic: {
+      /** Mazmo User Id */
+      mazmo_user_id: number;
+      /** Username */
+      username: string;
+      /** Displayname */
+      displayname: string;
+    };
+    /**
+     * EventLogListResponse
+     * @description Paginated list of event log entries.
+     *
+     *     Pagination fields:
+     *       - total: Total number of events matching the filter (for UI pagination)
+     *       - limit: Maximum events per page (default 50, max 100)
+     *       - offset: Number of events skipped (for page calculation)
+     *
+     *     Example: Page 2 with 50 per page → offset=50, limit=50
+     */
+    EventLogListResponse: {
+      /** Total */
+      total: number;
+      /** Limit */
+      limit: number;
+      /** Offset */
+      offset: number;
+      /** Events */
+      events: components["schemas"]["EventLogPublic"][];
+    };
+    /**
+     * EventLogPublic
+     * @description Single event log entry for API responses.
+     *
+     *     Contains the full context of what happened: who did what to whom,
+     *     when, and why. Relationships are expanded for convenience.
+     *
+     *     Fields:
+     *       - id: Unique event identifier
+     *       - event_type: What happened (CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN)
+     *       - timestamp: When it happened (UTC)
+     *       - actor: Staff member who performed the action
+     *       - guest: Guest who was affected (if applicable)
+     *       - meetup_id: Related meetup UUID (for check-in events)
+     *       - reason: Why the action was taken (required for bans, optional for undos)
+     */
+    EventLogPublic: {
+      /** Id */
+      id: number;
+      /** Event Type */
+      event_type: string;
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string;
+      actor?: components["schemas"]["EventActorPublic"] | null;
+      guest?: components["schemas"]["EventGuestPublic"] | null;
+      /** Meetup Id */
+      meetup_id?: string | null;
+      /** Reason */
+      reason?: string | null;
+    };
+    /**
+     * GuestListResponse
+     * @description Response for listing all known guests.
+     *
+     *     Returns identity-only data. For RSVP state at a specific meetup,
+     *     use the /meetups/{id}/guests endpoint instead.
+     */
+    GuestListResponse: {
+      /** Total */
+      total: number;
+      /** Guests */
+      guests: components["schemas"]["GuestPublic"][];
+    };
+    /**
+     * GuestPublic
+     * @description A Mazmo user's identity (cached locally).
+     *
+     *     This is identity-only data - no RSVP or check-in state.
+     *     The same guest can appear at multiple meetups with different RSVP states.
+     *     Maps directly to the Guest model via from_attributes.
+     *
+     *     Includes is_banned so the frontend can render banned guests differently
+     *     (e.g., name in red).
+     */
+    GuestPublic: {
+      /** Mazmo User Id */
+      mazmo_user_id: number;
+      /** Username */
+      username: string;
+      /** Displayname */
+      displayname: string;
+      /**
+       * Is Banned
+       * @default false
+       */
+      is_banned: boolean;
+    };
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components["schemas"]["ValidationError"][];
+    };
+    /**
+     * HealthResponse
+     * @description Full health check response.
+     *
+     *     The overall status is "healthy" only if all critical services are healthy.
+     *     Non-critical services being down results in "degraded" status.
+     */
+    HealthResponse: {
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "healthy" | "unhealthy" | "degraded";
+      /** Services */
+      services: {
+        [key: string]: components["schemas"]["ServiceCheck"];
+      };
+    };
+    /**
+     * MeetupCreate
+     * @description Request body for creating a new meetup.
+     *
+     *     The mazmo_meetup_url is validated to match the expected Mazmo format.
+     *     During creation, the API calls Mazmo to fetch the event date, which
+     *     also verifies the URL points to a real event.
+     */
+    MeetupCreate: {
+      /** Name */
+      name: string;
+      /**
+       * Mazmo Meetup Url
+       * Format: uri
+       */
+      mazmo_meetup_url: string;
+    };
+    /**
+     * MeetupGuestListResponse
+     * @description Response for listing guests at a specific meetup.
+     *
+     *     Each entry includes both the guest's identity and their RSVP state
+     *     for this particular meetup.
+     */
+    MeetupGuestListResponse: {
+      /** Total */
+      total: number;
+      /** Guests */
+      guests: components["schemas"]["MeetupGuestPublic"][];
+    };
+    /**
+     * MeetupGuestPublic
+     * @description Combined view of a guest at a specific meetup.
+     *
+     *     Nests the guest identity and their RSVP state separately for clarity.
+     *     Frontend can access guest.displayname vs rsvp.has_arrived.
+     */
+    MeetupGuestPublic: {
+      guest: components["schemas"]["GuestPublic"];
+      rsvp: components["schemas"]["RsvpPublic"];
+    };
+    /**
+     * MeetupListResponse
+     * @description Response for listing all meetups.
+     *
+     *     Returns meetups ordered by date descending (most recent first).
+     */
+    MeetupListResponse: {
+      /** Total */
+      total: number;
+      /** Meetups */
+      meetups: components["schemas"]["MeetupPublic"][];
+    };
+    /**
+     * MeetupPublic
+     * @description Public representation of a meetup.
+     *
+     *     Returned when fetching meetup details. The mazmo_meetup_url is the
+     *     source URL used for syncing RSVPs from the Mazmo platform.
+     */
+    MeetupPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Mazmo Meetup Url */
+      mazmo_meetup_url: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Is Finalized */
+      is_finalized: boolean;
+      /** Finalized At */
+      finalized_at: string | null;
+    };
+    /**
+     * PossibleRoles
+     * @description Used for Python/Pydantic validation only.
+     *     The actual role name is stored as a VARCHAR in the `user_roles` table
+     *     and referenced via a foreign key from `users.role_id`.
+     * @enum {string}
+     */
+    PossibleRoles: "STAFF" | "ADMIN";
+    /**
+     * RolePublic
+     * @description Public representation of a user role.
+     *
+     *     Used when returning user data that includes their role information.
+     *     Maps directly to the Role model via from_attributes.
+     */
+    RolePublic: {
+      /** Id */
+      id: number;
+      name: components["schemas"]["PossibleRoles"];
+    };
+    /**
+     * RoleRequest
+     * @description Request body for changing a user's role.
+     *
+     *     Used by admins to promote staff to admin or demote admins to staff.
+     */
+    RoleRequest: {
+      role: components["schemas"]["PossibleRoles"];
+    };
+    /**
+     * RsvpPublic
+     * @description Event-specific RSVP state for a guest at a meetup.
+     *
+     *     This data lives in the MeetupRsvp association table, not on the Guest.
+     *     arrival_time and arrival_order are set by a database trigger when
+     *     has_arrived flips to True during check-in.
+     */
+    RsvpPublic: {
+      /**
+       * Rsvp Time
+       * Format: date-time
+       */
+      rsvp_time: string;
+      /** Cancelled Rsvp */
+      cancelled_rsvp: boolean;
+      /** Has Arrived */
+      has_arrived: boolean;
+      /** Arrival Time */
+      arrival_time?: string | null;
+      /** Arrival Order */
+      arrival_order?: number | null;
+      /**
+       * Is Walkin
+       * @default false
+       */
+      is_walkin: boolean;
+    };
+    /**
+     * ServiceCheck
+     * @description Result of a single service health check.
+     */
+    ServiceCheck: {
+      status: components["schemas"]["ServiceStatus"];
+      /** Latency Ms */
+      latency_ms: number;
+      /** Message */
+      message?: string | null;
+    };
+    /**
+     * ServiceStatus
+     * @description Status of an individual service check.
+     * @enum {string}
+     */
+    ServiceStatus: "healthy" | "unhealthy" | "degraded";
+    /**
+     * StaffRegisterRequest
+     * @description Request body for staff registration.
+     *
+     *     Strict mode ensures exact type matching - no coercion from strings to ints, etc.
+     *     Password has a minimum length of 15 characters for security.
+     */
+    StaffRegisterRequest: {
+      /** Username */
+      username: string;
+      /** Password */
+      password: string;
+    };
+    /**
+     * SyncResponse
+     * @description Response after syncing guests from Mazmo.
+     *
+     *     Reports how many new guests/RSVPs were inserted vs already existed.
+     *     The sync is idempotent - running it multiple times is safe.
+     */
+    SyncResponse: {
+      /** Inserted */
+      inserted: number;
+      /** Skipped */
+      skipped: number;
+      /** Total In Db */
+      total_in_db: number;
+    };
+    /**
+     * TokenResponse
+     * @description Response returned after successful authentication.
+     *
+     *     Contains the JWT access token that the client should include in
+     *     subsequent requests via the Authorization header.
+     */
+    TokenResponse: {
+      /** Access Token */
+      access_token: string;
+      /**
+       * Token Type
+       * @default bearer
+       */
+      token_type: string;
+    };
+    /**
+     * UndoCheckInRequest
+     * @description Request body for undoing a check-in.
+     */
+    UndoCheckInRequest: {
+      /** Reason */
+      reason: string;
+    };
+    /**
+     * UserPublic
+     * @description Public representation of a staff user.
+     *
+     *     Returned when fetching user details. Includes the nested role object
+     *     for convenience. Never includes the hashed password.
+     */
+    UserPublic: {
+      /** Id */
+      id: number;
+      /** Username */
+      username: string;
+      /** Is Approved */
+      is_approved: boolean;
+      role: components["schemas"]["RolePublic"];
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Is Disabled
+       * @default false
+       */
+      is_disabled: boolean;
+      /** Disabled At */
+      disabled_at?: string | null;
+      /** Disabled Reason */
+      disabled_reason?: string | null;
+    };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+      /** Input */
+      input?: unknown;
+      /** Context */
+      ctx?: Record<string, never>;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    register_auth_register_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StaffRegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Account created (pending approval) */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"];
-                };
-            };
-            /** @description Username already taken */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+  register_auth_register_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    login_auth_token_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/x-www-form-urlencoded": components["schemas"]["Body_login_auth_token_post"];
-            };
-        };
-        responses: {
-            /** @description Login successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Wrong username or password */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StaffRegisterRequest"];
+      };
     };
-    get_me_auth_userinfo_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Account created (pending approval) */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Current user profile */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
         };
+      };
+      /** @description Username already taken */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    list_staff_staff__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All staff accounts */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"][];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+  };
+  login_auth_token_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_pending_staff_pending_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Unapproved staff accounts */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"][];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/x-www-form-urlencoded": components["schemas"]["Body_login_auth_token_post"];
+      };
     };
-    set_approval_staff__user_id__approve_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Login successful */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ApproveUserRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
         };
-        responses: {
-            /** @description Approval status updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"];
-                };
-            };
-            /** @description Invalid self-operation */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Staff user not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Wrong username or password */
+      401: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    set_role_staff__user_id__role_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RoleRequest"];
-            };
-        };
-        responses: {
-            /** @description Role updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"];
-                };
-            };
-            /** @description Invalid self-operation */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Staff user not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_me_auth_userinfo_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    disable_staff_staff__user_id__disable_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Current user profile */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DisableUserRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
         };
-        responses: {
-            /** @description Account disabled */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"];
-                };
-            };
-            /** @description Invalid self-operation */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Staff user not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account already disabled */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    enable_staff_staff__user_id__enable_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Account re-enabled */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Staff user not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not disabled */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  list_staff_staff__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_guests_guests__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description All staff accounts */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description All known guests */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestListResponse"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"][];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    create_guest_guests__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateGuestRequest"];
-            };
-        };
-        responses: {
-            /** @description Guest created from Mazmo profile */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Username not found on Mazmo */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest already exists */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Mazmo API timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+  };
+  list_pending_staff_pending_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_banned_guests_guests_banned_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Unapproved staff accounts */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description All banned guests */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BannedGuestListResponse"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"][];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    get_guest_guests__mazmo_user_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                mazmo_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Guest found */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  set_approval_staff__user_id__approve_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
     };
-    get_guest_by_username_guests_by_username__username__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                username: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Guest found */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not found by username */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ApproveUserRequest"];
+      };
     };
-    ban_guest_guests__mazmo_user_id__ban_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                mazmo_user_id: number;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Approval status updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BanGuestRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
         };
-        responses: {
-            /** @description Guest banned */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BannedGuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest already banned */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
+      };
+      /** @description Invalid self-operation */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Staff user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    unban_guest_guests__mazmo_user_id__unban_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                mazmo_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Guest unbanned */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not banned */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  set_role_staff__user_id__role_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
     };
-    list_meetups_meetups__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All meetups */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupListResponse"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RoleRequest"];
+      };
     };
-    create_meetup_meetups__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Role updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MeetupCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
         };
-        responses: {
-            /** @description Meetup created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Duplicate meetup URL */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Mazmo API error */
-            502: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Mazmo API timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
+      };
+      /** @description Invalid self-operation */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Staff user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_meetup_meetups__meetup_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Meetup found */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  disable_staff_staff__user_id__disable_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
     };
-    sync_meetup_guests_meetups__meetup_id__sync_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sync completed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SyncResponse"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup already finalized */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-            /** @description Mazmo API error */
-            502: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Mazmo API timeout */
-            504: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DisableUserRequest"];
+      };
     };
-    list_meetup_guests_meetups__meetup_id__guests_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Account disabled */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Guests at this meetup */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupGuestListResponse"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
         };
+      };
+      /** @description Invalid self-operation */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Staff user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account already disabled */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-                mazmo_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Walk-in guest added */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupGuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not found in system */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup already finalized */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  enable_staff_staff__user_id__enable_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
     };
-    checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-                mazmo_user_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Account re-enabled */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Guest checked in */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CheckInResponse"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not RSVPed to meetup */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup already finalized */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["UserPublic"];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Staff user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not disabled */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    undo_checkin_guest_meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-                mazmo_user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UndoCheckInRequest"];
-            };
-        };
-        responses: {
-            /** @description Check-in undone */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not RSVPed to meetup */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not checked in */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
+  };
+  list_guests_guests__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    finalize_meetup_meetups__meetup_id__finalize_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description All known guests */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Meetup finalized */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup already finalized */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["GuestListResponse"];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    unfinalize_meetup_meetups__meetup_id__unfinalize_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                meetup_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Meetup un-finalized */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MeetupPublic"];
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not finalized */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  create_guest_guests__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_all_events_events__get: {
-        parameters: {
-            query?: {
-                /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
-                type?: string | null;
-                /** @description Events after this timestamp */
-                since?: string | null;
-                /** @description Events before this timestamp */
-                until?: string | null;
-                /** @description Filter by guest mazmo_user_id */
-                guest_id?: number | null;
-                /** @description Filter by meetup UUID */
-                meetup_id?: string | null;
-                /** @description Filter by staff member ID */
-                actor_id?: number | null;
-                /** @description Events per page (max 100) */
-                limit?: number;
-                /** @description Skip N events */
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All events (paginated) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventLogListResponse"];
-                };
-            };
-            /** @description Invalid event type filter */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Admin role required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateGuestRequest"];
+      };
     };
-    list_meetup_events_events_meetups__meetup_id__get: {
-        parameters: {
-            query?: {
-                /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
-                type?: string | null;
-                /** @description Events after this timestamp */
-                since?: string | null;
-                /** @description Events before this timestamp */
-                until?: string | null;
-                /** @description Events per page (max 100) */
-                limit?: number;
-                /** @description Skip N events */
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                meetup_id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Guest created from Mazmo profile */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Events at this meetup */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventLogListResponse"];
-                };
-            };
-            /** @description Invalid event type filter */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Meetup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Username not found on Mazmo */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest already exists */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API timeout */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    list_guest_events_events_guests__guest_id__get: {
-        parameters: {
-            query?: {
-                /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
-                type?: string | null;
-                /** @description Events after this timestamp */
-                since?: string | null;
-                /** @description Events before this timestamp */
-                until?: string | null;
-                /** @description Filter by meetup UUID */
-                meetup_id?: string | null;
-                /** @description Events per page (max 100) */
-                limit?: number;
-                /** @description Skip N events */
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                guest_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Events for this guest */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventLogListResponse"];
-                };
-            };
-            /** @description Invalid event type filter */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Account not approved or disabled */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Guest not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  list_banned_guests_guests_banned_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    list_staff_events_events_staff__staff_id__get: {
-        parameters: {
-            query?: {
-                /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
-                type?: string | null;
-                /** @description Events after this timestamp */
-                since?: string | null;
-                /** @description Events before this timestamp */
-                until?: string | null;
-                /** @description Filter by guest mazmo_user_id */
-                guest_id?: number | null;
-                /** @description Filter by meetup UUID */
-                meetup_id?: string | null;
-                /** @description Events per page (max 100) */
-                limit?: number;
-                /** @description Skip N events */
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                staff_id: number;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description All banned guests */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Events by this staff member */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventLogListResponse"];
-                };
-            };
-            /** @description Invalid event type filter */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Invalid or missing credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Staff can only view their own events */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Staff user not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["BannedGuestListResponse"];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
     };
-    ping_ping_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
+  };
+  get_guest_guests__mazmo_user_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mazmo_user_id: number;
+      };
+      cookie?: never;
     };
-    health_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Guest found */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description All services healthy */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-            /** @description One or more critical services unhealthy */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
         };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    health_head_health_head: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description All services healthy */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description One or more critical services unhealthy */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  get_guest_by_username_guests_by_username__username__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        username: string;
+      };
+      cookie?: never;
     };
+    requestBody?: never;
+    responses: {
+      /** @description Guest found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found by username */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  ban_guest_guests__mazmo_user_id__ban_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BanGuestRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest banned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BannedGuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest already banned */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  unban_guest_guests__mazmo_user_id__unban_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest unbanned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not banned */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_meetups_meetups__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All meetups */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  create_meetup_meetups__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MeetupCreate"];
+      };
+    };
+    responses: {
+      /** @description Meetup created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Duplicate meetup URL */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API error */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API timeout */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_meetup_meetups__meetup_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Meetup found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  sync_meetup_guests_meetups__meetup_id__sync_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Sync completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SyncResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already finalized */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Mazmo API error */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API timeout */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  list_meetup_guests_meetups__meetup_id__guests_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guests at this meetup */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupGuestListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Walk-in guest added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupGuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found in system */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already finalized */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest checked in */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CheckInResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not RSVPed to meetup */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already finalized */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  undo_checkin_guest_meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UndoCheckInRequest"];
+      };
+    };
+    responses: {
+      /** @description Check-in undone */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not RSVPed to meetup */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not checked in */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  finalize_meetup_meetups__meetup_id__finalize_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Meetup finalized */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already finalized */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  unfinalize_meetup_meetups__meetup_id__unfinalize_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Meetup un-finalized */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not finalized */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_all_events_events__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        type?: string | null;
+        /** @description Events after this timestamp */
+        since?: string | null;
+        /** @description Events before this timestamp */
+        until?: string | null;
+        /** @description Filter by guest mazmo_user_id */
+        guest_id?: number | null;
+        /** @description Filter by meetup UUID */
+        meetup_id?: string | null;
+        /** @description Filter by staff member ID */
+        actor_id?: number | null;
+        /** @description Events per page (max 100) */
+        limit?: number;
+        /** @description Skip N events */
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All events (paginated) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventLogListResponse"];
+        };
+      };
+      /** @description Invalid event type filter */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_meetup_events_events_meetups__meetup_id__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        type?: string | null;
+        /** @description Events after this timestamp */
+        since?: string | null;
+        /** @description Events before this timestamp */
+        until?: string | null;
+        /** @description Events per page (max 100) */
+        limit?: number;
+        /** @description Skip N events */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Events at this meetup */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventLogListResponse"];
+        };
+      };
+      /** @description Invalid event type filter */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_guest_events_events_guests__guest_id__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        type?: string | null;
+        /** @description Events after this timestamp */
+        since?: string | null;
+        /** @description Events before this timestamp */
+        until?: string | null;
+        /** @description Filter by meetup UUID */
+        meetup_id?: string | null;
+        /** @description Events per page (max 100) */
+        limit?: number;
+        /** @description Skip N events */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        guest_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Events for this guest */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventLogListResponse"];
+        };
+      };
+      /** @description Invalid event type filter */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_staff_events_events_staff__staff_id__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        type?: string | null;
+        /** @description Events after this timestamp */
+        since?: string | null;
+        /** @description Events before this timestamp */
+        until?: string | null;
+        /** @description Filter by guest mazmo_user_id */
+        guest_id?: number | null;
+        /** @description Filter by meetup UUID */
+        meetup_id?: string | null;
+        /** @description Events per page (max 100) */
+        limit?: number;
+        /** @description Skip N events */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        staff_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Events by this staff member */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventLogListResponse"];
+        };
+      };
+      /** @description Invalid event type filter */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Staff can only view their own events */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Staff user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  ping_ping_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+  };
+  health_health_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All services healthy */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HealthResponse"];
+        };
+      };
+      /** @description One or more critical services unhealthy */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  health_head_health_head: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All services healthy */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description One or more critical services unhealthy */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
 }
