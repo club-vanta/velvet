@@ -12,6 +12,7 @@ type User = components["schemas"]["UserPublic"];
 
 interface AuthContextValue {
   user: User | null;
+  isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Rehidrata el usuario al montar si hay un token persistido en localStorage.
   useEffect(() => {
@@ -30,6 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {
         setAuthToken(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, []);
 
@@ -60,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

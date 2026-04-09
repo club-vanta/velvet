@@ -30,7 +30,9 @@ function AuthenticatedRoutes() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return null;
 
   if (!user) {
     return (
