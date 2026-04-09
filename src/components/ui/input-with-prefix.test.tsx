@@ -22,13 +22,29 @@ describe("InputWithPrefix", () => {
 
   it("forwards value and onChange to the input", async () => {
     const onChange = vi.fn();
-    render(<InputWithPrefix prefix="@" placeholder="username" value="" onChange={onChange} />);
+    render(
+      <InputWithPrefix
+        prefix="@"
+        placeholder="username"
+        value=""
+        onChange={onChange}
+      />,
+    );
     await userEvent.type(screen.getByPlaceholderText("username"), "a");
-    expect(onChange).toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ target: expect.anything() }),
+    );
   });
 
   it("forwards the disabled prop to the input", () => {
     render(<InputWithPrefix prefix="@" placeholder="username" disabled />);
     expect(screen.getByPlaceholderText("username")).toBeDisabled();
+  });
+
+  it("applies aria-invalid to the wrapper", () => {
+    const { container } = render(
+      <InputWithPrefix prefix="@" placeholder="username" aria-invalid={true} />,
+    );
+    expect(container.firstChild).toHaveAttribute("aria-invalid", "true");
   });
 });
