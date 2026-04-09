@@ -44,11 +44,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     // /auth/token is OAuth2 form-encoded, not JSON.
-    const res = await fetch(`${API_BASE_URL}/auth/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ username, password, scope: "" }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/auth/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ username, password, scope: "" }),
+      });
+    } catch {
+      throw new Error(`No se pudo conectar al servidor en ${API_BASE_URL}. Verificá tu conexión.`);
+    }
 
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { detail?: string };
