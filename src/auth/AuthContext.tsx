@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { api, API_BASE_URL, setAuthToken } from "@/api/client";
 import type { components } from "@/api/types";
 
@@ -15,8 +21,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Token lives in memory only — no localStorage, no persistence across reloads.
-  // Per Krapp's spec: if the page reloads, staff logs in again.
+  // Rehidrata el usuario al montar si hay un token persistido en localStorage.
+  useEffect(() => {
+    api
+      .GET("/auth/userinfo")
+      .then(({ data }) => {
+        if (data) setUser(data);
+      })
+      .catch(() => {
+        setAuthToken(null);
+      });
+  }, []);
 
   const login = useCallback(async (username: string, password: string) => {
     // /auth/token is OAuth2 form-encoded, not JSON.
