@@ -22,6 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { InputWithPrefix } from "@/components/ui/input-with-prefix";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDateTime } from "@/lib/format";
@@ -87,6 +88,80 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
             }
           >
             {mutation.isPending ? "Banning…" : "Ban guest"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddGuestDialog({ onClose }: { onClose: () => void }) {
+  const [username, setUsername] = useState("");
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const { error, response } = await api.POST("/guests/", {
+        body: { username: username.trim() },
+      });
+      if (error) {
+        if (response.status === 404) {
+          throw new Error(
+            "No se encontró el usuario en Mazmo. Revisá el handle.",
+          );
+        }
+        if (response.status === 409) {
+          throw new Error("Este guest ya está registrado en el sistema.");
+        }
+        if (response.status === 504) {
+          throw new Error("No se pudo conectar a Mazmo. Intentá de nuevo.");
+        }
+        throw new Error(
+          (error as { detail?: string }).detail ??
+            "Algo salió mal. Intentá de nuevo.",
+        );
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["guests"] });
+      toast.success("Guest agregado correctamente");
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add new guest</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1 py-2">
+          <label htmlFor="guest-username" className="text-sm font-medium">
+            Mazmo username
+          </label>
+          <InputWithPrefix
+            id="guest-username"
+            prefix="@"
+            placeholder="cindydark"
+            autoComplete="off"
+            autoCapitalize="none"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={mutation.isPending}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={!username.trim() || mutation.isPending}
+          >
+            {mutation.isPending ? "Adding…" : "Add"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -324,10 +399,14 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 export function GuestsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role.name === "ADMIN";
+  const [addGuestOpen, setAddGuestOpen] = useState(false);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Guests</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Guests</h1>
+        <Button onClick={() => setAddGuestOpen(true)}>Add new guest</Button>
+      </div>
       <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all">All Guests</TabsTrigger>
@@ -340,6 +419,9 @@ export function GuestsPage() {
           <BannedGuestsTab isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
+      {addGuestOpen && (
+        <AddGuestDialog onClose={() => setAddGuestOpen(false)} />
+      )}
     </div>
   );
 }
