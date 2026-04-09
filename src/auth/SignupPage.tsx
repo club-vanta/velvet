@@ -19,12 +19,11 @@ export function SignupPage() {
     setError(null);
     setIsPending(true);
     try {
-      const { error } = await api.POST("/auth/register", {
+      const { error, response } = await api.POST("/auth/register", {
         body: { username, password },
       });
       if (error) {
-        const status = (error as { status?: number }).status;
-        if (status === 409) {
+        if (response.status === 409) {
           setError("El nombre de usuario ya está en uso.");
         } else {
           setError("Algo salió mal. Intentá de nuevo.");
