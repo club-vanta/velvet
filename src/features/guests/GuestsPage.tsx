@@ -101,7 +101,7 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { error, response } = await api.POST("/guests/", {
+      const { data, error, response } = await api.POST("/guests/", {
         body: { username: username.trim() },
       });
       if (error) {
@@ -121,10 +121,11 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
             "Algo salió mal. Intentá de nuevo.",
         );
       }
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success("Guest agregado correctamente");
+      toast.success(`${data?.displayname ?? "Guest"} agregado correctamente`);
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
