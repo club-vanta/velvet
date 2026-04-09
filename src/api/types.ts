@@ -181,7 +181,18 @@ export interface paths {
      */
     get: operations["list_guests_guests__get"];
     put?: never;
-    post?: never;
+    /**
+     * Create a guest by Mazmo username
+     * @description Register a guest using their Mazmo username handle.
+     *
+     *     Looks up the canonical Mazmo user ID and profile data automatically,
+     *     so staff at the door only need to know the handle (e.g. "cindydark").
+     *
+     *     Returns 404 if the username doesn't exist on Mazmo.
+     *     Returns 409 if the guest is already registered in the system.
+     *     Returns 504 if Mazmo is unreachable.
+     */
+    post: operations["create_guest_guests__post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -220,6 +231,26 @@ export interface paths {
      * @description Get a single guest by their Mazmo user ID.
      */
     get: operations["get_guest_guests__mazmo_user_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/guests/by-username/{username}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a single guest by Mazmo username
+     * @description Get a single guest by their Mazmo username handle.
+     */
+    get: operations["get_guest_by_username_guests_by_username__username__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -361,6 +392,34 @@ export interface paths {
     get: operations["list_meetup_guests_meetups__meetup_id__guests_get"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add a walk-in guest to this meetup
+     * @description Manually add a guest who has a Mazmo profile but didn't RSVP to this event.
+     *
+     *     Creates a MeetupRsvp row with the current time as rsvp_time.
+     *     The guest must already exist in the system (fetched via a previous sync
+     *     for any meetup, or visible in GET /guests/).
+     *
+     *     Returns 404 if the guest doesn't exist in the system.
+     *     Returns 409 if the guest already has an RSVP for this meetup.
+     *     Returns 409 if the meetup is finalized.
+     */
+    post: operations["add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -565,15 +624,15 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/": {
+  "/ping": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /** Root */
-    get: operations["root__get"];
+    /** Ping */
+    get: operations["ping_ping_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -605,24 +664,16 @@ export interface paths {
     post?: never;
     delete?: never;
     options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/ping": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Ping */
-    get: operations["ping_ping_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
+    /**
+     * Health check (no body) — used by UptimeRobot
+     * @description Same health logic as `GET /health` but returns no response body, as required
+     *     by RFC 9110 for HEAD requests.
+     *
+     *     **Used by UptimeRobot** for uptime monitoring. UptimeRobot sends HEAD
+     *     requests to avoid downloading the response body on every check. Returns
+     *     200 if healthy, 503 if any critical service is down.
+     */
+    head: operations["health_head_health_head"];
     patch?: never;
     trace?: never;
   };
@@ -736,6 +787,20 @@ export interface components {
       /** Id */
       id: number;
       /** Username */
+      username: string;
+    };
+    /**
+     * CreateGuestRequest
+     * @description Request body for creating a guest by Mazmo username.
+     *
+     *     Staff only need to know the handle (e.g. "cindydark"). The endpoint looks
+     *     up the canonical ID and profile data from Mazmo automatically.
+     */
+    CreateGuestRequest: {
+      /**
+       * Username
+       * @description Mazmo username to look up (e.g. 'cindydark')
+       */
       username: string;
     };
     /**
@@ -1020,6 +1085,11 @@ export interface components {
       arrival_time?: string | null;
       /** Arrival Order */
       arrival_order?: number | null;
+      /**
+       * Is Walkin
+       * @default false
+       */
+      is_walkin: boolean;
     };
     /**
      * ServiceCheck
@@ -1206,7 +1276,7 @@ export interface operations {
           "application/json": components["schemas"]["TokenResponse"];
         };
       };
-      /** @description Invalid or missing credentials */
+      /** @description Wrong username or password */
       401: {
         headers: {
           [name: string]: unknown;
@@ -1676,6 +1746,84 @@ export interface operations {
       };
     };
   };
+  create_guest_guests__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateGuestRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest created from Mazmo profile */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Username not found on Mazmo */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest already exists */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API timeout */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
   list_banned_guests_guests_banned_get: {
     parameters: {
       query?: never;
@@ -1753,6 +1901,64 @@ export interface operations {
         };
       };
       /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_guest_by_username_guests_by_username__username__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        username: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found by username */
       404: {
         headers: {
           [name: string]: unknown;
@@ -2209,6 +2415,74 @@ export interface operations {
       };
       /** @description Meetup not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Walk-in guest added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupGuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found in system */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already finalized */
+      409: {
         headers: {
           [name: string]: unknown;
         };
@@ -2814,7 +3088,7 @@ export interface operations {
       };
     };
   };
-  root__get: {
+  ping_ping_get: {
     parameters: {
       query?: never;
       header?: never;
@@ -2863,7 +3137,7 @@ export interface operations {
       };
     };
   };
-  ping_ping_get: {
+  health_head_health_head: {
     parameters: {
       query?: never;
       header?: never;
@@ -2872,16 +3146,21 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Successful Response */
+      /** @description All services healthy */
       200: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": {
-            [key: string]: unknown;
-          };
+          "application/json": unknown;
         };
+      };
+      /** @description One or more critical services unhealthy */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

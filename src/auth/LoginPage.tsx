@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,10 @@ export function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-muted-foreground">
-          Need access? Contact an administrator.
+          ¿No tenés cuenta?{" "}
+          <Link to="/signup" className="underline underline-offset-2">
+            Registrate
+          </Link>
         </p>
       </div>
     </main>

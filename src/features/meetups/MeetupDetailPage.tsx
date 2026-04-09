@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, RefreshCw } from "lucide-react";
+import { ExternalLink, RefreshCw, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -186,11 +187,144 @@ function CheckInBannedDialog({
   );
 }
 
+type Guest = components["schemas"]["GuestPublic"];
+
+function WalkinDialog({
+  meetupId,
+  alreadyRsvped,
+  onClose,
+}: {
+  meetupId: string;
+  alreadyRsvped: Set<number>;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+
+  const allGuestsQ = useQuery({
+    queryKey: ["guests"],
+    queryFn: async () => {
+      const { data, error } = await api.GET("/guests/");
+      if (error) throw new Error("Failed to load guests");
+      return data;
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (guest: Guest) => {
+      const { data, error } = await api.POST(
+        "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin",
+        {
+          params: {
+            path: { meetup_id: meetupId, mazmo_user_id: guest.mazmo_user_id },
+          },
+        },
+      );
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? "Failed to add walk-in",
+        );
+      return { data, guest };
+    },
+    onSuccess: ({ guest }) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", meetupId],
+      });
+      toast.success(`${guest.displayname} added as walk-in`);
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const q = search.trim().toLowerCase();
+  const candidates = (allGuestsQ.data?.guests ?? []).filter(
+    (g) =>
+      !alreadyRsvped.has(g.mazmo_user_id) &&
+      (q === "" ||
+        g.displayname.toLowerCase().includes(q) ||
+        g.username.toLowerCase().includes(q)),
+  );
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add walk-in guest</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <Input
+            placeholder="Search by name or @username…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+          />
+          {allGuestsQ.isLoading && (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-full" />
+              ))}
+            </div>
+          )}
+          {allGuestsQ.isError && (
+            <p className="text-sm text-destructive">
+              Failed to load guest list.
+            </p>
+          )}
+          {!allGuestsQ.isLoading && candidates.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              {q
+                ? "No eligible guests match that search. They may already be on the RSVP list."
+                : "All known guests are already on the RSVP list."}
+            </p>
+          )}
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {candidates.map((g) => (
+              <div
+                key={g.mazmo_user_id}
+                className="flex items-center justify-between gap-3 rounded-md px-3 py-2 hover:bg-secondary/50"
+              >
+                <div className="min-w-0">
+                  <p
+                    className={`text-sm font-medium truncate ${g.is_banned ? "text-destructive" : ""}`}
+                  >
+                    {g.displayname}
+                    {g.is_banned && (
+                      <Badge variant="destructive" className="ml-2 text-xs">
+                        Banned
+                      </Badge>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">@{g.username}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => mutation.mutate(g)}
+                  disabled={mutation.isPending}
+                >
+                  Add
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function MeetupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
+  const [walkinOpen, setWalkinOpen] = useState(false);
 
   const meetupQ = useQuery({
     queryKey: ["meetup", id],
@@ -264,6 +398,7 @@ export function MeetupDetailPage() {
   const guests = guestsQ.data?.guests ?? [];
   const arrivedCount = guests.filter((g) => g.rsvp.has_arrived).length;
   const totalCount = guests.length;
+  const rsvpedIds = new Set(guests.map((g) => g.guest.mazmo_user_id));
 
   return (
     <div className="space-y-6">
@@ -294,17 +429,27 @@ export function MeetupDetailPage() {
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            className="gap-2 shrink-0"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
-            />
-            Sync from Mazmo
-          </Button>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setWalkinOpen(true)}
+              className="gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add walk-in
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+              className="gap-2"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
+              />
+              Sync from Mazmo
+            </Button>
+          </div>
         </div>
       )}
 
@@ -473,6 +618,13 @@ export function MeetupDetailPage() {
           guest={bannedTarget}
           meetupId={id!}
           onClose={() => setBannedTarget(null)}
+        />
+      )}
+      {walkinOpen && (
+        <WalkinDialog
+          meetupId={id!}
+          alreadyRsvped={rsvpedIds}
+          onClose={() => setWalkinOpen(false)}
         />
       )}
     </div>
