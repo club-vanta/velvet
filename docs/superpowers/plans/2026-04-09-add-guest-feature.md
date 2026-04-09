@@ -12,17 +12,18 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/components/ui/input-with-prefix.tsx` | Create | Reusable input with a non-editable prefix |
-| `src/features/guests/GuestsPage.tsx` | Modify | Add `AddGuestDialog` + header button |
-| `src/components/ui/input-with-prefix.test.tsx` | Create | Unit tests for `InputWithPrefix` |
+| File                                           | Action | Responsibility                            |
+| ---------------------------------------------- | ------ | ----------------------------------------- |
+| `src/components/ui/input-with-prefix.tsx`      | Create | Reusable input with a non-editable prefix |
+| `src/features/guests/GuestsPage.tsx`           | Modify | Add `AddGuestDialog` + header button      |
+| `src/components/ui/input-with-prefix.test.tsx` | Create | Unit tests for `InputWithPrefix`          |
 
 ---
 
 ## Task 1: Create `InputWithPrefix` component
 
 **Files:**
+
 - Create: `src/components/ui/input-with-prefix.tsx`
 - Create: `src/components/ui/input-with-prefix.test.tsx`
 
@@ -54,7 +55,14 @@ describe("InputWithPrefix", () => {
 
   it("forwards value and onChange to the input", async () => {
     const onChange = vi.fn();
-    render(<InputWithPrefix prefix="@" placeholder="username" value="" onChange={onChange} />);
+    render(
+      <InputWithPrefix
+        prefix="@"
+        placeholder="username"
+        value=""
+        onChange={onChange}
+      />,
+    );
     await userEvent.type(screen.getByPlaceholderText("username"), "a");
     expect(onChange).toHaveBeenCalled();
   });
@@ -86,7 +94,12 @@ interface InputWithPrefixProps extends React.ComponentProps<"input"> {
   prefix: string;
 }
 
-function InputWithPrefix({ prefix, className, disabled, ...props }: InputWithPrefixProps) {
+function InputWithPrefix({
+  prefix,
+  className,
+  disabled,
+  ...props
+}: InputWithPrefixProps) {
   return (
     <div
       className={cn(
@@ -133,6 +146,7 @@ git commit -m "feat(ui): add InputWithPrefix reusable component"
 ## Task 2: Add `AddGuestDialog` and update `GuestsPage` header
 
 **Files:**
+
 - Modify: `src/features/guests/GuestsPage.tsx`
 
 - [ ] **Step 2.1: Add `AddGuestDialog` and update the header in `GuestsPage.tsx`**
@@ -168,7 +182,8 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
           throw new Error("No se pudo conectar a Mazmo. Intentá de nuevo.");
         }
         throw new Error(
-          (error as { detail?: string }).detail ?? "Algo salió mal. Intentá de nuevo.",
+          (error as { detail?: string }).detail ??
+            "Algo salió mal. Intentá de nuevo.",
         );
       }
     },

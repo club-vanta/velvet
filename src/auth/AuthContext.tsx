@@ -52,7 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: new URLSearchParams({ username, password, scope: "" }),
       });
     } catch {
-      throw new Error(`No se pudo conectar al servidor en ${API_BASE_URL}. Verificá tu conexión.`);
+      throw new Error(
+        `No se pudo conectar al servidor en ${API_BASE_URL}. Verificá tu conexión.`,
+      );
     }
 
     if (!res.ok) {
