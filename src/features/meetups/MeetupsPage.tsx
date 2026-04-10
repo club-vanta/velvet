@@ -40,10 +40,16 @@ function NewMeetupDialog({
       const { data, error } = await api.POST("/meetups/", {
         body: { name, mazmo_meetup_url: url },
       });
-      if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Failed to create meetup",
-        );
+      if (error) {
+        const detail = (error as { detail?: unknown }).detail;
+        const message =
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d: { msg?: string }) => d.msg).join(", ")
+              : "Failed to create meetup";
+        throw new Error(message);
+      }
       return data;
     },
     onSuccess: () => {
