@@ -27,6 +27,16 @@ const authMiddleware: Middleware = {
   },
 };
 
+const networkErrorMiddleware: Middleware = {
+  onError({ error, request }) {
+    if (error instanceof TypeError) {
+      console.error("[network error]", request.method, request.url, error);
+      throw new Error("No se pudo conectar con el servidor.\nVerificá tu conexión.");
+    }
+    throw error;
+  },
+};
+
 export const api = createClient<paths>({
   baseUrl:
     import.meta.env.VITE_API_BASE_URL ??
@@ -34,6 +44,7 @@ export const api = createClient<paths>({
 });
 
 api.use(authMiddleware);
+api.use(networkErrorMiddleware);
 
 export const API_BASE_URL: string =
   import.meta.env.VITE_API_BASE_URL ??

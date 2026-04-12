@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -41,8 +42,7 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
         params: { path: { mazmo_user_id: guest.mazmo_user_id } },
         body: { reason },
       });
-      if (error)
-        throw new Error((error as { detail?: string }).detail ?? "Ban failed");
+      if (error) throw new Error(extractApiError(error, "Ban failed"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
@@ -292,10 +292,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       const { error } = await api.PATCH("/guests/{mazmo_user_id}/unban", {
         params: { path: { mazmo_user_id: guest.mazmo_user_id } },
       });
-      if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Unban failed",
-        );
+      if (error) throw new Error(extractApiError(error, "Unban failed"));
       return guest;
     },
     onSuccess: (guest) => {

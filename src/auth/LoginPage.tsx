@@ -92,7 +92,7 @@ export function LoginPage() {
 
           {error && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="whitespace-pre-line text-center">{error}</AlertDescription>
             </Alert>
           )}
 

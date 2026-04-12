@@ -15,6 +15,8 @@ import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { cn } from "@/lib/utils";
 
+const MOBILE_NAV_HEIGHT = "4rem"; // keep in sync with the bottom nav's height
+
 const NAV_ITEMS = [
   {
     label: "Dashboard",
@@ -139,13 +141,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 pb-20 md:p-6 md:pb-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6 md:pb-6" style={{ paddingBottom: MOBILE_NAV_HEIGHT }}>
           {children}
         </main>
       </div>
 
       {/* Bottom nav — mobile only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 border-t border-border bg-background flex items-stretch">
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background flex items-stretch"
+        style={{ height: MOBILE_NAV_HEIGHT }}
+      >
         {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
           const active =
             location.pathname === item.href ||
