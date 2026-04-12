@@ -26,6 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 type SortDir = "asc" | "desc";
 
@@ -84,6 +85,7 @@ function NewMeetupDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const queryClient = useQueryClient();
@@ -94,12 +96,12 @@ function NewMeetupDialog({
         body: { name, mazmo_meetup_url: url },
       });
       if (error)
-        throw new Error(extractApiError(error, "Failed to create meetup"));
+        throw new Error(extractApiError(error, t("failedCreateMeetup")));
       return data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["meetups"] });
-      toast.success("Meetup created");
+      toast.success(t("meetupCreated"));
       setName("");
       setUrl("");
       onClose();
@@ -111,12 +113,12 @@ function NewMeetupDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Meetup</DialogTitle>
+          <DialogTitle>{t("newMeetup")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1">
             <label htmlFor="meetup-name" className="text-sm font-medium">
-              Name
+              {t("name")}
             </label>
             <Input
               id="meetup-name"
@@ -127,7 +129,7 @@ function NewMeetupDialog({
           </div>
           <div className="space-y-1">
             <label htmlFor="meetup-url" className="text-sm font-medium">
-              Mazmo URL
+              {t("mazmoUrl")}
             </label>
             <Input
               id="meetup-url"
@@ -139,13 +141,13 @@ function NewMeetupDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate()}
             disabled={!name || !url || mutation.isPending}
           >
-            {mutation.isPending ? "Creating…" : "Create"}
+            {mutation.isPending ? t("creating") : t("create")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -154,6 +156,7 @@ function NewMeetupDialog({
 }
 
 export function MeetupsPage() {
+  const { t } = useLanguage();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -163,7 +166,7 @@ export function MeetupsPage() {
     queryKey: ["meetups"],
     queryFn: async () => {
       const { data, error } = await api.GET("/meetups/");
-      if (error) throw new Error("Failed to load meetups");
+      if (error) throw new Error(t("failedLoadMeetups"));
       return data;
     },
   });
@@ -193,16 +196,16 @@ export function MeetupsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Meetups</h1>
-        <Button onClick={() => setDialogOpen(true)}>New Meetup</Button>
+        <h1 className="text-2xl font-semibold">{t("meetups")}</h1>
+        <Button onClick={() => setDialogOpen(true)}>{t("newMeetup")}</Button>
       </div>
 
       {isError && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load meetups.
+            {t("failedLoadMeetups")}
             <Button variant="ghost" size="sm" onClick={() => refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -214,19 +217,19 @@ export function MeetupsPage() {
             <TableRow>
               <SortableHead
                 col="name"
-                label="Name"
+                label={t("name")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="date"
-                label="Date"
+                label={t("date")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
-              <TableHead>Mazmo URL</TableHead>
+              <TableHead>{t("mazmoUrl")}</TableHead>
               <TableHead className="w-20" />
             </TableRow>
           </TableHeader>
@@ -255,7 +258,7 @@ export function MeetupsPage() {
                   colSpan={4}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No meetups yet. Create the first one.
+                  {t("noMeetupsYetCreate")}
                 </TableCell>
               </TableRow>
             )}
@@ -282,7 +285,7 @@ export function MeetupsPage() {
                     size="sm"
                     onClick={() => navigate(`/meetups/${meetup.id}`)}
                   >
-                    View
+                    {t("view")}
                   </Button>
                 </TableCell>
               </TableRow>

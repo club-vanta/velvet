@@ -5,8 +5,10 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
+import { useLanguage } from "@/lib/i18n";
 
 export function SignupPage() {
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,15 +26,15 @@ export function SignupPage() {
       });
       if (error) {
         if (response.status === 409) {
-          setError("El nombre de usuario ya está en uso.");
+          setError(t("usernameInUse"));
         } else {
-          setError("Algo salió mal. Intentá de nuevo.");
+          setError(t("somethingWentWrong"));
         }
       } else {
         setSuccess(true);
       }
     } catch {
-      setError("Algo salió mal. Intentá de nuevo.");
+      setError(t("somethingWentWrong"));
     } finally {
       setIsPending(false);
     }
@@ -50,7 +52,9 @@ export function SignupPage() {
           </div>
           <div className="text-center space-y-0.5">
             <h1 className="text-2xl font-semibold">Alter Tracker</h1>
-            <p className="text-sm text-muted-foreground">Crear cuenta</p>
+            <p className="text-sm text-muted-foreground">
+              {t("createAccount")}
+            </p>
           </div>
         </div>
 
@@ -58,8 +62,7 @@ export function SignupPage() {
           <div className="space-y-4">
             <Alert>
               <AlertDescription>
-                Te registraste correctamente! Un administrador estará viendo tu
-                solicitud de registro, cualquier consulta contactarse a{" "}
+                {t("signupSuccess")}{" "}
                 <a
                   href="mailto:contacto@clubvanta.com"
                   className="underline underline-offset-2"
@@ -76,14 +79,14 @@ export function SignupPage() {
                 className: "w-full",
               })}
             >
-              Volver al inicio
+              {t("backToLogin")}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
               <label htmlFor="username" className="text-sm font-medium">
-                Username
+                {t("username")}
               </label>
               <Input
                 id="username"
@@ -99,7 +102,7 @@ export function SignupPage() {
 
             <div className="space-y-1">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("password")}
               </label>
               <div className="relative">
                 <Input
@@ -126,9 +129,7 @@ export function SignupPage() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Mínimo 15 caracteres.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("minChars")}</p>
             </div>
 
             {error && (
@@ -138,16 +139,16 @@ export function SignupPage() {
             )}
 
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Registrando…" : "Registrarse"}
+              {isPending ? t("signingUp") : t("signUp")}
             </Button>
           </form>
         )}
 
         {!success && (
           <p className="text-center text-xs text-muted-foreground">
-            ¿Ya tenés cuenta?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link to="/" className="underline underline-offset-2">
-              Iniciá sesión
+              {t("signInLink")}
             </Link>
           </p>
         )}

@@ -29,6 +29,7 @@ import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];
@@ -85,6 +86,7 @@ function SortableHead({
 }
 
 function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
@@ -94,7 +96,7 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
         params: { path: { mazmo_user_id: guest.mazmo_user_id } },
         body: { reason },
       });
-      if (error) throw new Error(extractApiError(error, "Ban failed"));
+      if (error) throw new Error(extractApiError(error, t("banFailed")));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
@@ -109,15 +111,17 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ban {guest.displayname}?</DialogTitle>
+          <DialogTitle>
+            {t("banDialogTitle")} {guest.displayname}?
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
           <label htmlFor="ban-reason" className="text-sm font-medium">
-            Reason (required)
+            {t("reasonRequired")}
           </label>
           <Textarea
             id="ban-reason"
-            placeholder="e.g. Aggressive behaviour at Alter #40"
+            placeholder={t("banReasonPlaceholder")}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
@@ -128,7 +132,7 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -139,7 +143,7 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
               mutation.isPending
             }
           >
-            {mutation.isPending ? "Banning…" : "Ban guest"}
+            {mutation.isPending ? t("banning") : t("banGuest")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -148,6 +152,7 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
 }
 
 function AddGuestDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const queryClient = useQueryClient();
 
@@ -187,11 +192,11 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add new guest</DialogTitle>
+          <DialogTitle>{t("addNewGuest")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-1 py-2">
           <label htmlFor="guest-username" className="text-sm font-medium">
-            Mazmo username
+            {t("mazmoUsername")}
           </label>
           <InputWithPrefix
             id="guest-username"
@@ -208,13 +213,13 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate()}
             disabled={!username.trim() || mutation.isPending}
           >
-            {mutation.isPending ? "Adding…" : "Add"}
+            {mutation.isPending ? t("adding") : t("add")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -223,6 +228,7 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
 }
 
 function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useLanguage();
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -269,9 +275,9 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       {isError && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load guests.
+            {t("failedLoadGuests")}
             <Button variant="ghost" size="sm" onClick={() => refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -282,28 +288,28 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             <TableRow>
               <SortableHead
                 col="displayname"
-                label="Display Name"
+                label={t("displayName")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="username"
-                label="@Username"
+                label={t("atUsername")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="mazmo_user_id"
-                label="Mazmo ID"
+                label={t("mazmoId")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="status"
-                label="Status"
+                label={t("status")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
@@ -340,7 +346,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   colSpan={isAdmin ? 5 : 4}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No guests yet.
+                  {t("noGuestsYet")}
                 </TableCell>
               </TableRow>
             )}
@@ -355,7 +361,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
                 <TableCell>
                   {g.is_banned ? (
-                    <Badge variant="destructive">Banned</Badge>
+                    <Badge variant="destructive">{t("banned")}</Badge>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
@@ -368,7 +374,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                         size="sm"
                         onClick={() => setBanTarget(g)}
                       >
-                        Ban
+                        {t("ban")}
                       </Button>
                     )}
                   </TableCell>
@@ -386,6 +392,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
+  const { t } = useLanguage();
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const queryClient = useQueryClient();
@@ -404,7 +411,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       const { error } = await api.PATCH("/guests/{mazmo_user_id}/unban", {
         params: { path: { mazmo_user_id: guest.mazmo_user_id } },
       });
-      if (error) throw new Error(extractApiError(error, "Unban failed"));
+      if (error) throw new Error(extractApiError(error, t("unbanFailed")));
       return guest;
     },
     onSuccess: (guest) => {
@@ -448,9 +455,9 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       {isError && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load banned guests.
+            {t("failedLoadBanned")}
             <Button variant="ghost" size="sm" onClick={() => refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -461,28 +468,28 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             <TableRow>
               <SortableHead
                 col="displayname"
-                label="Display Name"
+                label={t("displayName")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="username"
-                label="@Username"
+                label={t("atUsername")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="banned_at"
-                label="Banned At"
+                label={t("bannedAt")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="banned_reason"
-                label="Reason"
+                label={t("reason")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
@@ -519,7 +526,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   colSpan={isAdmin ? 5 : 4}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No banned guests.
+                  {t("noBannedGuests")}
                 </TableCell>
               </TableRow>
             )}
@@ -545,7 +552,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                       onClick={() => unbanMutation.mutate(g)}
                       disabled={unbanMutation.isPending}
                     >
-                      Unban
+                      {t("unban")}
                     </Button>
                   </TableCell>
                 )}
@@ -559,6 +566,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 export function GuestsPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const isAdmin = user?.role.name === "ADMIN";
   const [addGuestOpen, setAddGuestOpen] = useState(false);
@@ -566,13 +574,15 @@ export function GuestsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Guests</h1>
-        <Button onClick={() => setAddGuestOpen(true)}>Add new guest</Button>
+        <h1 className="text-2xl font-semibold">{t("guests")}</h1>
+        <Button onClick={() => setAddGuestOpen(true)}>
+          {t("addNewGuest")}
+        </Button>
       </div>
       <Tabs defaultValue="all">
         <TabsList>
-          <TabsTrigger value="all">All Guests</TabsTrigger>
-          <TabsTrigger value="banned">Banned</TabsTrigger>
+          <TabsTrigger value="all">{t("allGuests")}</TabsTrigger>
+          <TabsTrigger value="banned">{t("bannedGuests")}</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-4">
           <AllGuestsTab isAdmin={isAdmin} />

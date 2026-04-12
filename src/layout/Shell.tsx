@@ -13,35 +13,34 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const MOBILE_NAV_HEIGHT = "4rem"; // keep in sync with the bottom nav's height
 
-const NAV_ITEMS = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    adminOnly: false,
-  },
-  { label: "Meetups", href: "/meetups", icon: CalendarDays, adminOnly: false },
-  { label: "Guests", href: "/guests", icon: Users, adminOnly: false },
-  { label: "Staff", href: "/staff", icon: ShieldCheck, adminOnly: true },
-  { label: "Audit Log", href: "/events", icon: ScrollText, adminOnly: true },
-];
+
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  adminOnly: boolean;
+};
 
 function NavLinks({
   isAdmin,
   pending,
   location,
+  navItems,
 }: {
   isAdmin: boolean;
   pending: number;
   location: string;
+  navItems: NavItem[];
 }) {
+
   return (
     <>
-      {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+      {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
         const active =
           location === item.href || location.startsWith(item.href + "/");
         return (
@@ -71,7 +70,16 @@ function NavLinks({
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const { t, lang, setLang } = useLanguage();
   const location = useLocation();
+
+  const navItems: NavItem[] = [
+    { label: t("navDashboard"), href: "/dashboard", icon: LayoutDashboard, adminOnly: false },
+    { label: t("navMeetups"), href: "/meetups", icon: CalendarDays, adminOnly: false },
+    { label: t("navGuests"), href: "/guests", icon: Users, adminOnly: false },
+    { label: t("navStaff"), href: "/staff", icon: ShieldCheck, adminOnly: true },
+    { label: t("navAuditLog"), href: "/events", icon: ScrollText, adminOnly: true },
+  ];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isAdmin = user?.role.name === "ADMIN";
@@ -107,6 +115,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="font-semibold text-sm tracking-tight">
             Alter Tracker
           </span>
+          {/* Language toggle — anchored left so it never shifts */}
+          <button
+            onClick={() => setLang(lang === "es" ? "en" : "es")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-1"
+          >
+            {lang === "es" ? "ES" : "EN"}
+          </button>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">
@@ -119,7 +134,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             className="gap-2"
           >
             <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Logout</span>
+            <span className="hidden sm:inline">{t("logout")}</span>
           </Button>
         </div>
       </header>
@@ -131,11 +146,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
             isAdmin={isAdmin}
             pending={pendingCount}
             location={location.pathname}
+            navItems={navItems}
           />
           <div className="mt-auto">
             <Separator className="my-2" />
             <div className="px-3 py-2 text-xs text-muted-foreground">
-              {isAdmin ? "Admin" : "Staff"}
+              {isAdmin ? t("roleAdmin") : t("roleStaff")}
             </div>
           </div>
         </nav>
@@ -154,7 +170,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background flex items-stretch"
         style={{ height: MOBILE_NAV_HEIGHT }}
       >
-        {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+        {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
           const active =
             location.pathname === item.href ||
             location.pathname.startsWith(item.href + "/");

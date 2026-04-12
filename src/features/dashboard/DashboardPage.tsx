@@ -14,10 +14,12 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { useLanguage } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const isAdmin = user?.role.name === "ADMIN";
 
@@ -54,8 +56,8 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <Button onClick={() => navigate("/meetups")}>New Meetup</Button>
+        <h1 className="text-2xl font-semibold">{t("dashboard")}</h1>
+        <Button onClick={() => navigate("/meetups")}>{t("newMeetup")}</Button>
       </div>
 
       {/* Stats */}
@@ -63,7 +65,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Meetups
+              {t("totalMeetups")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -78,7 +80,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Guests
+              {t("totalGuests")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -94,7 +96,7 @@ export function DashboardPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Pending Approvals
+                {t("pendingApprovals")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -113,19 +115,19 @@ export function DashboardPage() {
       {/* Recent meetups */}
       <div className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-          Recent Meetups
+          {t("recentMeetups")}
         </h2>
 
         {meetupsQ.isError && (
           <Alert variant="destructive">
             <AlertDescription className="flex items-center justify-between">
-              Failed to load meetups.
+              {t("failedLoadMeetups")}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => meetupsQ.refetch()}
               >
-                Retry
+                {t("retry")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -135,8 +137,8 @@ export function DashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead>{t("name")}</TableHead>
+                <TableHead>{t("date")}</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -162,7 +164,7 @@ export function DashboardPage() {
                     colSpan={3}
                     className="text-center text-muted-foreground py-8"
                   >
-                    No meetups yet.
+                    {t("noMeetupsYet")}
                   </TableCell>
                 </TableRow>
               )}
@@ -179,7 +181,7 @@ export function DashboardPage() {
                       size="sm"
                       onClick={() => navigate(`/meetups/${meetup.id}`)}
                     >
-                      View
+                      {t("view")}
                     </Button>
                   </TableCell>
                 </TableRow>

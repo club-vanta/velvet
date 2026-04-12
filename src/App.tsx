@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { LanguageProvider } from "./lib/i18n";
 import { LoginPage } from "./auth/LoginPage";
 import { SignupPage } from "./auth/SignupPage";
 import { Shell } from "./layout/Shell";
@@ -50,9 +51,11 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-      <Toaster richColors theme="dark" />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <AppRoutes />
+        <Toaster richColors theme="dark" />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

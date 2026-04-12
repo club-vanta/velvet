@@ -36,6 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -99,6 +100,7 @@ function UndoDialog({
   meetupId: string;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
@@ -123,7 +125,7 @@ function UndoDialog({
       void queryClient.invalidateQueries({
         queryKey: ["meetup-guests", meetupId],
       });
-      toast.success("Undone — check-in reversed");
+      toast.success(t("undoDone"));
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -134,16 +136,16 @@ function UndoDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Undo check-in for {guest.guest.displayname}?
+            {t("undoDialogTitle")} {guest.guest.displayname}?
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
           <label htmlFor="undo-reason" className="text-sm font-medium">
-            Reason (required)
+            {t("reasonRequired")}
           </label>
           <Textarea
             id="undo-reason"
-            placeholder="e.g. Checked in by mistake"
+            placeholder={t("undoReasonPlaceholder")}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
@@ -154,7 +156,7 @@ function UndoDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -165,7 +167,7 @@ function UndoDialog({
               mutation.isPending
             }
           >
-            {mutation.isPending ? "Undoing…" : "Undo check-in"}
+            {mutation.isPending ? t("undoing") : t("undoCheckIn")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -182,6 +184,7 @@ function CheckInBannedDialog({
   meetupId: string;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -216,24 +219,24 @@ function CheckInBannedDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Check in banned guest?</DialogTitle>
+          <DialogTitle>{t("bannedGuestDialogTitle")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground py-2">
           <span className="font-medium text-destructive">
             {guest.guest.displayname}
           </span>{" "}
-          is on the banned list. Do you want to check them in anyway?
+          {t("bannedGuestDialogBody")}
         </p>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Checking in…" : "Check in anyway"}
+            {mutation.isPending ? t("checkingIn") : t("checkInAnyway")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -252,6 +255,7 @@ function WalkinDialog({
   alreadyRsvped: Set<number>;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
@@ -276,7 +280,7 @@ function WalkinDialog({
       );
       if (error)
         throw new Error(
-          (error as { detail?: string }).detail ?? "Failed to add walk-in",
+          (error as { detail?: string }).detail ?? t("failedAddWalkin"),
         );
       return { data, guest };
     },
@@ -303,11 +307,11 @@ function WalkinDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add walk-in guest</DialogTitle>
+          <DialogTitle>{t("walkinDialogTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <Input
-            placeholder="Search by name or @username…"
+            placeholder={t("searchGuest")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -322,14 +326,12 @@ function WalkinDialog({
           )}
           {allGuestsQ.isError && (
             <p className="text-sm text-destructive">
-              Failed to load guest list.
+              {t("failedLoadGuestListShort")}
             </p>
           )}
           {!allGuestsQ.isLoading && candidates.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {q
-                ? "No eligible guests match that search. They may already be on the RSVP list."
-                : "All known guests are already on the RSVP list."}
+              {q ? t("noEligibleGuests") : t("allGuestsOnList")}
             </p>
           )}
           <div className="space-y-1 max-h-64 overflow-y-auto">
@@ -345,7 +347,7 @@ function WalkinDialog({
                     {g.displayname}
                     {g.is_banned && (
                       <Badge variant="destructive" className="ml-2 text-xs">
-                        Banned
+                        {t("banned")}
                       </Badge>
                     )}
                   </p>
@@ -357,7 +359,7 @@ function WalkinDialog({
                   onClick={() => mutation.mutate(g)}
                   disabled={mutation.isPending}
                 >
-                  Add
+                  {t("add")}
                 </Button>
               </div>
             ))}
@@ -365,7 +367,7 @@ function WalkinDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -374,6 +376,7 @@ function WalkinDialog({
 }
 
 export function MeetupDetailPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
@@ -401,7 +404,7 @@ export function MeetupDetailPage() {
       const { data, error } = await api.GET("/meetups/{meetup_id}", {
         params: { path: { meetup_id: id! } },
       });
-      if (error) throw new Error("Failed to load meetup");
+      if (error) throw new Error(t("failedLoadMeetup"));
       return data;
     },
     enabled: !!id,
@@ -413,7 +416,7 @@ export function MeetupDetailPage() {
       const { data, error } = await api.GET("/meetups/{meetup_id}/guests", {
         params: { path: { meetup_id: id! } },
       });
-      if (error) throw new Error("Failed to load guests");
+      if (error) throw new Error(t("failedLoadGuestList"));
       return data;
     },
     enabled: !!id,
@@ -492,7 +495,7 @@ export function MeetupDetailPage() {
         </div>
       ) : meetupQ.isError ? (
         <Alert variant="destructive">
-          <AlertDescription>Failed to load meetup.</AlertDescription>
+          <AlertDescription>{t("failedLoadMeetup")}</AlertDescription>
         </Alert>
       ) : (
         <div className="flex items-start justify-between gap-4">
@@ -518,7 +521,7 @@ export function MeetupDetailPage() {
               className="gap-2"
             >
               <UserPlus className="h-4 w-4" />
-              Add walk-in
+              {t("addWalkin")}
             </Button>
             <Button
               variant="outline"
@@ -529,7 +532,7 @@ export function MeetupDetailPage() {
               <RefreshCw
                 className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
               />
-              Sync from Mazmo
+              {t("syncFromMazmo")}
             </Button>
           </div>
         </div>
@@ -552,9 +555,9 @@ export function MeetupDetailPage() {
       {guestsQ.isError && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load guest list.
+            {t("failedLoadGuestList")}
             <Button variant="ghost" size="sm" onClick={() => guestsQ.refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -566,7 +569,7 @@ export function MeetupDetailPage() {
             <TableRow>
               <SortableHead
                 col="order"
-                label="Order"
+                label={t("order")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
@@ -574,21 +577,21 @@ export function MeetupDetailPage() {
               />
               <SortableHead
                 col="guest"
-                label="Guest"
+                label={t("guest")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="rsvp"
-                label="RSVP"
+                label={t("rsvp")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
               />
               <SortableHead
                 col="status"
-                label="Status"
+                label={t("status")}
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
@@ -624,7 +627,7 @@ export function MeetupDetailPage() {
                   colSpan={5}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No guests yet. Sync from Mazmo to load the RSVP list.
+                  {t("noGuestsSyncMazmo")}
                 </TableCell>
               </TableRow>
             )}
@@ -658,7 +661,7 @@ export function MeetupDetailPage() {
                       @{mg.guest.username}
                     </span>
                     {mg.guest.is_banned && (
-                      <Badge variant="destructive">Banned</Badge>
+                      <Badge variant="destructive">{t("banned")}</Badge>
                     )}
                   </div>
                 </TableCell>
@@ -668,7 +671,7 @@ export function MeetupDetailPage() {
                 <TableCell>
                   {mg.rsvp.has_arrived ? (
                     <div className="space-y-0.5">
-                      <Badge>✓ Checked in</Badge>
+                      <Badge>{t("checkedIn")}</Badge>
                       <p className="text-xs text-muted-foreground">
                         {mg.rsvp.arrival_time
                           ? formatDateTime(mg.rsvp.arrival_time)
@@ -676,7 +679,7 @@ export function MeetupDetailPage() {
                       </p>
                     </div>
                   ) : (
-                    <Badge variant="secondary">Pending</Badge>
+                    <Badge variant="secondary">{t("pending")}</Badge>
                   )}
                 </TableCell>
                 <TableCell>
@@ -687,7 +690,7 @@ export function MeetupDetailPage() {
                         size="sm"
                         onClick={() => setUndoTarget(mg)}
                       >
-                        Undo
+                        {t("undo")}
                       </Button>
                     ) : (
                       <Button
@@ -702,7 +705,9 @@ export function MeetupDetailPage() {
                         }}
                         disabled={checkInMutation.isPending}
                       >
-                        Check in
+                        {checkInMutation.isPending
+                          ? t("checkingIn")
+                          : t("checkIn")}
                       </Button>
                     )}
                   </div>
