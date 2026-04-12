@@ -1,0 +1,357 @@
+import { createContext, useContext, useState } from "react";
+
+export type Lang = "en" | "es";
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const translations = {
+  en: {
+    // Nav
+    navDashboard: "Dashboard",
+    navMeetups: "Meetups",
+    navGuests: "Guests",
+    navStaff: "Staff",
+    navAuditLog: "Audit Log",
+    logout: "Logout",
+    roleAdmin: "Admin",
+    roleStaff: "Staff",
+    // Common
+    retry: "Retry",
+    cancel: "Cancel",
+    view: "View",
+    add: "Add",
+    adding: "Adding…",
+    reasonRequired: "Reason (required)",
+    // Login
+    staffPortal: "Staff portal",
+    username: "Username",
+    password: "Password",
+    signingIn: "Signing in…",
+    signIn: "Sign in",
+    noAccount: "Don't have an account?",
+    signUpLink: "Sign up",
+    // Signup
+    createAccount: "Create account",
+    minChars: "Minimum 15 characters.",
+    signingUp: "Signing up…",
+    signUp: "Sign up",
+    alreadyHaveAccount: "Already have an account?",
+    signInLink: "Sign in",
+    signupSuccess:
+      "You've registered successfully! An admin will review your request. For any questions contact",
+    backToLogin: "Back to login",
+    usernameInUse: "Username is already taken.",
+    somethingWentWrong: "Something went wrong. Please try again.",
+    // Dashboard
+    dashboard: "Dashboard",
+    newMeetup: "New Meetup",
+    totalMeetups: "Total Meetups",
+    totalGuests: "Total Guests",
+    pendingApprovals: "Pending Approvals",
+    recentMeetups: "Recent Meetups",
+    noMeetupsYet: "No meetups yet.",
+    failedLoadMeetups: "Failed to load meetups.",
+    failedLoadGuests: "Failed to load guests.",
+    failedLoadPending: "Failed to load pending staff.",
+    // Meetups page
+    meetups: "Meetups",
+    noMeetupsYetCreate: "No meetups yet. Create the first one.",
+    failedCreateMeetup: "Failed to create meetup",
+    meetupCreated: "Meetup created",
+    name: "Name",
+    date: "Date",
+    mazmoUrl: "Mazmo URL",
+    creating: "Creating…",
+    create: "Create",
+    // Meetup detail
+    addWalkin: "Add walk-in",
+    syncFromMazmo: "Sync from Mazmo",
+    failedLoadMeetup: "Failed to load meetup.",
+    failedLoadGuestList: "Failed to load guest list.",
+    order: "Order",
+    guest: "Guest",
+    rsvp: "RSVP",
+    status: "Status",
+    noGuestsSyncMazmo: "No guests yet. Sync from Mazmo to load the RSVP list.",
+    checkedIn: "✓ Checked in",
+    pending: "Pending",
+    undo: "Undo",
+    checkIn: "Check in",
+    checkingIn: "Checking in…",
+    undoDialogTitle: "Undo check-in for",
+    undoReasonPlaceholder: "e.g. Checked in by mistake",
+    undoing: "Undoing…",
+    undoCheckIn: "Undo check-in",
+    undoDone: "Undone — check-in reversed",
+    bannedGuestDialogTitle: "Check in banned guest?",
+    bannedGuestDialogBody:
+      "is on the banned list. Do you want to check them in anyway?",
+    checkInAnyway: "Check in anyway",
+    walkinDialogTitle: "Add walk-in guest",
+    searchGuest: "Search by name or @username…",
+    failedLoadGuestListShort: "Failed to load guest list.",
+    noEligibleGuests:
+      "No eligible guests match that search. They may already be on the RSVP list.",
+    allGuestsOnList: "All known guests are already on the RSVP list.",
+    failedAddWalkin: "Failed to add walk-in",
+    // Guests page
+    guests: "Guests",
+    allGuests: "All Guests",
+    bannedGuests: "Banned",
+    displayName: "Display Name",
+    atUsername: "@Username",
+    mazmoId: "Mazmo ID",
+    noGuestsYet: "No guests yet.",
+    bannedAt: "Banned At",
+    reason: "Reason",
+    noBannedGuests: "No banned guests.",
+    banned: "Banned",
+    ban: "Ban",
+    unban: "Unban",
+    addNewGuest: "Add new guest",
+    mazmoUsername: "Mazmo username",
+    failedLoadBanned: "Failed to load banned guests.",
+    banDialogTitle: "Ban",
+    banReasonPlaceholder: "e.g. Aggressive behaviour at Alter #40",
+    banning: "Banning…",
+    banGuest: "Ban guest",
+    banFailed: "Ban failed",
+    unbanFailed: "Unban failed",
+    // Staff page
+    staffManagement: "Staff Management",
+    allStaff: "All Staff",
+    pendingApproval: "Pending Approval",
+    role: "Role",
+    joined: "Joined",
+    actions: "Actions",
+    noStaffAccounts: "No staff accounts.",
+    revoke: "Revoke",
+    approve: "Approve",
+    disable: "Disable",
+    enable: "Enable",
+    failedLoadStaff: "Failed to load staff.",
+    statusDisabled: "Disabled",
+    statusPending: "Pending",
+    statusActive: "Active",
+    disableDialogTitle: "Disable",
+    disableReasonPlaceholder: "e.g. Left the organisation",
+    disabling: "Disabling…",
+    disableAccount: "Disable account",
+    failedDisable: "Failed to disable account",
+    accountApproved: "Account approved",
+    approvalRevoked: "Approval revoked",
+    roleUpdated: "Role updated",
+    accountReenabled: "Account re-enabled",
+    // Events page
+    auditLog: "Audit Log",
+    allEvents: "All events",
+    eventCheckIn: "Check-in",
+    eventUndo: "Undo",
+    eventBan: "Ban",
+    eventUnban: "Unban",
+    eventWalkin: "Walk-in",
+    eventFinalized: "Finalized",
+    eventUnfinalized: "Unfinalized",
+    failedLoadAuditLog: "Failed to load audit log.",
+    timestamp: "Timestamp",
+    actor: "Actor",
+    type: "Type",
+    guestCol: "Guest",
+    meetupCol: "Meetup",
+    noEventsFound: "No events found.",
+    loadMore: "Load more",
+  },
+  es: {
+    // Nav
+    navDashboard: "Panel",
+    navMeetups: "Eventos",
+    navGuests: "Invitados",
+    navStaff: "Staff",
+    navAuditLog: "Reg. Auditoría",
+    logout: "Cerrar sesión",
+    roleAdmin: "Admin",
+    roleStaff: "Staff",
+    // Common
+    retry: "Reintentar",
+    cancel: "Cancelar",
+    view: "Ver",
+    add: "Agregar",
+    adding: "Agregando…",
+    reasonRequired: "Motivo (requerido)",
+    // Login
+    staffPortal: "Portal de staff",
+    username: "Usuario",
+    password: "Contraseña",
+    signingIn: "Iniciando sesión…",
+    signIn: "Iniciar sesión",
+    noAccount: "¿No tenés cuenta?",
+    signUpLink: "Registrate",
+    // Signup
+    createAccount: "Crear cuenta",
+    minChars: "Mínimo 15 caracteres.",
+    signingUp: "Registrando…",
+    signUp: "Registrarse",
+    alreadyHaveAccount: "¿Ya tenés cuenta?",
+    signInLink: "Iniciá sesión",
+    signupSuccess:
+      "¡Te registraste correctamente! Un administrador estará viendo tu solicitud. Cualquier consulta contactarse a",
+    backToLogin: "Volver al inicio",
+    usernameInUse: "El nombre de usuario ya está en uso.",
+    somethingWentWrong: "Algo salió mal. Intentá de nuevo.",
+    // Dashboard
+    dashboard: "Panel",
+    newMeetup: "Nuevo Evento",
+    totalMeetups: "Total de Eventos",
+    totalGuests: "Total de Invitados",
+    pendingApprovals: "Aprobaciones Pendientes",
+    recentMeetups: "Eventos Recientes",
+    noMeetupsYet: "Aún no hay eventos.",
+    failedLoadMeetups: "Error al cargar eventos.",
+    failedLoadGuests: "Error al cargar invitados.",
+    failedLoadPending: "Error al cargar staff pendiente.",
+    // Meetups page
+    meetups: "Eventos",
+    noMeetupsYetCreate: "Aún no hay eventos. Creá el primero.",
+    failedCreateMeetup: "Error al crear evento",
+    meetupCreated: "Evento creado",
+    name: "Nombre",
+    date: "Fecha",
+    mazmoUrl: "URL de Mazmo",
+    creating: "Creando…",
+    create: "Crear",
+    // Meetup detail
+    addWalkin: "Agregar walk-in",
+    syncFromMazmo: "Sincronizar con Mazmo",
+    failedLoadMeetup: "Error al cargar evento.",
+    failedLoadGuestList: "Error al cargar invitados.",
+    order: "Orden",
+    guest: "Invitado",
+    rsvp: "RSVP",
+    status: "Estado",
+    noGuestsSyncMazmo:
+      "Sin invitados. Sincronizá con Mazmo para cargar la lista.",
+    checkedIn: "✓ Ingresado",
+    pending: "Pendiente",
+    undo: "Deshacer",
+    checkIn: "Ingresar",
+    checkingIn: "Ingresando…",
+    undoDialogTitle: "Deshacer ingreso de",
+    undoReasonPlaceholder: "Ej: Ingresado por error",
+    undoing: "Deshaciendo…",
+    undoCheckIn: "Deshacer ingreso",
+    undoDone: "Deshecho — ingreso revertido",
+    bannedGuestDialogTitle: "¿Ingresar invitado vanteado?",
+    bannedGuestDialogBody:
+      "está en la lista de vanteados. ¿Querés ingresarlo de todas formas?",
+    checkInAnyway: "Ingresar igual",
+    walkinDialogTitle: "Agregar walk-in",
+    searchGuest: "Buscar por nombre o @usuario…",
+    failedLoadGuestListShort: "Error al cargar invitados.",
+    noEligibleGuests:
+      "Ningún invitado elegible coincide. Es posible que ya esté en la lista.",
+    allGuestsOnList: "Todos los invitados ya están en la lista.",
+    failedAddWalkin: "Error al agregar walk-in",
+    // Guests page
+    guests: "Invitados",
+    allGuests: "Todos",
+    bannedGuests: "Vanteados",
+    displayName: "Nombre",
+    atUsername: "@Usuario",
+    mazmoId: "Mazmo ID",
+    noGuestsYet: "Sin invitados.",
+    bannedAt: "Vanteado el",
+    reason: "Motivo",
+    noBannedGuests: "Sin vanteados.",
+    banned: "Vanteado",
+    ban: "Vantear",
+    unban: "Desvantear",
+    addNewGuest: "Agregar invitado",
+    mazmoUsername: "Usuario de Mazmo",
+    failedLoadBanned: "Error al cargar vanteados.",
+    banDialogTitle: "¿Vantear a",
+    banReasonPlaceholder: "Ej: Comportamiento agresivo en Alter #40",
+    banning: "Vanteando…",
+    banGuest: "Vantear invitado",
+    banFailed: "Error al vantear",
+    unbanFailed: "Error al desvantear",
+    // Staff page
+    staffManagement: "Gestión de Staff",
+    allStaff: "Todo el Staff",
+    pendingApproval: "Pendientes",
+    role: "Rol",
+    joined: "Se unió",
+    actions: "Acciones",
+    noStaffAccounts: "Sin cuentas de staff.",
+    revoke: "Revocar",
+    approve: "Aprobar",
+    disable: "Deshabilitar",
+    enable: "Habilitar",
+    failedLoadStaff: "Error al cargar staff.",
+    statusDisabled: "Deshabilitado",
+    statusPending: "Pendiente",
+    statusActive: "Activo",
+    disableDialogTitle: "¿Deshabilitar a",
+    disableReasonPlaceholder: "Ej: Dejó la organización",
+    disabling: "Deshabilitando…",
+    disableAccount: "Deshabilitar cuenta",
+    failedDisable: "Error al deshabilitar cuenta",
+    accountApproved: "Cuenta aprobada",
+    approvalRevoked: "Aprobación revocada",
+    roleUpdated: "Rol actualizado",
+    accountReenabled: "Cuenta reactivada",
+    // Events page
+    auditLog: "Registro de Auditoría",
+    allEvents: "Todos los eventos",
+    eventCheckIn: "Ingreso",
+    eventUndo: "Deshacer",
+    eventBan: "Vanteo",
+    eventUnban: "Desvanteo",
+    eventWalkin: "Walk-in",
+    eventFinalized: "Finalizado",
+    eventUnfinalized: "Des-finalizado",
+    failedLoadAuditLog: "Error al cargar registro.",
+    timestamp: "Fecha/Hora",
+    actor: "Actor",
+    type: "Tipo",
+    guestCol: "Invitado",
+    meetupCol: "Evento",
+    noEventsFound: "Sin eventos.",
+    loadMore: "Cargar más",
+  },
+} satisfies Record<Lang, Record<string, string>>;
+
+export type TranslationKey = keyof typeof translations.en;
+
+type LanguageContextValue = {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: TranslationKey) => string;
+};
+
+const LanguageContext = createContext<LanguageContextValue | null>(null);
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const stored = (localStorage.getItem("lang") as Lang) ?? "es";
+  const [lang, setLangState] = useState<Lang>(stored);
+
+  function setLang(l: Lang) {
+    localStorage.setItem("lang", l);
+    setLangState(l);
+  }
+
+  function t(key: TranslationKey): string {
+    return translations[lang][key] ?? translations.en[key] ?? key;
+  }
+
+  return (
+    <LanguageContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useLanguage() {
+  const ctx = useContext(LanguageContext);
+  if (!ctx) throw new Error("useLanguage must be used inside LanguageProvider");
+  return ctx;
+}

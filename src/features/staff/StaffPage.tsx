@@ -32,18 +32,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDate } from "@/lib/format";
+import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 import { useState } from "react";
 
 type User = components["schemas"]["UserPublic"];
 
 function StatusBadge({ user }: { user: User }) {
-  if (user.is_disabled) return <Badge variant="destructive">Disabled</Badge>;
-  if (!user.is_approved) return <Badge variant="secondary">Pending</Badge>;
-  return <Badge>Active</Badge>;
+  const { t } = useLanguage();
+  if (user.is_disabled)
+    return <Badge variant="destructive">{t("statusDisabled")}</Badge>;
+  if (!user.is_approved)
+    return <Badge variant="secondary">{t("statusPending")}</Badge>;
+  return <Badge>{t("statusActive")}</Badge>;
 }
 
 function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
@@ -53,8 +58,7 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
         params: { path: { user_id: user.id } },
         body: { reason },
       });
-      if (error)
-        throw new Error(extractApiError(error, "Failed to disable account"));
+      if (error) throw new Error(extractApiError(error, t("failedDisable")));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -68,15 +72,17 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Disable {user.username}?</DialogTitle>
+          <DialogTitle>
+            {t("disableDialogTitle")} {user.username}?
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
           <label htmlFor="disable-reason" className="text-sm font-medium">
-            Reason (required)
+            {t("reasonRequired")}
           </label>
           <Textarea
             id="disable-reason"
-            placeholder="e.g. Left the organisation"
+            placeholder={t("disableReasonPlaceholder")}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
@@ -84,14 +90,14 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
             disabled={reason.length < 5 || mutation.isPending}
           >
-            {mutation.isPending ? "Disabling…" : "Disable account"}
+            {mutation.isPending ? t("disabling") : t("disableAccount")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -108,6 +114,7 @@ function StaffTable({
   currentUserId: number;
   isLoading: boolean;
 }) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [disableTarget, setDisableTarget] = useState<User | null>(null);
 
@@ -124,7 +131,7 @@ function StaffTable({
     },
     onSuccess: (_, { approve }) => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
-      toast.success(approve ? "Account approved" : "Approval revoked");
+      toast.success(approve ? t("accountApproved") : t("approvalRevoked"));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -146,7 +153,7 @@ function StaffTable({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
-      toast.success("Role updated");
+      toast.success(t("roleUpdated"));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -161,7 +168,7 @@ function StaffTable({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
-      toast.success("Account re-enabled");
+      toast.success(t("accountReenabled"));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -172,11 +179,11 @@ function StaffTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Username</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t("username")}</TableHead>
+              <TableHead>{t("role")}</TableHead>
+              <TableHead>{t("status")}</TableHead>
+              <TableHead>{t("joined")}</TableHead>
+              <TableHead>{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -196,7 +203,7 @@ function StaffTable({
                   colSpan={5}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No staff accounts.
+                  {t("noStaffAccounts")}
                 </TableCell>
               </TableRow>
             )}
@@ -246,7 +253,7 @@ function StaffTable({
                           }
                           disabled={approveMutation.isPending}
                         >
-                          Revoke
+                          {t("revoke")}
                         </Button>
                       )}
                       {!u.is_approved && (
@@ -258,7 +265,7 @@ function StaffTable({
                           }
                           disabled={approveMutation.isPending}
                         >
-                          Approve
+                          {t("approve")}
                         </Button>
                       )}
                       {!isSelf && !u.is_disabled && u.is_approved && (
@@ -267,7 +274,7 @@ function StaffTable({
                           size="sm"
                           onClick={() => setDisableTarget(u)}
                         >
-                          Disable
+                          {t("disable")}
                         </Button>
                       )}
                       {!isSelf && u.is_disabled && (
@@ -277,7 +284,7 @@ function StaffTable({
                           onClick={() => enableMutation.mutate(u.id)}
                           disabled={enableMutation.isPending}
                         >
-                          Enable
+                          {t("enable")}
                         </Button>
                       )}
                     </div>
@@ -299,6 +306,7 @@ function StaffTable({
 }
 
 export function StaffPage() {
+  const { t } = useLanguage();
   const { user: currentUser } = useAuth();
 
   const {
@@ -326,14 +334,14 @@ export function StaffPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Staff Management</h1>
+      <h1 className="text-2xl font-semibold">{t("staffManagement")}</h1>
 
       {errorAll && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load staff.
+            {t("failedLoadStaff")}
             <Button variant="ghost" size="sm" onClick={() => refetchAll()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -341,9 +349,9 @@ export function StaffPage() {
 
       <Tabs defaultValue="all">
         <TabsList>
-          <TabsTrigger value="all">All Staff</TabsTrigger>
+          <TabsTrigger value="all">{t("allStaff")}</TabsTrigger>
           <TabsTrigger value="pending">
-            Pending Approval
+            {t("pendingApproval")}
             {(pending?.length ?? 0) > 0 && (
               <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-xs">
                 {pending!.length}

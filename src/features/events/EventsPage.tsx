@@ -21,32 +21,41 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/api/client";
 import { formatDateTime } from "@/lib/format";
+import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 
 type EventLog = components["schemas"]["EventLogPublic"];
 type EventType = EventLog["event_type"];
 
-const EVENT_BADGE: Record<
+const EVENT_BADGE_VARIANT: Record<
   EventType,
-  {
-    label: string;
-    variant: "default" | "secondary" | "destructive" | "outline";
-  }
+  "default" | "secondary" | "destructive" | "outline"
 > = {
-  CHECK_IN: { label: "Check-in", variant: "default" },
-  UNDO_CHECK_IN: { label: "Undo", variant: "secondary" },
-  BAN: { label: "Ban", variant: "destructive" },
-  UNBAN: { label: "Unban", variant: "outline" },
-  MEETUP_FINALIZED: { label: "Finalized", variant: "secondary" },
-  MEETUP_UNFINALIZED: { label: "Unfinalized", variant: "outline" },
-  WALKIN: { label: "Walk-in", variant: "outline" },
+  CHECK_IN: "default",
+  UNDO_CHECK_IN: "secondary",
+  BAN: "destructive",
+  UNBAN: "outline",
+  MEETUP_FINALIZED: "secondary",
+  MEETUP_UNFINALIZED: "outline",
+  WALKIN: "outline",
 };
 
 const PAGE_SIZE = 50;
 
 export function EventsPage() {
+  const { t } = useLanguage();
   const [eventType, setEventType] = useState("all");
   const [offset, setOffset] = useState(0);
+
+  const eventTypeLabel: Record<EventType, string> = {
+    CHECK_IN: t("eventCheckIn"),
+    UNDO_CHECK_IN: t("eventUndo"),
+    BAN: t("eventBan"),
+    UNBAN: t("eventUnban"),
+    MEETUP_FINALIZED: t("eventFinalized"),
+    MEETUP_UNFINALIZED: t("eventUnfinalized"),
+    WALKIN: t("eventWalkin"),
+  };
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["events", eventType, offset],
@@ -67,7 +76,7 @@ export function EventsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Audit Log</h1>
+      <h1 className="text-2xl font-semibold">{t("auditLog")}</h1>
 
       <div className="flex items-center gap-3">
         <Select
@@ -78,15 +87,15 @@ export function EventsPage() {
           }}
         >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="All events" />
+            <SelectValue placeholder={t("allEvents")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All events</SelectItem>
-            <SelectItem value="CHECK_IN">Check-in</SelectItem>
-            <SelectItem value="UNDO_CHECK_IN">Undo</SelectItem>
-            <SelectItem value="BAN">Ban</SelectItem>
-            <SelectItem value="UNBAN">Unban</SelectItem>
-            <SelectItem value="WALKIN">Walk-in</SelectItem>
+            <SelectItem value="all">{t("allEvents")}</SelectItem>
+            <SelectItem value="CHECK_IN">{t("eventCheckIn")}</SelectItem>
+            <SelectItem value="UNDO_CHECK_IN">{t("eventUndo")}</SelectItem>
+            <SelectItem value="BAN">{t("eventBan")}</SelectItem>
+            <SelectItem value="UNBAN">{t("eventUnban")}</SelectItem>
+            <SelectItem value="WALKIN">{t("eventWalkin")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -94,9 +103,9 @@ export function EventsPage() {
       {isError && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load audit log.
+            {t("failedLoadAuditLog")}
             <Button variant="ghost" size="sm" onClick={() => refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -106,12 +115,12 @@ export function EventsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Actor</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Guest ID</TableHead>
-              <TableHead>Meetup</TableHead>
-              <TableHead>Reason</TableHead>
+              <TableHead>{t("timestamp")}</TableHead>
+              <TableHead>{t("actor")}</TableHead>
+              <TableHead>{t("type")}</TableHead>
+              <TableHead>{t("guestCol")}</TableHead>
+              <TableHead>{t("meetupCol")}</TableHead>
+              <TableHead>{t("reason")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -131,15 +140,15 @@ export function EventsPage() {
                   colSpan={6}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No events found.
+                  {t("noEventsFound")}
                 </TableCell>
               </TableRow>
             )}
             {data?.events.map((event) => {
-              const badge = EVENT_BADGE[event.event_type] ?? {
-                label: event.event_type,
-                variant: "outline" as const,
-              };
+              const label =
+                eventTypeLabel[event.event_type] ?? event.event_type;
+              const variant =
+                EVENT_BADGE_VARIANT[event.event_type] ?? "outline";
               return (
                 <TableRow key={event.id}>
                   <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
@@ -149,7 +158,7 @@ export function EventsPage() {
                     {event.actor?.username ?? "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                    <Badge variant={variant}>{label}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {event.guest?.displayname ?? "—"}
@@ -173,7 +182,7 @@ export function EventsPage() {
             variant="outline"
             onClick={() => setOffset(offset + PAGE_SIZE)}
           >
-            Load more
+            {t("loadMore")}
           </Button>
         </div>
       )}

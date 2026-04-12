@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "./AuthContext";
+import { useLanguage } from "@/lib/i18n";
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export function LoginPage() {
     try {
       await login(username, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : t("somethingWentWrong"));
     } finally {
       setIsPending(false);
     }
@@ -39,14 +41,14 @@ export function LoginPage() {
           </div>
           <div className="text-center space-y-0.5">
             <h1 className="text-2xl font-semibold">Alter Tracker</h1>
-            <p className="text-sm text-muted-foreground">Staff portal</p>
+            <p className="text-sm text-muted-foreground">{t("staffPortal")}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
             <label htmlFor="username" className="text-sm font-medium">
-              Username
+              {t("username")}
             </label>
             <Input
               id="username"
@@ -62,7 +64,7 @@ export function LoginPage() {
 
           <div className="space-y-1">
             <label htmlFor="password" className="text-sm font-medium">
-              Password
+              {t("password")}
             </label>
             <div className="relative">
               <Input
@@ -99,14 +101,14 @@ export function LoginPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "Signing in…" : "Sign in"}
+            {isPending ? t("signingIn") : t("signIn")}
           </Button>
         </form>
 
         <p className="text-center text-xs text-muted-foreground">
-          ¿No tenés cuenta?{" "}
+          {t("noAccount")}{" "}
           <Link to="/signup" className="underline underline-offset-2">
-            Registrate
+            {t("signUpLink")}
           </Link>
         </p>
       </div>

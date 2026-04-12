@@ -3,7 +3,14 @@ import { useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, RefreshCw, UserPlus } from "lucide-react";
+import {
+  ExternalLink,
+  RefreshCw,
+  UserPlus,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -28,9 +35,61 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
+
+type SortDir = "asc" | "desc";
+
+function SortIcon({
+  col,
+  active,
+  dir,
+}: {
+  col: string;
+  active: string | null;
+  dir: SortDir;
+}) {
+  if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+  return dir === "asc" ? (
+    <ArrowUp className="h-3 w-3" />
+  ) : (
+    <ArrowDown className="h-3 w-3" />
+  );
+}
+
+function SortableHead({
+  col,
+  label,
+  active,
+  dir,
+  onSort,
+  className,
+}: {
+  col: string;
+  label: string;
+  active: string | null;
+  dir: SortDir;
+  onSort: (col: string) => void;
+  className?: string;
+}) {
+  return (
+    <TableHead className={className}>
+      <button
+        onClick={() => onSort(col)}
+        className={cn(
+          "flex items-center gap-1 hover:text-foreground transition-colors",
+          col === active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+        <SortIcon col={col} active={active} dir={dir} />
+      </button>
+    </TableHead>
+  );
+}
 
 function UndoDialog({
   guest,
@@ -41,6 +100,7 @@ function UndoDialog({
   meetupId: string;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
@@ -65,7 +125,7 @@ function UndoDialog({
       void queryClient.invalidateQueries({
         queryKey: ["meetup-guests", meetupId],
       });
-      toast.success("Undone — check-in reversed");
+      toast.success(t("undoDone"));
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -76,16 +136,16 @@ function UndoDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Undo check-in for {guest.guest.displayname}?
+            {t("undoDialogTitle")} {guest.guest.displayname}?
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
           <label htmlFor="undo-reason" className="text-sm font-medium">
-            Reason (required)
+            {t("reasonRequired")}
           </label>
           <Textarea
             id="undo-reason"
-            placeholder="e.g. Checked in by mistake"
+            placeholder={t("undoReasonPlaceholder")}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
@@ -96,7 +156,7 @@ function UndoDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
@@ -107,7 +167,7 @@ function UndoDialog({
               mutation.isPending
             }
           >
-            {mutation.isPending ? "Undoing…" : "Undo check-in"}
+            {mutation.isPending ? t("undoing") : t("undoCheckIn")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -124,6 +184,7 @@ function CheckInBannedDialog({
   meetupId: string;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -158,24 +219,24 @@ function CheckInBannedDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Check in banned guest?</DialogTitle>
+          <DialogTitle>{t("bannedGuestDialogTitle")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground py-2">
           <span className="font-medium text-destructive">
             {guest.guest.displayname}
           </span>{" "}
-          is on the banned list. Do you want to check them in anyway?
+          {t("bannedGuestDialogBody")}
         </p>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "Checking in…" : "Check in anyway"}
+            {mutation.isPending ? t("checkingIn") : t("checkInAnyway")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -194,6 +255,7 @@ function WalkinDialog({
   alreadyRsvped: Set<number>;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
@@ -218,7 +280,7 @@ function WalkinDialog({
       );
       if (error)
         throw new Error(
-          (error as { detail?: string }).detail ?? "Failed to add walk-in",
+          (error as { detail?: string }).detail ?? t("failedAddWalkin"),
         );
       return { data, guest };
     },
@@ -245,11 +307,11 @@ function WalkinDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add walk-in guest</DialogTitle>
+          <DialogTitle>{t("walkinDialogTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           <Input
-            placeholder="Search by name or @username…"
+            placeholder={t("searchGuest")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -264,14 +326,12 @@ function WalkinDialog({
           )}
           {allGuestsQ.isError && (
             <p className="text-sm text-destructive">
-              Failed to load guest list.
+              {t("failedLoadGuestListShort")}
             </p>
           )}
           {!allGuestsQ.isLoading && candidates.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {q
-                ? "No eligible guests match that search. They may already be on the RSVP list."
-                : "All known guests are already on the RSVP list."}
+              {q ? t("noEligibleGuests") : t("allGuestsOnList")}
             </p>
           )}
           <div className="space-y-1 max-h-64 overflow-y-auto">
@@ -287,7 +347,7 @@ function WalkinDialog({
                     {g.displayname}
                     {g.is_banned && (
                       <Badge variant="destructive" className="ml-2 text-xs">
-                        Banned
+                        {t("banned")}
                       </Badge>
                     )}
                   </p>
@@ -299,7 +359,7 @@ function WalkinDialog({
                   onClick={() => mutation.mutate(g)}
                   disabled={mutation.isPending}
                 >
-                  Add
+                  {t("add")}
                 </Button>
               </div>
             ))}
@@ -307,7 +367,7 @@ function WalkinDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -316,11 +376,27 @@ function WalkinDialog({
 }
 
 export function MeetupDetailPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
   const [walkinOpen, setWalkinOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function handleSort(col: string) {
+    if (col === sortCol) {
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortCol(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
 
   const meetupQ = useQuery({
     queryKey: ["meetup", id],
@@ -328,7 +404,7 @@ export function MeetupDetailPage() {
       const { data, error } = await api.GET("/meetups/{meetup_id}", {
         params: { path: { meetup_id: id! } },
       });
-      if (error) throw new Error("Failed to load meetup");
+      if (error) throw new Error(t("failedLoadMeetup"));
       return data;
     },
     enabled: !!id,
@@ -340,7 +416,7 @@ export function MeetupDetailPage() {
       const { data, error } = await api.GET("/meetups/{meetup_id}/guests", {
         params: { path: { meetup_id: id! } },
       });
-      if (error) throw new Error("Failed to load guests");
+      if (error) throw new Error(t("failedLoadGuestList"));
       return data;
     },
     enabled: !!id,
@@ -387,10 +463,27 @@ export function MeetupDetailPage() {
   });
 
   const meetup = meetupQ.data;
-  const guests = guestsQ.data?.guests ?? [];
-  const arrivedCount = guests.filter((g) => g.rsvp.has_arrived).length;
-  const totalCount = guests.length;
-  const rsvpedIds = new Set(guests.map((g) => g.guest.mazmo_user_id));
+  const rawGuests = guestsQ.data?.guests ?? [];
+  const arrivedCount = rawGuests.filter((g) => g.rsvp.has_arrived).length;
+  const totalCount = rawGuests.length;
+  const rsvpedIds = new Set(rawGuests.map((g) => g.guest.mazmo_user_id));
+
+  const guests = sortCol
+    ? rawGuests.slice().sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === "order")
+          cmp =
+            (a.rsvp.arrival_order ?? Infinity) -
+            (b.rsvp.arrival_order ?? Infinity);
+        else if (sortCol === "guest")
+          cmp = a.guest.displayname.localeCompare(b.guest.displayname);
+        else if (sortCol === "rsvp")
+          cmp = (a.rsvp.rsvp_time ?? "").localeCompare(b.rsvp.rsvp_time ?? "");
+        else if (sortCol === "status")
+          cmp = Number(a.rsvp.has_arrived) - Number(b.rsvp.has_arrived);
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : rawGuests;
 
   return (
     <div className="space-y-6">
@@ -402,7 +495,7 @@ export function MeetupDetailPage() {
         </div>
       ) : meetupQ.isError ? (
         <Alert variant="destructive">
-          <AlertDescription>Failed to load meetup.</AlertDescription>
+          <AlertDescription>{t("failedLoadMeetup")}</AlertDescription>
         </Alert>
       ) : (
         <div className="flex items-start justify-between gap-4">
@@ -428,7 +521,7 @@ export function MeetupDetailPage() {
               className="gap-2"
             >
               <UserPlus className="h-4 w-4" />
-              Add walk-in
+              {t("addWalkin")}
             </Button>
             <Button
               variant="outline"
@@ -439,7 +532,7 @@ export function MeetupDetailPage() {
               <RefreshCw
                 className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
               />
-              Sync from Mazmo
+              {t("syncFromMazmo")}
             </Button>
           </div>
         </div>
@@ -462,9 +555,9 @@ export function MeetupDetailPage() {
       {guestsQ.isError && (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
-            Failed to load guest list.
+            {t("failedLoadGuestList")}
             <Button variant="ghost" size="sm" onClick={() => guestsQ.refetch()}>
-              Retry
+              {t("retry")}
             </Button>
           </AlertDescription>
         </Alert>
@@ -474,10 +567,35 @@ export function MeetupDetailPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16">Order</TableHead>
-              <TableHead>Guest</TableHead>
-              <TableHead>RSVP</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead
+                col="order"
+                label={t("order")}
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+                className="w-16"
+              />
+              <SortableHead
+                col="guest"
+                label={t("guest")}
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="rsvp"
+                label={t("rsvp")}
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="status"
+                label={t("status")}
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               <TableHead className="w-32" />
             </TableRow>
           </TableHeader>
@@ -509,7 +627,7 @@ export function MeetupDetailPage() {
                   colSpan={5}
                   className="text-center text-muted-foreground py-8"
                 >
-                  No guests yet. Sync from Mazmo to load the RSVP list.
+                  {t("noGuestsSyncMazmo")}
                 </TableCell>
               </TableRow>
             )}
@@ -543,7 +661,7 @@ export function MeetupDetailPage() {
                       @{mg.guest.username}
                     </span>
                     {mg.guest.is_banned && (
-                      <Badge variant="destructive">Banned</Badge>
+                      <Badge variant="destructive">{t("banned")}</Badge>
                     )}
                   </div>
                 </TableCell>
@@ -553,7 +671,7 @@ export function MeetupDetailPage() {
                 <TableCell>
                   {mg.rsvp.has_arrived ? (
                     <div className="space-y-0.5">
-                      <Badge>✓ Checked in</Badge>
+                      <Badge>{t("checkedIn")}</Badge>
                       <p className="text-xs text-muted-foreground">
                         {mg.rsvp.arrival_time
                           ? formatDateTime(mg.rsvp.arrival_time)
@@ -561,7 +679,7 @@ export function MeetupDetailPage() {
                       </p>
                     </div>
                   ) : (
-                    <Badge variant="secondary">Pending</Badge>
+                    <Badge variant="secondary">{t("pending")}</Badge>
                   )}
                 </TableCell>
                 <TableCell>
@@ -572,7 +690,7 @@ export function MeetupDetailPage() {
                         size="sm"
                         onClick={() => setUndoTarget(mg)}
                       >
-                        Undo
+                        {t("undo")}
                       </Button>
                     ) : (
                       <Button
@@ -587,7 +705,9 @@ export function MeetupDetailPage() {
                         }}
                         disabled={checkInMutation.isPending}
                       >
-                        Check in
+                        {checkInMutation.isPending
+                          ? t("checkingIn")
+                          : t("checkIn")}
                       </Button>
                     )}
                   </div>
