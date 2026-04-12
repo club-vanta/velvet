@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const EVENT_BADGE_VARIANT: Record<
   MEETUP_FINALIZED: "secondary",
   MEETUP_UNFINALIZED: "outline",
   WALKIN: "outline",
+  GUEST_CREATED: "outline",
 };
 
 const PAGE_SIZE = 50;
@@ -55,7 +57,21 @@ export function EventsPage() {
     MEETUP_FINALIZED: t("eventFinalized"),
     MEETUP_UNFINALIZED: t("eventUnfinalized"),
     WALKIN: t("eventWalkin"),
+    GUEST_CREATED: t("eventGuestCreated"),
   };
+
+  const { data: meetupsData } = useQuery({
+    queryKey: ["meetups"],
+    queryFn: async () => {
+      const { data } = await api.GET("/meetups/");
+      return data;
+    },
+  });
+
+  const meetupName: Record<string, string> = {};
+  for (const m of meetupsData?.meetups ?? []) {
+    meetupName[m.id] = m.name;
+  }
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["events", eventType, offset],
@@ -87,7 +103,17 @@ export function EventsPage() {
           }}
         >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder={t("allEvents")} />
+            {/*
+              Without explicit children, Radix shows whatever text was inside
+              the selected <SelectItem> when the user clicked it — which means
+              it goes stale when the language changes, or shows the raw backend
+              value on first render. Passing the label directly keeps it fresh.
+            */}
+            <SelectValue placeholder={t("allEvents")}>
+              {eventType === "all"
+                ? t("allEvents")
+                : (eventTypeLabel[eventType as EventType] ?? eventType)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("allEvents")}</SelectItem>
@@ -163,8 +189,18 @@ export function EventsPage() {
                   <TableCell className="text-muted-foreground text-sm">
                     {event.guest?.displayname ?? "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm font-mono text-xs">
-                    {event.meetup_id ? event.meetup_id.slice(0, 8) + "…" : "—"}
+                  <TableCell className="text-muted-foreground text-sm">
+                    {event.meetup_id ? (
+                      <Link
+                        to={`/meetups/${event.meetup_id}`}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {meetupName[event.meetup_id] ??
+                          event.meetup_id.slice(0, 8) + "…"}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
                   <TableCell className="text-sm max-w-xs truncate">
                     {event.reason ?? "—"}
