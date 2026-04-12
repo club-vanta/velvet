@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: { username, password, scope: "" },
     });
 
-    if (error) throw new Error(extractApiError(error, "Login failed"));
+    if (error || !data) throw new Error(extractApiError(error, "Login failed"));
 
     setAuthToken(data.access_token);
 

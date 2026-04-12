@@ -165,15 +165,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Button>
           {/* Language dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 h-7"
-              >
-                <Languages className="h-3.5 w-3.5" />
-                {lang === "es" ? "🇦🇷" : "🇺🇸"}
-              </Button>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 h-7 rounded-md hover:bg-accent">
+              <Languages className="h-3.5 w-3.5" />
+              {lang === "es" ? "🇦🇷" : "🇺🇸"}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem
