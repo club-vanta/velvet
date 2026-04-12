@@ -498,8 +498,8 @@ export function MeetupDetailPage() {
           <AlertDescription>{t("failedLoadMeetup")}</AlertDescription>
         </Alert>
       ) : (
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+          <div className="space-y-1 min-w-0">
             <h1 className="text-2xl font-semibold">{meetup?.name}</h1>
             <p className="text-sm text-muted-foreground">
               {formatDate(meetup?.date ?? "")}
@@ -508,10 +508,10 @@ export function MeetupDetailPage() {
               href={meetup?.mazmo_meetup_url}
               target="_blank"
               rel="noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
+              className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors max-w-full"
             >
-              {meetup?.mazmo_meetup_url}
-              <ExternalLink className="h-3 w-3" />
+              <span className="truncate">{meetup?.mazmo_meetup_url}</span>
+              <ExternalLink className="h-3 w-3 shrink-0" />
             </a>
           </div>
           <div className="flex gap-2 shrink-0">
