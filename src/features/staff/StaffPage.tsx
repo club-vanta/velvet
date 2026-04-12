@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -53,9 +54,7 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
         body: { reason },
       });
       if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Failed to disable account",
-        );
+        throw new Error(extractApiError(error, "Failed to disable account"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -119,7 +118,9 @@ function StaffTable({
         body: { is_approved: approve },
       });
       if (error)
-        throw new Error((error as { detail?: string }).detail ?? "Failed");
+        throw new Error(
+          extractApiError(error, "Failed to update approval status"),
+        );
     },
     onSuccess: (_, { approve }) => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -141,7 +142,7 @@ function StaffTable({
         body: { role },
       });
       if (error)
-        throw new Error((error as { detail?: string }).detail ?? "Failed");
+        throw new Error(extractApiError(error, "Failed to update role"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -156,7 +157,7 @@ function StaffTable({
         params: { path: { user_id: id } },
       });
       if (error)
-        throw new Error((error as { detail?: string }).detail ?? "Failed");
+        throw new Error(extractApiError(error, "Failed to enable account"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });

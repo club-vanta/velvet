@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,7 @@ function NewMeetupDialog({
         body: { name, mazmo_meetup_url: url },
       });
       if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Failed to create meetup",
-        );
+        throw new Error(extractApiError(error, "Failed to create meetup"));
       return data;
     },
     onSuccess: () => {

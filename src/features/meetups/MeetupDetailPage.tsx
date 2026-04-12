@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLink, RefreshCw, UserPlus } from "lucide-react";
@@ -58,9 +59,7 @@ function UndoDialog({
         },
       );
       if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Failed to undo check-in",
-        );
+        throw new Error(extractApiError(error, "Failed to undo check-in"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -140,10 +139,7 @@ function CheckInBannedDialog({
           },
         },
       );
-      if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Check-in failed",
-        );
+      if (error) throw new Error(extractApiError(error, "Check-in failed"));
       return data;
     },
     onSuccess: (data) => {
@@ -356,8 +352,7 @@ export function MeetupDetailPage() {
       const { data, error } = await api.POST("/meetups/{meetup_id}/sync", {
         params: { path: { meetup_id: id! } },
       });
-      if (error)
-        throw new Error((error as { detail?: string }).detail ?? "Sync failed");
+      if (error) throw new Error(extractApiError(error, "Sync failed"));
       return data;
     },
     onSuccess: (data) => {
@@ -379,10 +374,7 @@ export function MeetupDetailPage() {
           },
         },
       );
-      if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? "Check-in failed",
-        );
+      if (error) throw new Error(extractApiError(error, "Check-in failed"));
       return data;
     },
     onSuccess: (data) => {

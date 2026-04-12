@@ -5,7 +5,8 @@ import {
   useEffect,
   useState,
 } from "react";
-import { api, API_BASE_URL, setAuthToken } from "@/api/client";
+import { api, setAuthToken } from "@/api/client";
+import { extractApiError } from "@/api/errors";
 import type { components } from "@/api/types";
 
 type User = components["schemas"]["UserPublic"];
@@ -43,31 +44,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    // /auth/token is OAuth2 form-encoded, not JSON.
-    let res: Response;
-    try {
-      res = await fetch(`${API_BASE_URL}/auth/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password, scope: "" }),
-      });
-    } catch {
-      throw new Error(
-        `No se pudo conectar al servidor en ${API_BASE_URL}. Verificá tu conexión.`,
-      );
-    }
+    const { data, error } = await api.POST("/auth/token", {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      bodySerializer: (body) =>
+        new URLSearchParams(body as Record<string, string>).toString(),
+      body: { username, password, scope: "" },
+    });
 
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { detail?: string };
-      throw new Error(body.detail ?? "Login failed");
-    }
+    if (error) throw new Error(extractApiError(error, "Login failed"));
 
-    const { access_token } = (await res.json()) as { access_token: string };
-    setAuthToken(access_token);
+    setAuthToken(data.access_token);
 
-    const { data } = await api.GET("/auth/userinfo");
-    if (!data) throw new Error("Could not fetch user info after login");
-    setUser(data);
+    const { data: userInfo } = await api.GET("/auth/userinfo");
+    if (!userInfo) throw new Error("Could not fetch user info after login");
+    setUser(userInfo);
   }, []);
 
   const logout = useCallback(() => {
