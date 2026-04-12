@@ -7,14 +7,23 @@ import {
   Users,
   ShieldCheck,
   ScrollText,
+  Languages,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const MOBILE_NAV_HEIGHT = "4rem"; // keep in sync with the bottom nav's height
 
@@ -68,10 +77,23 @@ function NavLinks({
   );
 }
 
+const SIDEBAR_KEY = "sidebar_open";
+
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => localStorage.getItem(SIDEBAR_KEY) !== "false",
+  );
+
+  function toggleSidebar() {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem(SIDEBAR_KEY, String(next));
+      return next;
+    });
+  }
 
   const navItems: NavItem[] = [
     {
@@ -124,9 +146,54 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Topbar */}
-      <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0">
+      <header className="h-14 border-b border-border flex items-center px-4 shrink-0">
+        {/* Left: controls */}
+        <div className="flex items-center gap-1 flex-1">
+          {/* Sidebar toggle — desktop only */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className="hidden md:flex h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </Button>
+          {/* Language dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 h-7"
+              >
+                <Languages className="h-3.5 w-3.5" />
+                {lang === "es" ? "🇦🇷" : "🇺🇸"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => setLang("es")}
+                className={cn(lang === "es" && "font-medium")}
+              >
+                🇦🇷 Español
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLang("en")}
+                className={cn(lang === "en" && "font-medium")}
+              >
+                🇺🇸 English
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Center: logo + title */}
         <div className="flex items-center gap-3">
-          {/* Logo badge */}
           <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-bold text-sm leading-none">
               V
@@ -135,15 +202,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="font-semibold text-sm tracking-tight">
             Alter Tracker
           </span>
-          {/* Language toggle — anchored left so it never shifts */}
-          <button
-            onClick={() => setLang(lang === "es" ? "en" : "es")}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-1"
-          >
-            {lang === "es" ? "ES" : "EN"}
-          </button>
         </div>
-        <div className="flex items-center gap-3">
+
+        {/* Right: user + logout */}
+        <div className="flex items-center gap-3 flex-1 justify-end">
           <span className="text-sm text-muted-foreground">
             {user?.username}
           </span>
@@ -161,19 +223,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar — desktop only */}
-        <nav className="hidden md:flex w-56 border-r border-border flex-col gap-1 p-2 shrink-0">
+        <nav
+          className={cn(
+            "hidden border-r border-border flex-col gap-1 p-2 shrink-0 w-56",
+            sidebarOpen ? "md:flex" : "md:hidden",
+          )}
+        >
           <NavLinks
             isAdmin={isAdmin}
             pending={pendingCount}
             location={location.pathname}
             navItems={navItems}
           />
-          <div className="mt-auto">
-            <Separator className="my-2" />
-            <div className="px-3 py-2 text-xs text-muted-foreground">
-              {isAdmin ? t("roleAdmin") : t("roleStaff")}
-            </div>
-          </div>
         </nav>
 
         {/* Page content */}
