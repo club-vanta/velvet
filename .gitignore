@@ -25,3 +25,25 @@ dist-ssr
 
 # Git worktrees
 .worktrees
+
+# Terraform
+infra/terraform.tfvars
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/*.tfstate*
+
+# devenv
+.devenv/
+devenv.lock
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+.direnv
