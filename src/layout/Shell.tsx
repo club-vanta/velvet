@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 const MOBILE_NAV_HEIGHT = "4rem"; // keep in sync with the bottom nav's height
 
-
 type NavItem = {
   label: string;
   href: string;
@@ -37,33 +36,34 @@ function NavLinks({
   location: string;
   navItems: NavItem[];
 }) {
-
   return (
     <>
-      {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
-        const active =
-          location === item.href || location.startsWith(item.href + "/");
-        return (
-          <Link
-            key={item.href}
-            to={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              active
-                ? "bg-secondary text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
-            )}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            <span className="flex-1">{item.label}</span>
-            {item.href === "/staff" && isAdmin && pending > 0 && (
-              <Badge variant="destructive" className="h-5 px-1.5 text-xs">
-                {pending}
-              </Badge>
-            )}
-          </Link>
-        );
-      })}
+      {navItems
+        .filter((item) => !item.adminOnly || isAdmin)
+        .map((item) => {
+          const active =
+            location === item.href || location.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                active
+                  ? "bg-secondary text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
+              )}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/staff" && isAdmin && pending > 0 && (
+                <Badge variant="destructive" className="h-5 px-1.5 text-xs">
+                  {pending}
+                </Badge>
+              )}
+            </Link>
+          );
+        })}
     </>
   );
 }
@@ -74,11 +74,31 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   const navItems: NavItem[] = [
-    { label: t("navDashboard"), href: "/dashboard", icon: LayoutDashboard, adminOnly: false },
-    { label: t("navMeetups"), href: "/meetups", icon: CalendarDays, adminOnly: false },
+    {
+      label: t("navDashboard"),
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      adminOnly: false,
+    },
+    {
+      label: t("navMeetups"),
+      href: "/meetups",
+      icon: CalendarDays,
+      adminOnly: false,
+    },
     { label: t("navGuests"), href: "/guests", icon: Users, adminOnly: false },
-    { label: t("navStaff"), href: "/staff", icon: ShieldCheck, adminOnly: true },
-    { label: t("navAuditLog"), href: "/events", icon: ScrollText, adminOnly: true },
+    {
+      label: t("navStaff"),
+      href: "/staff",
+      icon: ShieldCheck,
+      adminOnly: true,
+    },
+    {
+      label: t("navAuditLog"),
+      href: "/events",
+      icon: ScrollText,
+      adminOnly: true,
+    },
   ];
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -170,34 +190,36 @@ export function Shell({ children }: { children: React.ReactNode }) {
         className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-background flex items-stretch"
         style={{ height: MOBILE_NAV_HEIGHT }}
       >
-        {navItems.filter((item) => !item.adminOnly || isAdmin).map((item) => {
-          const active =
-            location.pathname === item.href ||
-            location.pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors relative",
-                active ? "text-foreground" : "text-muted-foreground",
-              )}
-            >
-              <div className="relative">
-                <item.icon className="h-5 w-5" />
-                {item.href === "/staff" && isAdmin && pendingCount > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px]"
-                  >
-                    {pendingCount}
-                  </Badge>
+        {navItems
+          .filter((item) => !item.adminOnly || isAdmin)
+          .map((item) => {
+            const active =
+              location.pathname === item.href ||
+              location.pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors relative",
+                  active ? "text-foreground" : "text-muted-foreground",
                 )}
-              </div>
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+              >
+                <div className="relative">
+                  <item.icon className="h-5 w-5" />
+                  {item.href === "/staff" && isAdmin && pendingCount > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px]"
+                    >
+                      {pendingCount}
+                    </Badge>
+                  )}
+                </div>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
       </nav>
     </div>
   );

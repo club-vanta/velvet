@@ -58,8 +58,7 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
         params: { path: { user_id: user.id } },
         body: { reason },
       });
-      if (error)
-        throw new Error(extractApiError(error, t("failedDisable")));
+      if (error) throw new Error(extractApiError(error, t("failedDisable")));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
