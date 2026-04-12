@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,10 +28,61 @@ import { InputWithPrefix } from "@/components/ui/input-with-prefix";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];
 type BannedGuest = components["schemas"]["BannedGuestPublic"];
+
+type SortDir = "asc" | "desc";
+
+function SortIcon({
+  col,
+  active,
+  dir,
+}: {
+  col: string;
+  active: string;
+  dir: SortDir;
+}) {
+  if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+  return dir === "asc" ? (
+    <ArrowUp className="h-3 w-3" />
+  ) : (
+    <ArrowDown className="h-3 w-3" />
+  );
+}
+
+function SortableHead({
+  col,
+  label,
+  active,
+  dir,
+  onSort,
+  className,
+}: {
+  col: string;
+  label: string;
+  active: string;
+  dir: SortDir;
+  onSort: (col: string) => void;
+  className?: string;
+}) {
+  return (
+    <TableHead className={className}>
+      <button
+        onClick={() => onSort(col)}
+        className={cn(
+          "flex items-center gap-1 hover:text-foreground transition-colors",
+          col === active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+        <SortIcon col={col} active={active} dir={dir} />
+      </button>
+    </TableHead>
+  );
+}
 
 function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
   const [reason, setReason] = useState("");
@@ -172,6 +224,8 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
 
 function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
+  const [sortCol, setSortCol] = useState("displayname");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["guests"],
@@ -180,6 +234,27 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       if (error) throw new Error("Failed to load guests");
       return data;
     },
+  });
+
+  function handleSort(col: string) {
+    if (col === sortCol) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
+
+  const sorted = data?.guests.slice().sort((a, b) => {
+    let cmp = 0;
+    if (sortCol === "displayname")
+      cmp = a.displayname.localeCompare(b.displayname);
+    else if (sortCol === "username") cmp = a.username.localeCompare(b.username);
+    else if (sortCol === "mazmo_user_id")
+      cmp = a.mazmo_user_id - b.mazmo_user_id;
+    else if (sortCol === "status")
+      cmp = Number(a.is_banned) - Number(b.is_banned);
+    return sortDir === "asc" ? cmp : -cmp;
   });
 
   return (
@@ -198,10 +273,34 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Display Name</TableHead>
-              <TableHead>@Username</TableHead>
-              <TableHead>Mazmo ID</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead
+                col="displayname"
+                label="Display Name"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="username"
+                label="@Username"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="mazmo_user_id"
+                label="Mazmo ID"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="status"
+                label="Status"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               {isAdmin && <TableHead className="w-20" />}
             </TableRow>
           </TableHeader>
@@ -228,7 +327,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
-            {!isLoading && (data?.guests.length ?? 0) === 0 && (
+            {!isLoading && (sorted?.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={isAdmin ? 5 : 4}
@@ -238,7 +337,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
-            {data?.guests.map((g) => (
+            {sorted?.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium">{g.displayname}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -276,6 +375,8 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
+  const [sortCol, setSortCol] = useState("displayname");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -303,6 +404,27 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  function handleSort(col: string) {
+    if (col === sortCol) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
+
+  const sorted = data?.guests.slice().sort((a, b) => {
+    let cmp = 0;
+    if (sortCol === "displayname")
+      cmp = a.displayname.localeCompare(b.displayname);
+    else if (sortCol === "username") cmp = a.username.localeCompare(b.username);
+    else if (sortCol === "banned_at")
+      cmp = (a.banned_at ?? "").localeCompare(b.banned_at ?? "");
+    else if (sortCol === "banned_reason")
+      cmp = (a.banned_reason ?? "").localeCompare(b.banned_reason ?? "");
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   return (
     <>
       {isError && (
@@ -319,10 +441,34 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Display Name</TableHead>
-              <TableHead>@Username</TableHead>
-              <TableHead>Banned At</TableHead>
-              <TableHead>Reason</TableHead>
+              <SortableHead
+                col="displayname"
+                label="Display Name"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="username"
+                label="@Username"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="banned_at"
+                label="Banned At"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="banned_reason"
+                label="Reason"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               {isAdmin && <TableHead className="w-20" />}
             </TableRow>
           </TableHeader>
@@ -349,7 +495,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
-            {!isLoading && (data?.guests.length ?? 0) === 0 && (
+            {!isLoading && (sorted?.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={isAdmin ? 5 : 4}
@@ -359,7 +505,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
-            {data?.guests.map((g) => (
+            {sorted?.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium text-destructive">
                   {g.displayname}
