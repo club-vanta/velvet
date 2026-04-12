@@ -1,3 +1,10 @@
+data "cloudflare_zone" "club_vanta" {
+  filter = {
+    account_id = var.cloudflare_account_id
+    name       = var.cloudflare_domain
+  }
+}
+
 resource "cloudflare_pages_project" "velvet" {
   account_id        = var.cloudflare_account_id
   name              = "velvet"
@@ -33,4 +40,19 @@ resource "cloudflare_pages_project" "velvet" {
       }
     }
   }
+}
+
+resource "cloudflare_pages_domain" "velvet" {
+  account_id   = var.cloudflare_account_id
+  project_name = cloudflare_pages_project.velvet.name
+  name         = "velvet.${var.cloudflare_domain}"
+}
+
+resource "cloudflare_dns_record" "velvet" {
+  zone_id = data.cloudflare_zone.club_vanta.id
+  name    = "velvet"
+  type    = "CNAME"
+  content = cloudflare_pages_project.velvet.subdomain
+  proxied = true
+  ttl     = 1
 }
