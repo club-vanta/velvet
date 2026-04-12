@@ -46,7 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const { data, error } = await api.POST("/auth/token", {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      bodySerializer: (body) => new URLSearchParams(body as Record<string, string>).toString(),
+      bodySerializer: (body) =>
+        new URLSearchParams(body as Record<string, string>).toString(),
       body: { username, password, scope: "" },
     });
 

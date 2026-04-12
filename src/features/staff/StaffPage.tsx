@@ -53,7 +53,8 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
         params: { path: { user_id: user.id } },
         body: { reason },
       });
-      if (error) throw new Error(extractApiError(error, "Failed to disable account"));
+      if (error)
+        throw new Error(extractApiError(error, "Failed to disable account"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -116,7 +117,10 @@ function StaffTable({
         params: { path: { user_id: id } },
         body: { is_approved: approve },
       });
-      if (error) throw new Error(extractApiError(error, "Failed to update approval status"));
+      if (error)
+        throw new Error(
+          extractApiError(error, "Failed to update approval status"),
+        );
     },
     onSuccess: (_, { approve }) => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -137,7 +141,8 @@ function StaffTable({
         params: { path: { user_id: id } },
         body: { role },
       });
-      if (error) throw new Error(extractApiError(error, "Failed to update role"));
+      if (error)
+        throw new Error(extractApiError(error, "Failed to update role"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });
@@ -151,7 +156,8 @@ function StaffTable({
       const { error } = await api.PATCH("/staff/{user_id}/enable", {
         params: { path: { user_id: id } },
       });
-      if (error) throw new Error(extractApiError(error, "Failed to enable account"));
+      if (error)
+        throw new Error(extractApiError(error, "Failed to enable account"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["staff"] });

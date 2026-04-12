@@ -141,7 +141,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6 md:pb-6" style={{ paddingBottom: MOBILE_NAV_HEIGHT }}>
+        <main
+          className="flex-1 overflow-auto p-4 md:p-6 md:pb-6"
+          style={{ paddingBottom: MOBILE_NAV_HEIGHT }}
+        >
           {children}
         </main>
       </div>

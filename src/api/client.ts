@@ -31,7 +31,9 @@ const networkErrorMiddleware: Middleware = {
   onError({ error, request }) {
     if (error instanceof TypeError) {
       console.error("[network error]", request.method, request.url, error);
-      throw new Error("No se pudo conectar con el servidor.\nVerificá tu conexión.");
+      throw new Error(
+        "No se pudo conectar con el servidor.\nVerificá tu conexión.",
+      );
     }
     throw error;
   },

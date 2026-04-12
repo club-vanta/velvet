@@ -58,7 +58,8 @@ function UndoDialog({
           body: { reason },
         },
       );
-      if (error) throw new Error(extractApiError(error, "Failed to undo check-in"));
+      if (error)
+        throw new Error(extractApiError(error, "Failed to undo check-in"));
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
