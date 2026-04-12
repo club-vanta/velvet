@@ -42,7 +42,7 @@ function SortIcon({
   dir,
 }: {
   col: string;
-  active: string;
+  active: string | null;
   dir: SortDir;
 }) {
   if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
@@ -63,7 +63,7 @@ function SortableHead({
 }: {
   col: string;
   label: string;
-  active: string;
+  active: string | null;
   dir: SortDir;
   onSort: (col: string) => void;
   className?: string;
@@ -224,7 +224,7 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
 
 function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
-  const [sortCol, setSortCol] = useState("displayname");
+  const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -238,24 +238,31 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 
   function handleSort(col: string) {
     if (col === sortCol) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortCol(null);
+        setSortDir("asc");
+      }
     } else {
       setSortCol(col);
       setSortDir("asc");
     }
   }
 
-  const sorted = data?.guests.slice().sort((a, b) => {
-    let cmp = 0;
-    if (sortCol === "displayname")
-      cmp = a.displayname.localeCompare(b.displayname);
-    else if (sortCol === "username") cmp = a.username.localeCompare(b.username);
-    else if (sortCol === "mazmo_user_id")
-      cmp = a.mazmo_user_id - b.mazmo_user_id;
-    else if (sortCol === "status")
-      cmp = Number(a.is_banned) - Number(b.is_banned);
-    return sortDir === "asc" ? cmp : -cmp;
-  });
+  const sorted = sortCol
+    ? data?.guests.slice().sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === "displayname")
+          cmp = a.displayname.localeCompare(b.displayname);
+        else if (sortCol === "username")
+          cmp = a.username.localeCompare(b.username);
+        else if (sortCol === "mazmo_user_id")
+          cmp = a.mazmo_user_id - b.mazmo_user_id;
+        else if (sortCol === "status")
+          cmp = Number(a.is_banned) - Number(b.is_banned);
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : data?.guests;
 
   return (
     <>
@@ -347,7 +354,11 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   {g.mazmo_user_id}
                 </TableCell>
                 <TableCell>
-                  {g.is_banned && <Badge variant="destructive">Banned</Badge>}
+                  {g.is_banned ? (
+                    <Badge variant="destructive">Banned</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 {isAdmin && (
                   <TableCell>
@@ -375,7 +386,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 }
 
 function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
-  const [sortCol, setSortCol] = useState("displayname");
+  const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const queryClient = useQueryClient();
 
@@ -406,24 +417,31 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 
   function handleSort(col: string) {
     if (col === sortCol) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortCol(null);
+        setSortDir("asc");
+      }
     } else {
       setSortCol(col);
       setSortDir("asc");
     }
   }
 
-  const sorted = data?.guests.slice().sort((a, b) => {
-    let cmp = 0;
-    if (sortCol === "displayname")
-      cmp = a.displayname.localeCompare(b.displayname);
-    else if (sortCol === "username") cmp = a.username.localeCompare(b.username);
-    else if (sortCol === "banned_at")
-      cmp = (a.banned_at ?? "").localeCompare(b.banned_at ?? "");
-    else if (sortCol === "banned_reason")
-      cmp = (a.banned_reason ?? "").localeCompare(b.banned_reason ?? "");
-    return sortDir === "asc" ? cmp : -cmp;
-  });
+  const sorted = sortCol
+    ? data?.guests.slice().sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === "displayname")
+          cmp = a.displayname.localeCompare(b.displayname);
+        else if (sortCol === "username")
+          cmp = a.username.localeCompare(b.username);
+        else if (sortCol === "banned_at")
+          cmp = (a.banned_at ?? "").localeCompare(b.banned_at ?? "");
+        else if (sortCol === "banned_reason")
+          cmp = (a.banned_reason ?? "").localeCompare(b.banned_reason ?? "");
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : data?.guests;
 
   return (
     <>

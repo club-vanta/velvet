@@ -3,7 +3,14 @@ import { useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, RefreshCw, UserPlus } from "lucide-react";
+import {
+  ExternalLink,
+  RefreshCw,
+  UserPlus,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -28,9 +35,60 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
+
+type SortDir = "asc" | "desc";
+
+function SortIcon({
+  col,
+  active,
+  dir,
+}: {
+  col: string;
+  active: string | null;
+  dir: SortDir;
+}) {
+  if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+  return dir === "asc" ? (
+    <ArrowUp className="h-3 w-3" />
+  ) : (
+    <ArrowDown className="h-3 w-3" />
+  );
+}
+
+function SortableHead({
+  col,
+  label,
+  active,
+  dir,
+  onSort,
+  className,
+}: {
+  col: string;
+  label: string;
+  active: string | null;
+  dir: SortDir;
+  onSort: (col: string) => void;
+  className?: string;
+}) {
+  return (
+    <TableHead className={className}>
+      <button
+        onClick={() => onSort(col)}
+        className={cn(
+          "flex items-center gap-1 hover:text-foreground transition-colors",
+          col === active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+        <SortIcon col={col} active={active} dir={dir} />
+      </button>
+    </TableHead>
+  );
+}
 
 function UndoDialog({
   guest,
@@ -321,6 +379,21 @@ export function MeetupDetailPage() {
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
   const [walkinOpen, setWalkinOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function handleSort(col: string) {
+    if (col === sortCol) {
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortCol(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
 
   const meetupQ = useQuery({
     queryKey: ["meetup", id],
@@ -387,10 +460,27 @@ export function MeetupDetailPage() {
   });
 
   const meetup = meetupQ.data;
-  const guests = guestsQ.data?.guests ?? [];
-  const arrivedCount = guests.filter((g) => g.rsvp.has_arrived).length;
-  const totalCount = guests.length;
-  const rsvpedIds = new Set(guests.map((g) => g.guest.mazmo_user_id));
+  const rawGuests = guestsQ.data?.guests ?? [];
+  const arrivedCount = rawGuests.filter((g) => g.rsvp.has_arrived).length;
+  const totalCount = rawGuests.length;
+  const rsvpedIds = new Set(rawGuests.map((g) => g.guest.mazmo_user_id));
+
+  const guests = sortCol
+    ? rawGuests.slice().sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === "order")
+          cmp =
+            (a.rsvp.arrival_order ?? Infinity) -
+            (b.rsvp.arrival_order ?? Infinity);
+        else if (sortCol === "guest")
+          cmp = a.guest.displayname.localeCompare(b.guest.displayname);
+        else if (sortCol === "rsvp")
+          cmp = (a.rsvp.rsvp_time ?? "").localeCompare(b.rsvp.rsvp_time ?? "");
+        else if (sortCol === "status")
+          cmp = Number(a.rsvp.has_arrived) - Number(b.rsvp.has_arrived);
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : rawGuests;
 
   return (
     <div className="space-y-6">
@@ -474,10 +564,35 @@ export function MeetupDetailPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16">Order</TableHead>
-              <TableHead>Guest</TableHead>
-              <TableHead>RSVP</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHead
+                col="order"
+                label="Order"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+                className="w-16"
+              />
+              <SortableHead
+                col="guest"
+                label="Guest"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="rsvp"
+                label="RSVP"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="status"
+                label="Status"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               <TableHead className="w-32" />
             </TableRow>
           </TableHeader>

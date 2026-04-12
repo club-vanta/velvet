@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +25,57 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+type SortDir = "asc" | "desc";
+
+function SortIcon({
+  col,
+  active,
+  dir,
+}: {
+  col: string;
+  active: string | null;
+  dir: SortDir;
+}) {
+  if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+  return dir === "asc" ? (
+    <ArrowUp className="h-3 w-3" />
+  ) : (
+    <ArrowDown className="h-3 w-3" />
+  );
+}
+
+function SortableHead({
+  col,
+  label,
+  active,
+  dir,
+  onSort,
+  className,
+}: {
+  col: string;
+  label: string;
+  active: string | null;
+  dir: SortDir;
+  onSort: (col: string) => void;
+  className?: string;
+}) {
+  return (
+    <TableHead className={className}>
+      <button
+        onClick={() => onSort(col)}
+        className={cn(
+          "flex items-center gap-1 hover:text-foreground transition-colors",
+          col === active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+        <SortIcon col={col} active={active} dir={dir} />
+      </button>
+    </TableHead>
+  );
+}
 
 function NewMeetupDialog({
   open,
@@ -103,6 +155,8 @@ function NewMeetupDialog({
 
 export function MeetupsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const navigate = useNavigate();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -113,6 +167,28 @@ export function MeetupsPage() {
       return data;
     },
   });
+
+  function handleSort(col: string) {
+    if (col === sortCol) {
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortCol(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
+
+  const meetups = sortCol
+    ? (data?.meetups ?? []).slice().sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === "name") cmp = a.name.localeCompare(b.name);
+        else if (sortCol === "date") cmp = a.date.localeCompare(b.date);
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : (data?.meetups ?? []);
 
   return (
     <div className="space-y-6">
@@ -136,8 +212,20 @@ export function MeetupsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Date</TableHead>
+              <SortableHead
+                col="name"
+                label="Name"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHead
+                col="date"
+                label="Date"
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               <TableHead>Mazmo URL</TableHead>
               <TableHead className="w-20" />
             </TableRow>
@@ -172,7 +260,7 @@ export function MeetupsPage() {
               </TableRow>
             )}
 
-            {data?.meetups.map((meetup) => (
+            {meetups.map((meetup) => (
               <TableRow key={meetup.id}>
                 <TableCell className="font-medium">{meetup.name}</TableCell>
                 <TableCell className="text-muted-foreground">
