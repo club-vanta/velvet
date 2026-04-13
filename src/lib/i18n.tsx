@@ -72,6 +72,8 @@ export const translations = {
     rsvp: "RSVP",
     status: "Status",
     noGuestsSyncMazmo: "No guests yet. Sync from Mazmo to load the RSVP list.",
+    searchGuestList: "Search guest list…",
+    noGuestsMatchSearch: "No guests match that search.",
     checkedIn: "✓ Checked in",
     pending: "Pending",
     undo: "Undo",
@@ -230,6 +232,8 @@ export const translations = {
     status: "Estado",
     noGuestsSyncMazmo:
       "Sin invitados. Sincronizá con Mazmo para cargar la lista.",
+    searchGuestList: "Buscar en la lista…",
+    noGuestsMatchSearch: "Ningún invitado coincide con esa búsqueda.",
     checkedIn: "✓ Ingresado",
     pending: "Pendiente",
     undo: "Deshacer",

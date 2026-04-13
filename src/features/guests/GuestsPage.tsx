@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
 import { api } from "@/api/client";
@@ -232,6 +233,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [search, setSearch] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["guests"],
@@ -270,6 +272,15 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       })
     : data?.guests;
 
+  const q = search.trim().toLowerCase();
+  const guests = q
+    ? (sorted ?? []).filter(
+        (g) =>
+          g.displayname.toLowerCase().includes(q) ||
+          g.username.toLowerCase().includes(q),
+      )
+    : sorted;
+
   return (
     <>
       {isError && (
@@ -281,6 +292,14 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             </Button>
           </AlertDescription>
         </Alert>
+      )}
+      {!isLoading && (data?.guests.length ?? 0) > 0 && (
+        <Input
+          placeholder={t("searchGuestList")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-2"
+        />
       )}
       <div className="rounded-md border">
         <Table>
@@ -340,7 +359,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
-            {!isLoading && (sorted?.length ?? 0) === 0 && (
+            {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={isAdmin ? 5 : 4}
@@ -350,7 +369,19 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
-            {sorted?.map((g) => (
+            {!isLoading &&
+              (data?.guests.length ?? 0) > 0 &&
+              (guests?.length ?? 0) === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 5 : 4}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    {t("noGuestsMatchSearch")}
+                  </TableCell>
+                </TableRow>
+              )}
+            {guests?.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium">{g.displayname}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -395,6 +426,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useLanguage();
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -450,6 +482,15 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       })
     : data?.guests;
 
+  const q = search.trim().toLowerCase();
+  const guests = q
+    ? (sorted ?? []).filter(
+        (g) =>
+          g.displayname.toLowerCase().includes(q) ||
+          g.username.toLowerCase().includes(q),
+      )
+    : sorted;
+
   return (
     <>
       {isError && (
@@ -461,6 +502,14 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
             </Button>
           </AlertDescription>
         </Alert>
+      )}
+      {!isLoading && (data?.guests.length ?? 0) > 0 && (
+        <Input
+          placeholder={t("searchGuestList")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-2"
+        />
       )}
       <div className="rounded-md border">
         <Table>
@@ -520,7 +569,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
-            {!isLoading && (sorted?.length ?? 0) === 0 && (
+            {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={isAdmin ? 5 : 4}
@@ -530,7 +579,19 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
-            {sorted?.map((g) => (
+            {!isLoading &&
+              (data?.guests.length ?? 0) > 0 &&
+              (guests?.length ?? 0) === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 5 : 4}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    {t("noGuestsMatchSearch")}
+                  </TableCell>
+                </TableRow>
+              )}
+            {guests?.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium text-destructive">
                   {g.displayname}

@@ -384,6 +384,7 @@ export function MeetupDetailPage() {
   const [walkinOpen, setWalkinOpen] = useState(false);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [search, setSearch] = useState("");
 
   function handleSort(col: string) {
     if (col === sortCol) {
@@ -468,7 +469,7 @@ export function MeetupDetailPage() {
   const totalCount = rawGuests.length;
   const rsvpedIds = new Set(rawGuests.map((g) => g.guest.mazmo_user_id));
 
-  const guests = sortCol
+  const sorted = sortCol
     ? rawGuests.slice().sort((a, b) => {
         let cmp = 0;
         if (sortCol === "order")
@@ -484,6 +485,15 @@ export function MeetupDetailPage() {
         return sortDir === "asc" ? cmp : -cmp;
       })
     : rawGuests;
+
+  const q = search.trim().toLowerCase();
+  const guests = q
+    ? sorted.filter(
+        (g) =>
+          g.guest.displayname.toLowerCase().includes(q) ||
+          g.guest.username.toLowerCase().includes(q),
+      )
+    : sorted;
 
   return (
     <div className="space-y-6">
@@ -549,6 +559,15 @@ export function MeetupDetailPage() {
           </div>
           <Progress value={(arrivedCount / totalCount) * 100} />
         </div>
+      )}
+
+      {/* Search */}
+      {!guestsQ.isLoading && rawGuests.length > 0 && (
+        <Input
+          placeholder={t("searchGuestList")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       )}
 
       {/* Guest table */}
@@ -621,7 +640,7 @@ export function MeetupDetailPage() {
                 </TableRow>
               ))}
 
-            {!guestsQ.isLoading && guests.length === 0 && (
+            {!guestsQ.isLoading && rawGuests.length === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={5}
@@ -631,6 +650,19 @@ export function MeetupDetailPage() {
                 </TableCell>
               </TableRow>
             )}
+
+            {!guestsQ.isLoading &&
+              rawGuests.length > 0 &&
+              guests.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    {t("noGuestsMatchSearch")}
+                  </TableCell>
+                </TableRow>
+              )}
 
             {guests.map((mg) => (
               <TableRow
