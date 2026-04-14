@@ -92,7 +92,7 @@ export const translations = {
     searchGuest: "Search by name or @username…",
     failedLoadGuestListShort: "Failed to load guest list.",
     noEligibleGuests:
-      "No eligible guests match that search. They may already be on the RSVP list.",
+      "No eligible guests match that search.\nThey may already be on the RSVP list.",
     allGuestsOnList: "All known guests are already on the RSVP list.",
     failedAddWalkin: "Failed to add walk-in",
     // Guests page
@@ -252,7 +252,7 @@ export const translations = {
     searchGuest: "Buscar por nombre o @usuario…",
     failedLoadGuestListShort: "Error al cargar invitados.",
     noEligibleGuests:
-      "Ningún invitado elegible coincide. Es posible que ya esté en la lista.",
+      "Ningún invitado elegible coincide.\nEs posible que ya esté en la lista.",
     allGuestsOnList: "Todos los invitados ya están en la lista.",
     failedAddWalkin: "Error al agregar walk-in",
     // Guests page

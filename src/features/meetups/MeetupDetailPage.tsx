@@ -331,7 +331,7 @@ function WalkinDialog({
             </p>
           )}
           {!allGuestsQ.isLoading && candidates.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
+            <p className="text-sm text-muted-foreground text-center py-4 whitespace-pre-line">
               {q ? t("noEligibleGuests") : t("allGuestsOnList")}
             </p>
           )}
