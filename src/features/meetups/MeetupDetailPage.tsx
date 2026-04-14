@@ -37,6 +37,7 @@ import { api } from "@/api/client";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useGuestSearch } from "@/hooks/useGuestSearch";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -384,7 +385,6 @@ export function MeetupDetailPage() {
   const [walkinOpen, setWalkinOpen] = useState(false);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [search, setSearch] = useState("");
 
   function handleSort(col: string) {
     if (col === sortCol) {
@@ -486,15 +486,14 @@ export function MeetupDetailPage() {
       })
     : rawGuests;
 
-  const q = search.trim().toLowerCase();
-  const guests = q
-    ? sorted.filter(
-        (g) =>
-          g.guest.displayname.toLowerCase().includes(q) ||
-          g.guest.username.toLowerCase().includes(q),
-      )
-    : sorted;
-
+  const {
+    search,
+    setSearch,
+    filtered: guests,
+  } = useGuestSearch(sorted, (g) => ({
+    displayname: g.guest.displayname,
+    username: g.guest.username,
+  }));
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -565,8 +564,10 @@ export function MeetupDetailPage() {
       {!guestsQ.isLoading && rawGuests.length > 0 && (
         <Input
           placeholder={t("searchGuestList")}
+          aria-label={t("searchGuestList")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="mb-2"
         />
       )}
 
@@ -583,7 +584,7 @@ export function MeetupDetailPage() {
       )}
 
       <div className="rounded-md border">
-        <Table>
+        <Table className="xl:table-fixed">
           <TableHeader>
             <TableRow>
               <SortableHead
@@ -592,7 +593,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="w-16"
+                className="w-16 xl:w-[6%]"
               />
               <SortableHead
                 col="guest"
@@ -600,6 +601,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="xl:w-[44%]"
               />
               <SortableHead
                 col="rsvp"
@@ -607,6 +609,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="xl:w-[20%]"
               />
               <SortableHead
                 col="status"
@@ -614,6 +617,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="xl:w-[18%]"
               />
               <TableHead className="w-32" />
             </TableRow>
@@ -640,6 +644,7 @@ export function MeetupDetailPage() {
                 </TableRow>
               ))}
 
+            {/* No guests were RSVPed to this meetup at all — prompt to sync */}
             {!guestsQ.isLoading && rawGuests.length === 0 && (
               <TableRow>
                 <TableCell
@@ -651,9 +656,10 @@ export function MeetupDetailPage() {
               </TableRow>
             )}
 
+            {/* There are guests but every one was filtered out by the active search query */}
             {!guestsQ.isLoading &&
               rawGuests.length > 0 &&
-              guests.length === 0 && (
+              (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={5}
@@ -664,7 +670,7 @@ export function MeetupDetailPage() {
                 </TableRow>
               )}
 
-            {guests.map((mg) => (
+            {(guests ?? []).map((mg) => (
               <TableRow
                 key={mg.guest.mazmo_user_id}
                 className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}

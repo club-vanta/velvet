@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
+import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDateTime } from "@/lib/format";
@@ -233,7 +234,6 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [search, setSearch] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["guests"],
@@ -272,14 +272,14 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       })
     : data?.guests;
 
-  const q = search.trim().toLowerCase();
-  const guests = q
-    ? (sorted ?? []).filter(
-        (g) =>
-          g.displayname.toLowerCase().includes(q) ||
-          g.username.toLowerCase().includes(q),
-      )
-    : sorted;
+  const {
+    search,
+    setSearch,
+    filtered: guests,
+  } = useGuestSearch(sorted, (g) => ({
+    displayname: g.displayname,
+    username: g.username,
+  }));
 
   return (
     <>
@@ -296,13 +296,14 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       {!isLoading && (data?.guests.length ?? 0) > 0 && (
         <Input
           placeholder={t("searchGuestList")}
+          aria-label={t("searchGuestList")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="mb-2"
         />
       )}
       <div className="rounded-md border">
-        <Table>
+        <Table className="lg:table-fixed">
           <TableHeader>
             <TableRow>
               <SortableHead
@@ -311,6 +312,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[37%]"
               />
               <SortableHead
                 col="username"
@@ -318,6 +320,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[27%]"
               />
               <SortableHead
                 col="mazmo_user_id"
@@ -325,6 +328,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[12%]"
               />
               <SortableHead
                 col="status"
@@ -332,8 +336,9 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[14%]"
               />
-              {isAdmin && <TableHead className="w-20" />}
+              {isAdmin && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -359,6 +364,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
+            {/* Server returned an empty list — nothing to do with search, prompt to sync from Mazmo */}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
@@ -369,6 +375,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
+            {/* The list has guests but every one was filtered out by the active search query */}
             {!isLoading &&
               (data?.guests.length ?? 0) > 0 &&
               (guests?.length ?? 0) === 0 && (
@@ -426,7 +433,6 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useLanguage();
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -482,14 +488,14 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       })
     : data?.guests;
 
-  const q = search.trim().toLowerCase();
-  const guests = q
-    ? (sorted ?? []).filter(
-        (g) =>
-          g.displayname.toLowerCase().includes(q) ||
-          g.username.toLowerCase().includes(q),
-      )
-    : sorted;
+  const {
+    search,
+    setSearch,
+    filtered: guests,
+  } = useGuestSearch(sorted, (g) => ({
+    displayname: g.displayname,
+    username: g.username,
+  }));
 
   return (
     <>
@@ -506,13 +512,14 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       {!isLoading && (data?.guests.length ?? 0) > 0 && (
         <Input
           placeholder={t("searchGuestList")}
+          aria-label={t("searchGuestList")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="mb-2"
         />
       )}
       <div className="rounded-md border">
-        <Table>
+        <Table className="lg:table-fixed">
           <TableHeader>
             <TableRow>
               <SortableHead
@@ -521,6 +528,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[28%]"
               />
               <SortableHead
                 col="username"
@@ -528,6 +536,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[22%]"
               />
               <SortableHead
                 col="banned_at"
@@ -535,6 +544,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[17%]"
               />
               <SortableHead
                 col="banned_reason"
@@ -542,8 +552,9 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[21%]"
               />
-              {isAdmin && <TableHead className="w-20" />}
+              {isAdmin && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -569,6 +580,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
+            {/* Server returned an empty list — nothing to do with search, prompt to sync from Mazmo */}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
@@ -579,6 +591,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
+            {/* The list has guests but every one was filtered out by the active search query */}
             {!isLoading &&
               (data?.guests.length ?? 0) > 0 &&
               (guests?.length ?? 0) === 0 && (
@@ -602,7 +615,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 <TableCell className="text-muted-foreground text-sm">
                   {g.banned_at ? formatDateTime(g.banned_at) : "—"}
                 </TableCell>
-                <TableCell className="text-sm max-w-xs truncate">
+                <TableCell className="text-sm whitespace-normal overflow-hidden break-words">
                   {g.banned_reason}
                 </TableCell>
                 {isAdmin && (
@@ -610,6 +623,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="px-0"
                       onClick={() => unbanMutation.mutate(g)}
                       disabled={unbanMutation.isPending}
                     >
