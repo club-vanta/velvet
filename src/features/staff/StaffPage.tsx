@@ -180,7 +180,7 @@ function RecoveryCodeDialog({
               <Button variant="outline" onClick={copyCode}>
                 {copied ? t("codeCopied") : t("copyCode")}
               </Button>
-              <Button onClick={onClose}>{t("cancel")}</Button>
+              <Button onClick={onClose}>{t("close")}</Button>
             </DialogFooter>
           </>
         )}

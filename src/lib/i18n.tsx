@@ -17,6 +17,7 @@ export const translations = {
     // Common
     retry: "Retry",
     cancel: "Cancel",
+    close: "Close",
     view: "View",
     add: "Add",
     adding: "Adding…",
@@ -194,6 +195,7 @@ export const translations = {
     // Common
     retry: "Reintentar",
     cancel: "Cancelar",
+    close: "Cerrar",
     view: "Ver",
     add: "Agregar",
     adding: "Agregando…",
