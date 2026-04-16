@@ -114,6 +114,32 @@ Copy `.env.example` → `.env.local` to override for local dev.
 
 ---
 
+## Password Recovery
+
+The app has no email-based password reset. Recovery is handled manually: an admin generates a 6-digit code and communicates it to the user out-of-band (WhatsApp, Slack, etc.).
+
+**Admin side:**
+
+On the Staff management panel, each row has a "Forgot password" button. Clicking it opens a confirmation modal. On confirm, the backend generates a 6-digit code tied to that user's account. If there was already a pending code, it is replaced immediately. The admin reads the code from the modal and tells it to the user.
+
+**User side:**
+
+On the login screen there is a "Forgot your password?" link. It leads to a form where the user enters their username and the code. If the code is valid, they are taken to a new-password screen. Once they save successfully, a confirmation message is shown and they can go back to login.
+
+**Business rules:**
+
+- The code does **not** log the user in — it only unlocks the password change form.
+- The code expires 72 hours after generation.
+- The code is invalidated only after a **successful** password change, not when the user first submits it. This means a user can enter the code, close the tab by accident, and resume later using the same code.
+- Each user can have at most one active code. Generating a new one replaces the old one immediately.
+
+**Routes involved:**
+
+| Route              | Description                                                                 |
+| ------------------ | --------------------------------------------------------------------------- |
+| `/forgot-password` | Username + code form                                                        |
+| `/reset-password`  | New password form (requires valid code from previous step via router state) |
+
 ## Walk-in Guests
 
 Staff can add guests who have a Mazmo profile but didn't RSVP to the event. On the meetup detail page, click **"Add walk-in"** → search by name or @username → click Add. The guest appears in the list with a "Walk-in" badge. Walk-in events are recorded in the audit log.

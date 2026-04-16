@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LanguageProvider } from "./lib/i18n";
 import { LoginPage } from "./auth/LoginPage";
 import { SignupPage } from "./auth/SignupPage";
+import { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./auth/ResetPasswordPage";
 import { Shell } from "./layout/Shell";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { MeetupsPage } from "./features/meetups/MeetupsPage";
@@ -41,6 +43,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

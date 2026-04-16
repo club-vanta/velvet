@@ -105,6 +105,89 @@ function DisableDialog({ user, onClose }: { user: User; onClose: () => void }) {
   );
 }
 
+function RecoveryCodeDialog({
+  user,
+  onClose,
+}: {
+  user: User;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [code, setCode] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function generate() {
+    setIsPending(true);
+    try {
+      const { data, error } = await api.POST("/staff/{user_id}/recovery-code", {
+        params: { path: { user_id: user.id } },
+      });
+      if (error) throw new Error(t("failedGenerateCode"));
+      setCode(data.code);
+    } catch {
+      toast.error(t("failedGenerateCode"));
+      onClose();
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  function copyCode() {
+    if (!code) return;
+    void navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        {code === null ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {t("recoveryCodeDialogTitle")} {user.username}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground py-2">
+              {t("recoveryCodeDialogBody")}
+            </p>
+            <DialogFooter>
+              <Button variant="ghost" onClick={onClose}>
+                {t("cancel")}
+              </Button>
+              <Button onClick={() => void generate()} disabled={isPending}>
+                {isPending ? t("generatingCode") : t("generateCode")}
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {t("recoveryCodeGeneratedTitle").replace("{0}", user.username)}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center py-4">
+              <span className="font-mono text-4xl font-bold tracking-widest">
+                {code}
+              </span>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={copyCode}>
+                {copied ? t("codeCopied") : t("copyCode")}
+              </Button>
+              <Button onClick={onClose}>{t("close")}</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function StaffTable({
   users,
   currentUserId,
@@ -117,6 +200,7 @@ function StaffTable({
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [disableTarget, setDisableTarget] = useState<User | null>(null);
+  const [recoveryTarget, setRecoveryTarget] = useState<User | null>(null);
 
   const approveMutation = useMutation({
     mutationFn: async ({ id, approve }: { id: number; approve: boolean }) => {
@@ -243,7 +327,14 @@ function StaffTable({
                     {formatDate(u.created_at)}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRecoveryTarget(u)}
+                      >
+                        {t("forgotPasswordButton")}
+                      </Button>
                       {!isSelf && u.is_approved && !u.is_disabled && (
                         <Button
                           variant="ghost"
@@ -299,6 +390,12 @@ function StaffTable({
         <DisableDialog
           user={disableTarget}
           onClose={() => setDisableTarget(null)}
+        />
+      )}
+      {recoveryTarget && (
+        <RecoveryCodeDialog
+          user={recoveryTarget}
+          onClose={() => setRecoveryTarget(null)}
         />
       )}
     </>
