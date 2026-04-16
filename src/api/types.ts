@@ -55,6 +55,52 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/auth/verify-recovery-code": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify a 6-digit recovery code without consuming it
+     * @description Check that a recovery code is valid and not yet expired or used.
+     *
+     *     Does NOT mark the code as used, so closing the tab and retrying still works.
+     *     Returns a generic error on invalid username to avoid user enumeration.
+     */
+    post: operations["verify_recovery_code_auth_verify_recovery_code_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/reset-password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reset a user's password using a valid recovery code
+     * @description Reset the user's password if the provided recovery code is valid.
+     *
+     *     Marks the code as used after a successful reset so it cannot be reused.
+     *     Returns a generic error on invalid username to avoid user enumeration.
+     */
+    post: operations["reset_password_auth_reset_password_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/staff/": {
     parameters: {
       query?: never;
@@ -166,6 +212,30 @@ export interface paths {
      *     Clears the disable fields, allowing the user to log in again.
      */
     patch: operations["enable_staff_staff__user_id__enable_patch"];
+    trace?: never;
+  };
+  "/staff/{user_id}/recovery-code": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Generate a 6-digit password recovery code for a staff account (admin only)
+     * @description Generate a one-time 6-digit recovery code for the given user.
+     *
+     *     The code expires after 72 hours and is invalidated once used.
+     *     If the user already had a code, it is overwritten (implicitly invalidated).
+     *     The admin is responsible for communicating the code to the user out-of-band.
+     */
+    post: operations["generate_recovery_code_staff__user_id__recovery_code_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/guests/": {
@@ -1042,6 +1112,27 @@ export interface components {
      * @enum {string}
      */
     PossibleRoles: "STAFF" | "ADMIN";
+    /** RecoveryCodeResponse */
+    RecoveryCodeResponse: {
+      /** Username */
+      username: string;
+      /** Code */
+      code: string;
+    };
+    /** ResetPasswordRequest */
+    ResetPasswordRequest: {
+      /** Username */
+      username: string;
+      /** Code */
+      code: string;
+      /** New Password */
+      new_password: string;
+    };
+    /** ResetPasswordResponse */
+    ResetPasswordResponse: {
+      /** Username */
+      username: string;
+    };
     /**
      * RolePublic
      * @description Public representation of a user role.
@@ -1203,6 +1294,13 @@ export interface components {
       /** Context */
       ctx?: Record<string, never>;
     };
+    /** VerifyRecoveryCodeRequest */
+    VerifyRecoveryCodeRequest: {
+      /** Username */
+      username: string;
+      /** Code */
+      code: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -1339,6 +1437,74 @@ export interface operations {
         };
         content: {
           "application/json": unknown;
+        };
+      };
+    };
+  };
+  verify_recovery_code_auth_verify_recovery_code_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerifyRecoveryCodeRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  reset_password_auth_reset_password_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ResetPasswordRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResetPasswordResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -1695,6 +1861,37 @@ export interface operations {
         };
         content: {
           "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  generate_recovery_code_staff__user_id__recovery_code_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodeResponse"];
         };
       };
       /** @description Validation Error */

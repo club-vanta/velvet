@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/lib/i18n";
-import { API_BASE_URL } from "@/api/client";
+import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 
 export function ForgotPasswordPage() {
@@ -20,14 +20,11 @@ export function ForgotPasswordPage() {
     setError(null);
     setIsPending(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/verify-recovery-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, code }),
+      const { error } = await api.POST("/auth/verify-recovery-code", {
+        body: { username, code },
       });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as unknown;
-        setError(extractApiError(body, t("invalidRecoveryCode")));
+      if (error) {
+        setError(extractApiError(error, t("invalidRecoveryCode")));
         return;
       }
       navigate("/reset-password", { state: { username, code } });

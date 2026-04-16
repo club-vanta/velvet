@@ -29,7 +29,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { api, API_BASE_URL } from "@/api/client";
+import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
@@ -120,15 +120,11 @@ function RecoveryCodeDialog({
   async function generate() {
     setIsPending(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/staff/${user.id}/recovery-code`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("auth_token") ?? ""}`,
-        },
-      });
-      if (!res.ok) throw new Error(t("failedGenerateCode"));
-      const data = (await res.json()) as { code: string };
+      const { data, error } = await api.POST(
+        "/staff/{user_id}/recovery-code",
+        { params: { path: { user_id: user.id } } },
+      );
+      if (error) throw new Error(t("failedGenerateCode"));
       setCode(data.code);
     } catch {
       toast.error(t("failedGenerateCode"));
