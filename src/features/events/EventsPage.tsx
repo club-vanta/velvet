@@ -141,10 +141,10 @@ export function EventsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("timestamp")}</TableHead>
-              <TableHead>{t("actor")}</TableHead>
               <TableHead>{t("type")}</TableHead>
+              <TableHead>{t("timestamp")}</TableHead>
               <TableHead>{t("guestCol")}</TableHead>
+              <TableHead>{t("actor")}</TableHead>
               <TableHead>{t("meetupCol")}</TableHead>
               <TableHead>{t("reason")}</TableHead>
             </TableRow>
@@ -177,17 +177,17 @@ export function EventsPage() {
                 EVENT_BADGE_VARIANT[event.event_type] ?? "outline";
               return (
                 <TableRow key={event.id}>
-                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                    {formatDateTime(event.timestamp)}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {event.actor?.username ?? "—"}
-                  </TableCell>
                   <TableCell>
                     <Badge variant={variant}>{label}</Badge>
                   </TableCell>
+                  <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                    {formatDateTime(event.timestamp)}
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {event.guest?.displayname ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {event.actor?.username ?? "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {event.meetup_id ? (
