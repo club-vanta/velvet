@@ -1,29 +1,38 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "./AuthContext";
 import { useLanguage } from "@/lib/i18n";
+import { API_BASE_URL } from "@/api/client";
+import { extractApiError } from "@/api/errors";
 
-export function LoginPage() {
-  const { login } = useAuth();
+export function ForgotPasswordPage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setIsPending(true);
     try {
-      await login(username, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("somethingWentWrong"));
+      const res = await fetch(`${API_BASE_URL}/auth/verify-recovery-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, code }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as unknown;
+        setError(extractApiError(body, t("invalidRecoveryCode")));
+        return;
+      }
+      navigate("/reset-password", { state: { username, code } });
+    } catch {
+      setError(t("somethingWentWrong"));
     } finally {
       setIsPending(false);
     }
@@ -32,7 +41,6 @@ export function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-xl leading-none">
@@ -41,7 +49,9 @@ export function LoginPage() {
           </div>
           <div className="text-center space-y-0.5">
             <h1 className="text-2xl font-semibold">Alter Tracker</h1>
-            <p className="text-sm text-muted-foreground">{t("staffPortal")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("forgotPasswordTitle")}
+            </p>
           </div>
         </div>
 
@@ -63,33 +73,19 @@ export function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium">
-              {t("password")}
+            <label htmlFor="code" className="text-sm font-medium">
+              {t("recoveryCodeLabel")}
             </label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isPending}
-                required
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+            <Input
+              id="code"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              disabled={isPending}
+              required
+            />
           </div>
 
           {error && (
@@ -101,20 +97,13 @@ export function LoginPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? t("signingIn") : t("signIn")}
+            {isPending ? t("verifying") : t("verifyCode")}
           </Button>
         </form>
 
         <p className="text-center text-xs text-muted-foreground">
-          <Link to="/forgot-password" className="underline underline-offset-2">
-            {t("forgotPassword")}
-          </Link>
-        </p>
-
-        <p className="text-center text-xs text-muted-foreground">
-          {t("noAccount")}{" "}
-          <Link to="/signup" className="underline underline-offset-2">
-            {t("signUpLink")}
+          <Link to="/" className="underline underline-offset-2">
+            {t("backToLogin")}
           </Link>
         </p>
       </div>
