@@ -30,7 +30,9 @@ describe("LoginPage — forgot password link", () => {
 
   it("forgot-password link is visible alongside the sign-up link", () => {
     renderPage();
-    expect(screen.getByRole("link", { name: /olvidaste tu contraseña/i })).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: /olvidaste tu contraseña/i }),
+    ).toBeVisible();
     expect(screen.getByRole("link", { name: /registrate/i })).toBeVisible();
   });
 });

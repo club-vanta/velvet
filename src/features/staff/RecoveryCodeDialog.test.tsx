@@ -55,8 +55,13 @@ function makeQueryClient() {
 
 function renderStaffPage() {
   mockApiGet.mockImplementation((path: string) => {
-    if (path === "/staff/") return Promise.resolve({ data: [ADMIN_USER, STAFF_USER], error: undefined });
-    if (path === "/staff/pending") return Promise.resolve({ data: [], error: undefined });
+    if (path === "/staff/")
+      return Promise.resolve({
+        data: [ADMIN_USER, STAFF_USER],
+        error: undefined,
+      });
+    if (path === "/staff/pending")
+      return Promise.resolve({ data: [], error: undefined });
     return Promise.resolve({ data: [], error: undefined });
   });
 
@@ -79,7 +84,9 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
 
   it("each staff row has a 'Olvidó su contraseña' button", async () => {
     renderStaffPage();
-    const buttons = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const buttons = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     // one per user row
     expect(buttons.length).toBeGreaterThanOrEqual(2);
   });
@@ -88,7 +95,9 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
     const user = userEvent.setup();
     renderStaffPage();
 
-    const [firstBtn] = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const [firstBtn] = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(firstBtn);
 
     expect(
@@ -100,7 +109,9 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
     const user = userEvent.setup();
     renderStaffPage();
 
-    const [firstBtn] = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const [firstBtn] = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(firstBtn);
     await screen.findByText(/generar código de recuperación para/i);
 
@@ -118,7 +129,9 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
     renderStaffPage();
 
     // Click the button for staffuser row
-    const buttons = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const buttons = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     // second button = staffuser
     await user.click(buttons[1]);
 
@@ -141,15 +154,15 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
 
     renderStaffPage();
 
-    const buttons = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const buttons = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(buttons[1]);
     await screen.findByText(/generar código de recuperación para/i);
 
     await user.click(screen.getByRole("button", { name: /generar código/i }));
 
-    expect(
-      await screen.findByText("042567"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("042567")).toBeInTheDocument();
 
     expect(mockApiPost).toHaveBeenCalledWith("/staff/{user_id}/recovery-code", {
       params: { path: { user_id: 2 } },
@@ -162,13 +175,17 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
 
     renderStaffPage();
 
-    const [firstBtn] = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const [firstBtn] = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(firstBtn);
     await screen.findByText(/generar código de recuperación para/i);
 
     await user.click(screen.getByRole("button", { name: /generar código/i }));
 
-    expect(await screen.findByRole("button", { name: /generando/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /generando/i }),
+    ).toBeInTheDocument();
   });
 
   it("generated code is rendered in a monospace element", async () => {
@@ -180,9 +197,13 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
 
     renderStaffPage();
 
-    const buttons = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const buttons = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(buttons[1]);
-    await user.click(await screen.findByRole("button", { name: /generar código/i }));
+    await user.click(
+      await screen.findByRole("button", { name: /generar código/i }),
+    );
 
     const codeEl = await screen.findByText("999000");
     expect(codeEl.className).toMatch(/mono/);
@@ -204,33 +225,48 @@ describe("RecoveryCodeDialog (via StaffPage)", () => {
 
     renderStaffPage();
 
-    const [firstBtn] = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const [firstBtn] = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(firstBtn);
-    await user.click(await screen.findByRole("button", { name: /generar código/i }));
+    await user.click(
+      await screen.findByRole("button", { name: /generar código/i }),
+    );
     await screen.findByText("123456");
 
     await user.click(screen.getByRole("button", { name: /copiar/i }));
 
     expect(writeText).toHaveBeenCalledWith("123456");
-    expect(await screen.findByRole("button", { name: /copiado/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /copiado/i }),
+    ).toBeInTheDocument();
   });
 
   it("API error on generate closes dialog and shows toast", async () => {
     const { toast } = await import("sonner");
     const user = userEvent.setup();
-    mockApiPost.mockResolvedValue({ data: undefined, error: { detail: "Forbidden" } });
+    mockApiPost.mockResolvedValue({
+      data: undefined,
+      error: { detail: "Forbidden" },
+    });
 
     renderStaffPage();
 
-    const [firstBtn] = await screen.findAllByRole("button", { name: /olvidó su contraseña/i });
+    const [firstBtn] = await screen.findAllByRole("button", {
+      name: /olvidó su contraseña/i,
+    });
     await user.click(firstBtn);
-    await user.click(await screen.findByRole("button", { name: /generar código/i }));
+    await user.click(
+      await screen.findByRole("button", { name: /generar código/i }),
+    );
 
     await waitFor(() =>
       expect(
         screen.queryByText(/generar código de recuperación para/i),
       ).not.toBeInTheDocument(),
     );
-    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/error al generar código/i));
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringMatching(/error al generar código/i),
+    );
   });
 });

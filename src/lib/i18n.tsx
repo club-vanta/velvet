@@ -152,10 +152,12 @@ export const translations = {
     newPassword: "New password",
     setNewPassword: "Set new password",
     settingPassword: "Saving…",
-    passwordChanged: "Congratulations {0}, you've successfully changed your password!",
+    passwordChanged:
+      "Congratulations {0}, you've successfully changed your password!",
     forgotPasswordButton: "Forgot password",
     recoveryCodeDialogTitle: "Generate recovery code for",
-    recoveryCodeDialogBody: "This will invalidate any existing code for this user. Continue?",
+    recoveryCodeDialogBody:
+      "This will invalidate any existing code for this user. Continue?",
     generatingCode: "Generating…",
     generateCode: "Generate code",
     recoveryCodeGeneratedTitle: "Recovery code for {0}:",
@@ -334,7 +336,8 @@ export const translations = {
     passwordChanged: "¡Felicitaciones {0}, cambiaste tu contraseña con éxito!",
     forgotPasswordButton: "Olvidó su contraseña",
     recoveryCodeDialogTitle: "Generar código de recuperación para",
-    recoveryCodeDialogBody: "Esto invalidará cualquier código previo de este usuario. ¿Continuar?",
+    recoveryCodeDialogBody:
+      "Esto invalidará cualquier código previo de este usuario. ¿Continuar?",
     generatingCode: "Generando…",
     generateCode: "Generar código",
     recoveryCodeGeneratedTitle: "Código de recuperación para {0}:",

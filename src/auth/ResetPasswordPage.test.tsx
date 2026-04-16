@@ -7,7 +7,9 @@ import { ResetPasswordPage } from "./ResetPasswordPage";
 
 // ── API mock ──────────────────────────────────────────────────────────────────
 const mockPost = vi.fn();
-vi.mock("@/api/client", () => ({ api: { POST: (...a: unknown[]) => mockPost(...a) } }));
+vi.mock("@/api/client", () => ({
+  api: { POST: (...a: unknown[]) => mockPost(...a) },
+}));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const VALID_STATE = { username: "alice", code: "123456" };
@@ -15,9 +17,7 @@ const VALID_STATE = { username: "alice", code: "123456" };
 function renderPage(state: object | null = VALID_STATE) {
   return render(
     <LanguageProvider>
-      <MemoryRouter
-        initialEntries={[{ pathname: "/reset-password", state }]}
-      >
+      <MemoryRouter initialEntries={[{ pathname: "/reset-password", state }]}>
         <Routes>
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/" element={<div data-testid="login-page">login</div>} />
@@ -66,7 +66,10 @@ describe("ResetPasswordPage", () => {
 
   it("password field type is 'password' by default", () => {
     renderPage();
-    expect(screen.getByLabelText(/nueva contraseña/i)).toHaveAttribute("type", "password");
+    expect(screen.getByLabelText(/nueva contraseña/i)).toHaveAttribute(
+      "type",
+      "password",
+    );
   });
 
   it("toggle button shows and hides password", async () => {
@@ -83,7 +86,10 @@ describe("ResetPasswordPage", () => {
 
   it("password field enforces minLength=15", () => {
     renderPage();
-    expect(screen.getByLabelText(/nueva contraseña/i)).toHaveAttribute("minLength", "15");
+    expect(screen.getByLabelText(/nueva contraseña/i)).toHaveAttribute(
+      "minLength",
+      "15",
+    );
   });
 
   it("shows 'Guardando…' while the request is in flight", async () => {
@@ -92,33 +98,57 @@ describe("ResetPasswordPage", () => {
 
     renderPage();
     await user.type(screen.getByLabelText(/nueva contraseña/i), "a".repeat(15));
-    await user.click(screen.getByRole("button", { name: /establecer contraseña/i }));
+    await user.click(
+      screen.getByRole("button", { name: /establecer contraseña/i }),
+    );
 
-    expect(await screen.findByRole("button", { name: /guardando/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /guardando/i }),
+    ).toBeInTheDocument();
   });
 
   it("calls api with correct path and body", async () => {
     const user = userEvent.setup();
-    mockPost.mockResolvedValue({ data: { username: "alice" }, error: undefined });
+    mockPost.mockResolvedValue({
+      data: { username: "alice" },
+      error: undefined,
+    });
 
     renderPage();
-    await user.type(screen.getByLabelText(/nueva contraseña/i), "mysupersecretpass");
-    await user.click(screen.getByRole("button", { name: /establecer contraseña/i }));
+    await user.type(
+      screen.getByLabelText(/nueva contraseña/i),
+      "mysupersecretpass",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /establecer contraseña/i }),
+    );
 
     await waitFor(() => expect(mockPost).toHaveBeenCalledOnce());
     expect(mockPost).toHaveBeenCalledWith("/auth/reset-password", {
-      body: { username: "alice", code: "123456", new_password: "mysupersecretpass" },
+      body: {
+        username: "alice",
+        code: "123456",
+        new_password: "mysupersecretpass",
+      },
     });
   });
 
   // ── Phase 2: success ───────────────────────────────────────────────────────
   it("shows congratulations message with username after success", async () => {
     const user = userEvent.setup();
-    mockPost.mockResolvedValue({ data: { username: "alice" }, error: undefined });
+    mockPost.mockResolvedValue({
+      data: { username: "alice" },
+      error: undefined,
+    });
 
     renderPage();
-    await user.type(screen.getByLabelText(/nueva contraseña/i), "mysupersecretpass");
-    await user.click(screen.getByRole("button", { name: /establecer contraseña/i }));
+    await user.type(
+      screen.getByLabelText(/nueva contraseña/i),
+      "mysupersecretpass",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /establecer contraseña/i }),
+    );
 
     expect(
       await screen.findByText(/felicitaciones alice/i),
@@ -127,11 +157,19 @@ describe("ResetPasswordPage", () => {
 
   it("back-to-login button navigates to / after success", async () => {
     const user = userEvent.setup();
-    mockPost.mockResolvedValue({ data: { username: "alice" }, error: undefined });
+    mockPost.mockResolvedValue({
+      data: { username: "alice" },
+      error: undefined,
+    });
 
     renderPage();
-    await user.type(screen.getByLabelText(/nueva contraseña/i), "mysupersecretpass");
-    await user.click(screen.getByRole("button", { name: /establecer contraseña/i }));
+    await user.type(
+      screen.getByLabelText(/nueva contraseña/i),
+      "mysupersecretpass",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /establecer contraseña/i }),
+    );
 
     const backBtn = await screen.findByRole("link", { name: /volver/i });
     await user.click(backBtn);
@@ -148,8 +186,13 @@ describe("ResetPasswordPage", () => {
     });
 
     renderPage();
-    await user.type(screen.getByLabelText(/nueva contraseña/i), "mysupersecretpass");
-    await user.click(screen.getByRole("button", { name: /establecer contraseña/i }));
+    await user.type(
+      screen.getByLabelText(/nueva contraseña/i),
+      "mysupersecretpass",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /establecer contraseña/i }),
+    );
 
     expect(
       await screen.findByText("Código inválido o expirado."),
@@ -161,8 +204,13 @@ describe("ResetPasswordPage", () => {
     mockPost.mockRejectedValue(new Error("Network failure"));
 
     renderPage();
-    await user.type(screen.getByLabelText(/nueva contraseña/i), "mysupersecretpass");
-    await user.click(screen.getByRole("button", { name: /establecer contraseña/i }));
+    await user.type(
+      screen.getByLabelText(/nueva contraseña/i),
+      "mysupersecretpass",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /establecer contraseña/i }),
+    );
 
     expect(await screen.findByText(/algo salió mal/i)).toBeInTheDocument();
   });

@@ -7,17 +7,16 @@ import { ForgotPasswordPage } from "./ForgotPasswordPage";
 
 // ── API mock ──────────────────────────────────────────────────────────────────
 const mockPost = vi.fn();
-vi.mock("@/api/client", () => ({ api: { POST: (...a: unknown[]) => mockPost(...a) } }));
+vi.mock("@/api/client", () => ({
+  api: { POST: (...a: unknown[]) => mockPost(...a) },
+}));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 /** Records the location that react-router navigates to. */
 function LocationSpy() {
   const loc = useLocation();
   return (
-    <div
-      data-testid="spy-path"
-      data-state={JSON.stringify(loc.state)}
-    >
+    <div data-testid="spy-path" data-state={JSON.stringify(loc.state)}>
       {loc.pathname}
     </div>
   );
@@ -47,9 +46,16 @@ describe("ForgotPasswordPage", () => {
     renderPage();
     expect(screen.getByText("Alter Tracker")).toBeInTheDocument();
     expect(screen.getByLabelText(/usuario/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/código de recuperación/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /verificar código/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /volver/i })).toHaveAttribute("href", "/");
+    expect(
+      screen.getByLabelText(/código de recuperación/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /verificar código/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /volver/i })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("code field has inputMode=numeric and maxLength=6", () => {
@@ -69,7 +75,9 @@ describe("ForgotPasswordPage", () => {
     await user.type(screen.getByLabelText(/código de recuperación/i), "123456");
     await user.click(screen.getByRole("button", { name: /verificar código/i }));
 
-    expect(await screen.findByRole("button", { name: /verificando/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /verificando/i }),
+    ).toBeInTheDocument();
   });
 
   it("navigates to /reset-password with username and code in state on success", async () => {
@@ -82,7 +90,9 @@ describe("ForgotPasswordPage", () => {
     await user.click(screen.getByRole("button", { name: /verificar código/i }));
 
     await waitFor(() =>
-      expect(screen.getByTestId("spy-path")).toHaveTextContent("/reset-password"),
+      expect(screen.getByTestId("spy-path")).toHaveTextContent(
+        "/reset-password",
+      ),
     );
     const state = JSON.parse(screen.getByTestId("spy-path").dataset.state!);
     expect(state).toEqual({ username: "alice", code: "123456" });
@@ -149,18 +159,25 @@ describe("ForgotPasswordPage", () => {
   it("clears error between attempts", async () => {
     const user = userEvent.setup();
     mockPost
-      .mockResolvedValueOnce({ data: undefined, error: { detail: "Código inválido o expirado." } })
+      .mockResolvedValueOnce({
+        data: undefined,
+        error: { detail: "Código inválido o expirado." },
+      })
       .mockResolvedValueOnce({ data: { ok: true }, error: undefined });
 
     renderPage();
     await user.type(screen.getByLabelText(/usuario/i), "alice");
     await user.type(screen.getByLabelText(/código de recuperación/i), "000000");
     await user.click(screen.getByRole("button", { name: /verificar código/i }));
-    expect(await screen.findByText("Código inválido o expirado.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Código inválido o expirado."),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /verificar código/i }));
     await waitFor(() =>
-      expect(screen.queryByText("Código inválido o expirado.")).not.toBeInTheDocument(),
+      expect(
+        screen.queryByText("Código inválido o expirado."),
+      ).not.toBeInTheDocument(),
     );
   });
 });

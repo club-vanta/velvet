@@ -120,10 +120,9 @@ function RecoveryCodeDialog({
   async function generate() {
     setIsPending(true);
     try {
-      const { data, error } = await api.POST(
-        "/staff/{user_id}/recovery-code",
-        { params: { path: { user_id: user.id } } },
-      );
+      const { data, error } = await api.POST("/staff/{user_id}/recovery-code", {
+        params: { path: { user_id: user.id } },
+      });
       if (error) throw new Error(t("failedGenerateCode"));
       setCode(data.code);
     } catch {
