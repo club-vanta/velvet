@@ -39,6 +39,20 @@ const networkErrorMiddleware: Middleware = {
   },
 };
 
+const unauthorizedMiddleware: Middleware = {
+  onResponse({ response, request }) {
+    if (
+      response.status === 401 &&
+      request.headers.get("Authorization") !== null &&
+      !request.url.includes("/auth/token")
+    ) {
+      setAuthToken(null);
+      window.location.assign("/");
+    }
+    return response;
+  },
+};
+
 export const api = createClient<paths>({
   baseUrl:
     import.meta.env.VITE_API_BASE_URL ??
@@ -47,6 +61,7 @@ export const api = createClient<paths>({
 
 api.use(authMiddleware);
 api.use(networkErrorMiddleware);
+api.use(unauthorizedMiddleware);
 
 export const API_BASE_URL: string =
   import.meta.env.VITE_API_BASE_URL ??
