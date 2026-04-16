@@ -73,6 +73,8 @@ export const translations = {
     rsvp: "RSVP",
     status: "Status",
     noGuestsSyncMazmo: "No guests yet. Sync from Mazmo to load the RSVP list.",
+    searchGuestList: "Search guest list…",
+    noGuestsMatchSearch: "No guests match that search.",
     checkedIn: "✓ Checked in",
     pending: "Pending",
     undo: "Undo",
@@ -91,7 +93,7 @@ export const translations = {
     searchGuest: "Search by name or @username…",
     failedLoadGuestListShort: "Failed to load guest list.",
     noEligibleGuests:
-      "No eligible guests match that search. They may already be on the RSVP list.",
+      "No eligible guests match that search.\nThey may already be on the RSVP list.",
     allGuestsOnList: "All known guests are already on the RSVP list.",
     failedAddWalkin: "Failed to add walk-in",
     // Guests page
@@ -254,6 +256,8 @@ export const translations = {
     status: "Estado",
     noGuestsSyncMazmo:
       "Sin invitados. Sincronizá con Mazmo para cargar la lista.",
+    searchGuestList: "Buscar en la lista…",
+    noGuestsMatchSearch: "Ningún invitado coincide con esa búsqueda.",
     checkedIn: "✓ Ingresado",
     pending: "Pendiente",
     undo: "Deshacer",
@@ -272,7 +276,7 @@ export const translations = {
     searchGuest: "Buscar por nombre o @usuario…",
     failedLoadGuestListShort: "Error al cargar invitados.",
     noEligibleGuests:
-      "Ningún invitado elegible coincide. Es posible que ya esté en la lista.",
+      "Ningún invitado elegible coincide.\nEs posible que ya esté en la lista.",
     allGuestsOnList: "Todos los invitados ya están en la lista.",
     failedAddWalkin: "Error al agregar walk-in",
     // Guests page

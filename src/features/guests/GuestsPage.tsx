@@ -23,8 +23,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
+import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { formatDateTime } from "@/lib/format";
@@ -270,6 +272,15 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       })
     : data?.guests;
 
+  const {
+    search,
+    setSearch,
+    filtered: guests,
+  } = useGuestSearch(sorted, (g) => ({
+    displayname: g.displayname,
+    username: g.username,
+  }));
+
   return (
     <>
       {isError && (
@@ -282,8 +293,17 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
           </AlertDescription>
         </Alert>
       )}
+      {!isLoading && (data?.guests.length ?? 0) > 0 && (
+        <Input
+          placeholder={t("searchGuestList")}
+          aria-label={t("searchGuestList")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-2"
+        />
+      )}
       <div className="rounded-md border">
-        <Table>
+        <Table className="lg:table-fixed">
           <TableHeader>
             <TableRow>
               <SortableHead
@@ -292,6 +312,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[37%]"
               />
               <SortableHead
                 col="username"
@@ -299,6 +320,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[27%]"
               />
               <SortableHead
                 col="mazmo_user_id"
@@ -306,6 +328,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[12%]"
               />
               <SortableHead
                 col="status"
@@ -313,8 +336,9 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[14%]"
               />
-              {isAdmin && <TableHead className="w-20" />}
+              {isAdmin && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -340,7 +364,8 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
-            {!isLoading && (sorted?.length ?? 0) === 0 && (
+            {/* Server returned an empty list — nothing to do with search, prompt to sync from Mazmo */}
+            {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={isAdmin ? 5 : 4}
@@ -350,7 +375,20 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
-            {sorted?.map((g) => (
+            {/* The list has guests but every one was filtered out by the active search query */}
+            {!isLoading &&
+              (data?.guests.length ?? 0) > 0 &&
+              (guests?.length ?? 0) === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 5 : 4}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    {t("noGuestsMatchSearch")}
+                  </TableCell>
+                </TableRow>
+              )}
+            {guests?.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium">{g.displayname}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -450,6 +488,15 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
       })
     : data?.guests;
 
+  const {
+    search,
+    setSearch,
+    filtered: guests,
+  } = useGuestSearch(sorted, (g) => ({
+    displayname: g.displayname,
+    username: g.username,
+  }));
+
   return (
     <>
       {isError && (
@@ -462,8 +509,17 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
           </AlertDescription>
         </Alert>
       )}
+      {!isLoading && (data?.guests.length ?? 0) > 0 && (
+        <Input
+          placeholder={t("searchGuestList")}
+          aria-label={t("searchGuestList")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-2"
+        />
+      )}
       <div className="rounded-md border">
-        <Table>
+        <Table className="lg:table-fixed">
           <TableHeader>
             <TableRow>
               <SortableHead
@@ -472,6 +528,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[28%]"
               />
               <SortableHead
                 col="username"
@@ -479,6 +536,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[22%]"
               />
               <SortableHead
                 col="banned_at"
@@ -486,6 +544,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[17%]"
               />
               <SortableHead
                 col="banned_reason"
@@ -493,8 +552,9 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
+                className="lg:w-[21%]"
               />
-              {isAdmin && <TableHead className="w-20" />}
+              {isAdmin && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -520,7 +580,8 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   )}
                 </TableRow>
               ))}
-            {!isLoading && (sorted?.length ?? 0) === 0 && (
+            {/* Server returned an empty list — nothing to do with search, prompt to sync from Mazmo */}
+            {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={isAdmin ? 5 : 4}
@@ -530,7 +591,20 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 </TableCell>
               </TableRow>
             )}
-            {sorted?.map((g) => (
+            {/* The list has guests but every one was filtered out by the active search query */}
+            {!isLoading &&
+              (data?.guests.length ?? 0) > 0 &&
+              (guests?.length ?? 0) === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={isAdmin ? 5 : 4}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    {t("noGuestsMatchSearch")}
+                  </TableCell>
+                </TableRow>
+              )}
+            {guests?.map((g) => (
               <TableRow key={g.mazmo_user_id}>
                 <TableCell className="font-medium text-destructive">
                   {g.displayname}
@@ -541,7 +615,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 <TableCell className="text-muted-foreground text-sm">
                   {g.banned_at ? formatDateTime(g.banned_at) : "—"}
                 </TableCell>
-                <TableCell className="text-sm max-w-xs truncate">
+                <TableCell className="text-sm whitespace-normal overflow-hidden break-words">
                   {g.banned_reason}
                 </TableCell>
                 {isAdmin && (
@@ -549,6 +623,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="px-0"
                       onClick={() => unbanMutation.mutate(g)}
                       disabled={unbanMutation.isPending}
                     >
