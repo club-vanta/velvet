@@ -103,7 +103,7 @@ function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
       void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
-      toast.success(`${guest.displayname} has been banned`);
+      toast.success(`${guest.displayname} has been vanted`);
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -455,7 +455,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
     onSuccess: (guest) => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
       void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
-      toast.success(`${guest.displayname} unbanned`);
+      toast.success(`${guest.displayname} unvanted`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
