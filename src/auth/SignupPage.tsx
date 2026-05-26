@@ -7,6 +7,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { useLanguage } from "@/lib/i18n";
 
+// Derive org slug from hostname: velvet.club-vanta.com → "club-vanta"
+// Falls back to "club-vanta" on localhost or any unrecognised pattern.
+function getOrgSlug(): string {
+  const parts = window.location.hostname.split(".");
+  return parts.length >= 3 ? parts[1] : "club-vanta";
+}
+
 export function SignupPage() {
   const { t } = useLanguage();
   const [username, setUsername] = useState("");
@@ -22,7 +29,7 @@ export function SignupPage() {
     setIsPending(true);
     try {
       const { error, response } = await api.POST("/auth/register", {
-        body: { username, password },
+        body: { username, password, org_slug: getOrgSlug() },
       });
       if (error) {
         if (response.status === 409) {
