@@ -47,7 +47,9 @@ const unauthorizedMiddleware: Middleware = {
       !request.url.includes("/auth/token")
     ) {
       setAuthToken(null);
-      window.location.assign("/");
+      if (window.location.pathname !== "/") {
+        window.location.replace("/");
+      }
     }
     return response;
   },
