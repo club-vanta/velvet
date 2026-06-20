@@ -248,12 +248,14 @@ function MembersSection({
   isLoading,
   isError,
   refetch,
+  currentUserId,
 }: {
   orgId: string;
   members: OrgMemberPublic[] | undefined;
   isLoading: boolean;
   isError: boolean;
   refetch: () => void;
+  currentUserId: number | undefined;
 }) {
   const { t } = useLanguage();
   const [addOpen, setAddOpen] = useState(false);
@@ -355,38 +357,42 @@ function MembersSection({
                 </TableCell>
               </TableRow>
             )}
-            {members?.map((m) => (
-              <TableRow key={m.user_id}>
-                <TableCell className="font-medium">{m.user_id}</TableCell>
-                <TableCell>
-                  <Select
-                    value={m.role}
-                    onValueChange={(newRole) =>
-                      updateRoleMutation.mutate({ member: m, newRole })
-                    }
-                  >
-                    <SelectTrigger className="w-28 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="STAFF">{t("roleStaff")}</SelectItem>
-                      <SelectItem value="ADMIN">{t("roleAdmin")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => removeMutation.mutate(m)}
-                    disabled={removeMutation.isPending}
-                  >
-                    {removeMutation.isPending ? t("removing") : t("removeMember")}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {members?.map((m) => {
+              const isSelf = m.user_id === currentUserId;
+              return (
+                <TableRow key={m.user_id}>
+                  <TableCell className="font-medium">{m.user_id}</TableCell>
+                  <TableCell>
+                    <Select
+                      value={m.role}
+                      onValueChange={(newRole) =>
+                        updateRoleMutation.mutate({ member: m, newRole })
+                      }
+                      disabled={isSelf}
+                    >
+                      <SelectTrigger className="w-28 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="STAFF">{t("roleStaff")}</SelectItem>
+                        <SelectItem value="ADMIN">{t("roleAdmin")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => removeMutation.mutate(m)}
+                      disabled={removeMutation.isPending || isSelf}
+                    >
+                      {removeMutation.isPending ? t("removing") : t("removeMember")}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -484,6 +490,7 @@ export function OrganizationDetailPage() {
         isLoading={membersQ.isLoading}
         isError={membersQ.isError}
         refetch={() => membersQ.refetch()}
+        currentUserId={user?.id}
       />
 
       {isSiteAdmin && org && editOpen && (
