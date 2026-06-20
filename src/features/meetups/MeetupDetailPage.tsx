@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
+import { useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -41,6 +42,7 @@ import { useGuestSearch } from "@/hooks/useGuestSearch";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
+type Guest = components["schemas"]["GuestPublic"];
 
 type SortDir = "asc" | "desc";
 
@@ -94,10 +96,12 @@ function SortableHead({
 
 function UndoDialog({
   guest,
+  orgId,
   meetupId,
   onClose,
 }: {
   guest: MeetupGuest;
+  orgId: string;
   meetupId: string;
   onClose: () => void;
 }) {
@@ -108,10 +112,11 @@ function UndoDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH(
-        "/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin",
         {
           params: {
             path: {
+              org_id: orgId,
               meetup_id: meetupId,
               mazmo_user_id: guest.guest.mazmo_user_id,
             },
@@ -124,7 +129,7 @@ function UndoDialog({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["meetup-guests", meetupId],
+        queryKey: ["meetup-guests", orgId, meetupId],
       });
       toast.success(t("undoDone"));
       onClose();
@@ -178,10 +183,12 @@ function UndoDialog({
 
 function CheckInBannedDialog({
   guest,
+  orgId,
   meetupId,
   onClose,
 }: {
   guest: MeetupGuest;
+  orgId: string;
   meetupId: string;
   onClose: () => void;
 }) {
@@ -191,10 +198,11 @@ function CheckInBannedDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await api.POST(
-        "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
         {
           params: {
             path: {
+              org_id: orgId,
               meetup_id: meetupId,
               mazmo_user_id: guest.guest.mazmo_user_id,
             },
@@ -206,7 +214,7 @@ function CheckInBannedDialog({
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({
-        queryKey: ["meetup-guests", meetupId],
+        queryKey: ["meetup-guests", orgId, meetupId],
       });
       toast.success(
         `${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`,
@@ -245,13 +253,13 @@ function CheckInBannedDialog({
   );
 }
 
-type Guest = components["schemas"]["GuestPublic"];
-
 function WalkinDialog({
+  orgId,
   meetupId,
   alreadyRsvped,
   onClose,
 }: {
+  orgId: string;
   meetupId: string;
   alreadyRsvped: Set<number>;
   onClose: () => void;
@@ -272,10 +280,14 @@ function WalkinDialog({
   const mutation = useMutation({
     mutationFn: async (guest: Guest) => {
       const { data, error } = await api.POST(
-        "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin",
         {
           params: {
-            path: { meetup_id: meetupId, mazmo_user_id: guest.mazmo_user_id },
+            path: {
+              org_id: orgId,
+              meetup_id: meetupId,
+              mazmo_user_id: guest.mazmo_user_id,
+            },
           },
         },
       );
@@ -287,7 +299,7 @@ function WalkinDialog({
     },
     onSuccess: ({ guest }) => {
       void queryClient.invalidateQueries({
-        queryKey: ["meetup-guests", meetupId],
+        queryKey: ["meetup-guests", orgId, meetupId],
       });
       toast.success(`${guest.displayname} added as walk-in`);
       onClose();
@@ -342,16 +354,7 @@ function WalkinDialog({
                 className="flex items-center justify-between gap-3 rounded-md px-3 py-2 hover:bg-secondary/50"
               >
                 <div className="min-w-0">
-                  <p
-                    className={`text-sm font-medium truncate ${g.is_banned ? "text-destructive" : ""}`}
-                  >
-                    {g.displayname}
-                    {g.is_banned && (
-                      <Badge variant="destructive" className="ml-2 text-xs">
-                        {t("banned")}
-                      </Badge>
-                    )}
-                  </p>
+                  <p className="text-sm font-medium truncate">{g.displayname}</p>
                   <p className="text-xs text-muted-foreground">@{g.username}</p>
                 </div>
                 <Button
@@ -379,6 +382,8 @@ function WalkinDialog({
 export function MeetupDetailPage() {
   const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
+  const { activeOrg } = useOrg();
+  const orgId = activeOrg?.org_id ?? "";
   const queryClient = useQueryClient();
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
@@ -400,40 +405,45 @@ export function MeetupDetailPage() {
   }
 
   const meetupQ = useQuery({
-    queryKey: ["meetup", id],
+    queryKey: ["meetup", orgId, id],
     queryFn: async () => {
-      const { data, error } = await api.GET("/meetups/{meetup_id}", {
-        params: { path: { meetup_id: id! } },
-      });
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/meetups/{meetup_id}",
+        { params: { path: { org_id: orgId, meetup_id: id! } } },
+      );
       if (error) throw new Error(t("failedLoadMeetup"));
       return data;
     },
-    enabled: !!id,
+    enabled: !!orgId && !!id,
   });
 
   const guestsQ = useQuery({
-    queryKey: ["meetup-guests", id],
+    queryKey: ["meetup-guests", orgId, id],
     queryFn: async () => {
-      const { data, error } = await api.GET("/meetups/{meetup_id}/guests", {
-        params: { path: { meetup_id: id! } },
-      });
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/meetups/{meetup_id}/guests",
+        { params: { path: { org_id: orgId, meetup_id: id! } } },
+      );
       if (error) throw new Error(t("failedLoadGuestList"));
       return data;
     },
-    enabled: !!id,
+    enabled: !!orgId && !!id,
     refetchInterval: 30_000,
   });
 
   const syncMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/meetups/{meetup_id}/sync", {
-        params: { path: { meetup_id: id! } },
-      });
+      const { data, error } = await api.POST(
+        "/organizations/{org_id}/meetups/{meetup_id}/sync",
+        { params: { path: { org_id: orgId, meetup_id: id! } } },
+      );
       if (error) throw new Error(extractApiError(error, "Sync failed"));
       return data;
     },
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["meetup-guests", id] });
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", orgId, id],
+      });
       toast.success(
         `Synced — ${data!.inserted} new guests added, ${data!.skipped} skipped`,
       );
@@ -444,10 +454,14 @@ export function MeetupDetailPage() {
   const checkInMutation = useMutation({
     mutationFn: async (guest: MeetupGuest) => {
       const { data, error } = await api.POST(
-        "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
         {
           params: {
-            path: { meetup_id: id!, mazmo_user_id: guest.guest.mazmo_user_id },
+            path: {
+              org_id: orgId,
+              meetup_id: id!,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
           },
         },
       );
@@ -455,7 +469,9 @@ export function MeetupDetailPage() {
       return data;
     },
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["meetup-guests", id] });
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", orgId, id],
+      });
       toast.success(
         `${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`,
       );
@@ -494,6 +510,15 @@ export function MeetupDetailPage() {
     displayname: g.guest.displayname,
     username: g.guest.username,
   }));
+
+  if (!activeOrg) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t("noOrganization")}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -644,7 +669,6 @@ export function MeetupDetailPage() {
                 </TableRow>
               ))}
 
-            {/* No guests were RSVPed to this meetup at all — prompt to sync */}
             {!guestsQ.isLoading && rawGuests.length === 0 && (
               <TableRow>
                 <TableCell
@@ -656,7 +680,6 @@ export function MeetupDetailPage() {
               </TableRow>
             )}
 
-            {/* There are guests but every one was filtered out by the active search query */}
             {!guestsQ.isLoading &&
               rawGuests.length > 0 &&
               (guests?.length ?? 0) === 0 && (
@@ -685,7 +708,7 @@ export function MeetupDetailPage() {
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={
                         mg.guest.is_banned
@@ -698,6 +721,11 @@ export function MeetupDetailPage() {
                     <span className="text-muted-foreground text-sm">
                       @{mg.guest.username}
                     </span>
+                    {mg.rsvp.is_walkin && (
+                      <Badge variant="outline" className="text-xs">
+                        {t("walkinLabel")}
+                      </Badge>
+                    )}
                     {mg.guest.is_banned && (
                       <Badge variant="destructive">{t("banned")}</Badge>
                     )}
@@ -759,6 +787,7 @@ export function MeetupDetailPage() {
       {undoTarget && (
         <UndoDialog
           guest={undoTarget}
+          orgId={orgId}
           meetupId={id!}
           onClose={() => setUndoTarget(null)}
         />
@@ -766,12 +795,14 @@ export function MeetupDetailPage() {
       {bannedTarget && (
         <CheckInBannedDialog
           guest={bannedTarget}
+          orgId={orgId}
           meetupId={id!}
           onClose={() => setBannedTarget(null)}
         />
       )}
       {walkinOpen && (
         <WalkinDialog
+          orgId={orgId}
           meetupId={id!}
           alreadyRsvped={rsvpedIds}
           onClose={() => setWalkinOpen(false)}

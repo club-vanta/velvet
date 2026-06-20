@@ -14,22 +14,29 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { useOrg } from "@/lib/org";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { activeOrg } = useOrg();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const isAdmin = user?.role.name === "ADMIN";
+  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
+  const orgId = activeOrg?.org_id ?? "";
 
   const meetupsQ = useQuery({
-    queryKey: ["meetups"],
+    queryKey: ["meetups", orgId],
     queryFn: async () => {
-      const { data, error } = await api.GET("/meetups/");
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/meetups/",
+        { params: { path: { org_id: orgId } } },
+      );
       if (error) throw new Error("Failed to load meetups");
       return data;
     },
+    enabled: !!orgId,
   });
 
   const guestsQ = useQuery({
@@ -48,10 +55,18 @@ export function DashboardPage() {
       if (error) throw new Error("Failed to load pending staff");
       return data;
     },
-    enabled: isAdmin,
+    enabled: isSiteAdmin,
   });
 
   const recentMeetups = meetupsQ.data?.meetups.slice(0, 5) ?? [];
+
+  if (!activeOrg) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t("noOrganization")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -92,7 +107,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        {isAdmin && (
+        {isSiteAdmin && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">

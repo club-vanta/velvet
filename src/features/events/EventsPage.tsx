@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/api/client";
+import { useOrg } from "@/lib/org";
 import { formatDateTime } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
@@ -46,6 +47,8 @@ const PAGE_SIZE = 50;
 
 export function EventsPage() {
   const { t } = useLanguage();
+  const { activeOrg } = useOrg();
+  const orgId = activeOrg?.org_id ?? "";
   const [eventType, setEventType] = useState("all");
   const [offset, setOffset] = useState(0);
 
@@ -61,11 +64,14 @@ export function EventsPage() {
   };
 
   const { data: meetupsData } = useQuery({
-    queryKey: ["meetups"],
+    queryKey: ["meetups", orgId],
     queryFn: async () => {
-      const { data } = await api.GET("/meetups/");
+      const { data } = await api.GET("/organizations/{org_id}/meetups/", {
+        params: { path: { org_id: orgId } },
+      });
       return data;
     },
+    enabled: !!orgId,
   });
 
   const meetupName: Record<string, string> = {};
@@ -74,21 +80,34 @@ export function EventsPage() {
   }
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["events", eventType, offset],
+    queryKey: ["events", orgId, eventType, offset],
     queryFn: async () => {
-      const { data, error } = await api.GET("/events/", {
-        params: {
-          query: {
-            limit: PAGE_SIZE,
-            offset,
-            ...(eventType !== "all" && { type: eventType as EventType }),
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/events/",
+        {
+          params: {
+            path: { org_id: orgId },
+            query: {
+              limit: PAGE_SIZE,
+              offset,
+              ...(eventType !== "all" && { type: eventType as EventType }),
+            },
           },
         },
-      });
+      );
       if (error) throw new Error("Failed to load events");
       return data;
     },
+    enabled: !!orgId,
   });
+
+  if (!activeOrg) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t("noOrganization")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -103,12 +122,6 @@ export function EventsPage() {
           }}
         >
           <SelectTrigger className="w-48">
-            {/*
-              Without explicit children, Radix shows whatever text was inside
-              the selected <SelectItem> when the user clicked it — which means
-              it goes stale when the language changes, or shows the raw backend
-              value on first render. Passing the label directly keeps it fresh.
-            */}
             <SelectValue placeholder={t("allEvents")}>
               {eventType === "all"
                 ? t("allEvents")

@@ -10,6 +10,7 @@ import {
   Languages,
   PanelLeftClose,
   PanelLeftOpen,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { useOrg } from "@/lib/org";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -29,18 +31,21 @@ const MOBILE_NAV_HEIGHT = "4rem"; // keep in sync with the bottom nav's height
 
 type NavItem = {
   label: string;
+  shortLabel?: string;
   href: string;
   icon: React.ElementType;
   adminOnly: boolean;
 };
 
 function NavLinks({
-  isAdmin,
+  canSeeAdminNav,
+  isSiteAdmin,
   pending,
   location,
   navItems,
 }: {
-  isAdmin: boolean;
+  canSeeAdminNav: boolean;
+  isSiteAdmin: boolean;
   pending: number;
   location: string;
   navItems: NavItem[];
@@ -48,7 +53,11 @@ function NavLinks({
   return (
     <>
       {navItems
-        .filter((item) => !item.adminOnly || isAdmin)
+        .filter(
+          (item) =>
+            !item.adminOnly ||
+            (item.href === "/staff" ? isSiteAdmin : canSeeAdminNav),
+        )
         .map((item) => {
           const active =
             location === item.href || location.startsWith(item.href + "/");
@@ -65,7 +74,7 @@ function NavLinks({
             >
               <item.icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{item.label}</span>
-              {item.href === "/staff" && isAdmin && pending > 0 && (
+              {item.href === "/staff" && isSiteAdmin && pending > 0 && (
                 <Badge variant="destructive" className="h-5 px-1.5 text-xs">
                   {pending}
                 </Badge>
@@ -81,11 +90,19 @@ const SIDEBAR_KEY = "sidebar_open";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
+  const { orgs, activeOrg, setActiveOrg } = useOrg();
   const { t, lang, setLang } = useLanguage();
   const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(
     () => localStorage.getItem(SIDEBAR_KEY) !== "false",
   );
+
+  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
+  const isOrgAdmin = activeOrg?.role === "ADMIN";
+  const canSeeAdminNav = isSiteAdmin || isOrgAdmin;
+  const canSeeOrgs = canSeeAdminNav;
 
   function toggleSidebar() {
     setSidebarOpen((prev) => {
@@ -117,14 +134,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
     },
     {
       label: t("navAuditLog"),
+      shortLabel: "Log",
       href: "/events",
       icon: ScrollText,
       adminOnly: true,
     },
+    {
+      label: t("navOrganizations"),
+      shortLabel: "Orgs",
+      href: "/organizations",
+      icon: Building2,
+      adminOnly: true,
+    },
   ];
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const isAdmin = user?.role.name === "ADMIN";
 
   const { data: pending } = useQuery({
     queryKey: ["staff", "pending"],
@@ -132,7 +154,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       const { data } = await api.GET("/staff/pending");
       return data ?? [];
     },
-    enabled: isAdmin,
+    enabled: isSiteAdmin,
   });
 
   const pendingCount = pending?.length ?? 0;
@@ -141,6 +163,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
     logout();
     queryClient.clear();
     navigate("/");
+  }
+
+  function handleOrgChange(org: (typeof orgs)[number]) {
+    setActiveOrg(org);
+    navigate("/dashboard");
   }
 
   return (
@@ -184,6 +211,30 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* Org selector — only when there are orgs */}
+          {orgs.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 h-7 rounded-md hover:bg-accent">
+                <Building2 className="h-3.5 w-3.5" />
+                <span className="max-w-32 truncate">
+                  {activeOrg?.org_name ?? "—"}
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {orgs.map((org) => (
+                  <DropdownMenuItem
+                    key={org.org_id}
+                    onClick={() => handleOrgChange(org)}
+                    className={cn(
+                      org.org_id === activeOrg?.org_id && "font-medium",
+                    )}
+                  >
+                    {org.org_name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Center: logo + title */}
@@ -193,7 +244,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               V
             </span>
           </div>
-          <span className="font-semibold text-sm tracking-tight">
+          <span className="hidden sm:inline font-semibold text-sm tracking-tight">
             Alter Tracker
           </span>
         </div>
@@ -224,7 +275,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         >
           <NavLinks
-            isAdmin={isAdmin}
+            canSeeAdminNav={canSeeAdminNav}
+            isSiteAdmin={isSiteAdmin}
             pending={pendingCount}
             location={location.pathname}
             navItems={navItems}
@@ -246,7 +298,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         style={{ height: MOBILE_NAV_HEIGHT }}
       >
         {navItems
-          .filter((item) => !item.adminOnly || isAdmin)
+          .filter(
+            (item) =>
+              !item.adminOnly ||
+              (item.href === "/staff" ? isSiteAdmin : canSeeAdminNav),
+          )
           .map((item) => {
             const active =
               location.pathname === item.href ||
@@ -262,7 +318,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               >
                 <div className="relative">
                   <item.icon className="h-5 w-5" />
-                  {item.href === "/staff" && isAdmin && pendingCount > 0 && (
+                  {item.href === "/staff" && isSiteAdmin && pendingCount > 0 && (
                     <Badge
                       variant="destructive"
                       className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px]"
@@ -271,7 +327,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     </Badge>
                   )}
                 </div>
-                <span>{item.label}</span>
+                <span>{item.shortLabel ?? item.label}</span>
               </Link>
             );
           })}

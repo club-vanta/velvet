@@ -13,7 +13,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Register a new staff account (pending admin approval) */
+    /** Register a new staff account (auto-approved) */
     post: operations["register_auth_register_post"];
     delete?: never;
     options?: never;
@@ -101,6 +101,168 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List all organizations
+     * @description List all organizations. Only SITE_ADMIN can see all orgs.
+     */
+    get: operations["list_organizations_organizations__get"];
+    put?: never;
+    /**
+     * Create a new organization
+     * @description Create a new organization. Only SITE_ADMIN can do this.
+     */
+    post: operations["create_organization_organizations__post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a single organization
+     * @description Get an organization. Available to members and SITE_ADMIN.
+     */
+    get: operations["get_organization_organizations__org_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Update an organization's name and/or slug
+     * @description Update name and/or slug of an organization. Only SITE_ADMIN can do this.
+     */
+    patch: operations["update_organization_organizations__org_id__patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List members of an organization
+     * @description List all members of an organization with their org roles.
+     */
+    get: operations["list_org_members_organizations__org_id__members_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/members/{user_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Add a user to an organization
+     * @description Add a user to an organization with a specified role (STAFF or ADMIN).
+     */
+    post: operations["add_org_member_organizations__org_id__members__user_id__post"];
+    /**
+     * Remove a user from an organization
+     * @description Remove a user from an organization.
+     */
+    delete: operations["remove_org_member_organizations__org_id__members__user_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Change a member's org role
+     * @description Change a member's role within an organization (STAFF <-> ADMIN).
+     */
+    patch: operations["update_org_member_role_organizations__org_id__members__user_id__patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/guests/banned": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List all banned guests in this organization
+     * @description List all guests currently banned in this organization.
+     */
+    get: operations["list_banned_guests_organizations__org_id__guests_banned_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/guests/{mazmo_user_id}/ban": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Ban a guest in this organization (org admin only)
+     * @description Ban a guest in this organization. Records the admin who performed the ban and the reason.
+     *
+     *     Returns 404 if the guest doesn't exist.
+     *     Returns 409 if the guest is already banned in this organization.
+     */
+    patch: operations["ban_guest_organizations__org_id__guests__mazmo_user_id__ban_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/guests/{mazmo_user_id}/unban": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Unban a guest in this organization (org admin only)
+     * @description Unban a guest in this organization. Removes the ban record (history stays in event log).
+     *
+     *     Returns 404 if the guest doesn't exist.
+     *     Returns 409 if the guest is not currently banned in this organization.
+     */
+    patch: operations["unban_guest_organizations__org_id__guests__mazmo_user_id__unban_patch"];
+    trace?: never;
+  };
   "/staff/": {
     parameters: {
       query?: never;
@@ -108,7 +270,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** List all staff accounts (admin only) */
+    /** List all staff accounts (site admin only) */
     get: operations["list_staff_staff__get"];
     put?: never;
     post?: never;
@@ -125,7 +287,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** List unapproved staff accounts (admin only) */
+    /** List unapproved staff accounts (site admin only) */
     get: operations["list_pending_staff_pending_get"];
     put?: never;
     post?: never;
@@ -148,7 +310,7 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    /** Approve or revoke a staff account (admin only) */
+    /** Approve or revoke a staff account (site admin only) */
     patch: operations["set_approval_staff__user_id__approve_patch"];
     trace?: never;
   };
@@ -165,7 +327,7 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    /** Promote or demote a staff member's role (admin only) */
+    /** Promote or demote a staff member's role (site admin only) */
     patch: operations["set_role_staff__user_id__role_patch"];
     trace?: never;
   };
@@ -183,7 +345,7 @@ export interface paths {
     options?: never;
     head?: never;
     /**
-     * Disable a staff account (admin only)
+     * Disable a staff account (site admin only)
      * @description Disable a staff account (soft-delete).
      *
      *     Disabled accounts cannot log in but their data is preserved for
@@ -206,7 +368,7 @@ export interface paths {
     options?: never;
     head?: never;
     /**
-     * Re-enable a disabled staff account (admin only)
+     * Re-enable a disabled staff account (site admin only)
      * @description Re-enable a previously disabled staff account.
      *
      *     Clears the disable fields, allowing the user to log in again.
@@ -269,26 +431,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/guests/banned": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List all banned guests
-     * @description List all banned guests with their ban details.
-     */
-    get: operations["list_banned_guests_guests_banned_get"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/guests/{mazmo_user_id}": {
     parameters: {
       query?: never;
@@ -329,53 +471,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/guests/{mazmo_user_id}/ban": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Ban a guest (admin only)
-     * @description Ban a guest. Records the admin who performed the ban and the reason.
-     *
-     *     Returns 404 if the guest doesn't exist.
-     *     Returns 409 if the guest is already banned.
-     */
-    patch: operations["ban_guest_guests__mazmo_user_id__ban_patch"];
-    trace?: never;
-  };
-  "/guests/{mazmo_user_id}/unban": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Unban a guest (admin only)
-     * @description Unban a guest. Clears all ban-related fields.
-     *
-     *     Returns 404 if the guest doesn't exist.
-     *     Returns 409 if the guest is not currently banned.
-     */
-    patch: operations["unban_guest_guests__mazmo_user_id__unban_patch"];
-    trace?: never;
-  };
-  "/meetups/": {
+  "/organizations/{org_id}/meetups/": {
     parameters: {
       query?: never;
       header?: never;
@@ -383,10 +479,10 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * List all meetups
-     * @description List all meetups ordered by date descending.
+     * List all meetups in this organization
+     * @description List all meetups for this org ordered by date descending.
      */
-    get: operations["list_meetups_meetups__get"];
+    get: operations["list_meetups_organizations__org_id__meetups__get"];
     put?: never;
     /**
      * Create a new meetup
@@ -396,14 +492,14 @@ export interface paths {
      *     Returns 422 if URL format is invalid, 502 if Mazmo returns an error,
      *     504 if Mazmo is unreachable.
      */
-    post: operations["create_meetup_meetups__post"];
+    post: operations["create_meetup_organizations__org_id__meetups__post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/meetups/{meetup_id}": {
+  "/organizations/{org_id}/meetups/{meetup_id}": {
     parameters: {
       query?: never;
       header?: never;
@@ -414,7 +510,7 @@ export interface paths {
      * Get a single meetup
      * @description Get a single meetup by ID.
      */
-    get: operations["get_meetup_meetups__meetup_id__get"];
+    get: operations["get_meetup_organizations__org_id__meetups__meetup_id__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -423,7 +519,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/meetups/{meetup_id}/sync": {
+  "/organizations/{org_id}/meetups/{meetup_id}/sync": {
     parameters: {
       query?: never;
       header?: never;
@@ -441,14 +537,14 @@ export interface paths {
      *       - Existing RSVPs have their rsvp_time updated.
      *       - `has_arrived`, `arrival_time`, and `arrival_order` are NEVER modified.
      */
-    post: operations["sync_meetup_guests_meetups__meetup_id__sync_post"];
+    post: operations["sync_meetup_guests_organizations__org_id__meetups__meetup_id__sync_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/meetups/{meetup_id}/guests": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests": {
     parameters: {
       query?: never;
       header?: never;
@@ -457,9 +553,9 @@ export interface paths {
     };
     /**
      * List guests RSVPed to this meetup
-     * @description List all guests who have RSVPed to this meetup with their RSVP state.
+     * @description List all guests who have RSVPed to this meetup with their RSVP state and org ban status.
      */
-    get: operations["list_meetup_guests_meetups__meetup_id__guests_get"];
+    get: operations["list_meetup_guests_organizations__org_id__meetups__meetup_id__guests_get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -468,7 +564,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
     parameters: {
       query?: never;
       header?: never;
@@ -489,14 +585,14 @@ export interface paths {
      *     Returns 409 if the guest already has an RSVP for this meetup.
      *     Returns 409 if the meetup is finalized.
      */
-    post: operations["add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
+    post: operations["add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin": {
     parameters: {
       query?: never;
       header?: never;
@@ -513,14 +609,14 @@ export interface paths {
      *     The staff member performing the check-in is recorded for audit purposes.
      *     Returns 404 if guest not RSVPed, 409 if already checked in or meetup finalized.
      */
-    post: operations["checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post"];
+    post: operations["checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__checkin_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin": {
     parameters: {
       query?: never;
       header?: never;
@@ -544,10 +640,10 @@ export interface paths {
      *     Returns 404 if guest not RSVPed to this meetup.
      *     Returns 409 if guest is not currently checked in.
      */
-    patch: operations["undo_checkin_guest_meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch"];
+    patch: operations["undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch"];
     trace?: never;
   };
-  "/meetups/{meetup_id}/finalize": {
+  "/organizations/{org_id}/meetups/{meetup_id}/finalize": {
     parameters: {
       query?: never;
       header?: never;
@@ -561,15 +657,15 @@ export interface paths {
     options?: never;
     head?: never;
     /**
-     * Finalize a meetup
+     * Finalize a meetup (org admin only)
      * @description Mark a meetup as finalized. No further check-ins or syncs will be allowed.
      *
      *     Returns 409 if the meetup is already finalized.
      */
-    patch: operations["finalize_meetup_meetups__meetup_id__finalize_patch"];
+    patch: operations["finalize_meetup_organizations__org_id__meetups__meetup_id__finalize_patch"];
     trace?: never;
   };
-  "/meetups/{meetup_id}/unfinalize": {
+  "/organizations/{org_id}/meetups/{meetup_id}/unfinalize": {
     parameters: {
       query?: never;
       header?: never;
@@ -583,15 +679,15 @@ export interface paths {
     options?: never;
     head?: never;
     /**
-     * Un-finalize a meetup
+     * Un-finalize a meetup (org admin only)
      * @description Revert a meetup's finalized status (e.g., finalized by accident).
      *
      *     Returns 409 if the meetup is not finalized.
      */
-    patch: operations["unfinalize_meetup_meetups__meetup_id__unfinalize_patch"];
+    patch: operations["unfinalize_meetup_organizations__org_id__meetups__meetup_id__unfinalize_patch"];
     trace?: never;
   };
-  "/events/": {
+  "/organizations/{org_id}/events/": {
     parameters: {
       query?: never;
       header?: never;
@@ -599,15 +695,15 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * List all events (admin only)
-     * @description List all events in the system with optional filtering.
+     * List all events in this organization (org admin only)
+     * @description List all events in the organization with optional filtering.
      *
-     *     Admin-only endpoint for full audit trail access. Supports filtering
+     *     Org admin-only endpoint for full audit trail access. Supports filtering
      *     by event type, timestamp range, guest, meetup, and actor.
      *
      *     Returns paginated results ordered by timestamp descending (newest first).
      */
-    get: operations["list_all_events_events__get"];
+    get: operations["list_all_events_organizations__org_id__events__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -616,7 +712,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events/meetups/{meetup_id}": {
+  "/organizations/{org_id}/events/meetups/{meetup_id}": {
     parameters: {
       query?: never;
       header?: never;
@@ -627,13 +723,10 @@ export interface paths {
      * List events at a specific meetup
      * @description List events at a specific meetup.
      *
-     *     All staff can view meetup events to see check-in activity,
+     *     All org members can view meetup events to see check-in activity,
      *     who checked in guests, and any undone check-ins.
-     *
-     *     Commonly used filters:
-     *       - ?type=CHECK_IN,UNDO_CHECK_IN → check-in activity only
      */
-    get: operations["list_meetup_events_events_meetups__meetup_id__get"];
+    get: operations["list_meetup_events_organizations__org_id__events_meetups__meetup_id__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -642,7 +735,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events/guests/{guest_id}": {
+  "/organizations/{org_id}/events/guests/{guest_id}": {
     parameters: {
       query?: never;
       header?: never;
@@ -650,16 +743,14 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * List events for a specific guest
-     * @description List events for a specific guest.
+     * List events for a specific guest in this organization
+     * @description List events for a specific guest in this organization.
      *
      *     Authorization:
-     *       - Staff: Can only see BAN/UNBAN events (need to know who's banned)
-     *       - Admin: Can see all events for this guest
-     *
-     *     Common use case: Staff checking why a guest is on the banned list.
+     *       - Staff (org member): Can only see BAN/UNBAN events (need to know who's banned)
+     *       - Org admin / SITE_ADMIN: Can see all events for this guest in this org
      */
-    get: operations["list_guest_events_events_guests__guest_id__get"];
+    get: operations["list_guest_events_organizations__org_id__events_guests__guest_id__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -668,7 +759,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/events/staff/{staff_id}": {
+  "/organizations/{org_id}/events/staff/{staff_id}": {
     parameters: {
       query?: never;
       header?: never;
@@ -676,16 +767,34 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * List events by a specific staff member
-     * @description List events performed by a specific staff member.
+     * List events by a specific staff member in this organization
+     * @description List events performed by a specific staff member in this organization.
      *
      *     Authorization:
      *       - Staff: Can only view their own events (staff_id must match current user)
-     *       - Admin: Can view any staff member's events
-     *
-     *     Use case: Staff reviewing their own activity, or admin auditing staff actions.
+     *       - Org admin / SITE_ADMIN: Can view any staff member's events in this org
      */
-    get: operations["list_staff_events_events_staff__staff_id__get"];
+    get: operations["list_staff_events_organizations__org_id__events_staff__staff_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search active users by username
+     * @description Return up to 20 active users matching the username query. Returns id and username only.
+     */
+    get: operations["search_users_users__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -752,6 +861,14 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     /**
+     * AddOrgMemberRequest
+     * @description Request body to add a user to an organization.
+     */
+    AddOrgMemberRequest: {
+      /** Role */
+      role: string;
+    };
+    /**
      * ApproveUserRequest
      * @description Request body for approving or revoking a user's access.
      *
@@ -764,7 +881,7 @@ export interface components {
     };
     /**
      * BanGuestRequest
-     * @description Request body for banning a guest.
+     * @description Request body for banning a guest within an organization.
      */
     BanGuestRequest: {
       /** Reason */
@@ -772,7 +889,7 @@ export interface components {
     };
     /**
      * BannedGuestListResponse
-     * @description Response for listing all banned guests.
+     * @description Response for listing all banned guests in an organization.
      */
     BannedGuestListResponse: {
       /** Total */
@@ -782,10 +899,9 @@ export interface components {
     };
     /**
      * BannedGuestPublic
-     * @description Extended guest info including ban details for the banned list.
+     * @description Guest info with ban details, sourced from organization_bans.
      *
-     *     Used in the banned guests list endpoint where admins need to see
-     *     the full audit trail (when banned, why, by whom).
+     *     Used in the org-scoped banned guests list endpoint.
      */
     BannedGuestPublic: {
       /** Mazmo User Id */
@@ -794,12 +910,13 @@ export interface components {
       username: string;
       /** Displayname */
       displayname: string;
-      /** Is Banned */
-      is_banned: boolean;
-      /** Banned At */
-      banned_at: string | null;
+      /**
+       * Banned At
+       * Format: date-time
+       */
+      banned_at: string;
       /** Banned Reason */
-      banned_reason: string | null;
+      banned_reason: string;
       /** Banned By Id */
       banned_by_id: number | null;
     };
@@ -830,10 +947,6 @@ export interface components {
     /**
      * CheckInResponse
      * @description Response after successfully checking in a guest.
-     *
-     *     Confirms the check-in with the guest's identity and their assigned
-     *     arrival order for this meetup. arrival_order is gap-free per meetup.
-     *     Includes the staff member who performed the check-in for audit purposes.
      */
     CheckInResponse: {
       guest: components["schemas"]["GuestPublic"];
@@ -849,9 +962,6 @@ export interface components {
     /**
      * CheckedInByPublic
      * @description Minimal staff representation for check-in attribution.
-     *
-     *     Only includes the essential fields needed to identify who performed
-     *     a check-in, without exposing sensitive fields like approval status.
      */
     CheckedInByPublic: {
       /** Id */
@@ -862,9 +972,6 @@ export interface components {
     /**
      * CreateGuestRequest
      * @description Request body for creating a guest by Mazmo username.
-     *
-     *     Staff only need to know the handle (e.g. "cindydark"). The endpoint looks
-     *     up the canonical ID and profile data from Mazmo automatically.
      */
     CreateGuestRequest: {
       /**
@@ -966,10 +1073,10 @@ export interface components {
     };
     /**
      * GuestListResponse
-     * @description Response for listing all known guests.
+     * @description Response for listing all known guests (global, no org context).
      *
      *     Returns identity-only data. For RSVP state at a specific meetup,
-     *     use the /meetups/{id}/guests endpoint instead.
+     *     use the /organizations/{org_id}/meetups/{id}/guests endpoint instead.
      */
     GuestListResponse: {
       /** Total */
@@ -981,14 +1088,25 @@ export interface components {
      * GuestPublic
      * @description A Mazmo user's identity (cached locally).
      *
-     *     This is identity-only data - no RSVP or check-in state.
-     *     The same guest can appear at multiple meetups with different RSVP states.
-     *     Maps directly to the Guest model via from_attributes.
-     *
-     *     Includes is_banned so the frontend can render banned guests differently
-     *     (e.g., name in red).
+     *     Identity-only - no RSVP or ban state. Bans are per-org and are
+     *     included only in org-scoped endpoints via GuestWithBanPublic.
      */
     GuestPublic: {
+      /** Mazmo User Id */
+      mazmo_user_id: number;
+      /** Username */
+      username: string;
+      /** Displayname */
+      displayname: string;
+    };
+    /**
+     * GuestWithBanPublic
+     * @description Guest identity with org-scoped ban status.
+     *
+     *     Used in meetup guest lists and org-specific guest endpoints where
+     *     the frontend needs to know if this guest is banned in the current org.
+     */
+    GuestWithBanPublic: {
       /** Mazmo User Id */
       mazmo_user_id: number;
       /** Username */
@@ -1044,9 +1162,6 @@ export interface components {
     /**
      * MeetupGuestListResponse
      * @description Response for listing guests at a specific meetup.
-     *
-     *     Each entry includes both the guest's identity and their RSVP state
-     *     for this particular meetup.
      */
     MeetupGuestListResponse: {
       /** Total */
@@ -1058,11 +1173,11 @@ export interface components {
      * MeetupGuestPublic
      * @description Combined view of a guest at a specific meetup.
      *
-     *     Nests the guest identity and their RSVP state separately for clarity.
-     *     Frontend can access guest.displayname vs rsvp.has_arrived.
+     *     guest includes ban status for this org (is_banned) so the frontend
+     *     can render warnings at the door.
      */
     MeetupGuestPublic: {
-      guest: components["schemas"]["GuestPublic"];
+      guest: components["schemas"]["GuestWithBanPublic"];
       rsvp: components["schemas"]["RsvpPublic"];
     };
     /**
@@ -1105,13 +1220,100 @@ export interface components {
       finalized_at: string | null;
     };
     /**
+     * OrgCreate
+     * @description Request body to create a new organization.
+     */
+    OrgCreate: {
+      /** Name */
+      name: string;
+      /** Slug */
+      slug: string;
+    };
+    /** OrgListResponse */
+    OrgListResponse: {
+      /** Total */
+      total: number;
+      /** Organizations */
+      organizations: components["schemas"]["OrgPublic"][];
+    };
+    /** OrgMemberListResponse */
+    OrgMemberListResponse: {
+      /** Total */
+      total: number;
+      /** Members */
+      members: components["schemas"]["OrgMemberPublic"][];
+    };
+    /**
+     * OrgMemberPublic
+     * @description A user's membership in an organization.
+     */
+    OrgMemberPublic: {
+      /** User Id */
+      user_id: number;
+      /**
+       * Org Id
+       * Format: uuid
+       */
+      org_id: string;
+      /** Role */
+      role: string;
+    };
+    /**
+     * OrgMembershipPublic
+     * @description A user's membership in an org, flattened for the userinfo response.
+     */
+    OrgMembershipPublic: {
+      /**
+       * Org Id
+       * Format: uuid
+       */
+      org_id: string;
+      /** Org Name */
+      org_name: string;
+      /** Role */
+      role: string;
+    };
+    /**
+     * OrgPublic
+     * @description Public representation of an organization.
+     */
+    OrgPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Slug */
+      slug: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
+    /**
+     * OrgUpdate
+     * @description Request body to partially update an organization's name and/or slug.
+     */
+    OrgUpdate: {
+      /** Name */
+      name?: string | null;
+      /** Slug */
+      slug?: string | null;
+    };
+    /**
      * PossibleRoles
-     * @description Used for Python/Pydantic validation only.
-     *     The actual role name is stored as a VARCHAR in the `user_roles` table
-     *     and referenced via a foreign key from `users.role_id`.
+     * @description Global roles stored in user_roles / users.role_id.
+     *
+     *     USER:       Regular approved account. Actual capabilities come from
+     *                 user_organizations.role (per-org STAFF or ADMIN).
+     *     SITE_ADMIN: Superadmin. Bypasses all org membership checks, can create
+     *                 and manage organizations.
      * @enum {string}
      */
-    PossibleRoles: "STAFF" | "ADMIN";
+    PossibleRoles: "USER" | "SITE_ADMIN";
     /** RecoveryCodeResponse */
     RecoveryCodeResponse: {
       /** Username */
@@ -1158,7 +1360,6 @@ export interface components {
      * RsvpPublic
      * @description Event-specific RSVP state for a guest at a meetup.
      *
-     *     This data lives in the MeetupRsvp association table, not on the Guest.
      *     arrival_time and arrival_order are set by a database trigger when
      *     has_arrived flips to True during check-in.
      */
@@ -1280,6 +1481,21 @@ export interface components {
       disabled_at?: string | null;
       /** Disabled Reason */
       disabled_reason?: string | null;
+      /**
+       * Org Memberships
+       * @default []
+       */
+      org_memberships: components["schemas"]["OrgMembershipPublic"][];
+    };
+    /**
+     * UserSearchResult
+     * @description Minimal user info returned by the search endpoint.
+     */
+    UserSearchResult: {
+      /** Id */
+      id: number;
+      /** Username */
+      username: string;
     };
     /** ValidationError */
     ValidationError: {
@@ -1496,6 +1712,681 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ResetPasswordResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_organizations_organizations__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All organizations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  create_organization_organizations__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["OrgCreate"];
+      };
+    };
+    responses: {
+      /** @description Organization created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Name or slug already taken */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_organization_organizations__org_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Organization found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_organization_organizations__org_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["OrgUpdate"];
+      };
+    };
+    responses: {
+      /** @description Organization updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Name or slug already taken by another organization */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_org_members_organizations__org_id__members_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Members of this organization */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgMemberListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  add_org_member_organizations__org_id__members__user_id__post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddOrgMemberRequest"];
+      };
+    };
+    responses: {
+      /** @description Member added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgMemberPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization or user not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description User is already a member */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  remove_org_member_organizations__org_id__members__user_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Member removed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description User is not a member of this organization */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_org_member_role_organizations__org_id__members__user_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddOrgMemberRequest"];
+      };
+    };
+    responses: {
+      /** @description Role updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrgMemberPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Site admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description User is not a member of this organization */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_banned_guests_organizations__org_id__guests_banned_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Banned guests in this organization */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BannedGuestListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  ban_guest_organizations__org_id__guests__mazmo_user_id__ban_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BanGuestRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest banned in this organization */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BannedGuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest already banned */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  unban_guest_organizations__org_id__guests__mazmo_user_id__unban_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest unbanned in this organization */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not banned */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -1914,7 +2805,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description All known guests */
+      /** @description All known guests (global, no ban context) */
       200: {
         headers: {
           [name: string]: unknown;
@@ -2012,44 +2903,6 @@ export interface operations {
       };
       /** @description Mazmo API timeout */
       504: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-    };
-  };
-  list_banned_guests_guests_banned_get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description All banned guests */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["BannedGuestListResponse"];
-        };
-      };
-      /** @description Invalid or missing credentials */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Account not approved or disabled */
-      403: {
         headers: {
           [name: string]: unknown;
         };
@@ -2175,149 +3028,13 @@ export interface operations {
       };
     };
   };
-  ban_guest_guests__mazmo_user_id__ban_patch: {
+  list_meetups_organizations__org_id__meetups__get: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        mazmo_user_id: number;
+        org_id: string;
       };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["BanGuestRequest"];
-      };
-    };
-    responses: {
-      /** @description Guest banned */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["BannedGuestPublic"];
-        };
-      };
-      /** @description Invalid or missing credentials */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Admin role required */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Guest not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Guest already banned */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-    };
-  };
-  unban_guest_guests__mazmo_user_id__unban_patch: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        mazmo_user_id: number;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Guest unbanned */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["GuestPublic"];
-        };
-      };
-      /** @description Invalid or missing credentials */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Admin role required */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Guest not found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Guest not banned */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  list_meetups_meetups__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
       cookie?: never;
     };
     requestBody?: never;
@@ -2349,13 +3066,24 @@ export interface operations {
           "application/json": unknown;
         };
       };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
   };
-  create_meetup_meetups__post: {
+  create_meetup_organizations__org_id__meetups__post: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        org_id: string;
+      };
       cookie?: never;
     };
     requestBody: {
@@ -2429,11 +3157,12 @@ export interface operations {
       };
     };
   };
-  get_meetup_meetups__meetup_id__get: {
+  get_meetup_organizations__org_id__meetups__meetup_id__get: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
       };
       cookie?: never;
@@ -2487,11 +3216,12 @@ export interface operations {
       };
     };
   };
-  sync_meetup_guests_meetups__meetup_id__sync_post: {
+  sync_meetup_guests_organizations__org_id__meetups__meetup_id__sync_post: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
       };
       cookie?: never;
@@ -2572,11 +3302,12 @@ export interface operations {
       };
     };
   };
-  list_meetup_guests_meetups__meetup_id__guests_get: {
+  list_meetup_guests_organizations__org_id__meetups__meetup_id__guests_get: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
       };
       cookie?: never;
@@ -2630,11 +3361,12 @@ export interface operations {
       };
     };
   };
-  add_walkin_guest_meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
+  add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
         mazmo_user_id: number;
       };
@@ -2698,11 +3430,12 @@ export interface operations {
       };
     };
   };
-  checkin_guest_meetups__meetup_id__guests__mazmo_user_id__checkin_post: {
+  checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__checkin_post: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
         mazmo_user_id: number;
       };
@@ -2766,11 +3499,12 @@ export interface operations {
       };
     };
   };
-  undo_checkin_guest_meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch: {
+  undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
         mazmo_user_id: number;
       };
@@ -2838,11 +3572,12 @@ export interface operations {
       };
     };
   };
-  finalize_meetup_meetups__meetup_id__finalize_patch: {
+  finalize_meetup_organizations__org_id__meetups__meetup_id__finalize_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
       };
       cookie?: never;
@@ -2905,11 +3640,12 @@ export interface operations {
       };
     };
   };
-  unfinalize_meetup_meetups__meetup_id__unfinalize_patch: {
+  unfinalize_meetup_organizations__org_id__meetups__meetup_id__unfinalize_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
       };
       cookie?: never;
@@ -2972,7 +3708,7 @@ export interface operations {
       };
     };
   };
-  list_all_events_events__get: {
+  list_all_events_organizations__org_id__events__get: {
     parameters: {
       query?: {
         /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
@@ -2993,7 +3729,9 @@ export interface operations {
         offset?: number;
       };
       header?: never;
-      path?: never;
+      path: {
+        org_id: string;
+      };
       cookie?: never;
     };
     requestBody?: never;
@@ -3045,7 +3783,7 @@ export interface operations {
       };
     };
   };
-  list_meetup_events_events_meetups__meetup_id__get: {
+  list_meetup_events_organizations__org_id__events_meetups__meetup_id__get: {
     parameters: {
       query?: {
         /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
@@ -3061,6 +3799,7 @@ export interface operations {
       };
       header?: never;
       path: {
+        org_id: string;
         meetup_id: string;
       };
       cookie?: never;
@@ -3123,7 +3862,7 @@ export interface operations {
       };
     };
   };
-  list_guest_events_events_guests__guest_id__get: {
+  list_guest_events_organizations__org_id__events_guests__guest_id__get: {
     parameters: {
       query?: {
         /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
@@ -3141,6 +3880,7 @@ export interface operations {
       };
       header?: never;
       path: {
+        org_id: string;
         guest_id: number;
       };
       cookie?: never;
@@ -3203,7 +3943,7 @@ export interface operations {
       };
     };
   };
-  list_staff_events_events_staff__staff_id__get: {
+  list_staff_events_organizations__org_id__events_staff__staff_id__get: {
     parameters: {
       query?: {
         /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
@@ -3223,6 +3963,7 @@ export interface operations {
       };
       header?: never;
       path: {
+        org_id: string;
         staff_id: number;
       };
       cookie?: never;
@@ -3272,6 +4013,38 @@ export interface operations {
         };
         content: {
           "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  search_users_users__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by username (case-insensitive, partial match) */
+        q?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserSearchResult"][];
         };
       };
       /** @description Validation Error */

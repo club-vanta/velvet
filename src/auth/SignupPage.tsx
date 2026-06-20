@@ -61,16 +61,7 @@ export function SignupPage() {
         {success ? (
           <div className="space-y-4">
             <Alert>
-              <AlertDescription>
-                {t("signupSuccess")}{" "}
-                <a
-                  href="mailto:contacto@clubvanta.com"
-                  className="underline underline-offset-2"
-                >
-                  contacto@clubvanta.com
-                </a>
-                .
-              </AlertDescription>
+              <AlertDescription>{t("signupSuccess")}</AlertDescription>
             </Alert>
             <Link
               to="/"

@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
+import { useOrg } from "@/lib/org";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -79,9 +80,11 @@ function SortableHead({
 }
 
 function NewMeetupDialog({
+  orgId,
   open,
   onClose,
 }: {
+  orgId: string;
   open: boolean;
   onClose: () => void;
 }) {
@@ -92,15 +95,19 @@ function NewMeetupDialog({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await api.POST("/meetups/", {
-        body: { name, mazmo_meetup_url: url },
-      });
+      const { data, error } = await api.POST(
+        "/organizations/{org_id}/meetups/",
+        {
+          params: { path: { org_id: orgId } },
+          body: { name, mazmo_meetup_url: url },
+        },
+      );
       if (error)
         throw new Error(extractApiError(error, t("failedCreateMeetup")));
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["meetups"] });
+      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
       toast.success(t("meetupCreated"));
       setName("");
       setUrl("");
@@ -157,18 +164,24 @@ function NewMeetupDialog({
 
 export function MeetupsPage() {
   const { t } = useLanguage();
+  const { activeOrg } = useOrg();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const navigate = useNavigate();
+  const orgId = activeOrg?.org_id ?? "";
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["meetups"],
+    queryKey: ["meetups", orgId],
     queryFn: async () => {
-      const { data, error } = await api.GET("/meetups/");
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/meetups/",
+        { params: { path: { org_id: orgId } } },
+      );
       if (error) throw new Error(t("failedLoadMeetups"));
       return data;
     },
+    enabled: !!orgId,
   });
 
   function handleSort(col: string) {
@@ -192,6 +205,14 @@ export function MeetupsPage() {
         return sortDir === "asc" ? cmp : -cmp;
       })
     : (data?.meetups ?? []);
+
+  if (!activeOrg) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t("noOrganization")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -294,7 +315,11 @@ export function MeetupsPage() {
         </Table>
       </div>
 
-      <NewMeetupDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <NewMeetupDialog
+        orgId={orgId}
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
     </div>
   );
 }

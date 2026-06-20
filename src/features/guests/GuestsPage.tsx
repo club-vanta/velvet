@@ -4,7 +4,6 @@ import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -29,6 +28,7 @@ import { InputWithPrefix } from "@/components/ui/input-with-prefix";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
+import { useOrg } from "@/lib/org";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -87,22 +87,32 @@ function SortableHead({
   );
 }
 
-function BanDialog({ guest, onClose }: { guest: Guest; onClose: () => void }) {
+function BanDialog({
+  guest,
+  orgId,
+  onClose,
+}: {
+  guest: Guest;
+  orgId: string;
+  onClose: () => void;
+}) {
   const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { error } = await api.PATCH("/guests/{mazmo_user_id}/ban", {
-        params: { path: { mazmo_user_id: guest.mazmo_user_id } },
-        body: { reason },
-      });
+      const { error } = await api.PATCH(
+        "/organizations/{org_id}/guests/{mazmo_user_id}/ban",
+        {
+          params: { path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id } },
+          body: { reason },
+        },
+      );
       if (error) throw new Error(extractApiError(error, t("banFailed")));
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
+      void queryClient.invalidateQueries({ queryKey: ["guests-banned", orgId] });
       toast.success(`${guest.displayname} has been vanted`);
       onClose();
     },
@@ -229,7 +239,13 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
-function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
+function AllGuestsTab({
+  isOrgAdmin,
+  orgId,
+}: {
+  isOrgAdmin: boolean;
+  orgId: string;
+}) {
   const { t } = useLanguage();
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
   const [sortCol, setSortCol] = useState<string | null>("displayname");
@@ -266,8 +282,6 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
           cmp = a.username.localeCompare(b.username);
         else if (sortCol === "mazmo_user_id")
           cmp = a.mazmo_user_id - b.mazmo_user_id;
-        else if (sortCol === "status")
-          cmp = Number(a.is_banned) - Number(b.is_banned);
         return sortDir === "asc" ? cmp : -cmp;
       })
     : data?.guests;
@@ -312,7 +326,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="lg:w-[37%]"
+                className="lg:w-[40%]"
               />
               <SortableHead
                 col="username"
@@ -320,7 +334,7 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="lg:w-[27%]"
+                className="lg:w-[30%]"
               />
               <SortableHead
                 col="mazmo_user_id"
@@ -328,17 +342,9 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="lg:w-[12%]"
+                className="lg:w-[15%]"
               />
-              <SortableHead
-                col="status"
-                label={t("status")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[14%]"
-              />
-              {isAdmin && <TableHead />}
+              {isOrgAdmin && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -354,34 +360,29 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   <TableCell>
                     <Skeleton className="h-4 w-16" />
                   </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  {isAdmin && (
+                  {isOrgAdmin && (
                     <TableCell>
                       <Skeleton className="h-4 w-12" />
                     </TableCell>
                   )}
                 </TableRow>
               ))}
-            {/* Server returned an empty list — nothing to do with search, prompt to sync from Mazmo */}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={isAdmin ? 5 : 4}
+                  colSpan={isOrgAdmin ? 4 : 3}
                   className="text-center text-muted-foreground py-8"
                 >
                   {t("noGuestsYet")}
                 </TableCell>
               </TableRow>
             )}
-            {/* The list has guests but every one was filtered out by the active search query */}
             {!isLoading &&
               (data?.guests.length ?? 0) > 0 &&
               (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={isAdmin ? 5 : 4}
+                    colSpan={isOrgAdmin ? 4 : 3}
                     className="text-center text-muted-foreground py-8"
                   >
                     {t("noGuestsMatchSearch")}
@@ -397,24 +398,15 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 <TableCell className="text-muted-foreground text-sm">
                   {g.mazmo_user_id}
                 </TableCell>
-                <TableCell>
-                  {g.is_banned ? (
-                    <Badge variant="destructive">{t("banned")}</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                {isAdmin && (
+                {isOrgAdmin && (
                   <TableCell>
-                    {!g.is_banned && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setBanTarget(g)}
-                      >
-                        {t("ban")}
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBanTarget(g)}
+                    >
+                      {t("ban")}
+                    </Button>
                   </TableCell>
                 )}
               </TableRow>
@@ -423,38 +415,54 @@ function AllGuestsTab({ isAdmin }: { isAdmin: boolean }) {
         </Table>
       </div>
       {banTarget && (
-        <BanDialog guest={banTarget} onClose={() => setBanTarget(null)} />
+        <BanDialog
+          guest={banTarget}
+          orgId={orgId}
+          onClose={() => setBanTarget(null)}
+        />
       )}
     </>
   );
 }
 
-function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
+function BannedGuestsTab({
+  isOrgAdmin,
+  orgId,
+}: {
+  isOrgAdmin: boolean;
+  orgId: string;
+}) {
   const { t } = useLanguage();
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["guests-banned"],
+    queryKey: ["guests-banned", orgId],
     queryFn: async () => {
-      const { data, error } = await api.GET("/guests/banned");
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/guests/banned",
+        { params: { path: { org_id: orgId } } },
+      );
       if (error) throw new Error("Failed to load banned guests");
       return data;
     },
+    enabled: !!orgId,
   });
 
   const unbanMutation = useMutation({
     mutationFn: async (guest: BannedGuest) => {
-      const { error } = await api.PATCH("/guests/{mazmo_user_id}/unban", {
-        params: { path: { mazmo_user_id: guest.mazmo_user_id } },
-      });
+      const { error } = await api.PATCH(
+        "/organizations/{org_id}/guests/{mazmo_user_id}/unban",
+        {
+          params: { path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id } },
+        },
+      );
       if (error) throw new Error(extractApiError(error, t("unbanFailed")));
       return guest;
     },
     onSuccess: (guest) => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
+      void queryClient.invalidateQueries({ queryKey: ["guests-banned", orgId] });
       toast.success(`${guest.displayname} unvanted`);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -481,9 +489,9 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
         else if (sortCol === "username")
           cmp = a.username.localeCompare(b.username);
         else if (sortCol === "banned_at")
-          cmp = (a.banned_at ?? "").localeCompare(b.banned_at ?? "");
+          cmp = a.banned_at.localeCompare(b.banned_at);
         else if (sortCol === "banned_reason")
-          cmp = (a.banned_reason ?? "").localeCompare(b.banned_reason ?? "");
+          cmp = a.banned_reason.localeCompare(b.banned_reason);
         return sortDir === "asc" ? cmp : -cmp;
       })
     : data?.guests;
@@ -554,7 +562,7 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                 onSort={handleSort}
                 className="lg:w-[21%]"
               />
-              {isAdmin && <TableHead />}
+              {isOrgAdmin && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -573,31 +581,29 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   <TableCell>
                     <Skeleton className="h-4 w-48" />
                   </TableCell>
-                  {isAdmin && (
+                  {isOrgAdmin && (
                     <TableCell>
                       <Skeleton className="h-4 w-16" />
                     </TableCell>
                   )}
                 </TableRow>
               ))}
-            {/* Server returned an empty list — nothing to do with search, prompt to sync from Mazmo */}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={isAdmin ? 5 : 4}
+                  colSpan={isOrgAdmin ? 5 : 4}
                   className="text-center text-muted-foreground py-8"
                 >
                   {t("noBannedGuests")}
                 </TableCell>
               </TableRow>
             )}
-            {/* The list has guests but every one was filtered out by the active search query */}
             {!isLoading &&
               (data?.guests.length ?? 0) > 0 &&
               (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={isAdmin ? 5 : 4}
+                    colSpan={isOrgAdmin ? 5 : 4}
                     className="text-center text-muted-foreground py-8"
                   >
                     {t("noGuestsMatchSearch")}
@@ -613,12 +619,12 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
                   @{g.username}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {g.banned_at ? formatDateTime(g.banned_at) : "—"}
+                  {formatDateTime(g.banned_at)}
                 </TableCell>
                 <TableCell className="text-sm whitespace-normal overflow-hidden break-words">
                   {g.banned_reason}
                 </TableCell>
-                {isAdmin && (
+                {isOrgAdmin && (
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -643,8 +649,20 @@ function BannedGuestsTab({ isAdmin }: { isAdmin: boolean }) {
 export function GuestsPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const isAdmin = user?.role.name === "ADMIN";
+  const { activeOrg } = useOrg();
   const [addGuestOpen, setAddGuestOpen] = useState(false);
+
+  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
+  const isOrgAdmin = isSiteAdmin || activeOrg?.role === "ADMIN";
+  const orgId = activeOrg?.org_id ?? "";
+
+  if (!activeOrg) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t("noOrganization")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -660,10 +678,10 @@ export function GuestsPage() {
           <TabsTrigger value="banned">{t("bannedGuests")}</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-4">
-          <AllGuestsTab isAdmin={isAdmin} />
+          <AllGuestsTab isOrgAdmin={isOrgAdmin} orgId={orgId} />
         </TabsContent>
         <TabsContent value="banned" className="mt-4">
-          <BannedGuestsTab isAdmin={isAdmin} />
+          <BannedGuestsTab isOrgAdmin={isOrgAdmin} orgId={orgId} />
         </TabsContent>
       </Tabs>
       {addGuestOpen && (

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LanguageProvider } from "./lib/i18n";
+import { OrgProvider, useOrg } from "./lib/org";
 import { LoginPage } from "./auth/LoginPage";
 import { SignupPage } from "./auth/SignupPage";
 import { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
@@ -13,10 +14,15 @@ import { MeetupDetailPage } from "./features/meetups/MeetupDetailPage";
 import { GuestsPage } from "./features/guests/GuestsPage";
 import { StaffPage } from "./features/staff/StaffPage";
 import { EventsPage } from "./features/events/EventsPage";
+import { OrganizationsPage } from "./features/organizations/OrganizationsPage";
+import { OrganizationDetailPage } from "./features/organizations/OrganizationDetailPage";
 
 function AuthenticatedRoutes() {
   const { user } = useAuth();
-  const isAdmin = user?.role.name === "ADMIN";
+  const { activeOrg } = useOrg();
+  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
+  const isOrgAdmin = activeOrg?.role === "ADMIN";
+  const canSeeOrgs = isSiteAdmin || isOrgAdmin;
 
   return (
     <Shell>
@@ -25,8 +31,17 @@ function AuthenticatedRoutes() {
         <Route path="/meetups" element={<MeetupsPage />} />
         <Route path="/meetups/:id" element={<MeetupDetailPage />} />
         <Route path="/guests" element={<GuestsPage />} />
-        {isAdmin && <Route path="/staff" element={<StaffPage />} />}
-        {isAdmin && <Route path="/events" element={<EventsPage />} />}
+        {isSiteAdmin && <Route path="/staff" element={<StaffPage />} />}
+        {canSeeOrgs && <Route path="/events" element={<EventsPage />} />}
+        {canSeeOrgs && (
+          <Route path="/organizations" element={<OrganizationsPage />} />
+        )}
+        {canSeeOrgs && (
+          <Route
+            path="/organizations/:orgId"
+            element={<OrganizationDetailPage />}
+          />
+        )}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Shell>
@@ -57,8 +72,10 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <AppRoutes />
-        <Toaster richColors theme="dark" />
+        <OrgProvider>
+          <AppRoutes />
+          <Toaster richColors theme="dark" />
+        </OrgProvider>
       </AuthProvider>
     </LanguageProvider>
   );
