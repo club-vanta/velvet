@@ -217,7 +217,10 @@ function AddMemberDialog({
           {selected && (
             <div className="space-y-1 pt-1 border-t border-border">
               <label className="text-sm font-medium">{t("role")}</label>
-              <Select value={role} onValueChange={setRole}>
+              <Select
+                value={role}
+                onValueChange={(v) => v !== null && setRole(v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("selectRole")} />
                 </SelectTrigger>
@@ -369,6 +372,7 @@ function MembersSection({
                     <Select
                       value={m.role}
                       onValueChange={(newRole) =>
+                        newRole !== null &&
                         updateRoleMutation.mutate({ member: m, newRole })
                       }
                       disabled={isSelf}

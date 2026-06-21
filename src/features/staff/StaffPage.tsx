@@ -226,7 +226,7 @@ function StaffTable({
       role,
     }: {
       id: number;
-      role: "STAFF" | "ADMIN";
+      role: "USER" | "SITE_ADMIN";
     }) => {
       const { error } = await api.PATCH("/staff/{user_id}/role", {
         params: { path: { user_id: id } },
@@ -305,7 +305,7 @@ function StaffTable({
                         onValueChange={(val) =>
                           roleMutation.mutate({
                             id: u.id,
-                            role: val as "STAFF" | "ADMIN",
+                            role: val as "USER" | "SITE_ADMIN",
                           })
                         }
                         disabled={roleMutation.isPending}
@@ -314,8 +314,8 @@ function StaffTable({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="STAFF">STAFF</SelectItem>
-                          <SelectItem value="ADMIN">ADMIN</SelectItem>
+                          <SelectItem value="USER">USER</SelectItem>
+                          <SelectItem value="SITE_ADMIN">SITE_ADMIN</SelectItem>
                         </SelectContent>
                       </Select>
                     )}

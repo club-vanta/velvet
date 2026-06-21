@@ -33,19 +33,21 @@ vi.mock("sonner", () => ({
 const ADMIN_USER: User = {
   id: 1,
   username: "adminuser",
-  role: { id: 1, name: "ADMIN" },
+  role: { id: 1, name: "SITE_ADMIN" },
   is_approved: true,
   is_disabled: false,
   created_at: "2024-01-01T00:00:00Z",
+  org_memberships: [],
 };
 
 const STAFF_USER: User = {
   id: 2,
   username: "staffuser",
-  role: { id: 2, name: "STAFF" },
+  role: { id: 2, name: "USER" },
   is_approved: true,
   is_disabled: false,
   created_at: "2024-01-01T00:00:00Z",
+  org_memberships: [],
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
