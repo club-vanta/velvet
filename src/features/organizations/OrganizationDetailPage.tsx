@@ -333,7 +333,7 @@ function MembersSection({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("userId")}</TableHead>
+              <TableHead>{t("username")}</TableHead>
               <TableHead>{t("role")}</TableHead>
               <TableHead />
             </TableRow>
@@ -367,7 +367,7 @@ function MembersSection({
               const isSelf = m.user_id === currentUserId;
               return (
                 <TableRow key={m.user_id}>
-                  <TableCell className="font-medium">{m.user_id}</TableCell>
+                  <TableCell className="font-medium">{m.username}</TableCell>
                   <TableCell>
                     <Select
                       value={m.role}

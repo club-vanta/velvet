@@ -1257,6 +1257,8 @@ export interface components {
       org_id: string;
       /** Role */
       role: string;
+      /** Username */
+      username: string;
     };
     /**
      * OrgMembershipPublic
