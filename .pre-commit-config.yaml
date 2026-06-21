@@ -12,26 +12,34 @@ repos:
         entry: npx tsc --noEmit
         language: system
         pass_filenames: false
-        types_or: [ts, tsx]
+        always_run: true
 
       - id: prettier
         name: Prettier format check
         entry: npx prettier --check .
         language: system
         pass_filenames: false
-        types_or: [ts, tsx, json, css, markdown]
+        always_run: true
 
       - id: eslint
         name: ESLint
         entry: npx eslint .
         language: system
         pass_filenames: false
-        types_or: [ts, tsx]
+        always_run: true
+
+      - id: build
+        name: Build
+        entry: npm run build
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
 
       - id: vitest
         name: Vitest unit tests
         entry: npx vitest run
         language: system
         pass_filenames: false
-        types_or: [ts, tsx]
+        always_run: true
         stages: [pre-push]

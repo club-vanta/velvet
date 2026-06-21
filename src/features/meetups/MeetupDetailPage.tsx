@@ -354,7 +354,9 @@ function WalkinDialog({
                 className="flex items-center justify-between gap-3 rounded-md px-3 py-2 hover:bg-secondary/50"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{g.displayname}</p>
+                  <p className="text-sm font-medium truncate">
+                    {g.displayname}
+                  </p>
                   <p className="text-xs text-muted-foreground">@{g.username}</p>
                 </div>
                 <Button

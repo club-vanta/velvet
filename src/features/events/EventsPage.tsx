@@ -82,19 +82,16 @@ export function EventsPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["events", orgId, eventType, offset],
     queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/events/",
-        {
-          params: {
-            path: { org_id: orgId },
-            query: {
-              limit: PAGE_SIZE,
-              offset,
-              ...(eventType !== "all" && { type: eventType as EventType }),
-            },
+      const { data, error } = await api.GET("/organizations/{org_id}/events/", {
+        params: {
+          path: { org_id: orgId },
+          query: {
+            limit: PAGE_SIZE,
+            offset,
+            ...(eventType !== "all" && { type: eventType as EventType }),
           },
         },
-      );
+      });
       if (error) throw new Error("Failed to load events");
       return data;
     },

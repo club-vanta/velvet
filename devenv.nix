@@ -3,6 +3,7 @@
 {
   packages = with pkgs; [
     nodejs_24
+    pre-commit
   ];
 
   languages.opentofu = {

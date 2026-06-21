@@ -102,7 +102,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
   const isOrgAdmin = activeOrg?.role === "ADMIN";
   const canSeeAdminNav = isSiteAdmin || isOrgAdmin;
-  const canSeeOrgs = canSeeAdminNav;
 
   function toggleSidebar() {
     setSidebarOpen((prev) => {
@@ -318,14 +317,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
               >
                 <div className="relative">
                   <item.icon className="h-5 w-5" />
-                  {item.href === "/staff" && isSiteAdmin && pendingCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px]"
-                    >
-                      {pendingCount}
-                    </Badge>
-                  )}
+                  {item.href === "/staff" &&
+                    isSiteAdmin &&
+                    pendingCount > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="absolute -top-1.5 -right-2 h-4 min-w-4 px-1 text-[10px]"
+                      >
+                        {pendingCount}
+                      </Badge>
+                    )}
                 </div>
                 <span>{item.shortLabel ?? item.label}</span>
               </Link>

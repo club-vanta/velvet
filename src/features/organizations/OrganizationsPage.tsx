@@ -114,7 +114,9 @@ export function OrganizationsPage() {
     queryFn: async () => {
       const results = await Promise.all(
         memberOrgIds.map((id) =>
-          api.GET("/organizations/{org_id}", { params: { path: { org_id: id } } }),
+          api.GET("/organizations/{org_id}", {
+            params: { path: { org_id: id } },
+          }),
         ),
       );
       return results.flatMap((r) => (r.data ? [r.data] : []));
@@ -122,7 +124,9 @@ export function OrganizationsPage() {
     enabled: !isSiteAdmin && memberOrgIds.length > 0,
   });
 
-  const data = isSiteAdmin ? allOrgsQ.data : { organizations: memberOrgsQ.data ?? [] };
+  const data = isSiteAdmin
+    ? allOrgsQ.data
+    : { organizations: memberOrgsQ.data ?? [] };
   const isLoading = isSiteAdmin ? allOrgsQ.isLoading : memberOrgsQ.isLoading;
   const isError = isSiteAdmin ? allOrgsQ.isError : memberOrgsQ.isError;
   const refetch = isSiteAdmin ? allOrgsQ.refetch : memberOrgsQ.refetch;

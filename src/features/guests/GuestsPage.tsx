@@ -105,14 +105,18 @@ function BanDialog({
       const { error } = await api.PATCH(
         "/organizations/{org_id}/guests/{mazmo_user_id}/ban",
         {
-          params: { path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id } },
+          params: {
+            path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id },
+          },
           body: { reason },
         },
       );
       if (error) throw new Error(extractApiError(error, t("banFailed")));
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests-banned", orgId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["guests-banned", orgId],
+      });
       toast.success(`${guest.displayname} has been vanted`);
       onClose();
     },
@@ -455,14 +459,18 @@ function BannedGuestsTab({
       const { error } = await api.PATCH(
         "/organizations/{org_id}/guests/{mazmo_user_id}/unban",
         {
-          params: { path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id } },
+          params: {
+            path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id },
+          },
         },
       );
       if (error) throw new Error(extractApiError(error, t("unbanFailed")));
       return guest;
     },
     onSuccess: (guest) => {
-      void queryClient.invalidateQueries({ queryKey: ["guests-banned", orgId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["guests-banned", orgId],
+      });
       toast.success(`${guest.displayname} unvanted`);
     },
     onError: (err: Error) => toast.error(err.message),

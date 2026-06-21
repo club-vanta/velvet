@@ -52,8 +52,8 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
         role: m.role,
       }));
 
-  const [activeOrgId, setActiveOrgId] = useState<string | null>(
-    () => localStorage.getItem(ORG_KEY),
+  const [activeOrgId, setActiveOrgId] = useState<string | null>(() =>
+    localStorage.getItem(ORG_KEY),
   );
 
   // Resolve to stored org if valid, otherwise fall back to first available.

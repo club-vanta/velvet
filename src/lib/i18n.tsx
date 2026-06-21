@@ -171,8 +171,7 @@ export const translations = {
     createdAt: "Created",
     navOrganizations: "Organizations",
     organizations: "Organizations",
-    noOrganization:
-      "No organization assigned. Contact an administrator.",
+    noOrganization: "No organization assigned. Contact an administrator.",
     orgName: "Name",
     orgSlug: "Slug",
     orgCreated: "Organization created",
@@ -381,8 +380,7 @@ export const translations = {
     createdAt: "Creado",
     navOrganizations: "Organizaciones",
     organizations: "Organizaciones",
-    noOrganization:
-      "Sin organización asignada. Contactá a un administrador.",
+    noOrganization: "Sin organización asignada. Contactá a un administrador.",
     orgName: "Nombre",
     orgSlug: "Slug",
     orgCreated: "Organización creada",

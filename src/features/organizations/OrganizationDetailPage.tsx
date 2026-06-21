@@ -129,7 +129,10 @@ function AddMemberDialog({
 }) {
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<{ id: number; username: string } | null>(null);
+  const [selected, setSelected] = useState<{
+    id: number;
+    username: string;
+  } | null>(null);
   const [role, setRole] = useState("STAFF");
   const queryClient = useQueryClient();
 
@@ -387,7 +390,9 @@ function MembersSection({
                       onClick={() => removeMutation.mutate(m)}
                       disabled={removeMutation.isPending || isSelf}
                     >
-                      {removeMutation.isPending ? t("removing") : t("removeMember")}
+                      {removeMutation.isPending
+                        ? t("removing")
+                        : t("removeMember")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -427,10 +432,9 @@ export function OrganizationDetailPage() {
   const membersQ = useQuery({
     queryKey: ["org-members", orgId],
     queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/members",
-        { params: { path: { org_id: orgId! } } },
-      );
+      const { data, error } = await api.GET("/organizations/{org_id}/members", {
+        params: { path: { org_id: orgId! } },
+      });
       if (error) throw new Error("Failed to load members");
       return data;
     },
