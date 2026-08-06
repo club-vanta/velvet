@@ -589,6 +589,7 @@ export function MeetupDetailPage() {
       return data;
     },
     enabled: !!orgId && !!id,
+    refetchInterval: 30_000,
   });
 
   const guestsQ = useQuery({
@@ -655,6 +656,7 @@ export function MeetupDetailPage() {
 
   const meetup = meetupQ.data;
   const requiresPayment = meetup?.requires_payment ?? false;
+  const paymentStateKnown = meetupQ.isSuccess;
   const rawGuests = guestsQ.data?.guests ?? [];
   const arrivedCount = rawGuests.filter((g) => g.rsvp.has_arrived).length;
   const totalCount = rawGuests.length;
@@ -704,7 +706,12 @@ export function MeetupDetailPage() {
         </div>
       ) : meetupQ.isError ? (
         <Alert variant="destructive">
-          <AlertDescription>{t("failedLoadMeetup")}</AlertDescription>
+          <AlertDescription className="flex items-center justify-between">
+            {t("failedLoadMeetup")}
+            <Button variant="ghost" size="sm" onClick={() => meetupQ.refetch()}>
+              {t("retry")}
+            </Button>
+          </AlertDescription>
         </Alert>
       ) : (
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
@@ -885,151 +892,159 @@ export function MeetupDetailPage() {
                 </TableRow>
               )}
 
-            {(guests ?? []).map((mg) => (
-              <TableRow
-                key={mg.guest.mazmo_user_id}
-                className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}
-              >
-                <TableCell className="text-muted-foreground text-sm">
-                  {mg.rsvp.arrival_order != null ? (
-                    <Badge variant="secondary">
-                      {ordinal(mg.rsvp.arrival_order)}
-                    </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={
-                        mg.guest.is_banned
-                          ? "text-destructive font-medium"
-                          : "font-medium"
-                      }
-                    >
-                      {mg.guest.displayname}
-                    </span>
-                    <span className="text-muted-foreground text-sm">
-                      @{mg.guest.username}
-                    </span>
-                    {mg.rsvp.is_walkin && (
-                      <Badge variant="outline" className="text-xs">
-                        {t("walkinLabel")}
+            {(guests ?? []).map((mg) => {
+              const isBlockedByPayment =
+                !paymentStateKnown || (requiresPayment && !mg.rsvp.has_paid);
+              return (
+                <TableRow
+                  key={mg.guest.mazmo_user_id}
+                  className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}
+                >
+                  <TableCell className="text-muted-foreground text-sm">
+                    {mg.rsvp.arrival_order != null ? (
+                      <Badge variant="secondary">
+                        {ordinal(mg.rsvp.arrival_order)}
                       </Badge>
+                    ) : (
+                      "—"
                     )}
-                    {mg.guest.is_banned && (
-                      <Badge variant="destructive">{t("banned")}</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDateTime(mg.rsvp.rsvp_time)}
-                </TableCell>
-                <TableCell>
-                  {mg.rsvp.has_arrived ? (
-                    <div className="space-y-0.5">
-                      <Badge>{t("checkedIn")}</Badge>
-                      <p className="text-xs text-muted-foreground">
-                        {mg.rsvp.arrival_time
-                          ? formatDateTime(mg.rsvp.arrival_time)
-                          : ""}
-                      </p>
-                    </div>
-                  ) : (
-                    <Badge variant="secondary">{t("pending")}</Badge>
-                  )}
-                </TableCell>
-                {requiresPayment && (
+                  </TableCell>
                   <TableCell>
-                    {mg.rsvp.has_paid ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={
+                          mg.guest.is_banned
+                            ? "text-destructive font-medium"
+                            : "font-medium"
+                        }
+                      >
+                        {mg.guest.displayname}
+                      </span>
+                      <span className="text-muted-foreground text-sm">
+                        @{mg.guest.username}
+                      </span>
+                      {mg.rsvp.is_walkin && (
+                        <Badge variant="outline" className="text-xs">
+                          {t("walkinLabel")}
+                        </Badge>
+                      )}
+                      {mg.guest.is_banned && (
+                        <Badge variant="destructive">{t("banned")}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDateTime(mg.rsvp.rsvp_time)}
+                  </TableCell>
+                  <TableCell>
+                    {mg.rsvp.has_arrived ? (
                       <div className="space-y-0.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge>{t("paid")}</Badge>
-                          {isOrgAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setUndoPaymentTarget(mg)}
-                            >
-                              {t("undoPayment")}
-                            </Button>
-                          )}
-                        </div>
+                        <Badge>{t("checkedIn")}</Badge>
                         <p className="text-xs text-muted-foreground">
-                          {mg.rsvp.paid_at
-                            ? formatDateTime(mg.rsvp.paid_at)
+                          {mg.rsvp.arrival_time
+                            ? formatDateTime(mg.rsvp.arrival_time)
                             : ""}
                         </p>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary">{t("paymentPending")}</Badge>
-                        {isOrgAdmin && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMarkPaidTarget(mg)}
-                          >
-                            {t("markPaid")}
-                          </Button>
-                        )}
-                      </div>
+                      <Badge variant="secondary">{t("pending")}</Badge>
                     )}
                   </TableCell>
-                )}
-                <TableCell>
-                  <div className="flex gap-2 justify-end">
-                    {mg.rsvp.has_arrived ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setUndoTarget(mg)}
-                      >
-                        {t("undo")}
-                      </Button>
-                    ) : requiresPayment && !mg.rsvp.has_paid ? (
-                      <span
-                        title={t("checkInBlockedUnpaid")}
-                        className="inline-flex"
-                      >
+                  {requiresPayment && (
+                    <TableCell>
+                      {mg.rsvp.has_paid ? (
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge>{t("paid")}</Badge>
+                            {isOrgAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setUndoPaymentTarget(mg)}
+                              >
+                                {t("undoPayment")}
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {mg.rsvp.paid_at
+                              ? formatDateTime(mg.rsvp.paid_at)
+                              : ""}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary">
+                            {t("paymentPending")}
+                          </Badge>
+                          {isOrgAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setMarkPaidTarget(mg)}
+                            >
+                              {t("markPaid")}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <div className="flex gap-2 justify-end">
+                      {mg.rsvp.has_arrived ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUndoTarget(mg)}
+                        >
+                          {t("undo")}
+                        </Button>
+                      ) : isBlockedByPayment ? (
+                        <span
+                          title={t("checkInBlockedUnpaid")}
+                          className="inline-flex"
+                        >
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled
+                            aria-describedby={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                          >
+                            {t("checkIn")}
+                          </Button>
+                          <span
+                            id={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                            className="sr-only"
+                          >
+                            {t("checkInBlockedUnpaid")}
+                          </span>
+                        </span>
+                      ) : (
                         <Button
                           size="sm"
-                          variant="secondary"
-                          disabled
-                          aria-describedby={`checkin-blocked-${mg.guest.mazmo_user_id}`}
-                        >
-                          {t("checkIn")}
-                        </Button>
-                        <span
-                          id={`checkin-blocked-${mg.guest.mazmo_user_id}`}
-                          className="sr-only"
-                        >
-                          {t("checkInBlockedUnpaid")}
-                        </span>
-                      </span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant={mg.guest.is_banned ? "destructive" : "default"}
-                        onClick={() => {
-                          if (mg.guest.is_banned) {
-                            setBannedTarget(mg);
-                          } else {
-                            checkInMutation.mutate(mg);
+                          variant={
+                            mg.guest.is_banned ? "destructive" : "default"
                           }
-                        }}
-                        disabled={checkInMutation.isPending}
-                      >
-                        {checkInMutation.isPending
-                          ? t("checkingIn")
-                          : t("checkIn")}
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                          onClick={() => {
+                            if (mg.guest.is_banned) {
+                              setBannedTarget(mg);
+                            } else {
+                              checkInMutation.mutate(mg);
+                            }
+                          }}
+                          disabled={checkInMutation.isPending}
+                        >
+                          {checkInMutation.isPending
+                            ? t("checkingIn")
+                            : t("checkIn")}
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

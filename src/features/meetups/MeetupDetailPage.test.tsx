@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
@@ -148,5 +149,68 @@ describe("MeetupDetailPage payment blocking", () => {
     expect(await screen.findByText("Some Guest")).toBeInTheDocument();
     expect(screen.queryByText("Payment pending")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Check in" })).toBeEnabled();
+  });
+
+  it("does not open the banned-override dialog for a guest who is both banned and unpaid", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 5,
+        displayname: "Banned Unpaid Guest",
+        has_paid: false,
+        is_banned: true,
+      }),
+    ]);
+
+    const button = await screen.findByRole("button", { name: "Check in" });
+    expect(button).toBeDisabled();
+
+    // Clicking a disabled button fires no handler, so the override dialog
+    // (which would offer "Check in anyway") must never appear.
+    await userEvent.click(button);
+    expect(
+      screen.queryByRole("heading", { name: "Check in vanted guest?" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Check in anyway" }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage payment requirement toggle", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("hides the toggle from non-admin staff", async () => {
+    mockRole = "STAFF";
+    renderPage(MEETUP, []);
+
+    await screen.findByText("Alter Test");
+    expect(
+      screen.queryByRole("button", { name: "Disable payment" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Enable payment" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows "Disable payment" for an admin when the meetup already requires payment', async () => {
+    renderPage({ ...MEETUP, requires_payment: true }, []);
+
+    expect(
+      await screen.findByRole("button", { name: "Disable payment" }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows "Enable payment" for an admin when the meetup does not require payment', async () => {
+    // Per the design spec (section 3), the toggle renders for admins
+    // regardless of requires_payment — only its label changes.
+    renderPage({ ...MEETUP, requires_payment: false }, []);
+
+    expect(
+      await screen.findByRole("button", { name: "Enable payment" }),
+    ).toBeInTheDocument();
   });
 });
