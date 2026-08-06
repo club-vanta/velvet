@@ -32,7 +32,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { ReasonDialog } from "@/components/ReasonDialog";
+import { useAuth } from "@/auth/AuthContext";
 import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
@@ -106,11 +107,10 @@ function UndoDialog({
   onClose: () => void;
 }) {
   const { t } = useLanguage();
-  const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (reason: string) => {
       const { error } = await api.PATCH(
         "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin",
         {
@@ -138,46 +138,139 @@ function UndoDialog({
   });
 
   return (
+    <ReasonDialog
+      title={`${t("undoDialogTitle")} ${guest.guest.displayname}?`}
+      placeholder={t("undoReasonPlaceholder")}
+      confirmLabel={t("undoCheckIn")}
+      pendingLabel={t("undoing")}
+      isPending={mutation.isPending}
+      onConfirm={(reason) => mutation.mutate(reason)}
+      onClose={onClose}
+    />
+  );
+}
+
+function MarkPaidDialog({
+  guest,
+  orgId,
+  meetupId,
+  onClose,
+}: {
+  guest: MeetupGuest;
+  orgId: string;
+  meetupId: string;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.PATCH(
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment",
+        {
+          params: {
+            path: {
+              org_id: orgId,
+              meetup_id: meetupId,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
+          },
+        },
+      );
+      if (error)
+        throw new Error(extractApiError(error, "Failed to mark payment"));
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", orgId, meetupId],
+      });
+      toast.success(`${guest.guest.displayname} — ${t("paymentRecorded")}`);
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {t("undoDialogTitle")} {guest.guest.displayname}?
+            {t("markPaidDialogTitle")} {guest.guest.displayname}?
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-2 py-2">
-          <label htmlFor="undo-reason" className="text-sm font-medium">
-            {t("reasonRequired")}
-          </label>
-          <Textarea
-            id="undo-reason"
-            placeholder={t("undoReasonPlaceholder")}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">
-            {reason.trim().length}/500
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground py-2">
+          {t("markPaidDialogBody")}
+        </p>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             {t("cancel")}
           </Button>
           <Button
-            variant="destructive"
             onClick={() => mutation.mutate()}
-            disabled={
-              reason.trim().length < 5 ||
-              reason.trim().length > 500 ||
-              mutation.isPending
-            }
+            disabled={mutation.isPending}
           >
-            {mutation.isPending ? t("undoing") : t("undoCheckIn")}
+            {mutation.isPending ? t("markingPaid") : t("markPaid")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function UndoPaymentDialog({
+  guest,
+  orgId,
+  meetupId,
+  onClose,
+}: {
+  guest: MeetupGuest;
+  orgId: string;
+  meetupId: string;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const { error } = await api.PATCH(
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment/undo",
+        {
+          params: {
+            path: {
+              org_id: orgId,
+              meetup_id: meetupId,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
+          },
+          body: { reason },
+        },
+      );
+      if (error)
+        throw new Error(extractApiError(error, "Failed to undo payment"));
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", orgId, meetupId],
+      });
+      toast.success(t("paymentUndone"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <ReasonDialog
+      title={`${t("undoPaymentDialogTitle")} ${guest.guest.displayname}?`}
+      placeholder={t("undoPaymentPlaceholder")}
+      confirmLabel={t("undoPayment")}
+      pendingLabel={t("undoing")}
+      isPending={mutation.isPending}
+      onConfirm={(reason) => mutation.mutate(reason)}
+      onClose={onClose}
+    />
   );
 }
 
@@ -246,6 +339,76 @@ function CheckInBannedDialog({
             disabled={mutation.isPending}
           >
             {mutation.isPending ? t("checkingIn") : t("checkInAnyway")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PaymentRequirementDialog({
+  orgId,
+  meetupId,
+  enabling,
+  onClose,
+}: {
+  orgId: string;
+  meetupId: string;
+  enabling: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const path = enabling
+        ? ("/organizations/{org_id}/meetups/{meetup_id}/enable-payment" as const)
+        : ("/organizations/{org_id}/meetups/{meetup_id}/disable-payment" as const);
+      const { data, error } = await api.PATCH(path, {
+        params: { path: { org_id: orgId, meetup_id: meetupId } },
+      });
+      if (error)
+        throw new Error(
+          extractApiError(error, "Failed to update payment requirement"),
+        );
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup", orgId, meetupId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
+      toast.success(t("paymentRequirementUpdated"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {enabling
+              ? t("enablePaymentDialogTitle")
+              : t("disablePaymentDialogTitle")}
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground py-2">
+          {enabling
+            ? t("enablePaymentDialogBody")
+            : t("disablePaymentDialogBody")}
+        </p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            {enabling ? t("enablePayment") : t("disablePayment")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -386,10 +549,19 @@ export function MeetupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { activeOrg } = useOrg();
   const orgId = activeOrg?.org_id ?? "";
+  const { user } = useAuth();
+  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
+  const isOrgAdmin = isSiteAdmin || activeOrg?.role === "ADMIN";
   const queryClient = useQueryClient();
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
   const [walkinOpen, setWalkinOpen] = useState(false);
+  const [markPaidTarget, setMarkPaidTarget] = useState<MeetupGuest | null>(
+    null,
+  );
+  const [undoPaymentTarget, setUndoPaymentTarget] =
+    useState<MeetupGuest | null>(null);
+  const [paymentToggleOpen, setPaymentToggleOpen] = useState(false);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -417,6 +589,7 @@ export function MeetupDetailPage() {
       return data;
     },
     enabled: !!orgId && !!id,
+    refetchInterval: 30_000,
   });
 
   const guestsQ = useQuery({
@@ -482,6 +655,8 @@ export function MeetupDetailPage() {
   });
 
   const meetup = meetupQ.data;
+  const requiresPayment = meetup?.requires_payment ?? false;
+  const paymentStateKnown = meetupQ.isSuccess;
   const rawGuests = guestsQ.data?.guests ?? [];
   const arrivedCount = rawGuests.filter((g) => g.rsvp.has_arrived).length;
   const totalCount = rawGuests.length;
@@ -531,7 +706,12 @@ export function MeetupDetailPage() {
         </div>
       ) : meetupQ.isError ? (
         <Alert variant="destructive">
-          <AlertDescription>{t("failedLoadMeetup")}</AlertDescription>
+          <AlertDescription className="flex items-center justify-between">
+            {t("failedLoadMeetup")}
+            <Button variant="ghost" size="sm" onClick={() => meetupQ.refetch()}>
+              {t("retry")}
+            </Button>
+          </AlertDescription>
         </Alert>
       ) : (
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
@@ -551,6 +731,15 @@ export function MeetupDetailPage() {
             </a>
           </div>
           <div className="flex gap-2 shrink-0">
+            {isOrgAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setPaymentToggleOpen(true)}
+                disabled={meetup?.is_finalized}
+              >
+                {requiresPayment ? t("disablePayment") : t("enablePayment")}
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setWalkinOpen(true)}
@@ -628,7 +817,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="xl:w-[44%]"
+                className={requiresPayment ? "xl:w-[32%]" : "xl:w-[44%]"}
               />
               <SortableHead
                 col="rsvp"
@@ -636,7 +825,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="xl:w-[20%]"
+                className={requiresPayment ? "xl:w-[15%]" : "xl:w-[20%]"}
               />
               <SortableHead
                 col="status"
@@ -644,8 +833,11 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="xl:w-[18%]"
+                className={requiresPayment ? "xl:w-[13%]" : "xl:w-[18%]"}
               />
+              {requiresPayment && (
+                <TableHead className="xl:w-[22%]">{t("payment")}</TableHead>
+              )}
               <TableHead className="w-32" />
             </TableRow>
           </TableHeader>
@@ -668,13 +860,18 @@ export function MeetupDetailPage() {
                   <TableCell>
                     <Skeleton className="h-4 w-20" />
                   </TableCell>
+                  {requiresPayment && (
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
 
             {!guestsQ.isLoading && rawGuests.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={requiresPayment ? 6 : 5}
                   className="text-center text-muted-foreground py-8"
                 >
                   {t("noGuestsSyncMazmo")}
@@ -687,7 +884,7 @@ export function MeetupDetailPage() {
               (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={requiresPayment ? 6 : 5}
                     className="text-center text-muted-foreground py-8"
                   >
                     {t("noGuestsMatchSearch")}
@@ -695,93 +892,159 @@ export function MeetupDetailPage() {
                 </TableRow>
               )}
 
-            {(guests ?? []).map((mg) => (
-              <TableRow
-                key={mg.guest.mazmo_user_id}
-                className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}
-              >
-                <TableCell className="text-muted-foreground text-sm">
-                  {mg.rsvp.arrival_order != null ? (
-                    <Badge variant="secondary">
-                      {ordinal(mg.rsvp.arrival_order)}
-                    </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={
-                        mg.guest.is_banned
-                          ? "text-destructive font-medium"
-                          : "font-medium"
-                      }
-                    >
-                      {mg.guest.displayname}
-                    </span>
-                    <span className="text-muted-foreground text-sm">
-                      @{mg.guest.username}
-                    </span>
-                    {mg.rsvp.is_walkin && (
-                      <Badge variant="outline" className="text-xs">
-                        {t("walkinLabel")}
+            {(guests ?? []).map((mg) => {
+              const isBlockedByPayment =
+                !paymentStateKnown || (requiresPayment && !mg.rsvp.has_paid);
+              return (
+                <TableRow
+                  key={mg.guest.mazmo_user_id}
+                  className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}
+                >
+                  <TableCell className="text-muted-foreground text-sm">
+                    {mg.rsvp.arrival_order != null ? (
+                      <Badge variant="secondary">
+                        {ordinal(mg.rsvp.arrival_order)}
                       </Badge>
-                    )}
-                    {mg.guest.is_banned && (
-                      <Badge variant="destructive">{t("banned")}</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDateTime(mg.rsvp.rsvp_time)}
-                </TableCell>
-                <TableCell>
-                  {mg.rsvp.has_arrived ? (
-                    <div className="space-y-0.5">
-                      <Badge>{t("checkedIn")}</Badge>
-                      <p className="text-xs text-muted-foreground">
-                        {mg.rsvp.arrival_time
-                          ? formatDateTime(mg.rsvp.arrival_time)
-                          : ""}
-                      </p>
-                    </div>
-                  ) : (
-                    <Badge variant="secondary">{t("pending")}</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2 justify-end">
-                    {mg.rsvp.has_arrived ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setUndoTarget(mg)}
-                      >
-                        {t("undo")}
-                      </Button>
                     ) : (
-                      <Button
-                        size="sm"
-                        variant={mg.guest.is_banned ? "destructive" : "default"}
-                        onClick={() => {
-                          if (mg.guest.is_banned) {
-                            setBannedTarget(mg);
-                          } else {
-                            checkInMutation.mutate(mg);
-                          }
-                        }}
-                        disabled={checkInMutation.isPending}
-                      >
-                        {checkInMutation.isPending
-                          ? t("checkingIn")
-                          : t("checkIn")}
-                      </Button>
+                      "—"
                     )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={
+                          mg.guest.is_banned
+                            ? "text-destructive font-medium"
+                            : "font-medium"
+                        }
+                      >
+                        {mg.guest.displayname}
+                      </span>
+                      <span className="text-muted-foreground text-sm">
+                        @{mg.guest.username}
+                      </span>
+                      {mg.rsvp.is_walkin && (
+                        <Badge variant="outline" className="text-xs">
+                          {t("walkinLabel")}
+                        </Badge>
+                      )}
+                      {mg.guest.is_banned && (
+                        <Badge variant="destructive">{t("banned")}</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDateTime(mg.rsvp.rsvp_time)}
+                  </TableCell>
+                  <TableCell>
+                    {mg.rsvp.has_arrived ? (
+                      <div className="space-y-0.5">
+                        <Badge>{t("checkedIn")}</Badge>
+                        <p className="text-xs text-muted-foreground">
+                          {mg.rsvp.arrival_time
+                            ? formatDateTime(mg.rsvp.arrival_time)
+                            : ""}
+                        </p>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">{t("pending")}</Badge>
+                    )}
+                  </TableCell>
+                  {requiresPayment && (
+                    <TableCell>
+                      {mg.rsvp.has_paid ? (
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge>{t("paid")}</Badge>
+                            {isOrgAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setUndoPaymentTarget(mg)}
+                              >
+                                {t("undoPayment")}
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {mg.rsvp.paid_at
+                              ? formatDateTime(mg.rsvp.paid_at)
+                              : ""}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary">
+                            {t("paymentPending")}
+                          </Badge>
+                          {isOrgAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setMarkPaidTarget(mg)}
+                            >
+                              {t("markPaid")}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                  )}
+                  <TableCell>
+                    <div className="flex gap-2 justify-end">
+                      {mg.rsvp.has_arrived ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUndoTarget(mg)}
+                        >
+                          {t("undo")}
+                        </Button>
+                      ) : isBlockedByPayment ? (
+                        <span
+                          title={t("checkInBlockedUnpaid")}
+                          className="inline-flex"
+                        >
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled
+                            aria-describedby={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                          >
+                            {t("checkIn")}
+                          </Button>
+                          <span
+                            id={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                            className="sr-only"
+                          >
+                            {t("checkInBlockedUnpaid")}
+                          </span>
+                        </span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant={
+                            mg.guest.is_banned ? "destructive" : "default"
+                          }
+                          onClick={() => {
+                            if (mg.guest.is_banned) {
+                              setBannedTarget(mg);
+                            } else {
+                              checkInMutation.mutate(mg);
+                            }
+                          }}
+                          disabled={checkInMutation.isPending}
+                        >
+                          {checkInMutation.isPending
+                            ? t("checkingIn")
+                            : t("checkIn")}
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -808,6 +1071,30 @@ export function MeetupDetailPage() {
           meetupId={id!}
           alreadyRsvped={rsvpedIds}
           onClose={() => setWalkinOpen(false)}
+        />
+      )}
+      {markPaidTarget && (
+        <MarkPaidDialog
+          guest={markPaidTarget}
+          orgId={orgId}
+          meetupId={id!}
+          onClose={() => setMarkPaidTarget(null)}
+        />
+      )}
+      {undoPaymentTarget && (
+        <UndoPaymentDialog
+          guest={undoPaymentTarget}
+          orgId={orgId}
+          meetupId={id!}
+          onClose={() => setUndoPaymentTarget(null)}
+        />
+      )}
+      {paymentToggleOpen && (
+        <PaymentRequirementDialog
+          orgId={orgId}
+          meetupId={id!}
+          enabling={!requiresPayment}
+          onClose={() => setPaymentToggleOpen(false)}
         />
       )}
     </div>

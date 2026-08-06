@@ -643,6 +643,112 @@ export interface paths {
     patch: operations["undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch"];
     trace?: never;
   };
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Mark a guest's entrance as paid for this meetup (org admin only)
+     * @description Mark a guest's entrance fee as paid for this specific meetup.
+     *
+     *     Payment is handled externally by the organizer (cash, transfer, etc.);
+     *     this just records that it happened so check-in can be enforced.
+     *
+     *     Returns 409 if the meetup doesn't require payment, if the guest already
+     *     paid, or if the meetup is finalized. Returns 404 if not RSVPed.
+     */
+    patch: operations["mark_guest_paid_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment/undo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Undo a guest's payment mark for this meetup (org admin only)
+     * @description Undo a payment mark for a guest at this meetup.
+     *
+     *     Use this when a payment was marked by mistake. Requires a reason for
+     *     the audit trail. Clears has_paid, paid_at, and paid_by_id.
+     *
+     *     Returns 404 if guest not RSVPed to this meetup.
+     *     Returns 409 if the guest is not currently marked as paid.
+     */
+    patch: operations["undo_guest_payment_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_undo_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/enable-payment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Mark a meetup as requiring payment (org admin only)
+     * @description Mark a meetup as requiring payment. Check-in will be blocked for any
+     *     guest without has_paid=True from this point forward.
+     *
+     *     Existing RSVPs are left untouched - guests who already checked in
+     *     before this change keep their check-in, and any has_paid data from a
+     *     previous paid period (if this event toggled payment off and back on)
+     *     stays valid.
+     *
+     *     Returns 409 if the meetup already requires payment or is finalized.
+     */
+    patch: operations["enable_payment_requirement_organizations__org_id__meetups__meetup_id__enable_payment_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/disable-payment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Mark a meetup as not requiring payment (org admin only)
+     * @description Mark a meetup as no longer requiring payment. Check-in is no longer
+     *     blocked by has_paid for this meetup.
+     *
+     *     Any has_paid data already recorded is left untouched (it becomes
+     *     inert, not deleted) in case payment is re-enabled later.
+     *
+     *     Returns 409 if the meetup doesn't currently require payment or is finalized.
+     */
+    patch: operations["disable_payment_requirement_organizations__org_id__meetups__meetup_id__disable_payment_patch"];
+    trace?: never;
+  };
   "/organizations/{org_id}/meetups/{meetup_id}/finalize": {
     parameters: {
       query?: never;
@@ -1047,7 +1153,7 @@ export interface components {
      *
      *     Fields:
      *       - id: Unique event identifier
-     *       - event_type: What happened (CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN)
+     *       - event_type: What happened (see EventType in app/models/models.py for the full list)
      *       - timestamp: When it happened (UTC)
      *       - actor: Staff member who performed the action
      *       - guest: Guest who was affected (if applicable)
@@ -1158,6 +1264,11 @@ export interface components {
        * Format: uri
        */
       mazmo_meetup_url: string;
+      /**
+       * Requires Payment
+       * @default false
+       */
+      requires_payment: boolean;
     };
     /**
      * MeetupGuestListResponse
@@ -1218,6 +1329,8 @@ export interface components {
       is_finalized: boolean;
       /** Finalized At */
       finalized_at: string | null;
+      /** Requires Payment */
+      requires_payment: boolean;
     };
     /**
      * OrgCreate
@@ -1306,6 +1419,19 @@ export interface components {
       slug?: string | null;
     };
     /**
+     * PaymentResponse
+     * @description Response after successfully marking a guest's entrance as paid.
+     */
+    PaymentResponse: {
+      guest: components["schemas"]["GuestPublic"];
+      /**
+       * Paid At
+       * Format: date-time
+       */
+      paid_at: string;
+      paid_by: components["schemas"]["CheckedInByPublic"];
+    };
+    /**
      * PossibleRoles
      * @description Global roles stored in user_roles / users.role_id.
      *
@@ -1384,6 +1510,13 @@ export interface components {
        * @default false
        */
       is_walkin: boolean;
+      /**
+       * Has Paid
+       * @default false
+       */
+      has_paid: boolean;
+      /** Paid At */
+      paid_at?: string | null;
     };
     /**
      * ServiceCheck
@@ -1451,6 +1584,14 @@ export interface components {
      * @description Request body for undoing a check-in.
      */
     UndoCheckInRequest: {
+      /** Reason */
+      reason: string;
+    };
+    /**
+     * UndoPaymentRequest
+     * @description Request body for undoing a payment mark.
+     */
+    UndoPaymentRequest: {
       /** Reason */
       reason: string;
     };
@@ -3574,6 +3715,284 @@ export interface operations {
       };
     };
   };
+  mark_guest_paid_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest marked as paid */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not RSVPed to meetup */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup does not require payment */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  undo_guest_payment_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_undo_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+        mazmo_user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UndoPaymentRequest"];
+      };
+    };
+    responses: {
+      /** @description Payment mark undone */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not RSVPed to meetup */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not marked as paid */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  enable_payment_requirement_organizations__org_id__meetups__meetup_id__enable_payment_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Meetup marked as requiring payment */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already requires payment */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  disable_payment_requirement_organizations__org_id__meetups__meetup_id__disable_payment_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Meetup marked as not requiring payment */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup does not require payment */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   finalize_meetup_organizations__org_id__meetups__meetup_id__finalize_patch: {
     parameters: {
       query?: never;
@@ -3713,7 +4132,7 @@ export interface operations {
   list_all_events_organizations__org_id__events__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -3788,7 +4207,7 @@ export interface operations {
   list_meetup_events_organizations__org_id__events_meetups__meetup_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -3867,7 +4286,7 @@ export interface operations {
   list_guest_events_organizations__org_id__events_guests__guest_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -3948,7 +4367,7 @@ export interface operations {
   list_staff_events_organizations__org_id__events_staff__staff_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
