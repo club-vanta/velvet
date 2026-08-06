@@ -63,6 +63,8 @@ export const translations = {
     mazmoUrl: "Mazmo URL",
     creating: "Creating…",
     create: "Create",
+    requiresPayment: "Requires payment",
+    paidEvent: "Paid event",
     // Meetup detail
     addWalkin: "Add walk-in",
     syncFromMazmo: "Sync from Mazmo",
@@ -272,6 +274,8 @@ export const translations = {
     mazmoUrl: "URL de Mazmo",
     creating: "Creando…",
     create: "Crear",
+    requiresPayment: "Requiere pago",
+    paidEvent: "Evento pago",
     // Meetup detail
     addWalkin: "Agregar discreto",
     syncFromMazmo: "Sincronizar con Mazmo",

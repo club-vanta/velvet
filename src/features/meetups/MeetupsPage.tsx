@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -91,6 +93,7 @@ function NewMeetupDialog({
   const { t } = useLanguage();
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [requiresPayment, setRequiresPayment] = useState(false);
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -99,7 +102,11 @@ function NewMeetupDialog({
         "/organizations/{org_id}/meetups/",
         {
           params: { path: { org_id: orgId } },
-          body: { name, mazmo_meetup_url: url },
+          body: {
+            name,
+            mazmo_meetup_url: url,
+            ...(requiresPayment && { requires_payment: true }),
+          },
         },
       );
       if (error)
@@ -111,6 +118,7 @@ function NewMeetupDialog({
       toast.success(t("meetupCreated"));
       setName("");
       setUrl("");
+      setRequiresPayment(false);
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -144,6 +152,19 @@ function NewMeetupDialog({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="meetup-requires-payment"
+              checked={requiresPayment}
+              onCheckedChange={(checked) => setRequiresPayment(checked)}
+            />
+            <label
+              htmlFor="meetup-requires-payment"
+              className="text-sm font-medium"
+            >
+              {t("requiresPayment")}
+            </label>
           </div>
         </div>
         <DialogFooter>
@@ -286,7 +307,14 @@ export function MeetupsPage() {
 
             {meetups.map((meetup) => (
               <TableRow key={meetup.id}>
-                <TableCell className="font-medium">{meetup.name}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span>{meetup.name}</span>
+                    {meetup.requires_payment && (
+                      <Badge variant="outline">{t("paidEvent")}</Badge>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {formatDate(meetup.date)}
                 </TableCell>
