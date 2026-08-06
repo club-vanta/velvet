@@ -908,6 +908,15 @@ export function MeetupDetailPage() {
                       >
                         {t("undo")}
                       </Button>
+                    ) : requiresPayment && !mg.rsvp.has_paid ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled
+                        title={t("checkInBlockedUnpaid")}
+                      >
+                        {t("checkIn")}
+                      </Button>
                     ) : (
                       <Button
                         size="sm"
