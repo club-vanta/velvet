@@ -33,6 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ReasonDialog } from "@/components/ReasonDialog";
+import { useAuth } from "@/auth/AuthContext";
 import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
@@ -141,6 +142,130 @@ function UndoDialog({
       title={`${t("undoDialogTitle")} ${guest.guest.displayname}?`}
       placeholder={t("undoReasonPlaceholder")}
       confirmLabel={t("undoCheckIn")}
+      pendingLabel={t("undoing")}
+      isPending={mutation.isPending}
+      onConfirm={(reason) => mutation.mutate(reason)}
+      onClose={onClose}
+    />
+  );
+}
+
+function MarkPaidDialog({
+  guest,
+  orgId,
+  meetupId,
+  onClose,
+}: {
+  guest: MeetupGuest;
+  orgId: string;
+  meetupId: string;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.PATCH(
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment",
+        {
+          params: {
+            path: {
+              org_id: orgId,
+              meetup_id: meetupId,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
+          },
+        },
+      );
+      if (error)
+        throw new Error(extractApiError(error, "Failed to mark payment"));
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", orgId, meetupId],
+      });
+      toast.success(`${guest.guest.displayname} — ${t("paymentRecorded")}`);
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {t("markPaidDialogTitle")} {guest.guest.displayname}?
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground py-2">
+          {t("markPaidDialogBody")}
+        </p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? t("markingPaid") : t("markPaid")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UndoPaymentDialog({
+  guest,
+  orgId,
+  meetupId,
+  onClose,
+}: {
+  guest: MeetupGuest;
+  orgId: string;
+  meetupId: string;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const { error } = await api.PATCH(
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment/undo",
+        {
+          params: {
+            path: {
+              org_id: orgId,
+              meetup_id: meetupId,
+              mazmo_user_id: guest.guest.mazmo_user_id,
+            },
+          },
+          body: { reason },
+        },
+      );
+      if (error)
+        throw new Error(extractApiError(error, "Failed to undo payment"));
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup-guests", orgId, meetupId],
+      });
+      toast.success(t("paymentUndone"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <ReasonDialog
+      title={`${t("undoPaymentDialogTitle")} ${guest.guest.displayname}?`}
+      placeholder={t("undoPaymentPlaceholder")}
+      confirmLabel={t("undoPayment")}
       pendingLabel={t("undoing")}
       isPending={mutation.isPending}
       onConfirm={(reason) => mutation.mutate(reason)}
@@ -354,10 +479,18 @@ export function MeetupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { activeOrg } = useOrg();
   const orgId = activeOrg?.org_id ?? "";
+  const { user } = useAuth();
+  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
+  const isOrgAdmin = isSiteAdmin || activeOrg?.role === "ADMIN";
   const queryClient = useQueryClient();
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
   const [walkinOpen, setWalkinOpen] = useState(false);
+  const [markPaidTarget, setMarkPaidTarget] = useState<MeetupGuest | null>(
+    null,
+  );
+  const [undoPaymentTarget, setUndoPaymentTarget] =
+    useState<MeetupGuest | null>(null);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -731,7 +864,18 @@ export function MeetupDetailPage() {
                   <TableCell>
                     {mg.rsvp.has_paid ? (
                       <div className="space-y-0.5">
-                        <Badge>{t("paid")}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge>{t("paid")}</Badge>
+                          {isOrgAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setUndoPaymentTarget(mg)}
+                            >
+                              {t("undoPayment")}
+                            </Button>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {mg.rsvp.paid_at
                             ? formatDateTime(mg.rsvp.paid_at)
@@ -739,7 +883,18 @@ export function MeetupDetailPage() {
                         </p>
                       </div>
                     ) : (
-                      <Badge variant="secondary">{t("paymentPending")}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{t("paymentPending")}</Badge>
+                        {isOrgAdmin && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMarkPaidTarget(mg)}
+                          >
+                            {t("markPaid")}
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                 )}
@@ -801,6 +956,22 @@ export function MeetupDetailPage() {
           meetupId={id!}
           alreadyRsvped={rsvpedIds}
           onClose={() => setWalkinOpen(false)}
+        />
+      )}
+      {markPaidTarget && (
+        <MarkPaidDialog
+          guest={markPaidTarget}
+          orgId={orgId}
+          meetupId={id!}
+          onClose={() => setMarkPaidTarget(null)}
+        />
+      )}
+      {undoPaymentTarget && (
+        <UndoPaymentDialog
+          guest={undoPaymentTarget}
+          orgId={orgId}
+          meetupId={id!}
+          onClose={() => setUndoPaymentTarget(null)}
         />
       )}
     </div>

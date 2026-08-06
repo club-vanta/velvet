@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -36,6 +36,7 @@ export function ReasonDialog({
   const [reason, setReason] = useState("");
   const trimmed = reason.trim();
   const isValid = trimmed.length >= MIN_REASON && trimmed.length <= MAX_REASON;
+  const reasonId = useId();
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -44,11 +45,11 @@ export function ReasonDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 py-2">
-          <label htmlFor="reason-dialog-reason" className="text-sm font-medium">
+          <label htmlFor={reasonId} className="text-sm font-medium">
             {t("reasonRequired")}
           </label>
           <Textarea
-            id="reason-dialog-reason"
+            id={reasonId}
             placeholder={placeholder}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
