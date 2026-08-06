@@ -346,6 +346,76 @@ function CheckInBannedDialog({
   );
 }
 
+function PaymentRequirementDialog({
+  orgId,
+  meetupId,
+  enabling,
+  onClose,
+}: {
+  orgId: string;
+  meetupId: string;
+  enabling: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const path = enabling
+        ? ("/organizations/{org_id}/meetups/{meetup_id}/enable-payment" as const)
+        : ("/organizations/{org_id}/meetups/{meetup_id}/disable-payment" as const);
+      const { data, error } = await api.PATCH(path, {
+        params: { path: { org_id: orgId, meetup_id: meetupId } },
+      });
+      if (error)
+        throw new Error(
+          extractApiError(error, "Failed to update payment requirement"),
+        );
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["meetup", orgId, meetupId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
+      toast.success(t("paymentRequirementUpdated"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {enabling
+              ? t("enablePaymentDialogTitle")
+              : t("disablePaymentDialogTitle")}
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground py-2">
+          {enabling
+            ? t("enablePaymentDialogBody")
+            : t("disablePaymentDialogBody")}
+        </p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            {enabling ? t("enablePayment") : t("disablePayment")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function WalkinDialog({
   orgId,
   meetupId,
@@ -491,6 +561,7 @@ export function MeetupDetailPage() {
   );
   const [undoPaymentTarget, setUndoPaymentTarget] =
     useState<MeetupGuest | null>(null);
+  const [paymentToggleOpen, setPaymentToggleOpen] = useState(false);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -653,6 +724,15 @@ export function MeetupDetailPage() {
             </a>
           </div>
           <div className="flex gap-2 shrink-0">
+            {isOrgAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setPaymentToggleOpen(true)}
+                disabled={meetup?.is_finalized}
+              >
+                {requiresPayment ? t("disablePayment") : t("enablePayment")}
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setWalkinOpen(true)}
@@ -981,6 +1061,14 @@ export function MeetupDetailPage() {
           orgId={orgId}
           meetupId={id!}
           onClose={() => setUndoPaymentTarget(null)}
+        />
+      )}
+      {paymentToggleOpen && (
+        <PaymentRequirementDialog
+          orgId={orgId}
+          meetupId={id!}
+          enabling={!requiresPayment}
+          onClose={() => setPaymentToggleOpen(false)}
         />
       )}
     </div>

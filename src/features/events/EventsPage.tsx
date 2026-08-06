@@ -41,6 +41,10 @@ const EVENT_BADGE_VARIANT: Record<
   MEETUP_UNFINALIZED: "outline",
   WALKIN: "outline",
   GUEST_CREATED: "outline",
+  PAYMENT_RECORDED: "default",
+  PAYMENT_REVOKED: "secondary",
+  PAYMENT_REQUIREMENT_ENABLED: "outline",
+  PAYMENT_REQUIREMENT_DISABLED: "outline",
 };
 
 const PAGE_SIZE = 50;
@@ -61,6 +65,10 @@ export function EventsPage() {
     MEETUP_UNFINALIZED: t("eventUnfinalized"),
     WALKIN: t("eventWalkin"),
     GUEST_CREATED: t("eventGuestCreated"),
+    PAYMENT_RECORDED: t("eventPaymentRecorded"),
+    PAYMENT_REVOKED: t("eventPaymentRevoked"),
+    PAYMENT_REQUIREMENT_ENABLED: t("eventPaymentEnabled"),
+    PAYMENT_REQUIREMENT_DISABLED: t("eventPaymentDisabled"),
   };
 
   const { data: meetupsData } = useQuery({
@@ -132,6 +140,12 @@ export function EventsPage() {
             <SelectItem value="BAN">{t("eventBan")}</SelectItem>
             <SelectItem value="UNBAN">{t("eventUnban")}</SelectItem>
             <SelectItem value="WALKIN">{t("eventWalkin")}</SelectItem>
+            <SelectItem value="PAYMENT_RECORDED">
+              {t("eventPaymentRecorded")}
+            </SelectItem>
+            <SelectItem value="PAYMENT_REVOKED">
+              {t("eventPaymentRevoked")}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
