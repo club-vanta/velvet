@@ -640,6 +640,11 @@ export function MeetupDetailPage() {
                   <TableCell>
                     <Skeleton className="h-4 w-20" />
                   </TableCell>
+                  {requiresPayment && (
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
 
