@@ -32,7 +32,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { ReasonDialog } from "@/components/ReasonDialog";
 import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
@@ -106,11 +106,10 @@ function UndoDialog({
   onClose: () => void;
 }) {
   const { t } = useLanguage();
-  const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (reason: string) => {
       const { error } = await api.PATCH(
         "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin",
         {
@@ -138,46 +137,15 @@ function UndoDialog({
   });
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("undoDialogTitle")} {guest.guest.displayname}?
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2 py-2">
-          <label htmlFor="undo-reason" className="text-sm font-medium">
-            {t("reasonRequired")}
-          </label>
-          <Textarea
-            id="undo-reason"
-            placeholder={t("undoReasonPlaceholder")}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">
-            {reason.trim().length}/500
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={
-              reason.trim().length < 5 ||
-              reason.trim().length > 500 ||
-              mutation.isPending
-            }
-          >
-            {mutation.isPending ? t("undoing") : t("undoCheckIn")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ReasonDialog
+      title={`${t("undoDialogTitle")} ${guest.guest.displayname}?`}
+      placeholder={t("undoReasonPlaceholder")}
+      confirmLabel={t("undoCheckIn")}
+      pendingLabel={t("undoing")}
+      isPending={mutation.isPending}
+      onConfirm={(reason) => mutation.mutate(reason)}
+      onClose={onClose}
+    />
   );
 }
 
