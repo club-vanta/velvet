@@ -44,6 +44,11 @@ devenv.local.yaml
 # direnv
 .direnv
 
+# Playwright
+.playwright-mcp/
+playwright-report/
+test-results/
+
 # pre-commit
 .pre-commit-config.yaml
 .direnv
