@@ -818,7 +818,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="xl:w-[20%]"
+                className={requiresPayment ? "xl:w-[15%]" : "xl:w-[20%]"}
               />
               <SortableHead
                 col="status"
@@ -826,10 +826,10 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="xl:w-[18%]"
+                className={requiresPayment ? "xl:w-[13%]" : "xl:w-[18%]"}
               />
               {requiresPayment && (
-                <TableHead className="xl:w-[12%]">{t("payment")}</TableHead>
+                <TableHead className="xl:w-[22%]">{t("payment")}</TableHead>
               )}
               <TableHead className="w-32" />
             </TableRow>
@@ -944,7 +944,7 @@ export function MeetupDetailPage() {
                   <TableCell>
                     {mg.rsvp.has_paid ? (
                       <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge>{t("paid")}</Badge>
                           {isOrgAdmin && (
                             <Button
@@ -963,7 +963,7 @@ export function MeetupDetailPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary">{t("paymentPending")}</Badge>
                         {isOrgAdmin && (
                           <Button
@@ -989,14 +989,25 @@ export function MeetupDetailPage() {
                         {t("undo")}
                       </Button>
                     ) : requiresPayment && !mg.rsvp.has_paid ? (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        disabled
+                      <span
                         title={t("checkInBlockedUnpaid")}
+                        className="inline-flex"
                       >
-                        {t("checkIn")}
-                      </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled
+                          aria-describedby={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                        >
+                          {t("checkIn")}
+                        </Button>
+                        <span
+                          id={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                          className="sr-only"
+                        >
+                          {t("checkInBlockedUnpaid")}
+                        </span>
+                      </span>
                     ) : (
                       <Button
                         size="sm"
