@@ -450,6 +450,7 @@ export function MeetupDetailPage() {
   });
 
   const meetup = meetupQ.data;
+  const requiresPayment = meetup?.requires_payment ?? false;
   const rawGuests = guestsQ.data?.guests ?? [];
   const arrivedCount = rawGuests.filter((g) => g.rsvp.has_arrived).length;
   const totalCount = rawGuests.length;
@@ -596,7 +597,7 @@ export function MeetupDetailPage() {
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="xl:w-[44%]"
+                className={requiresPayment ? "xl:w-[32%]" : "xl:w-[44%]"}
               />
               <SortableHead
                 col="rsvp"
@@ -614,6 +615,9 @@ export function MeetupDetailPage() {
                 onSort={handleSort}
                 className="xl:w-[18%]"
               />
+              {requiresPayment && (
+                <TableHead className="xl:w-[12%]">{t("payment")}</TableHead>
+              )}
               <TableHead className="w-32" />
             </TableRow>
           </TableHeader>
@@ -642,7 +646,7 @@ export function MeetupDetailPage() {
             {!guestsQ.isLoading && rawGuests.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={requiresPayment ? 6 : 5}
                   className="text-center text-muted-foreground py-8"
                 >
                   {t("noGuestsSyncMazmo")}
@@ -655,7 +659,7 @@ export function MeetupDetailPage() {
               (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={requiresPayment ? 6 : 5}
                     className="text-center text-muted-foreground py-8"
                   >
                     {t("noGuestsMatchSearch")}
@@ -718,6 +722,22 @@ export function MeetupDetailPage() {
                     <Badge variant="secondary">{t("pending")}</Badge>
                   )}
                 </TableCell>
+                {requiresPayment && (
+                  <TableCell>
+                    {mg.rsvp.has_paid ? (
+                      <div className="space-y-0.5">
+                        <Badge>{t("paid")}</Badge>
+                        <p className="text-xs text-muted-foreground">
+                          {mg.rsvp.paid_at
+                            ? formatDateTime(mg.rsvp.paid_at)
+                            : ""}
+                        </p>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">{t("paymentPending")}</Badge>
+                    )}
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="flex gap-2 justify-end">
                     {mg.rsvp.has_arrived ? (
