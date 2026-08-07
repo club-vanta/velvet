@@ -105,7 +105,7 @@ function NewMeetupDialog({
           body: {
             name,
             mazmo_meetup_url: url,
-            ...(requiresPayment && { requires_payment: true }),
+            requires_payment: requiresPayment,
           },
         },
       );
