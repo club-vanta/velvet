@@ -645,7 +645,7 @@ function AllGuestsTab({
           </AlertDescription>
         </Alert>
       )}
-      {!isLoading && (data?.guests.length ?? 0) > 0 && (
+      {!isLoading && (debouncedSearch || (data?.guests.length ?? 0) > 0) && (
         <Input
           placeholder={t("searchGuestList")}
           aria-label={t("searchGuestList")}

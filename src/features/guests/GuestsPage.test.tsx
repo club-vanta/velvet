@@ -318,4 +318,53 @@ describe("GuestsPage — search", () => {
       expect.objectContaining({ params: { query: { q: "" } } }),
     );
   });
+
+  it("keeps the search input visible when a search matches nothing, so it can be cleared", async () => {
+    mockApiGet.mockImplementation(
+      (path: string, opts?: { params?: { query?: { q?: string } } }) => {
+        if (path === "/guests/") {
+          const q = opts?.params?.query?.q;
+          const guests = q ? [] : [guest({ id: "g-1", displayname: "Cindy" })];
+          return Promise.resolve({
+            data: { total: guests.length, guests },
+            error: undefined,
+          });
+        }
+        if (path === "/organizations/{org_id}/guests/banned")
+          return Promise.resolve({
+            data: { total: 0, guests: [] },
+            error: undefined,
+          });
+        return Promise.resolve({ data: undefined, error: undefined });
+      },
+    );
+
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <LanguageProvider>
+          <GuestsPage />
+        </LanguageProvider>
+      </QueryClientProvider>,
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: (ms) => vi.advanceTimersByTime(ms),
+    });
+    const input = await screen.findByPlaceholderText("Search guest list…");
+    await user.type(input, "zzz");
+    await vi.advanceTimersByTimeAsync(300);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("No guests match that search."),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByPlaceholderText("Search guest list…"),
+    ).toBeInTheDocument();
+  });
 });
