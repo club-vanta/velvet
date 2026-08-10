@@ -2,7 +2,7 @@ import { useDeferredValue, useState } from "react";
 
 export function useGuestSearch<T>(
   items: T[] | undefined,
-  getFields: (item: T) => { displayname: string; username: string },
+  getFields: (item: T) => { displayname: string; mazmoHandle: string | null },
 ): {
   search: string;
   setSearch: (v: string) => void;
@@ -16,10 +16,10 @@ export function useGuestSearch<T>(
   // Only run the filter once we have actual data and a non-empty query.
   const filtered = q
     ? (items ?? []).filter((item) => {
-        const { displayname, username } = getFields(item);
+        const { displayname, mazmoHandle } = getFields(item);
         return (
           displayname.toLowerCase().includes(q) ||
-          username.toLowerCase().includes(q)
+          (mazmoHandle ?? "").toLowerCase().includes(q)
         );
       })
     : items;
