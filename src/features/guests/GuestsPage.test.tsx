@@ -134,3 +134,106 @@ describe("GuestsPage — add guest", () => {
     );
   });
 });
+
+describe("GuestsPage — per-row identity management", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("offers Link Mazmo account for a guest with no handle, never Unlink", async () => {
+    renderPage([guest({ id: "g-1", displayname: "No Mazmo Guy" })]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions" }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Link Mazmo account" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Unlink Mazmo account" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers Unlink Mazmo account for a linked guest, never Link", async () => {
+    renderPage([
+      guest({ id: "g-2", mazmo_handle: "cindydark", displayname: "Cindy" }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions" }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Unlink Mazmo account" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Link Mazmo account" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders 'No Mazmo account' instead of a blank or @null handle", async () => {
+    renderPage([guest({ id: "g-3", displayname: "No Mazmo Guy" })]);
+
+    expect(await screen.findByText("No Mazmo account")).toBeInTheDocument();
+  });
+
+  it("omits instagram_username from the edit request when it wasn't changed", async () => {
+    mockApiPatch.mockResolvedValue({ data: undefined, error: undefined });
+    renderPage([
+      guest({
+        id: "g-4",
+        displayname: "Old Name",
+        instagram_username: "oldig",
+      }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions" }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    const nameInput = screen.getByLabelText("Display Name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "New Name");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(mockApiPatch).toHaveBeenCalledWith(
+      "/guests/{guest_id}",
+      expect.objectContaining({
+        body: { displayname: "New Name" },
+      }),
+    );
+  });
+
+  it("sends an explicit null when instagram_username is cleared", async () => {
+    mockApiPatch.mockResolvedValue({ data: undefined, error: undefined });
+    renderPage([
+      guest({
+        id: "g-5",
+        displayname: "Same Name",
+        instagram_username: "oldig",
+      }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions" }),
+    );
+    await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
+    const igInput = screen.getByLabelText("Instagram (optional)");
+    await user.clear(igInput);
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(mockApiPatch).toHaveBeenCalledWith(
+      "/guests/{guest_id}",
+      expect.objectContaining({
+        body: { instagram_username: null },
+      }),
+    );
+  });
+});

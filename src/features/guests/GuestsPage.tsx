@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
@@ -84,6 +91,227 @@ function SortableHead({
         <SortIcon col={col} active={active} dir={dir} />
       </button>
     </TableHead>
+  );
+}
+
+function EditGuestDialog({
+  guest,
+  onClose,
+}: {
+  guest: Guest;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [displayname, setDisplayname] = useState(guest.displayname);
+  const [instagram, setInstagram] = useState(guest.instagram_username ?? "");
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const body: { displayname?: string; instagram_username?: string | null } =
+        {};
+      const trimmedDisplayname = displayname.trim();
+      if (trimmedDisplayname && trimmedDisplayname !== guest.displayname) {
+        body.displayname = trimmedDisplayname;
+      }
+      const trimmedInstagram = instagram.trim();
+      const currentInstagram = guest.instagram_username ?? "";
+      if (trimmedInstagram !== currentInstagram) {
+        body.instagram_username =
+          trimmedInstagram === "" ? null : trimmedInstagram;
+      }
+      const { error } = await api.PATCH("/guests/{guest_id}", {
+        params: { path: { guest_id: guest.id } },
+        body,
+      });
+      if (error) throw new Error(extractApiError(error, t("failedEditGuest")));
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["guests"] });
+      toast.success(t("guestUpdated"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("editGuestDialogTitle")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="space-y-1">
+            <label
+              htmlFor="edit-guest-displayname"
+              className="text-sm font-medium"
+            >
+              {t("displayName")}
+            </label>
+            <Input
+              id="edit-guest-displayname"
+              value={displayname}
+              onChange={(e) => setDisplayname(e.target.value)}
+              disabled={mutation.isPending}
+            />
+          </div>
+          <div className="space-y-1">
+            <label
+              htmlFor="edit-guest-instagram"
+              className="text-sm font-medium"
+            >
+              {t("instagramLabel")}
+            </label>
+            <Input
+              id="edit-guest-instagram"
+              placeholder={t("instagramPlaceholder")}
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+              disabled={mutation.isPending}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={!displayname.trim() || mutation.isPending}
+          >
+            {mutation.isPending ? t("savingChanges") : t("saveChanges")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function LinkMazmoDialog({
+  guest,
+  onClose,
+}: {
+  guest: Guest;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const [username, setUsername] = useState("");
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const { error, response } = await api.PATCH(
+        "/guests/{guest_id}/link-mazmo",
+        {
+          params: { path: { guest_id: guest.id } },
+          body: { username: username.trim() },
+        },
+      );
+      if (error) {
+        if (response.status === 404) throw new Error(t("mazmoUserNotFound"));
+        throw new Error(extractApiError(error, t("failedLinkMazmo")));
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["guests"] });
+      toast.success(t("mazmoLinked"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("linkMazmoDialogTitle")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1 py-2">
+          <label htmlFor="link-mazmo-username" className="text-sm font-medium">
+            {t("mazmoUsername")}
+          </label>
+          <InputWithPrefix
+            id="link-mazmo-username"
+            prefix="@"
+            placeholder="cindydark"
+            autoComplete="off"
+            autoCapitalize="none"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={mutation.isPending}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={!username.trim() || mutation.isPending}
+          >
+            {mutation.isPending ? t("linking") : t("link")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UnlinkMazmoDialog({
+  guest,
+  onClose,
+}: {
+  guest: Guest;
+  onClose: () => void;
+}) {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await api.PATCH("/guests/{guest_id}/unlink-mazmo", {
+        params: { path: { guest_id: guest.id } },
+      });
+      if (error)
+        throw new Error(extractApiError(error, t("failedUnlinkMazmo")));
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["guests"] });
+      toast.success(t("mazmoUnlinked"));
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("unlinkMazmoDialogTitle")}</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground py-2">
+          {t("unlinkMazmoDialogBody")}{" "}
+          <span className="font-medium text-foreground">
+            {guest.displayname}
+          </span>{" "}
+          (@{guest.mazmo_handle}).
+        </p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? t("unlinking") : t("unlink")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -349,6 +577,9 @@ function AllGuestsTab({
 }) {
   const { t } = useLanguage();
   const [banTarget, setBanTarget] = useState<Guest | null>(null);
+  const [editTarget, setEditTarget] = useState<Guest | null>(null);
+  const [linkTarget, setLinkTarget] = useState<Guest | null>(null);
+  const [unlinkTarget, setUnlinkTarget] = useState<Guest | null>(null);
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -445,7 +676,7 @@ function AllGuestsTab({
                 onSort={handleSort}
                 className="lg:w-[15%]"
               />
-              {isOrgAdmin && <TableHead />}
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -461,17 +692,15 @@ function AllGuestsTab({
                   <TableCell>
                     <Skeleton className="h-4 w-16" />
                   </TableCell>
-                  {isOrgAdmin && (
-                    <TableCell>
-                      <Skeleton className="h-4 w-12" />
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
                 </TableRow>
               ))}
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={isOrgAdmin ? 4 : 3}
+                  colSpan={4}
                   className="text-center text-muted-foreground py-8"
                 >
                   {t("noGuestsYet")}
@@ -483,7 +712,7 @@ function AllGuestsTab({
               (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={isOrgAdmin ? 4 : 3}
+                    colSpan={4}
                     className="text-center text-muted-foreground py-8"
                   >
                     {t("noGuestsMatchSearch")}
@@ -499,17 +728,46 @@ function AllGuestsTab({
                 <TableCell className="text-muted-foreground text-sm">
                   {g.mazmo_user_id ?? "—"}
                 </TableCell>
-                {isOrgAdmin && (
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setBanTarget(g)}
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-label={t("guestActions")}
+                        />
+                      }
                     >
-                      {t("ban")}
-                    </Button>
-                  </TableCell>
-                )}
+                      <MoreHorizontal className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditTarget(g)}>
+                        {t("editGuest")}
+                      </DropdownMenuItem>
+                      {g.mazmo_handle ? (
+                        <DropdownMenuItem onClick={() => setUnlinkTarget(g)}>
+                          {t("unlinkMazmoAccount")}
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => setLinkTarget(g)}>
+                          {t("linkMazmoAccount")}
+                        </DropdownMenuItem>
+                      )}
+                      {isOrgAdmin && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => setBanTarget(g)}
+                          >
+                            {t("ban")}
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -520,6 +778,24 @@ function AllGuestsTab({
           guest={banTarget}
           orgId={orgId}
           onClose={() => setBanTarget(null)}
+        />
+      )}
+      {editTarget && (
+        <EditGuestDialog
+          guest={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
+      {linkTarget && (
+        <LinkMazmoDialog
+          guest={linkTarget}
+          onClose={() => setLinkTarget(null)}
+        />
+      )}
+      {unlinkTarget && (
+        <UnlinkMazmoDialog
+          guest={unlinkTarget}
+          onClose={() => setUnlinkTarget(null)}
         />
       )}
     </>
