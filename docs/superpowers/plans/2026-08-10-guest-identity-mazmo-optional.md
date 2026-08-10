@@ -23,6 +23,7 @@
 - **Spanish copy:** the app uses club slang for some terms (`banned` → "Vantear"/"Vanteado"). Guest-identity terms (link, unlink, edit) have no established slang — use plain, literal Spanish.
 - **Commit hooks run `tsc --noEmit`, Prettier, and ESLint.** A commit fails if any of them fail. Run `npx prettier --write <files>` before committing if the format check trips.
 - **This branch is `feat/guest-identity-mazmo-optional`.** The design spec is already committed there. Keep working on this branch; do not create a new one.
+- **This plan document was run through a markdown formatter that reformats embedded ```tsx code blocks as if they were standalone files.** That can shift indentation and line-wrapping in a snippet without changing its logic. Every "Locate X (searches ...)" instruction names a short, literal anchor string — use that to find the real spot in the real file, then apply the *edit being described*, not necessarily the plan snippet's exact whitespace. If a "before" snippet's structure genuinely conflicts with what the file actually contains (not just whitespace — an actual logic mismatch), stop and report it rather than guessing.
 
 ## File Structure
 
@@ -1924,18 +1925,20 @@ const [sortCol, setSortCol] = useState<string | null>("displayname");
 const [sortDir, setSortDir] = useState<SortDir>("asc");
 ```
 
-Locate the row's actions cell (searches `{isOrgAdmin && (\n                  <TableCell>\n                    <Button\n                      variant="ghost"\n                      size="sm"\n                      onClick={() => setBanTarget(g)}`). Change:
+Locate the row's actions cell (searches `onClick={() => setBanTarget(g)}` inside the row `.map`, the occurrence wrapped in `{isOrgAdmin && (...)}`). Change:
 
 ```tsx
-{
-  isOrgAdmin && (
-    <TableCell>
-      <Button variant="ghost" size="sm" onClick={() => setBanTarget(g)}>
-        {t("ban")}
-      </Button>
-    </TableCell>
-  );
-}
+{isOrgAdmin && (
+  <TableCell>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => setBanTarget(g)}
+    >
+      {t("ban")}
+    </Button>
+  </TableCell>
+)}
 ```
 
 to:
@@ -1968,7 +1971,13 @@ to:
 </TableCell>
 ```
 
-Note this cell is now unconditional (every row has at least "Edit"), whereas before it was `isOrgAdmin &&`-gated. The header row and the loading/empty-state `colSpan` values were already computed from `isOrgAdmin` to size the table — **do not change those** in this step; Task 8 revisits column count when the Instagram column is added, and it's the right place to also fix the now-always-present actions column's effect on `colSpan`. For this step, leave `isOrgAdmin && <TableHead />` and the `colSpan={isOrgAdmin ? 4 : 3}` expressions as they are; the table will render with a narrower or missing header cell for non-admins for one commit, which Task 8 corrects. (Link/unlink items are added to this same dropdown in Step 5 below, before this task is committed — so by the time this task lands, non-admin staff already need the actions column every row, making this inconsistency real, not hypothetical. Fix the header and colSpan **now**, in this step, rather than deferring: change `{isOrgAdmin && <TableHead />}` to an unconditional `<TableHead />`, and both `colSpan={isOrgAdmin ? 4 : 3}` occurrences in this tab — one in the loading-skeleton block via the `isOrgAdmin && <TableCell>` skeleton wrapper, one in the empty-state and no-search-match rows — to unconditional `4`. Locate the skeleton row (searches `{isOrgAdmin && (\n                    <TableCell>\n                      <Skeleton className="h-4 w-12" />`) and make that `<TableCell>` unconditional too, matching the real row's now-unconditional actions cell.)
+This cell is now unconditional — every row has at least "Edit" in its dropdown, whereas before the whole cell was `isOrgAdmin &&`-gated. That means the header's matching cell and every `colSpan` computed from `isOrgAdmin` are now wrong and must be fixed in this same step, not deferred:
+
+- Locate the header row's trailing cell (searches `{isOrgAdmin && <TableHead />}` inside `AllGuestsTab`'s `TableHeader`) and make it unconditional: `<TableHead />`.
+- Locate the loading-skeleton row's trailing cell (searches `{isOrgAdmin && (\n                    <TableCell>\n                      <Skeleton className="h-4 w-12" />` inside `AllGuestsTab`) and make that `<TableCell><Skeleton className="h-4 w-12" /></TableCell>` unconditional too.
+- Locate both `colSpan={isOrgAdmin ? 4 : 3}` occurrences in `AllGuestsTab` (the empty-state row and the no-search-match row) and change each to `colSpan={4}`.
+
+Task 8 will change these same `colSpan` values again (4 → 5) when it adds the Instagram column — that's expected, this step's job is only to stop them varying by `isOrgAdmin`.
 
 - [ ] **Step 5: Add `LinkMazmoDialog` and `UnlinkMazmoDialog`, and wire both into the dropdown**
 
@@ -2160,47 +2169,37 @@ const [unlinkTarget, setUnlinkTarget] = useState<Guest | null>(null);
 Finally, render all three new dialogs alongside the existing `{banTarget && <BanDialog .../>}` (locate that block at the end of `AllGuestsTab`'s returned JSX, just before its closing `</>`):
 
 ```tsx
-{
-  banTarget && (
-    <BanDialog
-      guest={banTarget}
-      orgId={orgId}
-      onClose={() => setBanTarget(null)}
-    />
-  );
-}
+{banTarget && (
+  <BanDialog
+    guest={banTarget}
+    orgId={orgId}
+    onClose={() => setBanTarget(null)}
+  />
+)}
 ```
 
 to:
 
 ```tsx
-{
-  banTarget && (
-    <BanDialog
-      guest={banTarget}
-      orgId={orgId}
-      onClose={() => setBanTarget(null)}
-    />
-  );
-}
-{
-  editTarget && (
-    <EditGuestDialog guest={editTarget} onClose={() => setEditTarget(null)} />
-  );
-}
-{
-  linkTarget && (
-    <LinkMazmoDialog guest={linkTarget} onClose={() => setLinkTarget(null)} />
-  );
-}
-{
-  unlinkTarget && (
-    <UnlinkMazmoDialog
-      guest={unlinkTarget}
-      onClose={() => setUnlinkTarget(null)}
-    />
-  );
-}
+{banTarget && (
+  <BanDialog
+    guest={banTarget}
+    orgId={orgId}
+    onClose={() => setBanTarget(null)}
+  />
+)}
+{editTarget && (
+  <EditGuestDialog guest={editTarget} onClose={() => setEditTarget(null)} />
+)}
+{linkTarget && (
+  <LinkMazmoDialog guest={linkTarget} onClose={() => setLinkTarget(null)} />
+)}
+{unlinkTarget && (
+  <UnlinkMazmoDialog
+    guest={unlinkTarget}
+    onClose={() => setUnlinkTarget(null)}
+  />
+)}
 ```
 
 - [ ] **Step 6: Write tests for the dropdown's conditional items and the edit dialog's omitted-key semantics**
@@ -2481,107 +2480,86 @@ Four data columns now sum to 85% (30+24+13+18), leaving 15% for the fixed-width 
 
 - [ ] **Step 4: Update the skeleton row, empty-state `colSpan`, and real row cells**
 
-Locate the loading skeleton (searches `Array.from({ length: 5 }).map((_, i) => (\n                <TableRow key={i}>` — the first occurrence, inside `AllGuestsTab`). Change:
+Task 7 already made the skeleton's trailing cell and both `colSpan` expressions unconditional (`colSpan={4}`, no more `isOrgAdmin ? 4 : 3`) — this step adds the fifth column on top of that. Locate the loading skeleton (searches `Array.from({ length: 5 }).map((_, i) => (\n                <TableRow key={i}>` — the first occurrence, inside `AllGuestsTab`). Change:
 
 ```tsx
-{
-  isLoading &&
-    Array.from({ length: 5 }).map((_, i) => (
-      <TableRow key={i}>
-        <TableCell>
-          <Skeleton className="h-4 w-40" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-28" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-16" />
-        </TableCell>
-        {isOrgAdmin && (
-          <TableCell>
-            <Skeleton className="h-4 w-12" />
-          </TableCell>
-        )}
-      </TableRow>
-    ));
-}
-{
-  !isLoading && (data?.guests.length ?? 0) === 0 && (
-    <TableRow>
-      <TableCell
-        colSpan={isOrgAdmin ? 4 : 3}
-        className="text-center text-muted-foreground py-8"
-      >
-        {t("noGuestsYet")}
+{isLoading &&
+  Array.from({ length: 5 }).map((_, i) => (
+    <TableRow key={i}>
+      <TableCell>
+        <Skeleton className="h-4 w-40" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-28" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-16" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-12" />
       </TableCell>
     </TableRow>
-  );
-}
-{
-  !isLoading &&
-    (data?.guests.length ?? 0) > 0 &&
-    (guests?.length ?? 0) === 0 && (
-      <TableRow>
-        <TableCell
-          colSpan={isOrgAdmin ? 4 : 3}
-          className="text-center text-muted-foreground py-8"
-        >
-          {t("noGuestsMatchSearch")}
-        </TableCell>
-      </TableRow>
-    );
-}
+  ))}
+{!isLoading && (data?.guests.length ?? 0) === 0 && (
+  <TableRow>
+    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+      {t("noGuestsYet")}
+    </TableCell>
+  </TableRow>
+)}
+{!isLoading &&
+  (data?.guests.length ?? 0) > 0 &&
+  (guests?.length ?? 0) === 0 && (
+    <TableRow>
+      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+        {t("noGuestsMatchSearch")}
+      </TableCell>
+    </TableRow>
+  )}
 ```
 
 to:
 
 ```tsx
-{
-  isLoading &&
-    Array.from({ length: 5 }).map((_, i) => (
-      <TableRow key={i}>
-        <TableCell>
-          <Skeleton className="h-4 w-40" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-28" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-16" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-24" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-4 w-12" />
-        </TableCell>
-      </TableRow>
-    ));
-}
-{
-  !isLoading && (data?.guests.length ?? 0) === 0 && (
-    <TableRow>
-      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-        {t("noGuestsYet")}
+{isLoading &&
+  Array.from({ length: 5 }).map((_, i) => (
+    <TableRow key={i}>
+      <TableCell>
+        <Skeleton className="h-4 w-40" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-28" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-16" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-24" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-12" />
       </TableCell>
     </TableRow>
-  );
-}
-{
-  !isLoading &&
-    (data?.guests.length ?? 0) > 0 &&
-    (guests?.length ?? 0) === 0 && (
-      <TableRow>
-        <TableCell
-          colSpan={5}
-          className="text-center text-muted-foreground py-8"
-        >
-          {t("noGuestsMatchSearch")}
-        </TableCell>
-      </TableRow>
-    );
-}
+  ))}
+{!isLoading && (data?.guests.length ?? 0) === 0 && (
+  <TableRow>
+    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+      {t("noGuestsYet")}
+    </TableCell>
+  </TableRow>
+)}
+{!isLoading &&
+  (data?.guests.length ?? 0) > 0 &&
+  (guests?.length ?? 0) === 0 && (
+    <TableRow>
+      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+        {t("noGuestsMatchSearch")}
+      </TableCell>
+    </TableRow>
+  )}
 ```
+
+If the actual file content at this point differs from the "before" snippet above only in whitespace/line-wrapping (not in the `isOrgAdmin` logic itself), trust the file — Task 7 is the authority on what this region looks like going in, this snippet is illustrative of the structure, not a byte-exact transcript.
 
 Locate the real row cells (searches `{g.mazmo_user_id ?? "—"}\n                </TableCell>` — this is the end of the Mazmo ID cell as left by Task 3). Change:
 
