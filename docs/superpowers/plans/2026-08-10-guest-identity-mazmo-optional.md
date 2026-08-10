@@ -23,7 +23,7 @@
 - **Spanish copy:** the app uses club slang for some terms (`banned` → "Vantear"/"Vanteado"). Guest-identity terms (link, unlink, edit) have no established slang — use plain, literal Spanish.
 - **Commit hooks run `tsc --noEmit`, Prettier, and ESLint.** A commit fails if any of them fail. Run `npx prettier --write <files>` before committing if the format check trips.
 - **This branch is `feat/guest-identity-mazmo-optional`.** The design spec is already committed there. Keep working on this branch; do not create a new one.
-- **`npm run typecheck` (`tsc --noEmit` at the repo root) does not actually check anything.** Root `tsconfig.json` has `files: []` and project references, but without `-b` those references are never traversed — the command silently exits 0 regardless of real errors. This affects the pre-commit hook too (its "TypeScript type check" step uses the same broken invocation). Discovered during Task 1. For every "verify typecheck" step in this plan from here on, use `npx tsc --noEmit -p tsconfig.app.json` instead — confirmed working, catches the real errors. This is a pre-existing repo bug outside this plan's scope; do not fix `tsconfig.json`/`package.json` as part of this work, just don't trust the broken command.
+- **`npm run typecheck` (`tsc --noEmit` at the repo root) was a silent no-op until Task 1.5.** Root `tsconfig.json` has `files: []` and project references, but without `-b` those references were never traversed — the command exited 0 regardless of real errors, and the pre-commit hook's "TypeScript type check" step used the same broken invocation. Discovered during Task 1; Task 1.5 fixes both the `npm run typecheck` script and the pre-commit hook entry to use `tsc -b`, which the project's own `build` script already relies on and which correctly traverses references. **Tasks 3 onward can trust `npm run typecheck` again** — it is fixed before any of them run.
 - **`EventLogPublic["event_type"]` is typed as plain `string` in the generated schema, not a literal union.** This means `Record<EventType, X>` in `EventsPage.tsx` is really `Record<string, X>` — TypeScript will **not** error if a new event type is missing from `EVENT_BADGE_VARIANT`/`eventTypeLabel`, contrary to Task 5's stated rationale. Task 5 must be verified by reading the code / grepping for the two new keys, not by "typecheck now passes."
 - **This plan document was run through a markdown formatter that reformats embedded ```tsx code blocks as if they were standalone files.** That can shift indentation and line-wrapping in a snippet without changing its logic. Every "Locate X (searches ...)" instruction names a short, literal anchor string — use that to find the real spot in the real file, then apply the *edit being described*, not necessarily the plan snippet's exact whitespace. If a "before" snippet's structure genuinely conflicts with what the file actually contains (not just whitespace — an actual logic mismatch), stop and report it rather than guessing.
 
@@ -32,6 +32,8 @@
 | File                                             | Responsibility                                                                                                                                                    |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/api/types.ts`                               | Generated. Gains `id`/nullable `mazmo_user_id`/`mazmo_handle`/`instagram_username` on guest schemas, `guest_id` path params, and the new `/guests/*` endpoints.   |
+| `package.json`                                   | `typecheck` script fixed to actually traverse project references (Task 1.5).                                                                                     |
+| `.pre-commit-config.yaml`                        | Typecheck hook entry fixed to match (Task 1.5).                                                                                                                    |
 | `src/hooks/useDebouncedValue.ts`                 | **New.** Generic debounce hook, used by the new guest search.                                                                                                     |
 | `src/hooks/useGuestSearch.ts`                    | `username: string` → `mazmoHandle: string \| null` in its field-accessor contract.                                                                                |
 | `src/features/guests/GuestsPage.tsx`             | Path renames, nullable-handle rendering, new tabs on the add-guest dialog, new per-row dropdown (edit/link/unlink/ban), new Instagram column, server-side search. |
@@ -41,7 +43,7 @@
 | `src/features/events/EventsPage.tsx`             | Two new `EventType` entries.                                                                                                                                      |
 | `src/lib/i18n.tsx`                               | All new copy, `en` + `es`.                                                                                                                                        |
 
-**Task order rationale:** Task 1 (types) unblocks everything. Task 2 builds a shared hook wave two needs early. Tasks 3-5 are the parity migration, ordered by blast radius (`GuestsPage` first since it's smaller, then the bigger `MeetupDetailPage`, then the mechanical `EventsPage` fix). Tasks 6-9 are additive feature slices on `GuestsPage.tsx`, each building on the previous task's edits to that same file — **run them in order**, since each task's "before" code is the previous task's "after" code, not today's file. Task 10 is manual verification.
+**Task order rationale:** Task 1 (types) unblocks everything. Task 1.5 (added mid-execution) fixes an unrelated but discovered-in-passing tooling bug — `npm run typecheck` was a silent no-op — before any task downstream relies on it being trustworthy again. Task 2 builds a shared hook wave two needs early. Tasks 3-5 are the parity migration, ordered by blast radius (`GuestsPage` first since it's smaller, then the bigger `MeetupDetailPage`, then the mechanical `EventsPage` fix). Tasks 6-9 are additive feature slices on `GuestsPage.tsx`, each building on the previous task's edits to that same file — **run them in order**, since each task's "before" code is the previous task's "after" code, not today's file. Task 10 is manual verification.
 
 ---
 
@@ -112,6 +114,119 @@ regenerate api types for optional-mazmo guest identity
 Intentionally breaks the typecheck until Tasks 3-5 fix every call
 site. --no-verify used because the pre-commit hook can't partially
 pass on a types-only commit that's mid-migration by design.
+EOF
+)"
+```
+
+---
+
+## Task 1.5: Fix `npm run typecheck` to actually check the project
+
+Discovered while executing Task 1: `npm run typecheck` (`tsc --noEmit`, run against the root `tsconfig.json`) is a silent no-op. The root config has `files: []` and only `references` to `tsconfig.app.json`/`tsconfig.node.json` — without the `-b` (build) flag, `tsc` never traverses those references, so the command always exits 0 regardless of real type errors. The project's own `build` script (`tsc -b && vite build`) already uses `-b` and correctly catches errors — Task 1's implementer confirmed this by using `npm run build` to verify its work instead of the (broken) `typecheck` script. The pre-commit hook's "TypeScript type check" step has the identical bug (`entry: npx tsc --noEmit`), so it has been passing unconditionally regardless of actual type errors.
+
+This task fixes both the `npm run typecheck` script and the pre-commit hook entry so both actually check the project going forward. No application code changes.
+
+**Files:**
+
+- Modify: `package.json`
+- Modify: `.pre-commit-config.yaml`
+
+**Interfaces:**
+
+- Consumes: nothing.
+- Produces: nothing new — `npm run typecheck` and the pre-commit hook's typecheck step become meaningful again.
+
+- [ ] **Step 1: Confirm the bug reproduces**
+
+```bash
+npm run typecheck
+echo "exit: $?"
+```
+
+Expected: no output, `exit: 0` — even though the working tree currently has real type errors from Task 1's schema regeneration (unfixed until Tasks 3-5). This confirms the no-op before touching anything.
+
+- [ ] **Step 2: Confirm `tsc -b` catches the same errors `npm run build`'s typecheck step catches**
+
+```bash
+npx tsc -b --noEmit 2>&1 | grep -c "error TS"
+```
+
+Expected: a positive number (around 28-31, matching Task 1's report) — confirming `-b` traverses the project references and surfaces the real errors. (The `--noEmit` flag is redundant here since both `tsconfig.app.json` and `tsconfig.node.json` already set `"noEmit": true`, but it documents intent and is harmless — `tsc -b` was already confirmed not to emit any stray build artifacts beyond the gitignored `node_modules/.tmp/*.tsbuildinfo` cache files.)
+
+- [ ] **Step 3: Fix `package.json`'s `typecheck` script**
+
+In `package.json`, locate the `"scripts"` block. Change:
+
+```json
+    "typecheck": "tsc --noEmit",
+```
+
+to:
+
+```json
+    "typecheck": "tsc -b --noEmit",
+```
+
+- [ ] **Step 4: Fix the pre-commit hook's typecheck entry**
+
+In `.pre-commit-config.yaml`, locate the `typecheck` hook. Change:
+
+```yaml
+      - id: typecheck
+        name: TypeScript type check
+        entry: npx tsc --noEmit
+        language: system
+        pass_filenames: false
+        always_run: true
+```
+
+to:
+
+```yaml
+      - id: typecheck
+        name: TypeScript type check
+        entry: npx tsc -b --noEmit
+        language: system
+        pass_filenames: false
+        always_run: true
+```
+
+- [ ] **Step 5: Verify the fixed script now reproduces the same (real) error count**
+
+```bash
+npm run typecheck 2>&1 | grep -c "error TS"
+```
+
+Expected: the same positive number as Step 2 (since the working tree's actual errors haven't changed, only the command checking for them). This confirms `npm run typecheck` is no longer a no-op.
+
+- [ ] **Step 6: Verify `npm run build`'s own typecheck step still behaves identically**
+
+```bash
+npm run build 2>&1 | grep -c "error TS"
+```
+
+Expected: the same count again — `build` was already using `tsc -b` correctly; this step just confirms the two commands agree now that `typecheck` uses the same mechanism.
+
+- [ ] **Step 7: Commit**
+
+This commit's own pre-commit hook run will show the same real (expected, pre-existing-in-the-branch) type errors that Tasks 3-5 are responsible for fixing — this commit only touches `package.json` and `.pre-commit-config.yaml`, neither of which introduces or fixes those errors. Use `--no-verify` for this commit for the same reason as Task 1's commit: the working tree is intentionally mid-migration and the hook cannot cleanly pass until Task 5 lands.
+
+```bash
+git add package.json .pre-commit-config.yaml
+git commit --no-verify -m "$(cat <<'EOF'
+fix: make npm run typecheck and its pre-commit hook actually check the project
+
+Root tsconfig.json has files: [] and only project references; without
+-b, tsc --noEmit never traversed those references and silently
+exited 0 regardless of real errors. Both the typecheck script and the
+pre-commit hook's typecheck step used this broken invocation. Switch
+both to tsc -b --noEmit, matching the mechanism the build script
+already relies on.
+
+--no-verify: the working tree is mid-migration (Task 1 of a larger
+plan intentionally broke the typecheck until Tasks 3-5 fix every call
+site); this commit only touches tooling config, not the errors
+themselves.
 EOF
 )"
 ```
