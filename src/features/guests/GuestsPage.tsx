@@ -103,10 +103,10 @@ function BanDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       const { error } = await api.PATCH(
-        "/organizations/{org_id}/guests/{mazmo_user_id}/ban",
+        "/organizations/{org_id}/guests/{guest_id}/ban",
         {
           params: {
-            path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id },
+            path: { org_id: orgId, guest_id: guest.id },
           },
           body: { reason },
         },
@@ -174,7 +174,7 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { data, error, response } = await api.POST("/guests/", {
+      const { data, error, response } = await api.POST("/guests/mazmo", {
         body: { username: username.trim() },
       });
       if (error) {
@@ -283,9 +283,9 @@ function AllGuestsTab({
         if (sortCol === "displayname")
           cmp = a.displayname.localeCompare(b.displayname);
         else if (sortCol === "username")
-          cmp = a.username.localeCompare(b.username);
+          cmp = (a.mazmo_handle ?? "").localeCompare(b.mazmo_handle ?? "");
         else if (sortCol === "mazmo_user_id")
-          cmp = a.mazmo_user_id - b.mazmo_user_id;
+          cmp = (a.mazmo_user_id ?? -1) - (b.mazmo_user_id ?? -1);
         return sortDir === "asc" ? cmp : -cmp;
       })
     : data?.guests;
@@ -296,7 +296,7 @@ function AllGuestsTab({
     filtered: guests,
   } = useGuestSearch(sorted, (g) => ({
     displayname: g.displayname,
-    username: g.username,
+    mazmoHandle: g.mazmo_handle,
   }));
 
   return (
@@ -394,13 +394,13 @@ function AllGuestsTab({
                 </TableRow>
               )}
             {guests?.map((g) => (
-              <TableRow key={g.mazmo_user_id}>
+              <TableRow key={g.id}>
                 <TableCell className="font-medium">{g.displayname}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  @{g.username}
+                  {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {g.mazmo_user_id}
+                  {g.mazmo_user_id ?? "—"}
                 </TableCell>
                 {isOrgAdmin && (
                   <TableCell>
@@ -457,10 +457,10 @@ function BannedGuestsTab({
   const unbanMutation = useMutation({
     mutationFn: async (guest: BannedGuest) => {
       const { error } = await api.PATCH(
-        "/organizations/{org_id}/guests/{mazmo_user_id}/unban",
+        "/organizations/{org_id}/guests/{guest_id}/unban",
         {
           params: {
-            path: { org_id: orgId, mazmo_user_id: guest.mazmo_user_id },
+            path: { org_id: orgId, guest_id: guest.id },
           },
         },
       );
@@ -495,7 +495,7 @@ function BannedGuestsTab({
         if (sortCol === "displayname")
           cmp = a.displayname.localeCompare(b.displayname);
         else if (sortCol === "username")
-          cmp = a.username.localeCompare(b.username);
+          cmp = (a.mazmo_handle ?? "").localeCompare(b.mazmo_handle ?? "");
         else if (sortCol === "banned_at")
           cmp = a.banned_at.localeCompare(b.banned_at);
         else if (sortCol === "banned_reason")
@@ -510,7 +510,7 @@ function BannedGuestsTab({
     filtered: guests,
   } = useGuestSearch(sorted, (g) => ({
     displayname: g.displayname,
-    username: g.username,
+    mazmoHandle: g.mazmo_handle,
   }));
 
   return (
@@ -619,12 +619,12 @@ function BannedGuestsTab({
                 </TableRow>
               )}
             {guests?.map((g) => (
-              <TableRow key={g.mazmo_user_id}>
+              <TableRow key={g.id}>
                 <TableCell className="font-medium text-destructive">
                   {g.displayname}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  @{g.username}
+                  {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {formatDateTime(g.banned_at)}
