@@ -176,6 +176,31 @@ describe("GuestsPage — per-row identity management", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows Edit and Link/Unlink but never Ban for non-admin staff", async () => {
+    mockRole = "STAFF";
+    renderPage([
+      guest({ id: "g-staff", mazmo_handle: "cindydark", displayname: "Cindy" }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions" }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Edit" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Unlink Mazmo account" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Link Mazmo account" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Vant" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders 'No Mazmo account' instead of a blank or @null handle", async () => {
     renderPage([guest({ id: "g-3", displayname: "No Mazmo Guy" })]);
 
