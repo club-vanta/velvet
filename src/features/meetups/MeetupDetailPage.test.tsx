@@ -56,9 +56,11 @@ function guest(overrides: {
 }): MeetupGuest {
   return {
     guest: {
+      id: `00000000-0000-0000-0000-${String(overrides.mazmo_user_id).padStart(12, "0")}`,
       mazmo_user_id: overrides.mazmo_user_id,
-      username: `user${overrides.mazmo_user_id}`,
+      mazmo_handle: `user${overrides.mazmo_user_id}`,
       displayname: overrides.displayname,
+      instagram_username: null,
       is_banned: overrides.is_banned ?? false,
     },
     rsvp: {
@@ -212,5 +214,42 @@ describe("MeetupDetailPage payment requirement toggle", () => {
     expect(
       await screen.findByRole("button", { name: "Enable payment" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage guest identity", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("renders 'No Mazmo account' for a guest with no Mazmo handle", async () => {
+    const noMazmoGuest: MeetupGuest = {
+      guest: {
+        id: "00000000-0000-0000-0000-000000000099",
+        mazmo_user_id: null,
+        mazmo_handle: null,
+        displayname: "Walk-in No Mazmo",
+        instagram_username: null,
+        is_banned: false,
+      },
+      rsvp: {
+        rsvp_time: "2026-08-01T12:00:00Z",
+        cancelled_rsvp: false,
+        has_arrived: false,
+        arrival_time: null,
+        arrival_order: null,
+        is_walkin: true,
+        has_paid: false,
+        paid_at: null,
+      },
+    };
+
+    renderPage({ ...MEETUP, requires_payment: false }, [noMazmoGuest]);
+
+    expect(await screen.findByText("Walk-in No Mazmo")).toBeInTheDocument();
+    expect(screen.getByText("No Mazmo account")).toBeInTheDocument();
+    expect(screen.queryByText("@null")).not.toBeInTheDocument();
   });
 });
