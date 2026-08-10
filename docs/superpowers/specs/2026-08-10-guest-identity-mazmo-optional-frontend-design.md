@@ -84,10 +84,12 @@ their `.username` references are `UserPublic` (staff), not guest, and
 
 ### `MeetupDetailPage.tsx`
 
-- `checkInMutation`, `UndoDialog`, `MarkPaidDialog`/payment mutation,
-  `UndoPaymentDialog`/payment-undo mutation, and `WalkinDialog`'s add-walkin
-  mutation all change their path param from `mazmo_user_id: guest.mazmo_user_id`
-  (number) to `guest_id: guest.id` (string).
+- Six call sites change their path param from `mazmo_user_id: guest.mazmo_user_id`
+  (number) to `guest_id: guest.id` (string): `checkInMutation`, `UndoDialog`
+  (undo-checkin), `MarkPaidDialog` (payment), `UndoPaymentDialog`
+  (payment/undo), `CheckInBannedDialog` ("check in anyway" override — this one
+  hits the *same* `checkin` endpoint as `checkInMutation`, from a second call
+  site), and `WalkinDialog`'s add-walkin mutation.
 - `rsvpedIds` (`Set<number>` built from `g.guest.mazmo_user_id`) and
   `alreadyRsvped` (passed into `WalkinDialog`, typed `Set<number>`) become
   `Set<string>` built from `g.guest.id`. Update the `WalkinDialog` prop type
