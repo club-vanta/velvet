@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: typecheck
         name: TypeScript type check
-        entry: npx tsc --noEmit
+        entry: npx tsc -b --noEmit
         language: system
         pass_filenames: false
         always_run: true
