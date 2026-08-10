@@ -169,40 +169,66 @@ function BanDialog({
 
 function AddGuestDialog({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage();
+  const [tab, setTab] = useState<"mazmo" | "manual">("mazmo");
   const [username, setUsername] = useState("");
+  const [displayname, setDisplayname] = useState("");
+  const [instagram, setInstagram] = useState("");
   const queryClient = useQueryClient();
 
-  const mutation = useMutation({
+  const mazmoMutation = useMutation({
     mutationFn: async () => {
       const { data, error, response } = await api.POST("/guests/mazmo", {
-        body: { username: username.trim() },
+        body: {
+          username: username.trim(),
+          instagram_username: instagram.trim() || null,
+        },
       });
       if (error) {
-        if (response.status === 404) {
-          throw new Error(
-            "No se encontró el usuario en Mazmo. Revisá el handle.",
-          );
-        }
-        if (response.status === 409) {
-          throw new Error("Este guest ya está registrado en el sistema.");
-        }
-        if (response.status === 504) {
-          throw new Error("No se pudo conectar a Mazmo. Intentá de nuevo.");
-        }
+        if (response.status === 404) throw new Error(t("mazmoUserNotFound"));
+        if (response.status === 409)
+          throw new Error(t("guestAlreadyRegistered"));
+        if (response.status === 504) throw new Error(t("mazmoUnreachable"));
         throw new Error(
-          (error as { detail?: string }).detail ??
-            "Algo salió mal. Intentá de nuevo.",
+          (error as { detail?: string }).detail ?? t("somethingWentWrong"),
         );
       }
       return data;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(`${data?.displayname ?? "Guest"} agregado correctamente`);
+      toast.success(
+        `${data?.displayname ?? "Guest"} ${t("addedSuccessfully")}`,
+      );
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const manualMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.POST("/guests/manual", {
+        body: {
+          displayname: displayname.trim(),
+          instagram_username: instagram.trim() || null,
+        },
+      });
+      if (error)
+        throw new Error(
+          (error as { detail?: string }).detail ?? t("somethingWentWrong"),
+        );
+      return data;
+    },
+    onSuccess: (data) => {
+      void queryClient.invalidateQueries({ queryKey: ["guests"] });
+      toast.success(
+        `${data?.displayname ?? "Guest"} ${t("addedSuccessfully")}`,
+      );
+      onClose();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const isPending = mazmoMutation.isPending || manualMutation.isPending;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -210,33 +236,104 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
         <DialogHeader>
           <DialogTitle>{t("addNewGuest")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-1 py-2">
-          <label htmlFor="guest-username" className="text-sm font-medium">
-            {t("mazmoUsername")}
-          </label>
-          <InputWithPrefix
-            id="guest-username"
-            prefix="@"
-            placeholder="cindydark"
-            autoComplete="off"
-            autoCapitalize="none"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={mutation.isPending}
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-          />
-        </div>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as "mazmo" | "manual")}
+        >
+          <TabsList>
+            <TabsTrigger value="mazmo">{t("tabWithMazmo")}</TabsTrigger>
+            <TabsTrigger value="manual">{t("tabManual")}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="mazmo" className="space-y-3 py-2">
+            <div className="space-y-1">
+              <label htmlFor="guest-username" className="text-sm font-medium">
+                {t("mazmoUsername")}
+              </label>
+              <InputWithPrefix
+                id="guest-username"
+                prefix="@"
+                placeholder="cindydark"
+                autoComplete="off"
+                autoCapitalize="none"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={isPending}
+                // eslint-disable-next-line jsx-a11y/no-autofocus
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <label
+                htmlFor="guest-instagram-mazmo"
+                className="text-sm font-medium"
+              >
+                {t("instagramLabel")}
+              </label>
+              <Input
+                id="guest-instagram-mazmo"
+                placeholder={t("instagramPlaceholder")}
+                autoComplete="off"
+                autoCapitalize="none"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+          </TabsContent>
+          <TabsContent value="manual" className="space-y-3 py-2">
+            <div className="space-y-1">
+              <label
+                htmlFor="guest-displayname"
+                className="text-sm font-medium"
+              >
+                {t("displayName")}
+              </label>
+              <Input
+                id="guest-displayname"
+                placeholder={t("displaynamePlaceholder")}
+                value={displayname}
+                onChange={(e) => setDisplayname(e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+            <div className="space-y-1">
+              <label
+                htmlFor="guest-instagram-manual"
+                className="text-sm font-medium"
+              >
+                {t("instagramLabel")}
+              </label>
+              <Input
+                id="guest-instagram-manual"
+                placeholder={t("instagramPlaceholder")}
+                autoComplete="off"
+                autoCapitalize="none"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                disabled={isPending}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             {t("cancel")}
           </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!username.trim() || mutation.isPending}
-          >
-            {mutation.isPending ? t("adding") : t("add")}
-          </Button>
+          {tab === "mazmo" ? (
+            <Button
+              onClick={() => mazmoMutation.mutate()}
+              disabled={!username.trim() || isPending}
+            >
+              {mazmoMutation.isPending ? t("adding") : t("add")}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => manualMutation.mutate()}
+              disabled={!displayname.trim() || isPending}
+            >
+              {manualMutation.isPending ? t("adding") : t("add")}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
