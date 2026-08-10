@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/lib/i18n";
 import { GuestsPage } from "./GuestsPage";
@@ -259,6 +259,63 @@ describe("GuestsPage — per-row identity management", () => {
       expect.objectContaining({
         body: { instagram_username: null },
       }),
+    );
+  });
+});
+
+describe("GuestsPage — search", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("debounces the search query instead of firing one request per keystroke", async () => {
+    const user = userEvent.setup({
+      advanceTimers: (ms) => vi.advanceTimersByTime(ms),
+    });
+    renderPage([guest({ id: "g-1", displayname: "Cindy" })]);
+
+    const input = await screen.findByPlaceholderText("Search guest list…");
+    const callsBeforeTyping = mockApiGet.mock.calls.filter(
+      (c) => c[0] === "/guests/",
+    ).length;
+
+    await user.type(input, "cin");
+
+    // No new /guests/ GET should have fired yet — the debounce window
+    // (300ms) hasn't elapsed since the last keystroke.
+    const callsRightAfterTyping = mockApiGet.mock.calls.filter(
+      (c) => c[0] === "/guests/",
+    ).length;
+    expect(callsRightAfterTyping).toBe(callsBeforeTyping);
+
+    await vi.advanceTimersByTimeAsync(300);
+
+    await waitFor(() => {
+      const callsAfterDebounce = mockApiGet.mock.calls.filter(
+        (c) => c[0] === "/guests/",
+      ).length;
+      expect(callsAfterDebounce).toBe(callsBeforeTyping + 1);
+    });
+    expect(mockApiGet).toHaveBeenCalledWith(
+      "/guests/",
+      expect.objectContaining({ params: { query: { q: "cin" } } }),
+    );
+  });
+
+  it("omits q entirely when the search box is empty", async () => {
+    renderPage([guest({ id: "g-1", displayname: "Cindy" })]);
+    await screen.findByText("Cindy");
+
+    const initialCall = mockApiGet.mock.calls.find((c) => c[0] === "/guests/");
+    expect(initialCall?.[1]).not.toEqual(
+      expect.objectContaining({ params: { query: { q: "" } } }),
     );
   });
 });

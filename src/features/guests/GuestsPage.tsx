@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useOrg } from "@/lib/org";
@@ -583,10 +584,15 @@ function AllGuestsTab({
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["guests"],
+    queryKey: debouncedSearch ? ["guests", debouncedSearch] : ["guests"],
     queryFn: async () => {
-      const { data, error } = await api.GET("/guests/");
+      const { data, error } = await api.GET("/guests/", {
+        params: debouncedSearch ? { query: { q: debouncedSearch } } : undefined,
+      });
       if (error) throw new Error("Failed to load guests");
       return data;
     },
@@ -625,14 +631,7 @@ function AllGuestsTab({
       })
     : data?.guests;
 
-  const {
-    search,
-    setSearch,
-    filtered: guests,
-  } = useGuestSearch(sorted, (g) => ({
-    displayname: g.displayname,
-    mazmoHandle: g.mazmo_handle,
-  }));
+  const guests = sorted;
 
   return (
     <>
@@ -721,22 +720,12 @@ function AllGuestsTab({
                   colSpan={5}
                   className="text-center text-muted-foreground py-8"
                 >
-                  {t("noGuestsYet")}
+                  {debouncedSearch
+                    ? t("noGuestsMatchSearch")
+                    : t("noGuestsYet")}
                 </TableCell>
               </TableRow>
             )}
-            {!isLoading &&
-              (data?.guests.length ?? 0) > 0 &&
-              (guests?.length ?? 0) === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    {t("noGuestsMatchSearch")}
-                  </TableCell>
-                </TableRow>
-              )}
             {guests?.map((g) => (
               <TableRow key={g.id}>
                 <TableCell className="font-medium">{g.displayname}</TableCell>
