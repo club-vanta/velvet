@@ -223,9 +223,13 @@ isn't meaningfully "less than" one with `mazmo_user_id: 3`).
 and it also matches on `mazmo_handle` server-side (which the client-side
 version already did, so behavior is preserved, not changed). Add a small
 `useDebouncedValue` hook (`src/hooks/useDebouncedValue.ts`, ~10 lines,
-`setTimeout`-based, 300ms) and key the query as
-`["guests", debouncedQuery || undefined]`. Empty query omits `q` entirely
-(equivalent to today's unfiltered list) rather than sending `q=""`.
+`setTimeout`-based, 300ms). Key the query as `debouncedQuery ? ["guests", debouncedQuery] : ["guests"]`
+— the empty-query case keeps the exact `["guests"]` key already used
+elsewhere (`DashboardPage`, `WalkinDialog`), so a plain `invalidateQueries({
+queryKey: ["guests"] })` after a create/edit/link/unlink still catches every
+variant via react-query's default prefix matching, and the unfiltered list
+doesn't needlessly become a second cache entry. Omit `q` from the request
+entirely when empty, rather than sending `q=""`.
 
 `BannedGuestsTab` and `MeetupDetailPage`'s in-page guest search stay
 client-side — both filter a list already loaded for another reason (the
