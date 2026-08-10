@@ -612,8 +612,15 @@ function AllGuestsTab({
           cmp = a.displayname.localeCompare(b.displayname);
         else if (sortCol === "username")
           cmp = (a.mazmo_handle ?? "").localeCompare(b.mazmo_handle ?? "");
-        else if (sortCol === "mazmo_user_id")
-          cmp = (a.mazmo_user_id ?? -1) - (b.mazmo_user_id ?? -1);
+        else if (sortCol === "mazmo_user_id") {
+          if (a.mazmo_user_id == null && b.mazmo_user_id == null) cmp = 0;
+          else if (a.mazmo_user_id == null) cmp = sortDir === "asc" ? 1 : -1;
+          else if (b.mazmo_user_id == null) cmp = sortDir === "asc" ? -1 : 1;
+          else cmp = a.mazmo_user_id - b.mazmo_user_id;
+        } else if (sortCol === "instagram_username")
+          cmp = (a.instagram_username ?? "").localeCompare(
+            b.instagram_username ?? "",
+          );
         return sortDir === "asc" ? cmp : -cmp;
       })
     : data?.guests;
@@ -658,7 +665,7 @@ function AllGuestsTab({
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="lg:w-[40%]"
+                className="lg:w-[30%]"
               />
               <SortableHead
                 col="username"
@@ -666,7 +673,7 @@ function AllGuestsTab({
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="lg:w-[30%]"
+                className="lg:w-[24%]"
               />
               <SortableHead
                 col="mazmo_user_id"
@@ -674,7 +681,15 @@ function AllGuestsTab({
                 active={sortCol}
                 dir={sortDir}
                 onSort={handleSort}
-                className="lg:w-[15%]"
+                className="lg:w-[13%]"
+              />
+              <SortableHead
+                col="instagram_username"
+                label={t("instagramCol")}
+                active={sortCol}
+                dir={sortDir}
+                onSort={handleSort}
+                className="lg:w-[18%]"
               />
               <TableHead />
             </TableRow>
@@ -693,6 +708,9 @@ function AllGuestsTab({
                     <Skeleton className="h-4 w-16" />
                   </TableCell>
                   <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
                     <Skeleton className="h-4 w-12" />
                   </TableCell>
                 </TableRow>
@@ -700,7 +718,7 @@ function AllGuestsTab({
             {!isLoading && (data?.guests.length ?? 0) === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center text-muted-foreground py-8"
                 >
                   {t("noGuestsYet")}
@@ -712,7 +730,7 @@ function AllGuestsTab({
               (guests?.length ?? 0) === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-center text-muted-foreground py-8"
                   >
                     {t("noGuestsMatchSearch")}
@@ -727,6 +745,9 @@ function AllGuestsTab({
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {g.mazmo_user_id ?? "—"}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {g.instagram_username ? `@${g.instagram_username}` : "—"}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
