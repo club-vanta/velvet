@@ -112,13 +112,13 @@ function UndoDialog({
   const mutation = useMutation({
     mutationFn: async (reason: string) => {
       const { error } = await api.PATCH(
-        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/undo-checkin",
         {
           params: {
             path: {
               org_id: orgId,
               meetup_id: meetupId,
-              mazmo_user_id: guest.guest.mazmo_user_id,
+              guest_id: guest.guest.id,
             },
           },
           body: { reason },
@@ -167,13 +167,13 @@ function MarkPaidDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await api.PATCH(
-        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/payment",
         {
           params: {
             path: {
               org_id: orgId,
               meetup_id: meetupId,
-              mazmo_user_id: guest.guest.mazmo_user_id,
+              guest_id: guest.guest.id,
             },
           },
         },
@@ -236,13 +236,13 @@ function UndoPaymentDialog({
   const mutation = useMutation({
     mutationFn: async (reason: string) => {
       const { error } = await api.PATCH(
-        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment/undo",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/payment/undo",
         {
           params: {
             path: {
               org_id: orgId,
               meetup_id: meetupId,
-              mazmo_user_id: guest.guest.mazmo_user_id,
+              guest_id: guest.guest.id,
             },
           },
           body: { reason },
@@ -291,13 +291,13 @@ function CheckInBannedDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await api.POST(
-        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/checkin",
         {
           params: {
             path: {
               org_id: orgId,
               meetup_id: meetupId,
-              mazmo_user_id: guest.guest.mazmo_user_id,
+              guest_id: guest.guest.id,
             },
           },
         },
@@ -424,7 +424,7 @@ function WalkinDialog({
 }: {
   orgId: string;
   meetupId: string;
-  alreadyRsvped: Set<number>;
+  alreadyRsvped: Set<string>;
   onClose: () => void;
 }) {
   const { t } = useLanguage();
@@ -443,21 +443,18 @@ function WalkinDialog({
   const mutation = useMutation({
     mutationFn: async (guest: Guest) => {
       const { data, error } = await api.POST(
-        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/add-walkin",
         {
           params: {
             path: {
               org_id: orgId,
               meetup_id: meetupId,
-              mazmo_user_id: guest.mazmo_user_id,
+              guest_id: guest.id,
             },
           },
         },
       );
-      if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? t("failedAddWalkin"),
-        );
+      if (error) throw new Error(extractApiError(error, t("failedAddWalkin")));
       return { data, guest };
     },
     onSuccess: ({ guest }) => {
@@ -473,10 +470,10 @@ function WalkinDialog({
   const q = search.trim().toLowerCase();
   const candidates = (allGuestsQ.data?.guests ?? []).filter(
     (g) =>
-      !alreadyRsvped.has(g.mazmo_user_id) &&
+      !alreadyRsvped.has(g.id) &&
       (q === "" ||
         g.displayname.toLowerCase().includes(q) ||
-        g.username.toLowerCase().includes(q)),
+        (g.mazmo_handle ?? "").toLowerCase().includes(q)),
   );
 
   return (
@@ -513,14 +510,16 @@ function WalkinDialog({
           <div className="space-y-1 max-h-64 overflow-y-auto">
             {candidates.map((g) => (
               <div
-                key={g.mazmo_user_id}
+                key={g.id}
                 className="flex items-center justify-between gap-3 rounded-md px-3 py-2 hover:bg-secondary/50"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
                     {g.displayname}
                   </p>
-                  <p className="text-xs text-muted-foreground">@{g.username}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
+                  </p>
                 </div>
                 <Button
                   size="sm"
@@ -629,13 +628,13 @@ export function MeetupDetailPage() {
   const checkInMutation = useMutation({
     mutationFn: async (guest: MeetupGuest) => {
       const { data, error } = await api.POST(
-        "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin",
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/checkin",
         {
           params: {
             path: {
               org_id: orgId,
               meetup_id: id!,
-              mazmo_user_id: guest.guest.mazmo_user_id,
+              guest_id: guest.guest.id,
             },
           },
         },
@@ -660,7 +659,7 @@ export function MeetupDetailPage() {
   const rawGuests = guestsQ.data?.guests ?? [];
   const arrivedCount = rawGuests.filter((g) => g.rsvp.has_arrived).length;
   const totalCount = rawGuests.length;
-  const rsvpedIds = new Set(rawGuests.map((g) => g.guest.mazmo_user_id));
+  const rsvpedIds = new Set(rawGuests.map((g) => g.guest.id));
 
   const sorted = sortCol
     ? rawGuests.slice().sort((a, b) => {
@@ -685,7 +684,7 @@ export function MeetupDetailPage() {
     filtered: guests,
   } = useGuestSearch(sorted, (g) => ({
     displayname: g.guest.displayname,
-    username: g.guest.username,
+    mazmoHandle: g.guest.mazmo_handle,
   }));
 
   if (!activeOrg) {
@@ -897,7 +896,7 @@ export function MeetupDetailPage() {
                 !paymentStateKnown || (requiresPayment && !mg.rsvp.has_paid);
               return (
                 <TableRow
-                  key={mg.guest.mazmo_user_id}
+                  key={mg.guest.id}
                   className={mg.rsvp.cancelled_rsvp ? "opacity-50" : ""}
                 >
                   <TableCell className="text-muted-foreground text-sm">
@@ -921,7 +920,9 @@ export function MeetupDetailPage() {
                         {mg.guest.displayname}
                       </span>
                       <span className="text-muted-foreground text-sm">
-                        @{mg.guest.username}
+                        {mg.guest.mazmo_handle
+                          ? `@${mg.guest.mazmo_handle}`
+                          : t("noMazmoHandle")}
                       </span>
                       {mg.rsvp.is_walkin && (
                         <Badge variant="outline" className="text-xs">
@@ -1009,12 +1010,12 @@ export function MeetupDetailPage() {
                             size="sm"
                             variant="secondary"
                             disabled
-                            aria-describedby={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                            aria-describedby={`checkin-blocked-${mg.guest.id}`}
                           >
                             {t("checkIn")}
                           </Button>
                           <span
-                            id={`checkin-blocked-${mg.guest.mazmo_user_id}`}
+                            id={`checkin-blocked-${mg.guest.id}`}
                             className="sr-only"
                           >
                             {t("checkInBlockedUnpaid")}

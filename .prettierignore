@@ -1,0 +1,8 @@
+# These two docs contain ```tsx fenced code blocks used as copy-paste
+# instructions for implementers. Prettier's embedded-language formatting
+# reformats those blocks as if they were standalone files (stripping
+# original indentation, adding stray semicolons around bare JSX
+# expressions), which corrupts the instructions rather than improving
+# them. See commit bfcdf15 on feat/guest-identity-mazmo-optional.
+docs/superpowers/plans/2026-08-10-guest-identity-mazmo-optional.md
+docs/superpowers/specs/2026-08-10-guest-identity-mazmo-optional-frontend-design.md

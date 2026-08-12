@@ -217,7 +217,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/organizations/{org_id}/guests/{mazmo_user_id}/ban": {
+  "/organizations/{org_id}/guests/{guest_id}/ban": {
     parameters: {
       query?: never;
       header?: never;
@@ -237,10 +237,10 @@ export interface paths {
      *     Returns 404 if the guest doesn't exist.
      *     Returns 409 if the guest is already banned in this organization.
      */
-    patch: operations["ban_guest_organizations__org_id__guests__mazmo_user_id__ban_patch"];
+    patch: operations["ban_guest_organizations__org_id__guests__guest_id__ban_patch"];
     trace?: never;
   };
-  "/organizations/{org_id}/guests/{mazmo_user_id}/unban": {
+  "/organizations/{org_id}/guests/{guest_id}/unban": {
     parameters: {
       query?: never;
       header?: never;
@@ -260,7 +260,7 @@ export interface paths {
      *     Returns 404 if the guest doesn't exist.
      *     Returns 409 if the guest is not currently banned in this organization.
      */
-    patch: operations["unban_guest_organizations__org_id__guests__mazmo_user_id__unban_patch"];
+    patch: operations["unban_guest_organizations__org_id__guests__guest_id__unban_patch"];
     trace?: never;
   };
   "/staff/": {
@@ -400,6 +400,58 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/guests/mazmo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create a guest by Mazmo username
+     * @description Register a guest using their Mazmo username handle.
+     *
+     *     Looks up the canonical Mazmo user ID and profile data automatically,
+     *     so staff at the door only need to know the handle (e.g. "cindydark").
+     *
+     *     Returns 404 if the username doesn't exist on Mazmo.
+     *     Returns 409 if that mazmo_user_id is already registered.
+     *     Returns 504 if Mazmo is unreachable.
+     */
+    post: operations["create_guest_from_mazmo_guests_mazmo_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/guests/manual": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create a guest without a Mazmo account
+     * @description Register a guest who does not have a Mazmo account.
+     *
+     *     No dedup check is performed: there is no external identifier to
+     *     deduplicate against, so two guests with the same displayname can
+     *     coexist. Use PATCH /guests/{guest_id}/link-mazmo later if this guest
+     *     turns out to have (or creates) a Mazmo account.
+     */
+    post: operations["create_manual_guest_guests_manual_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/guests/": {
     parameters: {
       query?: never;
@@ -413,25 +465,14 @@ export interface paths {
      */
     get: operations["list_guests_guests__get"];
     put?: never;
-    /**
-     * Create a guest by Mazmo username
-     * @description Register a guest using their Mazmo username handle.
-     *
-     *     Looks up the canonical Mazmo user ID and profile data automatically,
-     *     so staff at the door only need to know the handle (e.g. "cindydark").
-     *
-     *     Returns 404 if the username doesn't exist on Mazmo.
-     *     Returns 409 if the guest is already registered in the system.
-     *     Returns 504 if Mazmo is unreachable.
-     */
-    post: operations["create_guest_guests__post"];
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/guests/{mazmo_user_id}": {
+  "/guests/{guest_id}": {
     parameters: {
       query?: never;
       header?: never;
@@ -440,9 +481,48 @@ export interface paths {
     };
     /**
      * Get a single guest's identity
-     * @description Get a single guest by their Mazmo user ID.
+     * @description Get a single guest by their internal id.
      */
-    get: operations["get_guest_guests__mazmo_user_id__get"];
+    get: operations["get_guest_guests__guest_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Edit a guest's displayname and/or Instagram handle
+     * @description Edit a guest's displayname and/or instagram_username.
+     *
+     *     A key omitted from the request body is left untouched. A key sent
+     *     explicitly as null clears it - but only for instagram_username.
+     *     displayname is typed str | None on the request schema, so the schema
+     *     itself accepts {"displayname": null} without a 422; it is this
+     *     function's own guard (payload.displayname is not None) that silently
+     *     ignores an explicit null for displayname instead of clearing it,
+     *     because Guest.displayname is non-nullable and cannot actually be
+     *     cleared. This distinction uses payload.model_fields_set, since
+     *     payload.instagram_username is None in both the "omitted" and
+     *     "explicitly cleared" cases.
+     *
+     *     mazmo_user_id and mazmo_handle cannot be changed here - use
+     *     link-mazmo/unlink-mazmo for that. This is a cosmetic edit, not an
+     *     audited business event, so no event_log entry is written.
+     */
+    patch: operations["update_guest_guests__guest_id__patch"];
+    trace?: never;
+  };
+  "/guests/by-mazmo-handle/{mazmo_handle}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a single guest by Mazmo handle
+     * @description Get a single guest by their Mazmo handle. Guests without Mazmo never match.
+     */
+    get: operations["get_guest_by_mazmo_handle_guests_by_mazmo_handle__mazmo_handle__get"];
     put?: never;
     post?: never;
     delete?: never;
@@ -451,24 +531,61 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/guests/by-username/{username}": {
+  "/guests/{guest_id}/link-mazmo": {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /**
-     * Get a single guest by Mazmo username
-     * @description Get a single guest by their Mazmo username handle.
-     */
-    get: operations["get_guest_by_username_guests_by_username__username__get"];
+    get?: never;
     put?: never;
     post?: never;
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Link an existing guest to a Mazmo account
+     * @description Attach a Mazmo account to a guest created without one.
+     *
+     *     Overwrites mazmo_user_id, mazmo_handle, and displayname with the
+     *     Mazmo profile data. instagram_username is left untouched.
+     *
+     *     Returns 404 if the guest doesn't exist.
+     *     Returns 409 if the guest is already linked, or if the Mazmo account
+     *     is already linked to a different guest (no automatic merge).
+     */
+    patch: operations["link_guest_to_mazmo_guests__guest_id__link_mazmo_patch"];
+    trace?: never;
+  };
+  "/guests/{guest_id}/unlink-mazmo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Unlink a guest's Mazmo account
+     * @description Detach a guest's Mazmo account, e.g. to undo a link made by mistake.
+     *
+     *     displayname is NOT reverted to any prior value (no name history is
+     *     kept) - it stays as whatever it was, and can be corrected afterward
+     *     via PATCH /guests/{guest_id}. The freed mazmo_user_id can be linked
+     *     to this guest again, or to a different one.
+     *
+     *     Returns 404 if the guest doesn't exist.
+     *     Returns 409 if the guest is not currently linked.
+     *     Returns 409 if the guest has an active ban in any organization - see
+     *     the ban-evasion guard below for why this is blocked.
+     */
+    patch: operations["unlink_guest_mazmo_guests__guest_id__unlink_mazmo_patch"];
     trace?: never;
   };
   "/organizations/{org_id}/meetups/": {
@@ -564,7 +681,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/add-walkin": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/add-walkin": {
     parameters: {
       query?: never;
       header?: never;
@@ -585,14 +702,14 @@ export interface paths {
      *     Returns 409 if the guest already has an RSVP for this meetup.
      *     Returns 409 if the meetup is finalized.
      */
-    post: operations["add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__add_walkin_post"];
+    post: operations["add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__add_walkin_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/checkin": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/checkin": {
     parameters: {
       query?: never;
       header?: never;
@@ -609,14 +726,14 @@ export interface paths {
      *     The staff member performing the check-in is recorded for audit purposes.
      *     Returns 404 if guest not RSVPed, 409 if already checked in or meetup finalized.
      */
-    post: operations["checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__checkin_post"];
+    post: operations["checkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__checkin_post"];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/undo-checkin": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/undo-checkin": {
     parameters: {
       query?: never;
       header?: never;
@@ -640,10 +757,10 @@ export interface paths {
      *     Returns 404 if guest not RSVPed to this meetup.
      *     Returns 409 if guest is not currently checked in.
      */
-    patch: operations["undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch"];
+    patch: operations["undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__undo_checkin_patch"];
     trace?: never;
   };
-  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/payment": {
     parameters: {
       query?: never;
       header?: never;
@@ -666,10 +783,10 @@ export interface paths {
      *     Returns 409 if the meetup doesn't require payment, if the guest already
      *     paid, or if the meetup is finalized. Returns 404 if not RSVPed.
      */
-    patch: operations["mark_guest_paid_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_patch"];
+    patch: operations["mark_guest_paid_organizations__org_id__meetups__meetup_id__guests__guest_id__payment_patch"];
     trace?: never;
   };
-  "/organizations/{org_id}/meetups/{meetup_id}/guests/{mazmo_user_id}/payment/undo": {
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/payment/undo": {
     parameters: {
       query?: never;
       header?: never;
@@ -692,7 +809,7 @@ export interface paths {
      *     Returns 404 if guest not RSVPed to this meetup.
      *     Returns 409 if the guest is not currently marked as paid.
      */
-    patch: operations["undo_guest_payment_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_undo_patch"];
+    patch: operations["undo_guest_payment_organizations__org_id__meetups__meetup_id__guests__guest_id__payment_undo_patch"];
     trace?: never;
   };
   "/organizations/{org_id}/meetups/{meetup_id}/enable-payment": {
@@ -1010,12 +1127,19 @@ export interface components {
      *     Used in the org-scoped banned guests list endpoint.
      */
     BannedGuestPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
       /** Mazmo User Id */
-      mazmo_user_id: number;
-      /** Username */
-      username: string;
+      mazmo_user_id: number | null;
+      /** Mazmo Handle */
+      mazmo_handle: string | null;
       /** Displayname */
       displayname: string;
+      /** Instagram Username */
+      instagram_username: string | null;
       /**
        * Banned At
        * Format: date-time
@@ -1077,7 +1201,7 @@ export interface components {
     };
     /**
      * CreateGuestRequest
-     * @description Request body for creating a guest by Mazmo username.
+     * @description Request body for creating a guest by Mazmo username (POST /guests/mazmo).
      */
     CreateGuestRequest: {
       /**
@@ -1085,6 +1209,18 @@ export interface components {
        * @description Mazmo username to look up (e.g. 'cindydark')
        */
       username: string;
+      /** Instagram Username */
+      instagram_username?: string | null;
+    };
+    /**
+     * CreateManualGuestRequest
+     * @description Request body for creating a guest without a Mazmo account (POST /guests/manual).
+     */
+    CreateManualGuestRequest: {
+      /** Displayname */
+      displayname: string;
+      /** Instagram Username */
+      instagram_username?: string | null;
     };
     /**
      * DisableUserRequest
@@ -1116,10 +1252,15 @@ export interface components {
      *     Provides enough info to identify the guest without full profile data.
      */
     EventGuestPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
       /** Mazmo User Id */
-      mazmo_user_id: number;
-      /** Username */
-      username: string;
+      mazmo_user_id: number | null;
+      /** Mazmo Handle */
+      mazmo_handle: string | null;
       /** Displayname */
       displayname: string;
     };
@@ -1192,18 +1333,25 @@ export interface components {
     };
     /**
      * GuestPublic
-     * @description A Mazmo user's identity (cached locally).
+     * @description A guest's identity (cached locally, may or may not have a Mazmo account).
      *
      *     Identity-only - no RSVP or ban state. Bans are per-org and are
      *     included only in org-scoped endpoints via GuestWithBanPublic.
      */
     GuestPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
       /** Mazmo User Id */
-      mazmo_user_id: number;
-      /** Username */
-      username: string;
+      mazmo_user_id: number | null;
+      /** Mazmo Handle */
+      mazmo_handle: string | null;
       /** Displayname */
       displayname: string;
+      /** Instagram Username */
+      instagram_username: string | null;
     };
     /**
      * GuestWithBanPublic
@@ -1213,12 +1361,19 @@ export interface components {
      *     the frontend needs to know if this guest is banned in the current org.
      */
     GuestWithBanPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
       /** Mazmo User Id */
-      mazmo_user_id: number;
-      /** Username */
-      username: string;
+      mazmo_user_id: number | null;
+      /** Mazmo Handle */
+      mazmo_handle: string | null;
       /** Displayname */
       displayname: string;
+      /** Instagram Username */
+      instagram_username: string | null;
       /**
        * Is Banned
        * @default false
@@ -1247,6 +1402,17 @@ export interface components {
       services: {
         [key: string]: components["schemas"]["ServiceCheck"];
       };
+    };
+    /**
+     * LinkMazmoRequest
+     * @description Request body for linking an existing guest to a Mazmo account.
+     */
+    LinkMazmoRequest: {
+      /**
+       * Username
+       * @description Mazmo username to link
+       */
+      username: string;
     };
     /**
      * MeetupCreate
@@ -1594,6 +1760,21 @@ export interface components {
     UndoPaymentRequest: {
       /** Reason */
       reason: string;
+    };
+    /**
+     * UpdateGuestRequest
+     * @description Request body for editing a guest's displayname and/or Instagram handle.
+     *
+     *     Both fields are optional (partial update). Whether an omitted key
+     *     means "don't touch" vs. an explicit null meaning "clear it" is
+     *     resolved by the router via payload.model_fields_set, not by this
+     *     schema - see update_guest() in app/routers/guests.py.
+     */
+    UpdateGuestRequest: {
+      /** Displayname */
+      displayname?: string | null;
+      /** Instagram Username */
+      instagram_username?: string | null;
     };
     /**
      * UserPublic
@@ -2403,13 +2584,13 @@ export interface operations {
       };
     };
   };
-  ban_guest_organizations__org_id__guests__mazmo_user_id__ban_patch: {
+  ban_guest_organizations__org_id__guests__guest_id__ban_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -2475,13 +2656,13 @@ export interface operations {
       };
     };
   };
-  unban_guest_organizations__org_id__guests__mazmo_user_id__unban_patch: {
+  unban_guest_organizations__org_id__guests__guest_id__unban_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -2939,45 +3120,7 @@ export interface operations {
       };
     };
   };
-  list_guests_guests__get: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description All known guests (global, no ban context) */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["GuestListResponse"];
-        };
-      };
-      /** @description Invalid or missing credentials */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-      /** @description Account not approved or disabled */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": unknown;
-        };
-      };
-    };
-  };
-  create_guest_guests__post: {
+  create_guest_from_mazmo_guests_mazmo_post: {
     parameters: {
       query?: never;
       header?: never;
@@ -3055,12 +3198,113 @@ export interface operations {
       };
     };
   };
-  get_guest_guests__mazmo_user_id__get: {
+  create_manual_guest_guests_manual_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateManualGuestRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest created without a Mazmo account */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_guests_guests__get: {
+    parameters: {
+      query?: {
+        /** @description Filter by displayname or mazmo_handle (case-insensitive substring) */
+        q?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description All known guests (global, no ban context) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_guest_guests__guest_id__get: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -3113,12 +3357,74 @@ export interface operations {
       };
     };
   };
-  get_guest_by_username_guests_by_username__username__get: {
+  update_guest_guests__guest_id__patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
-        username: string;
+        guest_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateGuestRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_guest_by_mazmo_handle_guests_by_mazmo_handle__mazmo_handle__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        mazmo_handle: string;
       };
       cookie?: never;
     };
@@ -3151,7 +3457,145 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description Guest not found by username */
+      /** @description Guest not found by Mazmo handle */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  link_guest_to_mazmo_guests__guest_id__link_mazmo_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        guest_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LinkMazmoRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest linked to Mazmo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Username not found on Mazmo */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest already exists */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Mazmo API timeout */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  unlink_guest_mazmo_guests__guest_id__unlink_mazmo_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        guest_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest unlinked from Mazmo */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
       404: {
         headers: {
           [name: string]: unknown;
@@ -3504,14 +3948,14 @@ export interface operations {
       };
     };
   };
-  add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__add_walkin_post: {
+  add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__add_walkin_post: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
         meetup_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -3573,14 +4017,14 @@ export interface operations {
       };
     };
   };
-  checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__checkin_post: {
+  checkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__checkin_post: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
         meetup_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -3642,14 +4086,14 @@ export interface operations {
       };
     };
   };
-  undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__undo_checkin_patch: {
+  undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__undo_checkin_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
         meetup_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -3715,14 +4159,14 @@ export interface operations {
       };
     };
   };
-  mark_guest_paid_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_patch: {
+  mark_guest_paid_organizations__org_id__meetups__meetup_id__guests__guest_id__payment_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
         meetup_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -3784,14 +4228,14 @@ export interface operations {
       };
     };
   };
-  undo_guest_payment_organizations__org_id__meetups__meetup_id__guests__mazmo_user_id__payment_undo_patch: {
+  undo_guest_payment_organizations__org_id__meetups__meetup_id__guests__guest_id__payment_undo_patch: {
     parameters: {
       query?: never;
       header?: never;
       path: {
         org_id: string;
         meetup_id: string;
-        mazmo_user_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -4132,14 +4576,14 @@ export interface operations {
   list_all_events_organizations__org_id__events__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
         /** @description Events before this timestamp */
         until?: string | null;
-        /** @description Filter by guest mazmo_user_id */
-        guest_id?: number | null;
+        /** @description Filter by guest id */
+        guest_id?: string | null;
         /** @description Filter by meetup UUID */
         meetup_id?: string | null;
         /** @description Filter by staff member ID */
@@ -4207,7 +4651,7 @@ export interface operations {
   list_meetup_events_organizations__org_id__events_meetups__meetup_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -4286,7 +4730,7 @@ export interface operations {
   list_guest_events_organizations__org_id__events_guests__guest_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -4302,7 +4746,7 @@ export interface operations {
       header?: never;
       path: {
         org_id: string;
-        guest_id: number;
+        guest_id: string;
       };
       cookie?: never;
     };
@@ -4367,14 +4811,14 @@ export interface operations {
   list_staff_events_organizations__org_id__events_staff__staff_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
         /** @description Events before this timestamp */
         until?: string | null;
-        /** @description Filter by guest mazmo_user_id */
-        guest_id?: number | null;
+        /** @description Filter by guest id */
+        guest_id?: string | null;
         /** @description Filter by meetup UUID */
         meetup_id?: string | null;
         /** @description Events per page (max 100) */
