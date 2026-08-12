@@ -15,7 +15,7 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
-    "check": "tsc --noEmit && prettier --check . && eslint .",
+    "check": "npm run typecheck && prettier --check . && eslint .",
     "generate:api": "openapi-typescript https://raw.githubusercontent.com/club-vanta/alter-tracker-backend/refs/heads/main/openapi.json -o src/api/types.ts && prettier --write src/api/types.ts"
   },
   "dependencies": {
