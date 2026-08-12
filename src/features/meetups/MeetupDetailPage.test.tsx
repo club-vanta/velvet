@@ -252,4 +252,38 @@ describe("MeetupDetailPage guest identity", () => {
     expect(screen.getByText("No Mazmo account")).toBeInTheDocument();
     expect(screen.queryByText("@null")).not.toBeInTheDocument();
   });
+
+  it("sends guest_id (not mazmo_user_id) to the checkin endpoint", async () => {
+    mockApiPost.mockResolvedValue({
+      data: {
+        guest: {
+          id: "00000000-0000-0000-0000-000000000001",
+          mazmo_user_id: 1,
+          mazmo_handle: "user1",
+          displayname: "Test Guest",
+          instagram_username: null,
+          is_banned: false,
+        },
+        arrival_order: 1,
+      },
+      error: undefined,
+    });
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({ mazmo_user_id: 1, displayname: "Test Guest", has_paid: false }),
+    ]);
+
+    const button = await screen.findByRole("button", { name: "Check in" });
+    await userEvent.click(button);
+
+    expect(mockApiPost).toHaveBeenCalledWith(
+      "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/checkin",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          path: expect.objectContaining({
+            guest_id: expect.any(String),
+          }),
+        }),
+      }),
+    );
+  });
 });

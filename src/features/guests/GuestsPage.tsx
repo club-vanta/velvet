@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { ArrowUp, ArrowDown, ArrowUpDown, MoreHorizontal } from "lucide-react";
@@ -210,6 +215,7 @@ function LinkMazmoDialog({
       );
       if (error) {
         if (response.status === 404) throw new Error(t("mazmoUserNotFound"));
+        if (response.status === 504) throw new Error(t("mazmoUnreachable"));
         throw new Error(extractApiError(error, t("failedLinkMazmo")));
       }
     },
@@ -417,9 +423,7 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
         if (response.status === 409)
           throw new Error(t("guestAlreadyRegistered"));
         if (response.status === 504) throw new Error(t("mazmoUnreachable"));
-        throw new Error(
-          (error as { detail?: string }).detail ?? t("somethingWentWrong"),
-        );
+        throw new Error(extractApiError(error, t("somethingWentWrong")));
       }
       return data;
     },
@@ -442,9 +446,7 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
         },
       });
       if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? t("somethingWentWrong"),
-        );
+        throw new Error(extractApiError(error, t("somethingWentWrong")));
       return data;
     },
     onSuccess: (data) => {
@@ -596,6 +598,7 @@ function AllGuestsTab({
       if (error) throw new Error("Failed to load guests");
       return data;
     },
+    placeholderData: keepPreviousData,
   });
 
   function handleSort(col: string) {
@@ -611,7 +614,7 @@ function AllGuestsTab({
     }
   }
 
-  const sorted = sortCol
+  const guests = sortCol
     ? data?.guests.slice().sort((a, b) => {
         let cmp = 0;
         if (sortCol === "displayname")
@@ -630,8 +633,6 @@ function AllGuestsTab({
         return sortDir === "asc" ? cmp : -cmp;
       })
     : data?.guests;
-
-  const guests = sorted;
 
   return (
     <>

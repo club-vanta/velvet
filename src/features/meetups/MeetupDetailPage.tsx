@@ -454,10 +454,7 @@ function WalkinDialog({
           },
         },
       );
-      if (error)
-        throw new Error(
-          (error as { detail?: string }).detail ?? t("failedAddWalkin"),
-        );
+      if (error) throw new Error(extractApiError(error, t("failedAddWalkin")));
       return { data, guest };
     },
     onSuccess: ({ guest }) => {
