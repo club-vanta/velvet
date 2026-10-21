@@ -893,10 +893,106 @@ describe("MeetupDetailPage finalized meetup", () => {
     expect(
       await screen.findByRole("button", { name: "Check in" }),
     ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Add walk-in" })).toBeDisabled();
+    // The door tools give way to a note saying what is closed.
     expect(
-      screen.getByRole("button", { name: "Sync from Mazmo" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Add walk-in" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Sync from Mazmo" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Check-ins, walk-ins, sync, and payments are closed/),
+    ).toBeInTheDocument();
+  });
+
+  it("finalizes the meetup after confirming, with the attendance summary", async () => {
+    const stats = {
+      ...STATS,
+      attendance: {
+        total_rsvps: 10,
+        arrived_count: 7,
+        not_arrived_count: 3,
+        walkin_count: 0,
+      },
+    };
+    const meetup: Meetup = { ...MEETUP, requires_payment: false };
+    renderPage(
+      meetup,
+      [guest({ mazmo_user_id: 74, displayname: "Door", has_paid: false })],
+      stats,
+    );
+    // The backend's answer; refetches see it too.
+    mockApiPatch.mockImplementation(() => {
+      meetup.is_finalized = true;
+      meetup.finalized_at = "2026-09-02T05:00:00Z";
+      return Promise.resolve({ data: { ...meetup }, error: undefined });
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Finalize meetup" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      await within(dialog).findByText("7 of 10 checked in. 3 never arrived."),
+    ).toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole("button", { name: "Finalize meetup" }),
+    );
+
+    expect(mockApiPatch).toHaveBeenCalledWith(
+      "/organizations/{org_id}/meetups/{meetup_id}/finalize",
+      { params: { path: { org_id: "org-1", meetup_id: "meetup-1" } } },
+    );
+    expect(
+      await screen.findByRole("button", { name: "Reopen meetup" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/^Finalized on/)).toBeInTheDocument();
+  });
+
+  it("reopens a finalized meetup", async () => {
+    const meetup: Meetup = {
+      ...MEETUP,
+      is_finalized: true,
+      requires_payment: false,
+    };
+    renderPage(meetup, [
+      guest({ mazmo_user_id: 75, displayname: "Late", has_paid: false }),
+    ]);
+    mockApiPatch.mockImplementation(() => {
+      meetup.is_finalized = false;
+      return Promise.resolve({ data: { ...meetup }, error: undefined });
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Reopen meetup" }),
+    );
+    await user.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Reopen meetup",
+      }),
+    );
+
+    expect(mockApiPatch).toHaveBeenCalledWith(
+      "/organizations/{org_id}/meetups/{meetup_id}/unfinalize",
+      { params: { path: { org_id: "org-1", meetup_id: "meetup-1" } } },
+    );
+    expect(
+      await screen.findByRole("button", { name: "Sync from Mazmo" }),
+    ).toBeEnabled();
+  });
+
+  it("hides finalize from non-admin staff", async () => {
+    mockRole = "STAFF";
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 76, displayname: "Anyone", has_paid: true }),
+    ]);
+
+    await screen.findByText("Anyone");
+    expect(
+      screen.queryByRole("button", { name: "Finalize meetup" }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the corrections the backend allows after finalizing", async () => {

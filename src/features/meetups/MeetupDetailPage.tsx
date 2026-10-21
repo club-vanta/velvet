@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Banknote,
+  Lock,
+  LockOpen,
   RefreshCw,
   UserPlus,
   ArrowUp,
@@ -74,6 +76,7 @@ import {
 import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
 import { GuestListToolbar } from "./GuestListToolbar";
+import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
 import type { components } from "@/api/types";
 
@@ -686,6 +689,7 @@ export function MeetupDetailPage() {
   const [undoPaymentTarget, setUndoPaymentTarget] =
     useState<MeetupGuest | null>(null);
   const [paymentToggleOpen, setPaymentToggleOpen] = useState(false);
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
   // Kept after the sheet closes so its content stays put during the
   // slide-out animation; profileOpen drives visibility.
   const [profileGuest, setProfileGuest] = useState<MeetupGuest | null>(null);
@@ -1030,40 +1034,82 @@ export function MeetupDetailPage() {
             </div>
           </div>
           {/* The meetup's tools, in a band of their own like the footer of
-              the guest profile card. Payment is a setting, not a door task,
-              so it sits apart on the right. */}
+              the guest profile card. Settings (payment, finalize) sit apart
+              on the right. Once finalized the door tools are gone and the
+              band says so, rather than showing a row of dead buttons. */}
           <div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:px-6">
-            <Button
-              variant="outline"
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending || isFinalized}
-              className="gap-2"
-            >
-              <RefreshCw
-                className={cn(syncMutation.isPending && "animate-spin")}
-                aria-hidden="true"
-              />
-              {t("syncFromMazmo")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setWalkinOpen(true)}
-              disabled={isFinalized}
-              className="gap-2"
-            >
-              <UserPlus aria-hidden="true" />
-              {t("addWalkin")}
-            </Button>
+            {isFinalized ? (
+              <div className="flex min-w-0 flex-1 basis-full items-start gap-2 text-sm @md:basis-0">
+                <Lock
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <p className="min-w-0">
+                  {/* With no date, the Finalized badge above already says it. */}
+                  {meetup.finalized_at && (
+                    <>
+                      <span className="font-medium">
+                        {t("finalizedOn").replace(
+                          "{0}",
+                          formatDateTime(meetup.finalized_at),
+                        )}
+                      </span>{" "}
+                    </>
+                  )}
+                  <span className="text-muted-foreground">
+                    {t("finalizedLockedHint")}
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending}
+                  className="gap-2"
+                >
+                  <RefreshCw
+                    className={cn(syncMutation.isPending && "animate-spin")}
+                    aria-hidden="true"
+                  />
+                  {t("syncFromMazmo")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setWalkinOpen(true)}
+                  className="gap-2"
+                >
+                  <UserPlus aria-hidden="true" />
+                  {t("addWalkin")}
+                </Button>
+              </>
+            )}
             {isOrgAdmin && (
-              <Button
-                variant="ghost"
-                onClick={() => setPaymentToggleOpen(true)}
-                disabled={isFinalized}
-                className="gap-2 @md:ml-auto"
-              >
-                <Banknote aria-hidden="true" />
-                {requiresPayment ? t("disablePayment") : t("enablePayment")}
-              </Button>
+              <div className="flex flex-wrap gap-2 @md:ml-auto">
+                {!isFinalized && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setPaymentToggleOpen(true)}
+                    className="gap-2"
+                  >
+                    <Banknote aria-hidden="true" />
+                    {requiresPayment ? t("disablePayment") : t("enablePayment")}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setFinalizeOpen(true)}
+                  className="gap-2"
+                >
+                  {isFinalized ? (
+                    <LockOpen aria-hidden="true" />
+                  ) : (
+                    <Lock aria-hidden="true" />
+                  )}
+                  {isFinalized ? t("reopenMeetup") : t("finalizeMeetup")}
+                </Button>
+              </div>
             )}
           </div>
         </section>
@@ -1355,6 +1401,13 @@ export function MeetupDetailPage() {
           )}
         </SheetContent>
       </Sheet>
+      {finalizeOpen && meetup && (
+        <FinalizeMeetupDialog
+          orgId={orgId}
+          meetup={meetup}
+          onClose={() => setFinalizeOpen(false)}
+        />
+      )}
       {paymentToggleOpen && (
         <PaymentRequirementDialog
           orgId={orgId}

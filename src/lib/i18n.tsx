@@ -138,6 +138,23 @@ export const translations = {
     sortArrivalDesc: "Last to arrive on top",
     sortStatusAsc: "Not arrived first",
     sortStatusDesc: "Checked in first",
+    finalizeMeetup: "Finalize meetup",
+    reopenMeetup: "Reopen meetup",
+    finalizing: "Finalizing…",
+    reopening: "Reopening…",
+    finalizeDialogTitle: "Finalize {0}?",
+    finalizeDialogSummary: "{0} of {1} checked in. {2} never arrived.",
+    finalizeDialogBlocks:
+      "Once finalized, nobody can check guests in, add walk-ins, sync with Mazmo, record payments, change guest types, or change the payment requirement.",
+    finalizeDialogAllowed:
+      "Undoing a check-in or a payment stays available for corrections, and you can reopen the meetup later.",
+    reopenDialogTitle: "Reopen {0}?",
+    reopenDialogBody:
+      "Check-ins, walk-ins, sync, and payments will be allowed again. Use this if the meetup was finalized by mistake.",
+    meetupFinalizedToast: "{0} finalized",
+    meetupReopenedToast: "{0} reopened",
+    finalizedOn: "Finalized on {0}",
+    finalizedLockedHint: "Check-ins, walk-ins, sync, and payments are closed.",
     sortHandle: "Mazmo user",
     sortMazmoId: "Mazmo ID",
     sortInstagram: "Instagram",
@@ -574,6 +591,24 @@ export const translations = {
     sortArrivalDesc: "Últimos en llegar arriba",
     sortStatusAsc: "Por llegar primero",
     sortStatusDesc: "Ingresados primero",
+    finalizeMeetup: "Finalizar evento",
+    reopenMeetup: "Reabrir evento",
+    finalizing: "Finalizando…",
+    reopening: "Reabriendo…",
+    finalizeDialogTitle: "¿Finalizar {0}?",
+    finalizeDialogSummary: "Ingresaron {0} de {1}. {2} no llegaron.",
+    finalizeDialogBlocks:
+      "Una vez finalizado, nadie va a poder ingresar invitados, agregar discretos, sincronizar con Mazmo, registrar pagos, cambiar tipos de invitado ni cambiar el cobro de entrada.",
+    finalizeDialogAllowed:
+      "Deshacer un ingreso o un pago sigue disponible para corregir errores, y podés reabrir el evento más adelante.",
+    reopenDialogTitle: "¿Reabrir {0}?",
+    reopenDialogBody:
+      "Se vuelven a permitir ingresos, discretos, sincronización y pagos. Usalo si el evento se finalizó por error.",
+    meetupFinalizedToast: "{0} finalizado",
+    meetupReopenedToast: "{0} reabierto",
+    finalizedOn: "Finalizado el {0}",
+    finalizedLockedHint:
+      "Ingresos, discretos, sincronización y pagos están cerrados.",
     sortHandle: "Usuario de Mazmo",
     sortMazmoId: "Mazmo ID",
     sortInstagram: "Instagram",
