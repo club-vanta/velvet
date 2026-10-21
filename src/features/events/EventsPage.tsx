@@ -24,6 +24,7 @@ import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
 import { formatDateTime } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
+import { GUEST_TYPE_LABEL, isGuestType } from "@/lib/guestType";
 import type { components } from "@/api/types";
 
 type EventLog = components["schemas"]["EventLogPublic"];
@@ -47,7 +48,11 @@ const EVENT_BADGE_VARIANT: Record<
   PAYMENT_REVOKED: "secondary",
   PAYMENT_REQUIREMENT_ENABLED: "outline",
   PAYMENT_REQUIREMENT_DISABLED: "outline",
+  GUEST_TYPE_CHANGED: "outline",
+  GUEST_DISPLAYNAME_CHANGED: "outline",
 };
+
+const GUEST_TYPE_CHANGE_REASON = /^Changed guest_type from (\w+) to (\w+)$/;
 
 const PAGE_SIZE = 50;
 
@@ -73,7 +78,22 @@ export function EventsPage() {
     PAYMENT_REVOKED: t("eventPaymentRevoked"),
     PAYMENT_REQUIREMENT_ENABLED: t("eventPaymentEnabled"),
     PAYMENT_REQUIREMENT_DISABLED: t("eventPaymentDisabled"),
+    GUEST_TYPE_CHANGED: t("eventGuestTypeChanged"),
+    GUEST_DISPLAYNAME_CHANGED: t("eventGuestDisplaynameChanged"),
   };
+
+  // The backend writes this reason in English with raw enum values; show it
+  // as "Normal -> Vendor" in the active language when it matches.
+  function formatReason(event: EventLog): string | null {
+    if (event.event_type !== "GUEST_TYPE_CHANGED" || !event.reason)
+      return event.reason ?? null;
+    const match = GUEST_TYPE_CHANGE_REASON.exec(event.reason);
+    const from = match?.[1];
+    const to = match?.[2];
+    if (!from || !to || !isGuestType(from) || !isGuestType(to))
+      return event.reason;
+    return `${t(GUEST_TYPE_LABEL[from])} → ${t(GUEST_TYPE_LABEL[to])}`;
+  }
 
   const { data: meetupsData } = useQuery({
     queryKey: ["meetups", orgId],
@@ -150,6 +170,9 @@ export function EventsPage() {
             <SelectItem value="PAYMENT_REVOKED">
               {t("eventPaymentRevoked")}
             </SelectItem>
+            <SelectItem value="GUEST_TYPE_CHANGED">
+              {t("eventGuestTypeChanged")}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -212,7 +235,16 @@ export function EventsPage() {
                     {formatDateTime(event.timestamp)}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {event.guest?.displayname ?? "—"}
+                    {event.guest ? (
+                      <Link
+                        to={`/guests/${event.guest.id}`}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {event.guest.displayname}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {event.actor?.username ?? "—"}
@@ -231,7 +263,7 @@ export function EventsPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-sm max-w-xs truncate">
-                    {event.reason ?? "—"}
+                    {formatReason(event) ?? "—"}
                   </TableCell>
                 </TableRow>
               );
