@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { GuestsPage } from "./GuestsPage";
 import type { components } from "@/api/types";
@@ -68,7 +69,9 @@ function renderPage(guests: Guest[]) {
       }
     >
       <LanguageProvider>
-        <GuestsPage />
+        <MemoryRouter>
+          <GuestsPage />
+        </MemoryRouter>
       </LanguageProvider>
     </QueryClientProvider>,
   );
@@ -346,7 +349,9 @@ describe("GuestsPage — search", () => {
         }
       >
         <LanguageProvider>
-          <GuestsPage />
+          <MemoryRouter>
+            <GuestsPage />
+          </MemoryRouter>
         </LanguageProvider>
       </QueryClientProvider>,
     );

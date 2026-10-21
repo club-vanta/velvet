@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   useQuery,
   useMutation,
@@ -35,8 +36,16 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
+import { GuestAvatar } from "@/components/GuestAvatar";
+import { MazmoFlagBadges } from "@/components/GuestBadges";
+import {
+  BanDialog,
+  EditGuestDialog,
+  LinkMazmoDialog,
+  UnlinkMazmoDialog,
+} from "./GuestDialogs";
+import { useUnbanGuest } from "./useUnbanGuest";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { api } from "@/api/client";
@@ -48,7 +57,6 @@ import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];
-type BannedGuest = components["schemas"]["BannedGuestPublic"];
 
 type SortDir = "asc" | "desc";
 
@@ -100,305 +108,32 @@ function SortableHead({
   );
 }
 
-function EditGuestDialog({
+function GuestNameCell({
   guest,
-  onClose,
+  className,
 }: {
-  guest: Guest;
-  onClose: () => void;
+  guest: Pick<Guest, "id" | "displayname" | "mazmo_profile">;
+  className?: string;
 }) {
-  const { t } = useLanguage();
-  const [displayname, setDisplayname] = useState(guest.displayname);
-  const [instagram, setInstagram] = useState(guest.instagram_username ?? "");
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const body: { displayname?: string; instagram_username?: string | null } =
-        {};
-      const trimmedDisplayname = displayname.trim();
-      if (trimmedDisplayname && trimmedDisplayname !== guest.displayname) {
-        body.displayname = trimmedDisplayname;
-      }
-      const trimmedInstagram = instagram.trim();
-      const currentInstagram = guest.instagram_username ?? "";
-      if (trimmedInstagram !== currentInstagram) {
-        body.instagram_username =
-          trimmedInstagram === "" ? null : trimmedInstagram;
-      }
-      const { error } = await api.PATCH("/guests/{guest_id}", {
-        params: { path: { guest_id: guest.id } },
-        body,
-      });
-      if (error) throw new Error(extractApiError(error, t("failedEditGuest")));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(t("guestUpdated"));
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("editGuestDialogTitle")}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3 py-2">
-          <div className="space-y-1">
-            <label
-              htmlFor="edit-guest-displayname"
-              className="text-sm font-medium"
-            >
-              {t("displayName")}
-            </label>
-            <Input
-              id="edit-guest-displayname"
-              value={displayname}
-              onChange={(e) => setDisplayname(e.target.value)}
-              disabled={mutation.isPending}
-            />
-          </div>
-          <div className="space-y-1">
-            <label
-              htmlFor="edit-guest-instagram"
-              className="text-sm font-medium"
-            >
-              {t("instagramLabel")}
-            </label>
-            <Input
-              id="edit-guest-instagram"
-              placeholder={t("instagramPlaceholder")}
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-              disabled={mutation.isPending}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!displayname.trim() || mutation.isPending}
-          >
-            {mutation.isPending ? t("savingChanges") : t("saveChanges")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function LinkMazmoDialog({
-  guest,
-  onClose,
-}: {
-  guest: Guest;
-  onClose: () => void;
-}) {
-  const { t } = useLanguage();
-  const [username, setUsername] = useState("");
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const { error, response } = await api.PATCH(
-        "/guests/{guest_id}/link-mazmo",
-        {
-          params: { path: { guest_id: guest.id } },
-          body: { username: username.trim() },
-        },
-      );
-      if (error) {
-        if (response.status === 404) throw new Error(t("mazmoUserNotFound"));
-        if (response.status === 504) throw new Error(t("mazmoUnreachable"));
-        throw new Error(extractApiError(error, t("failedLinkMazmo")));
-      }
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(t("mazmoLinked"));
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("linkMazmoDialogTitle")}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-1 py-2">
-          <label htmlFor="link-mazmo-username" className="text-sm font-medium">
-            {t("mazmoUsername")}
-          </label>
-          <InputWithPrefix
-            id="link-mazmo-username"
-            prefix="@"
-            placeholder="cindydark"
-            autoComplete="off"
-            autoCapitalize="none"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={mutation.isPending}
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!username.trim() || mutation.isPending}
-          >
-            {mutation.isPending ? t("linking") : t("link")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function UnlinkMazmoDialog({
-  guest,
-  onClose,
-}: {
-  guest: Guest;
-  onClose: () => void;
-}) {
-  const { t } = useLanguage();
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await api.PATCH("/guests/{guest_id}/unlink-mazmo", {
-        params: { path: { guest_id: guest.id } },
-      });
-      if (error)
-        throw new Error(extractApiError(error, t("failedUnlinkMazmo")));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(t("mazmoUnlinked"));
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("unlinkMazmoDialogTitle")}</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground py-2">
-          {t("unlinkMazmoDialogBody")}{" "}
-          <span className="font-medium text-foreground">
-            {guest.displayname}
-          </span>{" "}
-          (@{guest.mazmo_handle}).
-        </p>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t("unlinking") : t("unlink")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function BanDialog({
-  guest,
-  orgId,
-  onClose,
-}: {
-  guest: Guest;
-  orgId: string;
-  onClose: () => void;
-}) {
-  const { t } = useLanguage();
-  const [reason, setReason] = useState("");
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await api.PATCH(
-        "/organizations/{org_id}/guests/{guest_id}/ban",
-        {
-          params: {
-            path: { org_id: orgId, guest_id: guest.id },
-          },
-          body: { reason },
-        },
-      );
-      if (error) throw new Error(extractApiError(error, t("banFailed")));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["guests-banned", orgId],
-      });
-      toast.success(`${guest.displayname} has been vanted`);
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("banDialogTitle")} {guest.displayname}?
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2 py-2">
-          <label htmlFor="ban-reason" className="text-sm font-medium">
-            {t("reasonRequired")}
-          </label>
-          <Textarea
-            id="ban-reason"
-            placeholder={t("banReasonPlaceholder")}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">
-            {reason.trim().length}/500
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={
-              reason.trim().length < 5 ||
-              reason.trim().length > 500 ||
-              mutation.isPending
-            }
-          >
-            {mutation.isPending ? t("banning") : t("banGuest")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <div className="flex items-center gap-3 min-w-0">
+      <GuestAvatar
+        name={guest.displayname}
+        src={guest.mazmo_profile?.avatar_url}
+      />
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <Link
+          to={`/guests/${guest.id}`}
+          className={cn(
+            "truncate font-medium underline-offset-4 hover:underline",
+            className,
+          )}
+        >
+          {guest.displayname}
+        </Link>
+        <MazmoFlagBadges profile={guest.mazmo_profile} />
+      </div>
+    </div>
   );
 }
 
@@ -729,7 +464,9 @@ function AllGuestsTab({
             )}
             {guests?.map((g) => (
               <TableRow key={g.id}>
-                <TableCell className="font-medium">{g.displayname}</TableCell>
+                <TableCell>
+                  <GuestNameCell guest={g} />
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
                 </TableCell>
@@ -753,6 +490,11 @@ function AllGuestsTab({
                       <MoreHorizontal className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        render={<Link to={`/guests/${g.id}`} />}
+                      >
+                        {t("viewProfile")}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setEditTarget(g)}>
                         {t("editGuest")}
                       </DropdownMenuItem>
@@ -823,7 +565,6 @@ function BannedGuestsTab({
   const { t } = useLanguage();
   const [sortCol, setSortCol] = useState<string | null>("displayname");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["guests-banned", orgId],
@@ -838,27 +579,7 @@ function BannedGuestsTab({
     enabled: !!orgId,
   });
 
-  const unbanMutation = useMutation({
-    mutationFn: async (guest: BannedGuest) => {
-      const { error } = await api.PATCH(
-        "/organizations/{org_id}/guests/{guest_id}/unban",
-        {
-          params: {
-            path: { org_id: orgId, guest_id: guest.id },
-          },
-        },
-      );
-      if (error) throw new Error(extractApiError(error, t("unbanFailed")));
-      return guest;
-    },
-    onSuccess: (guest) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["guests-banned", orgId],
-      });
-      toast.success(`${guest.displayname} unvanted`);
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
+  const unbanMutation = useUnbanGuest(orgId);
 
   function handleSort(col: string) {
     if (col === sortCol) {
@@ -1004,8 +725,8 @@ function BannedGuestsTab({
               )}
             {guests?.map((g) => (
               <TableRow key={g.id}>
-                <TableCell className="font-medium text-destructive">
-                  {g.displayname}
+                <TableCell>
+                  <GuestNameCell guest={g} className="text-destructive" />
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
