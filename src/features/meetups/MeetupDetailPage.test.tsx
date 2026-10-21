@@ -72,6 +72,7 @@ function guest(overrides: {
       is_walkin: false,
       has_paid: overrides.has_paid,
       paid_at: overrides.has_paid ? "2026-08-02T12:00:00Z" : null,
+      guest_type: "NORMAL",
     },
   };
 }
@@ -243,6 +244,7 @@ describe("MeetupDetailPage guest identity", () => {
         is_walkin: true,
         has_paid: false,
         paid_at: null,
+        guest_type: "NORMAL",
       },
     };
 
