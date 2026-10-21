@@ -2,6 +2,11 @@ import { TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/i18n";
 import { GUEST_TYPE_LABEL, isGuestType, type GuestType } from "@/lib/guestType";
+import {
+  MAZMO_PRONOUN_LABEL,
+  MAZMO_PRONOUN_SHORT,
+  mazmoLabel,
+} from "@/lib/mazmoProfile";
 import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 
@@ -73,5 +78,27 @@ export function MazmoFlagBadges({
         </Badge>
       )}
     </>
+  );
+}
+
+/**
+ * The guest's Mazmo pronoun in its short form ("ella"), next to the handle.
+ * The long form is the tooltip, and screen readers hear what it is.
+ */
+export function PronounPill({
+  pronoun,
+}: {
+  pronoun: string | null | undefined;
+}) {
+  const { t } = useLanguage();
+  if (!pronoun) return null;
+  return (
+    <span
+      title={`${t("pronouns")}: ${mazmoLabel(MAZMO_PRONOUN_LABEL, pronoun, t)}`}
+      className="rounded-full border border-foreground/15 px-2 py-px text-xs font-medium"
+    >
+      <span className="sr-only">{t("pronouns")}: </span>
+      {mazmoLabel(MAZMO_PRONOUN_SHORT, pronoun, t)}
+    </span>
   );
 }

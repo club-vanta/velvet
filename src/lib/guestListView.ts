@@ -1,10 +1,12 @@
 import { isPaymentExempt, type GuestType } from "@/lib/guestType";
+import { compareNames, type SortDir } from "@/lib/sortNames";
+
+export type { SortDir };
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
 
 export type GuestSortKey = "name" | "rsvp" | "arrival" | "status";
-export type SortDir = "asc" | "desc";
 export type GuestSort = { key: GuestSortKey; dir: SortDir };
 
 export const GUEST_SORT_KEYS: readonly GuestSortKey[] = [
@@ -72,36 +74,15 @@ function matches(
   return true;
 }
 
-const collator = new Intl.Collator(undefined, {
-  sensitivity: "base",
-  numeric: true,
-});
-
 // The last resort, so equal rows never swap places between refetches.
 const byRsvpTime = (a: MeetupGuest, b: MeetupGuest) =>
   a.rsvp.rsvp_time.localeCompare(b.rsvp.rsvp_time) ||
   a.guest.id.localeCompare(b.guest.id);
 
-/**
- * Mazmo names are often decorated: styled Unicode letters ("𝑩𝑨𝑹𝑴𝑨𝑵") and
- * leading emoji or symbols ("☆ selene ☆"). NFKC folds the styled letters to
- * plain ones and the leading decoration is skipped, so "☆ selene" files
- * under S. A name with no letters or digits at all keeps its raw form.
- */
-function nameSortKey(displayname: string): string {
-  const folded = displayname.normalize("NFKC");
-  return folded.replace(/^[^\p{L}\p{N}]+/u, "") || folded;
-}
-
 function compare(a: MeetupGuest, b: MeetupGuest, key: GuestSortKey): number {
   switch (key) {
     case "name":
-      return (
-        collator.compare(
-          nameSortKey(a.guest.displayname),
-          nameSortKey(b.guest.displayname),
-        ) || collator.compare(a.guest.displayname, b.guest.displayname)
-      );
+      return compareNames(a.guest.displayname, b.guest.displayname);
     case "rsvp":
       return a.rsvp.rsvp_time.localeCompare(b.rsvp.rsvp_time);
     case "arrival":

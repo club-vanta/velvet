@@ -40,7 +40,11 @@ import {
 } from "@/components/ui/sheet";
 import { ReasonDialog } from "@/components/ReasonDialog";
 import { GuestAvatar } from "@/components/GuestAvatar";
-import { GuestTypeBadge, MazmoFlagBadges } from "@/components/GuestBadges";
+import {
+  GuestTypeBadge,
+  MazmoFlagBadges,
+  PronounPill,
+} from "@/components/GuestBadges";
 import { GuestProfile } from "@/features/guests/GuestProfile";
 import { useAuth } from "@/auth/AuthContext";
 import { api } from "@/api/client";
@@ -62,11 +66,6 @@ import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRelativeDay } from "@/hooks/useRelativeDay";
 import { isPaymentExempt } from "@/lib/guestType";
-import {
-  MAZMO_PRONOUN_LABEL,
-  MAZMO_PRONOUN_SHORT,
-  mazmoLabel,
-} from "@/lib/mazmoProfile";
 import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
@@ -843,19 +842,7 @@ export function MeetupDetailPage() {
                 ? `@${mg.guest.mazmo_handle}`
                 : t("noMazmoHandle")}
             </span>
-            {mg.guest.mazmo_profile?.pronoun && (
-              <span
-                title={`${t("pronouns")}: ${mazmoLabel(MAZMO_PRONOUN_LABEL, mg.guest.mazmo_profile.pronoun, t)}`}
-                className="rounded-full border border-foreground/15 px-2 py-px text-xs font-medium"
-              >
-                <span className="sr-only">{t("pronouns")}: </span>
-                {mazmoLabel(
-                  MAZMO_PRONOUN_SHORT,
-                  mg.guest.mazmo_profile.pronoun,
-                  t,
-                )}
-              </span>
-            )}
+            <PronounPill pronoun={mg.guest.mazmo_profile?.pronoun} />
           </div>
           <div className="flex items-center gap-1.5 flex-wrap empty:hidden">
             <GuestTypeBadge guestType={mg.rsvp.guest_type} />
