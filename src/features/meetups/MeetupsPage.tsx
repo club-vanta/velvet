@@ -1,21 +1,12 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -27,9 +18,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
-import { formatDate } from "@/lib/format";
+import { groupMeetupsByTiming } from "@/lib/meetupTiming";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { MeetupRow } from "./MeetupListItem";
+import type { components } from "@/api/types";
+
+type Meetup = components["schemas"]["MeetupPublic"];
 
 type SortDir = "asc" | "desc";
 
@@ -50,34 +45,66 @@ function SortIcon({
   );
 }
 
-function SortableHead({
+function SortButton({
   col,
   label,
   active,
   dir,
   onSort,
-  className,
 }: {
   col: string;
   label: string;
   active: string | null;
   dir: SortDir;
   onSort: (col: string) => void;
-  className?: string;
 }) {
   return (
-    <TableHead className={className}>
-      <button
-        onClick={() => onSort(col)}
-        className={cn(
-          "flex items-center gap-1 hover:text-foreground transition-colors",
-          col === active ? "text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {label}
-        <SortIcon col={col} active={active} dir={dir} />
-      </button>
-    </TableHead>
+    <button
+      type="button"
+      onClick={() => onSort(col)}
+      aria-pressed={col === active}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        col === active ? "bg-muted text-foreground" : "text-muted-foreground",
+      )}
+    >
+      {label}
+      <SortIcon col={col} active={active} dir={dir} />
+    </button>
+  );
+}
+
+function MeetupGroup({
+  title,
+  meetups,
+}: {
+  title?: string;
+  meetups: Meetup[];
+}) {
+  const headingId = useId();
+  if (meetups.length === 0) return null;
+  return (
+    <section
+      className="space-y-3"
+      aria-labelledby={title ? headingId : undefined}
+    >
+      {title && (
+        <h2
+          id={headingId}
+          className="text-sm font-medium text-muted-foreground"
+        >
+          {title}{" "}
+          <span className="tabular-nums text-muted-foreground/70">
+            ({meetups.length})
+          </span>
+        </h2>
+      )}
+      <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+        {meetups.map((meetup) => (
+          <MeetupRow key={meetup.id} meetup={meetup} />
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -186,10 +213,13 @@ function NewMeetupDialog({
 export function MeetupsPage() {
   const { t } = useLanguage();
   const { activeOrg } = useOrg();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // The dashboard's "New meetup" button links here with ?new=1.
+  const [dialogOpen, setDialogOpen] = useState(
+    () => searchParams.get("new") === "1",
+  );
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const navigate = useNavigate();
   const orgId = activeOrg?.org_id ?? "";
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -226,6 +256,7 @@ export function MeetupsPage() {
         return sortDir === "asc" ? cmp : -cmp;
       })
     : (data?.meetups ?? []);
+  const grouped = groupMeetupsByTiming(data?.meetups ?? []);
 
   if (!activeOrg) {
     return (
@@ -236,8 +267,8 @@ export function MeetupsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="@container space-y-6">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t("meetups")}</h1>
         <Button onClick={() => setDialogOpen(true)}>{t("newMeetup")}</Button>
       </div>
@@ -253,100 +284,70 @@ export function MeetupsPage() {
         </Alert>
       )}
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableHead
-                col="name"
-                label={t("name")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHead
-                col="date"
-                label={t("date")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <TableHead>{t("mazmoUrl")}</TableHead>
-              <TableHead className="w-20" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-56" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-12" />
-                  </TableCell>
-                </TableRow>
-              ))}
-
-            {!isLoading && (data?.meetups.length ?? 0) === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  {t("noMeetupsYetCreate")}
-                </TableCell>
-              </TableRow>
-            )}
-
-            {meetups.map((meetup) => (
-              <TableRow key={meetup.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span>{meetup.name}</span>
-                    {meetup.requires_payment && (
-                      <Badge variant="outline">{t("paidEvent")}</Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatDate(meetup.date)}
-                </TableCell>
-                <TableCell className="text-muted-foreground max-w-xs truncate">
-                  <a
-                    href={meetup.mazmo_meetup_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-foreground transition-colors"
-                  >
-                    {meetup.mazmo_meetup_url}
-                  </a>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/meetups/${meetup.id}`)}
-                  >
-                    {t("view")}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="flex items-center gap-1 text-sm">
+        <span className="mr-1 text-muted-foreground">{t("sortBy")}</span>
+        <SortButton
+          col="name"
+          label={t("name")}
+          active={sortCol}
+          dir={sortDir}
+          onSort={handleSort}
+        />
+        <SortButton
+          col="date"
+          label={t("date")}
+          active={sortCol}
+          dir={sortDir}
+          onSort={handleSort}
+        />
       </div>
+
+      {isLoading && (
+        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <li key={i} className="flex items-center gap-4 px-4 py-3">
+              <Skeleton className="size-14 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!isLoading && !isError && (data?.meetups.length ?? 0) === 0 && (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t("noMeetupsYetCreate")}
+          </p>
+          <Button variant="outline" onClick={() => setDialogOpen(true)}>
+            {t("newMeetup")}
+          </Button>
+        </div>
+      )}
+
+      {/* With no sort picked, group by timing; a picked sort shows one flat
+          list in that order. */}
+      {sortCol ? (
+        <MeetupGroup meetups={meetups} />
+      ) : (
+        <>
+          <MeetupGroup
+            title={t("upcomingMeetups")}
+            meetups={grouped.upcoming}
+          />
+          <MeetupGroup title={t("pastMeetups")} meetups={grouped.past} />
+        </>
+      )}
 
       <NewMeetupDialog
         orgId={orgId}
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false);
+          if (searchParams.has("new")) setSearchParams({}, { replace: true });
+        }}
       />
     </div>
   );

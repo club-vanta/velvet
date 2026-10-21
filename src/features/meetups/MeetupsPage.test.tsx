@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupsPage } from "./MeetupsPage";
+import type { components } from "@/api/types";
 
 const mockApiGet = vi.fn();
 const mockApiPost = vi.fn();
@@ -25,9 +26,33 @@ vi.mock("@/lib/org", () => ({
   }),
 }));
 
-function renderPage() {
+type Meetup = components["schemas"]["MeetupPublic"];
+
+function daysFromNow(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(22, 0, 0, 0);
+  return d.toISOString();
+}
+
+function meetup(id: string, name: string, date: string): Meetup {
+  return {
+    id,
+    name,
+    mazmo_meetup_url: `https://mazmo.net/+eventos/${id}`,
+    date,
+    is_finalized: false,
+    finalized_at: null,
+    requires_payment: false,
+  };
+}
+
+function renderPage({
+  meetups = [],
+  url = "/meetups",
+}: { meetups?: Meetup[]; url?: string } = {}) {
   mockApiGet.mockResolvedValue({
-    data: { total: 0, meetups: [] },
+    data: { total: meetups.length, meetups },
     error: undefined,
   });
   mockApiPost.mockResolvedValue({
@@ -42,7 +67,7 @@ function renderPage() {
       }
     >
       <LanguageProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[url]}>
           <MeetupsPage />
         </MemoryRouter>
       </LanguageProvider>
@@ -78,5 +103,58 @@ describe("MeetupsPage — new meetup dialog", () => {
         body: expect.objectContaining({ requires_payment: true }),
       }),
     );
+  });
+});
+
+describe("MeetupsPage — list", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const MEETUPS = [
+    meetup("m-far", "Alter #43", daysFromNow(20)),
+    meetup("m-old", "Alter #40", daysFromNow(-30)),
+    meetup("m-today", "Spookink II", daysFromNow(0)),
+  ];
+
+  it("groups meetups into today-and-upcoming and past", async () => {
+    renderPage({ meetups: MEETUPS });
+
+    const upcoming = await screen.findByRole("region", {
+      name: /Today and upcoming/,
+    });
+    const names = within(upcoming)
+      .getAllByRole("link", { name: /^(Alter|Spookink)/ })
+      .map((a) => a.textContent);
+    expect(names).toEqual(["Spookink II", "Alter #43"]);
+    expect(within(upcoming).getByText("Today")).toBeInTheDocument();
+
+    const past = screen.getByRole("region", { name: /Past/ });
+    expect(
+      within(past).getByRole("link", { name: "Alter #40" }),
+    ).toHaveAttribute("href", "/meetups/m-old");
+  });
+
+  it("shows one flat list once a sort is picked", async () => {
+    renderPage({ meetups: MEETUPS });
+
+    await userEvent.click(await screen.findByRole("button", { name: /Name/ }));
+
+    expect(
+      screen.queryByRole("region", { name: /Today and upcoming/ }),
+    ).not.toBeInTheDocument();
+    const names = screen
+      .getAllByRole("link", { name: /^(Alter|Spookink)/ })
+      .map((a) => a.textContent);
+    expect(names).toEqual(["Alter #40", "Alter #43", "Spookink II"]);
+  });
+
+  it("opens the new meetup dialog when linked with ?new=1", async () => {
+    renderPage({ url: "/meetups?new=1" });
+
+    expect(
+      await screen.findByRole("dialog", { name: "New Meetup" }),
+    ).toBeInTheDocument();
   });
 });

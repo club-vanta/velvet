@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { GuestsPage } from "./GuestsPage";
 import type { components } from "@/api/types";
@@ -46,18 +47,27 @@ function guest(overrides: Partial<Guest> & { id: string }): Guest {
   };
 }
 
-function renderPage(guests: Guest[]) {
+function renderPage(guests: Guest[], bannedIds: string[] = []) {
   mockApiGet.mockImplementation((path: string) => {
     if (path === "/guests/")
       return Promise.resolve({
         data: { total: guests.length, guests },
         error: undefined,
       });
-    if (path === "/organizations/{org_id}/guests/banned")
+    if (path === "/organizations/{org_id}/guests/banned") {
+      const banned = guests
+        .filter((g) => bannedIds.includes(g.id))
+        .map((g) => ({
+          ...g,
+          banned_at: "2026-08-22T03:00:00Z",
+          banned_reason: "Reason here",
+          banned_by_id: 1,
+        }));
       return Promise.resolve({
-        data: { total: 0, guests: [] },
+        data: { total: banned.length, guests: banned },
         error: undefined,
       });
+    }
     return Promise.resolve({ data: undefined, error: undefined });
   });
 
@@ -68,7 +78,9 @@ function renderPage(guests: Guest[]) {
       }
     >
       <LanguageProvider>
-        <GuestsPage />
+        <MemoryRouter>
+          <GuestsPage />
+        </MemoryRouter>
       </LanguageProvider>
     </QueryClientProvider>,
   );
@@ -147,7 +159,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
 
     expect(
@@ -165,7 +177,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
 
     expect(
@@ -184,7 +196,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
 
     expect(
@@ -219,7 +231,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
     await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
     const nameInput = screen.getByLabelText("Display Name");
@@ -247,7 +259,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
     await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
     const igInput = screen.getByLabelText("Instagram (optional)");
@@ -346,7 +358,9 @@ describe("GuestsPage — search", () => {
         }
       >
         <LanguageProvider>
-          <GuestsPage />
+          <MemoryRouter>
+            <GuestsPage />
+          </MemoryRouter>
         </LanguageProvider>
       </QueryClientProvider>,
     );
@@ -366,5 +380,124 @@ describe("GuestsPage — search", () => {
     expect(
       screen.getByPlaceholderText("Search guest list…"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("GuestsPage: vant flag in the all guests tab", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("marks guests vanted in this org, and only them", async () => {
+    renderPage(
+      [
+        guest({ id: "g-v", displayname: "Vanted One" }),
+        guest({ id: "g-ok", displayname: "Fine One" }),
+      ],
+      ["g-v"],
+    );
+
+    const vantedRow = (
+      await screen.findByRole("link", { name: "Vanted One" })
+    ).closest("li")!;
+    expect(await within(vantedRow).findByText("Vanted")).toBeInTheDocument();
+    const fineRow = screen
+      .getByRole("link", { name: "Fine One" })
+      .closest("li")!;
+    expect(within(fineRow).queryByText("Vanted")).not.toBeInTheDocument();
+  });
+
+  it("offers Unvant instead of Vant and disables Unlink for a vanted guest", async () => {
+    renderPage(
+      [guest({ id: "g-v2", displayname: "Vanted Two", mazmo_handle: "v2" })],
+      ["g-v2"],
+    );
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Guest actions: Vanted Two",
+      }),
+    );
+    // The vanted list loads separately; wait until the menu reflects it.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "Vanted Two" }).closest("li"),
+      ).toHaveTextContent("Vanted"),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Unvant" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Vant" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Unlink Mazmo account" }),
+    ).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
+describe("GuestsPage: sorting and filtering", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  function names() {
+    const list = screen.getByRole("list", { name: "All Guests" });
+    return within(list)
+      .getAllByRole("listitem")
+      .map((li) => within(li).getAllByRole("link")[0]?.textContent);
+  }
+
+  it("lists guests alphabetically, decorated names under their letter", async () => {
+    renderPage([
+      guest({ id: "g-c", displayname: "carla" }),
+      guest({ id: "g-s", displayname: "☆ selene ☆" }),
+      guest({ id: "g-a", displayname: "Ana" }),
+    ]);
+
+    await screen.findByText("Ana");
+    expect(names()).toEqual(["Ana", "carla", "☆ selene ☆"]);
+  });
+
+  it("sorts by Mazmo ID with unlinked guests last", async () => {
+    renderPage([
+      guest({ id: "g-1", displayname: "Ana" }),
+      guest({ id: "g-2", displayname: "Bea", mazmo_user_id: 20 }),
+      guest({ id: "g-3", displayname: "Cami", mazmo_user_id: 10 }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Ana");
+
+    await user.click(screen.getByRole("button", { name: /Sort by/ }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Mazmo ID" }),
+    );
+    await user.keyboard("{Escape}");
+
+    expect(names()).toEqual(["Cami", "Bea", "Ana"]);
+  });
+
+  it("filters to guests without a Mazmo account", async () => {
+    renderPage([
+      guest({ id: "g-1", displayname: "Manual" }),
+      guest({ id: "g-2", displayname: "Linked", mazmo_handle: "linked" }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Manual");
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Without Mazmo" }),
+    );
+    await user.keyboard("{Escape}");
+
+    expect(names()).toEqual(["Manual"]);
+    expect(screen.getByText("Showing 1 of 2")).toBeInTheDocument();
   });
 });

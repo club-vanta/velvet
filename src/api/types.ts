@@ -416,6 +416,11 @@ export interface paths {
      *     Looks up the canonical Mazmo user ID and profile data automatically,
      *     so staff at the door only need to know the handle (e.g. "cindydark").
      *
+     *     Also creates the guest's GuestMazmoProfile (avatar, age, gender,
+     *     pronoun, mazmo_suspended, mazmo_banned) from the same Mazmo lookup
+     *     response - same commit as the Guest and EventLog(GUEST_CREATED, ...)
+     *     rows, no extra call to Mazmo.
+     *
      *     Returns 404 if the username doesn't exist on Mazmo.
      *     Returns 409 if that mazmo_user_id is already registered.
      *     Returns 504 if Mazmo is unreachable.
@@ -505,8 +510,13 @@ export interface paths {
      *     "explicitly cleared" cases.
      *
      *     mazmo_user_id and mazmo_handle cannot be changed here - use
-     *     link-mazmo/unlink-mazmo for that. This is a cosmetic edit, not an
-     *     audited business event, so no event_log entry is written.
+     *     link-mazmo/unlink-mazmo for that.
+     *
+     *     A real displayname change (new value differs from the current one)
+     *     writes a GuestDisplaynameHistory row (source=MANUAL_EDIT) and an
+     *     EventLog(GUEST_DISPLAYNAME_CHANGED) entry, in the same commit as the
+     *     guest update. Omitting displayname, or "changing" it to its current
+     *     value, writes neither - only a real change is audited.
      */
     patch: operations["update_guest_guests__guest_id__patch"];
     trace?: never;
@@ -551,6 +561,16 @@ export interface paths {
      *     Overwrites mazmo_user_id, mazmo_handle, and displayname with the
      *     Mazmo profile data. instagram_username is left untouched.
      *
+     *     If the incoming Mazmo displayname differs from the guest's previous
+     *     value, writes a GuestDisplaynameHistory row (source=MAZMO_LINK) and
+     *     an EventLog(GUEST_DISPLAYNAME_CHANGED) entry, alongside the existing
+     *     EventLog(GUEST_MAZMO_LINKED) - same commit, same timestamp.
+     *
+     *     Also upserts GuestMazmoProfile (avatar, age, gender, pronoun,
+     *     mazmo_suspended, mazmo_banned) from the same Mazmo lookup response -
+     *     unconditionally, not just when the displayname changed, and without
+     *     any extra call to Mazmo. Same commit as everything else here.
+     *
      *     Returns 404 if the guest doesn't exist.
      *     Returns 409 if the guest is already linked, or if the Mazmo account
      *     is already linked to a different guest (no automatic merge).
@@ -580,12 +600,44 @@ export interface paths {
      *     via PATCH /guests/{guest_id}. The freed mazmo_user_id can be linked
      *     to this guest again, or to a different one.
      *
+     *     Also deletes the guest's GuestMazmoProfile row, if one exists.
+     *     Keeping stale age/gender/avatar data around for an account that is
+     *     no longer linked could be shown as if it were still valid.
+     *
      *     Returns 404 if the guest doesn't exist.
      *     Returns 409 if the guest is not currently linked.
      *     Returns 409 if the guest has an active ban in any organization - see
      *     the ban-evasion guard below for why this is blocked.
      */
     patch: operations["unlink_guest_mazmo_guests__guest_id__unlink_mazmo_patch"];
+    trace?: never;
+  };
+  "/guests/{guest_id}/displayname-history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a guest's full displayname history
+     * @description Get the full displayname history for a guest, newest first.
+     *
+     *     Not paginated: a displayname changes rarely over a guest's lifetime,
+     *     so the complete list is always returned. A guest with no changes
+     *     since creation still has exactly one row (its initial value) - never
+     *     an empty list, since every guest creation path writes one.
+     *
+     *     Global guest endpoint, same as GET /guests/{guest_id} - not scoped
+     *     to an organization.
+     */
+    get: operations["get_guest_displayname_history_guests__guest_id__displayname_history_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/organizations/{org_id}/meetups/": {
@@ -681,6 +733,34 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/meetups/{meetup_id}/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get grouped attendance/payment/guest-type statistics for this meetup
+     * @description Return grouped attendance, cancellation, guest-type, and payment stats
+     *     for this meetup.
+     *
+     *     All counts except cancellations.* exclude cancelled RSVPs.
+     *     payment.paid_count and payment.unpaid_count are scoped to
+     *     guest_type=NORMAL only, so guest_types.normal_count always equals
+     *     payment.paid_count + payment.unpaid_count, and attendance.total_rsvps
+     *     always equals the sum of all four guest_types.* counts and also the
+     *     sum of all three payment.* counts.
+     */
+    get: operations["get_meetup_stats_organizations__org_id__meetups__meetup_id__stats_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/add-walkin": {
     parameters: {
       query?: never;
@@ -760,6 +840,33 @@ export interface paths {
     patch: operations["undo_checkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__undo_checkin_patch"];
     trace?: never;
   };
+  "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/type": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Change a guest's category for this meetup (org admin only)
+     * @description Change a guest's category (NORMAL/INVITED/VENDOR/STAFF) at this meetup.
+     *
+     *     INVITED, VENDOR, and STAFF guests are exempt from the payment check-in
+     *     gate regardless of has_paid - see checkin_guest(). This does not touch
+     *     has_paid, paid_at, or paid_by_id.
+     *
+     *     Returns 404 if the guest is not RSVPed to this meetup.
+     *     Returns 409 if the meetup is finalized.
+     */
+    patch: operations["update_guest_type_organizations__org_id__meetups__meetup_id__guests__guest_id__type_patch"];
+    trace?: never;
+  };
   "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/payment": {
     parameters: {
       query?: never;
@@ -778,7 +885,9 @@ export interface paths {
      * @description Mark a guest's entrance fee as paid for this specific meetup.
      *
      *     Payment is handled externally by the organizer (cash, transfer, etc.);
-     *     this just records that it happened so check-in can be enforced.
+     *     this just records that it happened so check-in can be enforced for
+     *     NORMAL guests. INVITED/VENDOR/STAFF guests (see PATCH .../guests/{id}
+     *     /type) skip the payment check-in gate entirely regardless of has_paid.
      *
      *     Returns 409 if the meetup doesn't require payment, if the guest already
      *     paid, or if the meetup is finalized. Returns 404 if not RSVPed.
@@ -1103,6 +1212,20 @@ export interface components {
       is_approved: boolean;
     };
     /**
+     * AttendanceStats
+     * @description Attendance counts for a meetup, excluding cancelled RSVPs.
+     */
+    AttendanceStats: {
+      /** Total Rsvps */
+      total_rsvps: number;
+      /** Arrived Count */
+      arrived_count: number;
+      /** Not Arrived Count */
+      not_arrived_count: number;
+      /** Walkin Count */
+      walkin_count: number;
+    };
+    /**
      * BanGuestRequest
      * @description Request body for banning a guest within an organization.
      */
@@ -1124,7 +1247,8 @@ export interface components {
      * BannedGuestPublic
      * @description Guest info with ban details, sourced from organization_bans.
      *
-     *     Used in the org-scoped banned guests list endpoint.
+     *     Used in the org-scoped banned guests list endpoint. mazmo_profile
+     *     follows the same rules as GuestPublic.mazmo_profile.
      */
     BannedGuestPublic: {
       /**
@@ -1140,6 +1264,7 @@ export interface components {
       displayname: string;
       /** Instagram Username */
       instagram_username: string | null;
+      mazmo_profile?: components["schemas"]["GuestMazmoProfilePublic"] | null;
       /**
        * Banned At
        * Format: date-time
@@ -1173,6 +1298,16 @@ export interface components {
        * Format: password
        */
       client_secret?: string | null;
+    };
+    /**
+     * CancellationStats
+     * @description Counts describing the cancelled RSVP set for a meetup.
+     */
+    CancellationStats: {
+      /** Cancelled Count */
+      cancelled_count: number;
+      /** Cancelled But Paid Count */
+      cancelled_but_paid_count: number;
     };
     /**
      * CheckInResponse
@@ -1319,6 +1454,39 @@ export interface components {
       reason?: string | null;
     };
     /**
+     * GuestDisplaynameHistoryListResponse
+     * @description Full displayname history for a guest, newest first.
+     *
+     *     Not paginated: a displayname changes rarely over a guest's lifetime,
+     *     so the complete list is always returned.
+     */
+    GuestDisplaynameHistoryListResponse: {
+      /** Total */
+      total: number;
+      /** History */
+      history: components["schemas"]["GuestDisplaynameHistoryPublic"][];
+    };
+    /**
+     * GuestDisplaynameHistoryPublic
+     * @description One entry in a guest's displayname history.
+     *
+     *     A full timeline (one row per value the displayname ever had,
+     *     including the first), not before/after pairs. actor is None for
+     *     SYNC and BACKFILL entries - no human triggered them.
+     */
+    GuestDisplaynameHistoryPublic: {
+      /** Displayname */
+      displayname: string;
+      /** Source */
+      source: string;
+      /**
+       * Recorded At
+       * Format: date-time
+       */
+      recorded_at: string;
+      actor?: components["schemas"]["EventActorPublic"] | null;
+    };
+    /**
      * GuestListResponse
      * @description Response for listing all known guests (global, no org context).
      *
@@ -1332,11 +1500,43 @@ export interface components {
       guests: components["schemas"]["GuestPublic"][];
     };
     /**
+     * GuestMazmoProfilePublic
+     * @description Snapshot of extended Mazmo profile data for a linked, synced guest.
+     *
+     *     mazmo_suspended/mazmo_banned are Mazmo's own account-level flags -
+     *     unrelated to this app's own ban system (OrganizationBan / the
+     *     is_banned field on GuestWithBanPublic). Prefixed even here to avoid
+     *     that confusion once this is flattened into JSON.
+     */
+    GuestMazmoProfilePublic: {
+      /** Avatar Url */
+      avatar_url: string | null;
+      /** Age */
+      age: number | null;
+      /** Gender */
+      gender: string | null;
+      /** Pronoun */
+      pronoun: string | null;
+      /** Mazmo Suspended */
+      mazmo_suspended: boolean;
+      /** Mazmo Banned */
+      mazmo_banned: boolean;
+      /**
+       * Synced At
+       * Format: date-time
+       */
+      synced_at: string;
+    };
+    /**
      * GuestPublic
      * @description A guest's identity (cached locally, may or may not have a Mazmo account).
      *
      *     Identity-only - no RSVP or ban state. Bans are per-org and are
      *     included only in org-scoped endpoints via GuestWithBanPublic.
+     *
+     *     mazmo_profile is None both for guests never linked to Mazmo, and for
+     *     linked guests that haven't appeared in a sync or link-mazmo call yet
+     *     - two different situations, same null result here.
      */
     GuestPublic: {
       /**
@@ -1352,6 +1552,43 @@ export interface components {
       displayname: string;
       /** Instagram Username */
       instagram_username: string | null;
+      mazmo_profile?: components["schemas"]["GuestMazmoProfilePublic"] | null;
+    };
+    /**
+     * GuestType
+     * @description Category of a guest's attendance at a specific meetup.
+     *
+     *     NORMAL guests are subject to the meetup's requires_payment flag like
+     *     any regular attendee. INVITED, VENDOR, and STAFF guests are exempt
+     *     from the payment check-in gate regardless of has_paid: invited guests
+     *     were personally invited by the meetup organizer and don't pay entry,
+     *     vendors bring their own stand to sell goods and aren't attending as
+     *     participants, and staff are working the event itself. This is set
+     *     per-RSVP (not on the Guest) because these categories are decided
+     *     event by event, not a persistent trait of the person.
+     * @enum {string}
+     */
+    GuestType: "NORMAL" | "INVITED" | "VENDOR" | "STAFF";
+    /**
+     * GuestTypeStats
+     * @description Per-category guest counts for a meetup, excluding cancelled RSVPs.
+     */
+    GuestTypeStats: {
+      /** Normal Count */
+      normal_count: number;
+      /** Invited Count */
+      invited_count: number;
+      /** Vendor Count */
+      vendor_count: number;
+      /** Staff Count */
+      staff_count: number;
+    };
+    /**
+     * GuestTypeUpdateRequest
+     * @description Request body for changing a guest's category at a specific meetup.
+     */
+    GuestTypeUpdateRequest: {
+      guest_type: components["schemas"]["GuestType"];
     };
     /**
      * GuestWithBanPublic
@@ -1374,6 +1611,7 @@ export interface components {
       displayname: string;
       /** Instagram Username */
       instagram_username: string | null;
+      mazmo_profile?: components["schemas"]["GuestMazmoProfilePublic"] | null;
       /**
        * Is Banned
        * @default false
@@ -1499,6 +1737,16 @@ export interface components {
       requires_payment: boolean;
     };
     /**
+     * MeetupStatsPublic
+     * @description Grouped attendance/cancellation/guest-type/payment statistics for a meetup.
+     */
+    MeetupStatsPublic: {
+      attendance: components["schemas"]["AttendanceStats"];
+      cancellations: components["schemas"]["CancellationStats"];
+      guest_types: components["schemas"]["GuestTypeStats"];
+      payment: components["schemas"]["PaymentStats"];
+    };
+    /**
      * OrgCreate
      * @description Request body to create a new organization.
      */
@@ -1598,6 +1846,24 @@ export interface components {
       paid_by: components["schemas"]["CheckedInByPublic"];
     };
     /**
+     * PaymentStats
+     * @description Payment counts for a meetup, excluding cancelled RSVPs.
+     *
+     *     paid_count and unpaid_count are scoped to guest_type=NORMAL only - a
+     *     non-NORMAL guest who happens to have has_paid=True (e.g. someone who
+     *     paid before being reclassified as staff) is counted only in
+     *     exempt_from_payment_count, never in paid_count or unpaid_count, so
+     *     guest_types.normal_count always equals paid_count + unpaid_count.
+     */
+    PaymentStats: {
+      /** Paid Count */
+      paid_count: number;
+      /** Unpaid Count */
+      unpaid_count: number;
+      /** Exempt From Payment Count */
+      exempt_from_payment_count: number;
+    };
+    /**
      * PossibleRoles
      * @description Global roles stored in user_roles / users.role_id.
      *
@@ -1655,7 +1921,8 @@ export interface components {
      * @description Event-specific RSVP state for a guest at a meetup.
      *
      *     arrival_time and arrival_order are set by a database trigger when
-     *     has_arrived flips to True during check-in.
+     *     has_arrived flips to True during check-in. guest_type defaults to
+     *     NORMAL and is only ever changed via PATCH .../guests/{id}/type.
      */
     RsvpPublic: {
       /**
@@ -1683,6 +1950,11 @@ export interface components {
       has_paid: boolean;
       /** Paid At */
       paid_at?: string | null;
+      /**
+       * Guest Type
+       * @default NORMAL
+       */
+      guest_type: string;
     };
     /**
      * ServiceCheck
@@ -3615,6 +3887,64 @@ export interface operations {
       };
     };
   };
+  get_guest_displayname_history_guests__guest_id__displayname_history_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        guest_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Guest's full displayname history, newest first */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestDisplaynameHistoryListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   list_meetups_organizations__org_id__meetups__get: {
     parameters: {
       query?: never;
@@ -3948,6 +4278,65 @@ export interface operations {
       };
     };
   };
+  get_meetup_stats_organizations__org_id__meetups__meetup_id__stats_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Meetup statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   add_walkin_guest_organizations__org_id__meetups__meetup_id__guests__guest_id__add_walkin_post: {
     parameters: {
       query?: never;
@@ -4140,6 +4529,79 @@ export interface operations {
         };
       };
       /** @description Guest not checked in */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  update_guest_type_organizations__org_id__meetups__meetup_id__guests__guest_id__type_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+        guest_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GuestTypeUpdateRequest"];
+      };
+    };
+    responses: {
+      /** @description Guest type updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupGuestPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Guest not RSVPed to meetup */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup already finalized */
       409: {
         headers: {
           [name: string]: unknown;
@@ -4576,7 +5038,7 @@ export interface operations {
   list_all_events_organizations__org_id__events__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, GUEST_DISPLAYNAME_CHANGED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED, GUEST_TYPE_CHANGED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -4651,7 +5113,7 @@ export interface operations {
   list_meetup_events_organizations__org_id__events_meetups__meetup_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, GUEST_DISPLAYNAME_CHANGED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED, GUEST_TYPE_CHANGED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -4730,7 +5192,7 @@ export interface operations {
   list_guest_events_organizations__org_id__events_guests__guest_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, GUEST_DISPLAYNAME_CHANGED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED, GUEST_TYPE_CHANGED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;
@@ -4811,7 +5273,7 @@ export interface operations {
   list_staff_events_organizations__org_id__events_staff__staff_id__get: {
     parameters: {
       query?: {
-        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED */
+        /** @description Filter by event type(s), comma-separated: CHECK_IN, UNDO_CHECK_IN, BAN, UNBAN, MEETUP_FINALIZED, MEETUP_UNFINALIZED, WALKIN, GUEST_CREATED, GUEST_MAZMO_LINKED, GUEST_MAZMO_UNLINKED, GUEST_DISPLAYNAME_CHANGED, PAYMENT_RECORDED, PAYMENT_REVOKED, PAYMENT_REQUIREMENT_ENABLED, PAYMENT_REQUIREMENT_DISABLED, GUEST_TYPE_CHANGED */
         type?: string | null;
         /** @description Events after this timestamp */
         since?: string | null;

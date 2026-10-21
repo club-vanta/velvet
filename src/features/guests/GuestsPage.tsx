@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   useQuery,
   useMutation,
@@ -7,19 +8,12 @@ import {
 } from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
-import { ArrowUp, ArrowDown, ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -29,14 +23,32 @@ import {
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  FilterChips,
+  FilterMenu,
+  ListToolbarRow,
+  MenuRadios,
+  SortMenu,
+} from "@/components/ListToolbar";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { InputWithPrefix } from "@/components/ui/input-with-prefix";
+import { GuestAvatar } from "@/components/GuestAvatar";
+import { MazmoFlagBadges, PronounPill } from "@/components/GuestBadges";
+import {
+  BanDialog,
+  EditGuestDialog,
+  LinkMazmoDialog,
+  UnlinkMazmoDialog,
+} from "./GuestDialogs";
+import { useUnbanGuest } from "./useUnbanGuest";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { api } from "@/api/client";
@@ -44,361 +56,134 @@ import { useAuth } from "@/auth/AuthContext";
 import { useOrg } from "@/lib/org";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import { MAZMO_PRONOUN_SHORT, mazmoLabel } from "@/lib/mazmoProfile";
+import type { SortDir } from "@/lib/sortNames";
+import {
+  DEFAULT_DIRECTORY_FILTERS,
+  DIRECTORY_SORT_KEYS,
+  VANTED_SORT_KEYS,
+  activeDirectoryFilters,
+  viewDirectory,
+  viewVanted,
+  type DirectoryFilters,
+  type DirectorySortKey,
+  type ListSort,
+  type VantedSortKey,
+} from "@/lib/guestDirectoryView";
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];
-type BannedGuest = components["schemas"]["BannedGuestPublic"];
 
-type SortDir = "asc" | "desc";
+const DIRECTORY_SORT_LABEL: Record<DirectorySortKey, TranslationKey> = {
+  name: "sortName",
+  handle: "sortHandle",
+  mazmoId: "sortMazmoId",
+  instagram: "sortInstagram",
+};
 
-function SortIcon({
-  col,
-  active,
-  dir,
-}: {
-  col: string;
-  active: string | null;
-  dir: SortDir;
-}) {
-  if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
-  return dir === "asc" ? (
-    <ArrowUp className="h-3 w-3" />
-  ) : (
-    <ArrowDown className="h-3 w-3" />
-  );
-}
+const VANTED_SORT_LABEL: Record<VantedSortKey, TranslationKey> = {
+  name: "sortName",
+  handle: "sortHandle",
+  bannedAt: "sortBannedAt",
+  reason: "sortReason",
+};
 
-function SortableHead({
-  col,
-  label,
-  active,
-  dir,
-  onSort,
-  className,
-}: {
-  col: string;
-  label: string;
-  active: string | null;
-  dir: SortDir;
-  onSort: (col: string) => void;
-  className?: string;
-}) {
-  return (
-    <TableHead className={className}>
-      <button
-        onClick={() => onSort(col)}
-        className={cn(
-          "flex items-center gap-1 hover:text-foreground transition-colors",
-          col === active ? "text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {label}
-        <SortIcon col={col} active={active} dir={dir} />
-      </button>
-    </TableHead>
-  );
-}
+// Text sorts read "A to Z"; numbers and dates say which end comes first.
+const DIR_LABEL: Record<
+  DirectorySortKey | VantedSortKey,
+  Record<SortDir, TranslationKey>
+> = {
+  name: { asc: "sortNameAsc", desc: "sortNameDesc" },
+  handle: { asc: "sortNameAsc", desc: "sortNameDesc" },
+  instagram: { asc: "sortNameAsc", desc: "sortNameDesc" },
+  reason: { asc: "sortNameAsc", desc: "sortNameDesc" },
+  mazmoId: { asc: "sortLowestFirst", desc: "sortHighestFirst" },
+  bannedAt: { asc: "sortRsvpAsc", desc: "sortRsvpDesc" },
+};
 
-function EditGuestDialog({
+const MAZMO_FILTER_LABEL: Record<DirectoryFilters["mazmo"], TranslationKey> = {
+  all: "filterAll",
+  linked: "filterWithMazmo",
+  unlinked: "filterWithoutMazmo",
+};
+
+const INSTAGRAM_FILTER_LABEL: Record<
+  DirectoryFilters["instagram"],
+  TranslationKey
+> = {
+  all: "filterAll",
+  with: "filterWithInstagram",
+  without: "filterWithoutInstagram",
+};
+
+const PRONOUN_CODES = ["MALE", "FEMALE", "NEUTRAL"] as const;
+
+const ROW_CLASS =
+  "flex flex-col gap-3 rounded-lg border p-3 @3xl:flex-row @3xl:items-center @3xl:gap-4";
+
+/** Avatar, name linked to the profile, handle, pronoun, and badges. */
+function GuestIdentity({
   guest,
-  onClose,
+  isBanned = false,
 }: {
-  guest: Guest;
-  onClose: () => void;
+  guest: Pick<Guest, "id" | "displayname" | "mazmo_handle" | "mazmo_profile">;
+  isBanned?: boolean;
 }) {
   const { t } = useLanguage();
-  const [displayname, setDisplayname] = useState(guest.displayname);
-  const [instagram, setInstagram] = useState(guest.instagram_username ?? "");
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const body: { displayname?: string; instagram_username?: string | null } =
-        {};
-      const trimmedDisplayname = displayname.trim();
-      if (trimmedDisplayname && trimmedDisplayname !== guest.displayname) {
-        body.displayname = trimmedDisplayname;
-      }
-      const trimmedInstagram = instagram.trim();
-      const currentInstagram = guest.instagram_username ?? "";
-      if (trimmedInstagram !== currentInstagram) {
-        body.instagram_username =
-          trimmedInstagram === "" ? null : trimmedInstagram;
-      }
-      const { error } = await api.PATCH("/guests/{guest_id}", {
-        params: { path: { guest_id: guest.id } },
-        body,
-      });
-      if (error) throw new Error(extractApiError(error, t("failedEditGuest")));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(t("guestUpdated"));
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
+  const flagged =
+    !!guest.mazmo_profile?.mazmo_banned ||
+    !!guest.mazmo_profile?.mazmo_suspended;
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("editGuestDialogTitle")}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3 py-2">
-          <div className="space-y-1">
-            <label
-              htmlFor="edit-guest-displayname"
-              className="text-sm font-medium"
-            >
-              {t("displayName")}
-            </label>
-            <Input
-              id="edit-guest-displayname"
-              value={displayname}
-              onChange={(e) => setDisplayname(e.target.value)}
-              disabled={mutation.isPending}
-            />
-          </div>
-          <div className="space-y-1">
-            <label
-              htmlFor="edit-guest-instagram"
-              className="text-sm font-medium"
-            >
-              {t("instagramLabel")}
-            </label>
-            <Input
-              id="edit-guest-instagram"
-              placeholder={t("instagramPlaceholder")}
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-              disabled={mutation.isPending}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!displayname.trim() || mutation.isPending}
+    <div className="flex min-w-0 flex-1 items-center gap-3">
+      <GuestAvatar
+        name={guest.displayname}
+        src={guest.mazmo_profile?.avatar_url}
+      />
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <Link
+            to={`/guests/${guest.id}`}
+            className={cn(
+              "rounded-sm font-medium break-words underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              isBanned && "text-destructive",
+            )}
           >
-            {mutation.isPending ? t("savingChanges") : t("saveChanges")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function LinkMazmoDialog({
-  guest,
-  onClose,
-}: {
-  guest: Guest;
-  onClose: () => void;
-}) {
-  const { t } = useLanguage();
-  const [username, setUsername] = useState("");
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const { error, response } = await api.PATCH(
-        "/guests/{guest_id}/link-mazmo",
-        {
-          params: { path: { guest_id: guest.id } },
-          body: { username: username.trim() },
-        },
-      );
-      if (error) {
-        if (response.status === 404) throw new Error(t("mazmoUserNotFound"));
-        if (response.status === 504) throw new Error(t("mazmoUnreachable"));
-        throw new Error(extractApiError(error, t("failedLinkMazmo")));
-      }
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(t("mazmoLinked"));
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("linkMazmoDialogTitle")}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-1 py-2">
-          <label htmlFor="link-mazmo-username" className="text-sm font-medium">
-            {t("mazmoUsername")}
-          </label>
-          <InputWithPrefix
-            id="link-mazmo-username"
-            prefix="@"
-            placeholder="cindydark"
-            autoComplete="off"
-            autoCapitalize="none"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={mutation.isPending}
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!username.trim() || mutation.isPending}
-          >
-            {mutation.isPending ? t("linking") : t("link")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function UnlinkMazmoDialog({
-  guest,
-  onClose,
-}: {
-  guest: Guest;
-  onClose: () => void;
-}) {
-  const { t } = useLanguage();
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await api.PATCH("/guests/{guest_id}/unlink-mazmo", {
-        params: { path: { guest_id: guest.id } },
-      });
-      if (error)
-        throw new Error(extractApiError(error, t("failedUnlinkMazmo")));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["guests"] });
-      toast.success(t("mazmoUnlinked"));
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("unlinkMazmoDialogTitle")}</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground py-2">
-          {t("unlinkMazmoDialogBody")}{" "}
-          <span className="font-medium text-foreground">
             {guest.displayname}
-          </span>{" "}
-          (@{guest.mazmo_handle}).
-        </p>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t("unlinking") : t("unlink")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </Link>
+          <span className="text-sm break-all text-muted-foreground">
+            {guest.mazmo_handle ? `@${guest.mazmo_handle}` : t("noMazmoHandle")}
+          </span>
+          <PronounPill pronoun={guest.mazmo_profile?.pronoun} />
+        </div>
+        {(isBanned || flagged) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {isBanned && <Badge variant="destructive">{t("banned")}</Badge>}
+            <MazmoFlagBadges profile={guest.mazmo_profile} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-function BanDialog({
-  guest,
-  orgId,
-  onClose,
-}: {
-  guest: Guest;
-  orgId: string;
-  onClose: () => void;
-}) {
-  const { t } = useLanguage();
-  const [reason, setReason] = useState("");
-  const queryClient = useQueryClient();
+function RowSkeletons() {
+  return Array.from({ length: 5 }).map((_, i) => (
+    <li key={i} className="flex items-center gap-3 rounded-lg border p-3">
+      <Skeleton className="size-8 rounded-full" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+    </li>
+  ));
+}
 
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await api.PATCH(
-        "/organizations/{org_id}/guests/{guest_id}/ban",
-        {
-          params: {
-            path: { org_id: orgId, guest_id: guest.id },
-          },
-          body: { reason },
-        },
-      );
-      if (error) throw new Error(extractApiError(error, t("banFailed")));
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["guests-banned", orgId],
-      });
-      toast.success(`${guest.displayname} has been vanted`);
-      onClose();
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
-
+function EmptyRow({ children }: { children: React.ReactNode }) {
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t("banDialogTitle")} {guest.displayname}?
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2 py-2">
-          <label htmlFor="ban-reason" className="text-sm font-medium">
-            {t("reasonRequired")}
-          </label>
-          <Textarea
-            id="ban-reason"
-            placeholder={t("banReasonPlaceholder")}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">
-            {reason.trim().length}/500
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
-            {t("cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={
-              reason.trim().length < 5 ||
-              reason.trim().length > 500 ||
-              mutation.isPending
-            }
-          >
-            {mutation.isPending ? t("banning") : t("banGuest")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <li className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+      {children}
+    </li>
   );
 }
 
@@ -583,8 +368,13 @@ function AllGuestsTab({
   const [editTarget, setEditTarget] = useState<Guest | null>(null);
   const [linkTarget, setLinkTarget] = useState<Guest | null>(null);
   const [unlinkTarget, setUnlinkTarget] = useState<Guest | null>(null);
-  const [sortCol, setSortCol] = useState<string | null>("displayname");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [sort, setSort] = useState<ListSort<DirectorySortKey>>({
+    key: "name",
+    dir: "asc",
+  });
+  const [filters, setFilters] = useState<DirectoryFilters>(
+    DEFAULT_DIRECTORY_FILTERS,
+  );
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -601,38 +391,42 @@ function AllGuestsTab({
     placeholderData: keepPreviousData,
   });
 
-  function handleSort(col: string) {
-    if (col === sortCol) {
-      if (sortDir === "asc") setSortDir("desc");
-      else {
-        setSortCol(null);
-        setSortDir("asc");
-      }
-    } else {
-      setSortCol(col);
-      setSortDir("asc");
-    }
-  }
+  // GuestPublic has no org ban state, so vants come from the org's list
+  // (same query and cache as the Vanted tab).
+  const bannedQ = useQuery({
+    queryKey: ["guests-banned", orgId],
+    queryFn: async () => {
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/guests/banned",
+        { params: { path: { org_id: orgId } } },
+      );
+      if (error) throw new Error("Failed to load banned guests");
+      return data;
+    },
+    enabled: !!orgId,
+  });
+  const bannedIds = new Set(bannedQ.data?.guests.map((g) => g.id) ?? []);
+  const unbanMutation = useUnbanGuest(orgId);
 
-  const guests = sortCol
-    ? data?.guests.slice().sort((a, b) => {
-        let cmp = 0;
-        if (sortCol === "displayname")
-          cmp = a.displayname.localeCompare(b.displayname);
-        else if (sortCol === "username")
-          cmp = (a.mazmo_handle ?? "").localeCompare(b.mazmo_handle ?? "");
-        else if (sortCol === "mazmo_user_id") {
-          if (a.mazmo_user_id == null && b.mazmo_user_id == null) cmp = 0;
-          else if (a.mazmo_user_id == null) cmp = sortDir === "asc" ? 1 : -1;
-          else if (b.mazmo_user_id == null) cmp = sortDir === "asc" ? -1 : 1;
-          else cmp = a.mazmo_user_id - b.mazmo_user_id;
-        } else if (sortCol === "instagram_username")
-          cmp = (a.instagram_username ?? "").localeCompare(
-            b.instagram_username ?? "",
-          );
-        return sortDir === "asc" ? cmp : -cmp;
-      })
-    : data?.guests;
+  const guests = data
+    ? viewDirectory(data.guests, filters, sort, bannedIds)
+    : undefined;
+  const active = activeDirectoryFilters(filters);
+  const setFilter = <K extends keyof DirectoryFilters>(
+    key: K,
+    value: DirectoryFilters[K],
+  ) => setFilters({ ...filters, [key]: value });
+
+  const chipLabel: Record<keyof DirectoryFilters, string> = {
+    mazmo: t(MAZMO_FILTER_LABEL[filters.mazmo]),
+    instagram: t(INSTAGRAM_FILTER_LABEL[filters.instagram]),
+    pronoun:
+      filters.pronoun === "all"
+        ? ""
+        : `${t("pronouns")}: ${mazmoLabel(MAZMO_PRONOUN_SHORT, filters.pronoun, t)}`,
+    vantedOnly: t("filterBanned"),
+    mazmoFlaggedOnly: t("filterMazmoFlagged"),
+  };
 
   return (
     <>
@@ -647,143 +441,183 @@ function AllGuestsTab({
         </Alert>
       )}
       {!isLoading && (debouncedSearch || (data?.guests.length ?? 0) > 0) && (
-        <Input
-          placeholder={t("searchGuestList")}
-          aria-label={t("searchGuestList")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-2"
-        />
-      )}
-      <div className="rounded-md border">
-        <Table className="lg:table-fixed">
-          <TableHeader>
-            <TableRow>
-              <SortableHead
-                col="displayname"
-                label={t("displayName")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[30%]"
+        <div className="space-y-2">
+          <ListToolbarRow search={search} onSearch={setSearch}>
+            <FilterMenu activeCount={active.length}>
+              <MenuRadios
+                label={t("filterMazmoAccount")}
+                value={filters.mazmo}
+                onChange={(v) => setFilter("mazmo", v)}
+                options={(["all", "linked", "unlinked"] as const).map((v) => ({
+                  value: v,
+                  label: t(MAZMO_FILTER_LABEL[v]),
+                }))}
               />
-              <SortableHead
-                col="username"
-                label={t("atUsername")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[24%]"
-              />
-              <SortableHead
-                col="mazmo_user_id"
-                label={t("mazmoId")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[13%]"
-              />
-              <SortableHead
-                col="instagram_username"
+              <DropdownMenuSeparator />
+              <MenuRadios
                 label={t("instagramCol")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[18%]"
+                value={filters.instagram}
+                onChange={(v) => setFilter("instagram", v)}
+                options={(["all", "with", "without"] as const).map((v) => ({
+                  value: v,
+                  label: t(INSTAGRAM_FILTER_LABEL[v]),
+                }))}
               />
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-12" />
-                  </TableCell>
-                </TableRow>
-              ))}
-            {!isLoading && (data?.guests.length ?? 0) === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="text-center text-muted-foreground py-8"
+              <DropdownMenuSeparator />
+              <MenuRadios
+                label={t("pronouns")}
+                value={filters.pronoun}
+                onChange={(v) => setFilter("pronoun", v)}
+                options={[
+                  { value: "all" as const, label: t("filterAll") },
+                  ...PRONOUN_CODES.map((v) => ({
+                    value: v,
+                    label: mazmoLabel(MAZMO_PRONOUN_SHORT, v, t),
+                  })),
+                ]}
+              />
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{t("filterShowOnly")}</DropdownMenuLabel>
+                <DropdownMenuCheckboxItem
+                  checked={filters.vantedOnly}
+                  onCheckedChange={(v: boolean) => setFilter("vantedOnly", v)}
                 >
-                  {debouncedSearch
-                    ? t("noGuestsMatchSearch")
-                    : t("noGuestsYet")}
-                </TableCell>
-              </TableRow>
-            )}
-            {guests?.map((g) => (
-              <TableRow key={g.id}>
-                <TableCell className="font-medium">{g.displayname}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {g.mazmo_user_id ?? "—"}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {g.instagram_username ? `@${g.instagram_username}` : "—"}
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={t("guestActions")}
-                        />
-                      }
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditTarget(g)}>
-                        {t("editGuest")}
+                  {t("filterBanned")}
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={filters.mazmoFlaggedOnly}
+                  onCheckedChange={(v: boolean) =>
+                    setFilter("mazmoFlaggedOnly", v)
+                  }
+                >
+                  {t("filterMazmoFlagged")}
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuGroup>
+            </FilterMenu>
+            <SortMenu
+              sort={sort}
+              onSort={setSort}
+              keys={DIRECTORY_SORT_KEYS}
+              label={(k) => t(DIRECTORY_SORT_LABEL[k])}
+              dirLabel={(k, d) => t(DIR_LABEL[k][d])}
+            />
+          </ListToolbarRow>
+          <FilterChips
+            chips={active.map((key) => ({
+              key,
+              label: chipLabel[key],
+              onRemove: () => setFilter(key, DEFAULT_DIRECTORY_FILTERS[key]),
+            }))}
+            narrowed={!!debouncedSearch}
+            shown={guests?.length ?? 0}
+            total={data?.guests.length ?? 0}
+            onClear={() => setFilters(DEFAULT_DIRECTORY_FILTERS)}
+          />
+        </div>
+      )}
+      <ul className="space-y-2" aria-label={t("allGuests")}>
+        {isLoading && <RowSkeletons />}
+        {!isLoading && (data?.guests.length ?? 0) === 0 && (
+          <EmptyRow>
+            {debouncedSearch ? t("noGuestsMatchSearch") : t("noGuestsYet")}
+          </EmptyRow>
+        )}
+        {!isLoading &&
+          (data?.guests.length ?? 0) > 0 &&
+          (guests?.length ?? 0) === 0 && (
+            <EmptyRow>{t("noGuestsMatchFilters")}</EmptyRow>
+          )}
+        {guests?.map((g) => (
+          <li key={g.id} className={ROW_CLASS}>
+            <GuestIdentity guest={g} isBanned={bannedIds.has(g.id)} />
+            <div className="flex items-center justify-between gap-2 @3xl:contents">
+              <dl className="flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground @3xl:contents">
+                <div className="@3xl:w-32">
+                  <dt className="inline font-medium">{t("mazmoId")}</dt>{" "}
+                  <dd className="inline tabular-nums">
+                    {g.mazmo_user_id ?? "—"}
+                  </dd>
+                </div>
+                <div className="min-w-0 @3xl:w-44 @3xl:truncate">
+                  <dt className="inline font-medium">{t("instagramCol")}</dt>{" "}
+                  <dd className="inline">
+                    {g.instagram_username ? (
+                      <a
+                        href={`https://instagram.com/${g.instagram_username}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        @{g.instagram_username}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </dd>
+                </div>
+              </dl>
+              <div className="shrink-0">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`${t("guestActions")}: ${g.displayname}`}
+                      />
+                    }
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem render={<Link to={`/guests/${g.id}`} />}>
+                      {t("viewProfile")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditTarget(g)}>
+                      {t("editGuest")}
+                    </DropdownMenuItem>
+                    {g.mazmo_handle ? (
+                      <DropdownMenuItem
+                        onClick={() => setUnlinkTarget(g)}
+                        // The backend refuses to unlink a vanted guest.
+                        disabled={bannedIds.has(g.id)}
+                      >
+                        {t("unlinkMazmoAccount")}
                       </DropdownMenuItem>
-                      {g.mazmo_handle ? (
-                        <DropdownMenuItem onClick={() => setUnlinkTarget(g)}>
-                          {t("unlinkMazmoAccount")}
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem onClick={() => setLinkTarget(g)}>
-                          {t("linkMazmoAccount")}
-                        </DropdownMenuItem>
-                      )}
-                      {isOrgAdmin && (
-                        <>
-                          <DropdownMenuSeparator />
+                    ) : (
+                      <DropdownMenuItem onClick={() => setLinkTarget(g)}>
+                        {t("linkMazmoAccount")}
+                      </DropdownMenuItem>
+                    )}
+                    {/* Vant state is only known once the org's list loads. */}
+                    {isOrgAdmin && bannedQ.isSuccess && (
+                      <>
+                        <DropdownMenuSeparator />
+                        {bannedIds.has(g.id) ? (
+                          <DropdownMenuItem
+                            onClick={() => unbanMutation.mutate(g)}
+                            disabled={unbanMutation.isPending}
+                          >
+                            {t("unban")}
+                          </DropdownMenuItem>
+                        ) : (
                           <DropdownMenuItem
                             variant="destructive"
                             onClick={() => setBanTarget(g)}
                           >
                             {t("ban")}
                           </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                        )}
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
       {banTarget && (
         <BanDialog
           guest={banTarget}
@@ -821,9 +655,10 @@ function BannedGuestsTab({
   orgId: string;
 }) {
   const { t } = useLanguage();
-  const [sortCol, setSortCol] = useState<string | null>("displayname");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const queryClient = useQueryClient();
+  const [sort, setSort] = useState<ListSort<VantedSortKey>>({
+    key: "name",
+    dir: "asc",
+  });
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["guests-banned", orgId],
@@ -838,56 +673,9 @@ function BannedGuestsTab({
     enabled: !!orgId,
   });
 
-  const unbanMutation = useMutation({
-    mutationFn: async (guest: BannedGuest) => {
-      const { error } = await api.PATCH(
-        "/organizations/{org_id}/guests/{guest_id}/unban",
-        {
-          params: {
-            path: { org_id: orgId, guest_id: guest.id },
-          },
-        },
-      );
-      if (error) throw new Error(extractApiError(error, t("unbanFailed")));
-      return guest;
-    },
-    onSuccess: (guest) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["guests-banned", orgId],
-      });
-      toast.success(`${guest.displayname} unvanted`);
-    },
-    onError: (err: Error) => toast.error(err.message),
-  });
+  const unbanMutation = useUnbanGuest(orgId);
 
-  function handleSort(col: string) {
-    if (col === sortCol) {
-      if (sortDir === "asc") setSortDir("desc");
-      else {
-        setSortCol(null);
-        setSortDir("asc");
-      }
-    } else {
-      setSortCol(col);
-      setSortDir("asc");
-    }
-  }
-
-  const sorted = sortCol
-    ? data?.guests.slice().sort((a, b) => {
-        let cmp = 0;
-        if (sortCol === "displayname")
-          cmp = a.displayname.localeCompare(b.displayname);
-        else if (sortCol === "username")
-          cmp = (a.mazmo_handle ?? "").localeCompare(b.mazmo_handle ?? "");
-        else if (sortCol === "banned_at")
-          cmp = a.banned_at.localeCompare(b.banned_at);
-        else if (sortCol === "banned_reason")
-          cmp = a.banned_reason.localeCompare(b.banned_reason);
-        return sortDir === "asc" ? cmp : -cmp;
-      })
-    : data?.guests;
-
+  const sorted = data ? viewVanted(data.guests, sort) : undefined;
   const {
     search,
     setSearch,
@@ -910,130 +698,64 @@ function BannedGuestsTab({
         </Alert>
       )}
       {!isLoading && (data?.guests.length ?? 0) > 0 && (
-        <Input
-          placeholder={t("searchGuestList")}
-          aria-label={t("searchGuestList")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-2"
-        />
+        <div className="space-y-2">
+          <ListToolbarRow search={search} onSearch={setSearch}>
+            <SortMenu
+              sort={sort}
+              onSort={setSort}
+              keys={VANTED_SORT_KEYS}
+              label={(k) => t(VANTED_SORT_LABEL[k])}
+              dirLabel={(k, d) => t(DIR_LABEL[k][d])}
+            />
+          </ListToolbarRow>
+          <FilterChips
+            chips={[]}
+            narrowed={search.trim() !== ""}
+            shown={guests?.length ?? 0}
+            total={data?.guests.length ?? 0}
+            onClear={() => {}}
+          />
+        </div>
       )}
-      <div className="rounded-md border">
-        <Table className="lg:table-fixed">
-          <TableHeader>
-            <TableRow>
-              <SortableHead
-                col="displayname"
-                label={t("displayName")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[28%]"
-              />
-              <SortableHead
-                col="username"
-                label={t("atUsername")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[22%]"
-              />
-              <SortableHead
-                col="banned_at"
-                label={t("bannedAt")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[17%]"
-              />
-              <SortableHead
-                col="banned_reason"
-                label={t("reason")}
-                active={sortCol}
-                dir={sortDir}
-                onSort={handleSort}
-                className="lg:w-[21%]"
-              />
-              {isOrgAdmin && <TableHead />}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-4 w-40" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  {isOrgAdmin && (
-                    <TableCell>
-                      <Skeleton className="h-4 w-16" />
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            {!isLoading && (data?.guests.length ?? 0) === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={isOrgAdmin ? 5 : 4}
-                  className="text-center text-muted-foreground py-8"
+      <ul className="space-y-2" aria-label={t("bannedGuests")}>
+        {isLoading && <RowSkeletons />}
+        {!isLoading && (data?.guests.length ?? 0) === 0 && (
+          <EmptyRow>{t("noBannedGuests")}</EmptyRow>
+        )}
+        {!isLoading &&
+          (data?.guests.length ?? 0) > 0 &&
+          (guests?.length ?? 0) === 0 && (
+            <EmptyRow>{t("noGuestsMatchSearch")}</EmptyRow>
+          )}
+        {guests?.map((g) => (
+          <li key={g.id} className={ROW_CLASS}>
+            <GuestIdentity guest={g} isBanned />
+            <div className="flex items-end justify-between gap-3 @3xl:contents">
+              <dl className="min-w-0 space-y-1 text-sm @3xl:contents">
+                <div className="text-xs text-muted-foreground @3xl:w-52 @3xl:shrink-0 @3xl:whitespace-nowrap">
+                  <dt className="inline font-medium">{t("bannedAt")}</dt>{" "}
+                  <dd className="inline">{formatDateTime(g.banned_at)}</dd>
+                </div>
+                <div className="@3xl:w-72 @3xl:shrink-0">
+                  <dt className="sr-only">{t("reason")}</dt>
+                  <dd className="break-words">{g.banned_reason}</dd>
+                </div>
+              </dl>
+              {isOrgAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => unbanMutation.mutate(g)}
+                  disabled={unbanMutation.isPending}
                 >
-                  {t("noBannedGuests")}
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading &&
-              (data?.guests.length ?? 0) > 0 &&
-              (guests?.length ?? 0) === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={isOrgAdmin ? 5 : 4}
-                    className="text-center text-muted-foreground py-8"
-                  >
-                    {t("noGuestsMatchSearch")}
-                  </TableCell>
-                </TableRow>
+                  {t("unban")}
+                </Button>
               )}
-            {guests?.map((g) => (
-              <TableRow key={g.id}>
-                <TableCell className="font-medium text-destructive">
-                  {g.displayname}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDateTime(g.banned_at)}
-                </TableCell>
-                <TableCell className="text-sm whitespace-normal overflow-hidden break-words">
-                  {g.banned_reason}
-                </TableCell>
-                {isOrgAdmin && (
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="px-0"
-                      onClick={() => unbanMutation.mutate(g)}
-                      disabled={unbanMutation.isPending}
-                    >
-                      {t("unban")}
-                    </Button>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </div>
+          </li>
+        ))}
+      </ul>
     </>
   );
 }
@@ -1057,7 +779,7 @@ export function GuestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="@container space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t("guests")}</h1>
         <Button onClick={() => setAddGuestOpen(true)}>
@@ -1069,10 +791,10 @@ export function GuestsPage() {
           <TabsTrigger value="all">{t("allGuests")}</TabsTrigger>
           <TabsTrigger value="banned">{t("bannedGuests")}</TabsTrigger>
         </TabsList>
-        <TabsContent value="all" className="mt-4">
+        <TabsContent value="all" className="mt-4 space-y-4">
           <AllGuestsTab isOrgAdmin={isOrgAdmin} orgId={orgId} />
         </TabsContent>
-        <TabsContent value="banned" className="mt-4">
+        <TabsContent value="banned" className="mt-4 space-y-4">
           <BannedGuestsTab isOrgAdmin={isOrgAdmin} orgId={orgId} />
         </TabsContent>
       </Tabs>

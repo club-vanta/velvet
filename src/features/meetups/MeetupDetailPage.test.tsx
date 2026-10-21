@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
@@ -9,6 +9,7 @@ import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
+type MeetupStats = components["schemas"]["MeetupStatsPublic"];
 
 const mockApiGet = vi.fn();
 const mockApiPost = vi.fn();
@@ -53,6 +54,9 @@ function guest(overrides: {
   displayname: string;
   has_paid: boolean;
   is_banned?: boolean;
+  guest_type?: string;
+  rsvp_time?: string;
+  mazmo_profile?: MeetupGuest["guest"]["mazmo_profile"];
 }): MeetupGuest {
   return {
     guest: {
@@ -62,9 +66,10 @@ function guest(overrides: {
       displayname: overrides.displayname,
       instagram_username: null,
       is_banned: overrides.is_banned ?? false,
+      mazmo_profile: overrides.mazmo_profile ?? null,
     },
     rsvp: {
-      rsvp_time: "2026-08-01T12:00:00Z",
+      rsvp_time: overrides.rsvp_time ?? "2026-08-01T12:00:00Z",
       cancelled_rsvp: false,
       has_arrived: false,
       arrival_time: null,
@@ -72,21 +77,67 @@ function guest(overrides: {
       is_walkin: false,
       has_paid: overrides.has_paid,
       paid_at: overrides.has_paid ? "2026-08-02T12:00:00Z" : null,
+      guest_type: overrides.guest_type ?? "NORMAL",
     },
   };
 }
 
-function renderPage(meetup: Meetup, guests: MeetupGuest[]) {
-  mockApiGet.mockImplementation((path: string) => {
-    if (path === "/organizations/{org_id}/meetups/{meetup_id}")
-      return Promise.resolve({ data: meetup, error: undefined });
-    if (path === "/organizations/{org_id}/meetups/{meetup_id}/guests")
-      return Promise.resolve({
-        data: { total: guests.length, guests },
-        error: undefined,
-      });
-    return Promise.resolve({ data: undefined, error: undefined });
-  });
+const STATS: MeetupStats = {
+  attendance: {
+    total_rsvps: 0,
+    arrived_count: 0,
+    not_arrived_count: 0,
+    walkin_count: 0,
+  },
+  cancellations: { cancelled_count: 0, cancelled_but_paid_count: 0 },
+  guest_types: {
+    normal_count: 0,
+    invited_count: 0,
+    vendor_count: 0,
+    staff_count: 0,
+  },
+  payment: { paid_count: 0, unpaid_count: 0, exempt_from_payment_count: 0 },
+};
+
+function renderPage(
+  meetup: Meetup,
+  guests: MeetupGuest[],
+  stats: MeetupStats = STATS,
+) {
+  mockApiGet.mockImplementation(
+    (path: string, opts?: { params?: { path?: { guest_id?: string } } }) => {
+      if (path === "/organizations/{org_id}/meetups/{meetup_id}")
+        return Promise.resolve({ data: meetup, error: undefined });
+      if (path === "/organizations/{org_id}/meetups/{meetup_id}/guests")
+        return Promise.resolve({
+          data: { total: guests.length, guests },
+          error: undefined,
+        });
+      if (path === "/organizations/{org_id}/meetups/{meetup_id}/stats")
+        return Promise.resolve({ data: stats, error: undefined });
+      if (path === "/organizations/{org_id}/guests/banned")
+        return Promise.resolve({
+          data: { total: 0, guests: [] },
+          error: undefined,
+        });
+      if (path === "/guests/{guest_id}/displayname-history")
+        return Promise.resolve({
+          data: { total: 0, history: [] },
+          error: undefined,
+        });
+      if (path === "/guests/{guest_id}") {
+        const found = guests.find(
+          (g) => g.guest.id === opts?.params?.path?.guest_id,
+        );
+        return Promise.resolve({
+          data: found?.guest,
+          error: undefined,
+          response: { status: found ? 200 : 404 },
+        });
+      }
+      return Promise.resolve({ data: undefined, error: undefined });
+    },
+  );
 
   return render(
     <QueryClientProvider
@@ -243,6 +294,7 @@ describe("MeetupDetailPage guest identity", () => {
         is_walkin: true,
         has_paid: false,
         paid_at: null,
+        guest_type: "NORMAL",
       },
     };
 
@@ -285,5 +337,726 @@ describe("MeetupDetailPage guest identity", () => {
         }),
       }),
     );
+  });
+});
+
+describe("MeetupDetailPage guest type payment exemption", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it.each(["INVITED", "VENDOR", "STAFF"])(
+    "lets an unpaid %s guest check in on a paid meetup",
+    async (guestType) => {
+      renderPage(MEETUP, [
+        guest({
+          mazmo_user_id: 10,
+          displayname: "Exempt Guest",
+          has_paid: false,
+          guest_type: guestType,
+        }),
+      ]);
+
+      const button = await screen.findByRole("button", { name: "Check in" });
+      expect(button).toBeEnabled();
+      expect(screen.getByText("Exempt")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Mark paid" }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it("still blocks an unpaid regular guest", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 11,
+        displayname: "Regular Guest",
+        has_paid: false,
+        guest_type: "NORMAL",
+      }),
+    ]);
+
+    expect(
+      await screen.findByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+  });
+
+  it("shows the guest type badge, and none for regular guests", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 12,
+        displayname: "Vendor Guest",
+        has_paid: false,
+        guest_type: "VENDOR",
+      }),
+      guest({
+        mazmo_user_id: 13,
+        displayname: "Regular Guest",
+        has_paid: true,
+      }),
+    ]);
+
+    expect(await screen.findByText("Vendor")).toBeInTheDocument();
+    expect(screen.queryByText("Regular")).not.toBeInTheDocument();
+  });
+
+  it("keeps Undo payment for an exempt guest who had already paid", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 14,
+        displayname: "Reclassified Guest",
+        has_paid: true,
+        guest_type: "STAFF",
+      }),
+    ]);
+
+    expect(await screen.findByText("Exempt")).toBeInTheDocument();
+    // Shown as a secondary note, never as the primary "Paid" badge.
+    expect(screen.getByText(/^Paid ·/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Undo payment" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage guest type menu", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("sends the picked guest type to the type endpoint", async () => {
+    const target = guest({
+      mazmo_user_id: 20,
+      displayname: "Soon Vendor",
+      has_paid: false,
+    });
+    mockApiPatch.mockResolvedValue({
+      data: { ...target, rsvp: { ...target.rsvp, guest_type: "VENDOR" } },
+      error: undefined,
+    });
+    renderPage(MEETUP, [target]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions: Soon Vendor" }),
+    );
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: /^Vendor/ }),
+    );
+
+    await waitFor(() =>
+      expect(mockApiPatch).toHaveBeenCalledWith(
+        "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/type",
+        {
+          params: {
+            path: {
+              org_id: "org-1",
+              meetup_id: "meetup-1",
+              guest_id: target.guest.id,
+            },
+          },
+          body: { guest_type: "VENDOR" },
+        },
+      ),
+    );
+  });
+
+  it("does not call the API when the current type is picked again", async () => {
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 21, displayname: "Regular", has_paid: false }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions: Regular" }),
+    );
+    const current = await screen.findByRole("menuitemradio", {
+      name: /^Regular/,
+    });
+    expect(current).toHaveAttribute("aria-checked", "true");
+    await user.click(current);
+
+    expect(mockApiPatch).not.toHaveBeenCalled();
+  });
+
+  it("hides guest type options from non-admin staff", async () => {
+    mockRole = "STAFF";
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 22, displayname: "Someone", has_paid: true }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions: Someone" }),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "View profile" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
+  });
+
+  it("disables guest type options on a finalized meetup", async () => {
+    renderPage({ ...MEETUP, is_finalized: true }, [
+      guest({ mazmo_user_id: 23, displayname: "Late", has_paid: true }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Guest actions: Late" }),
+    );
+
+    const options = await screen.findAllByRole("menuitemradio");
+    expect(options).toHaveLength(4);
+    for (const option of options) {
+      expect(option).toHaveAttribute("aria-disabled", "true");
+    }
+    expect(
+      screen.getByText(
+        "This meetup is finalized, so guest types can't change.",
+      ),
+    ).toBeInTheDocument();
+  });
+});
+
+// The <dd> next to a stat label, matched exactly so "12" never passes for "2".
+function statValue(region: HTMLElement, label: string) {
+  return within(region).getByText(label).closest("div")?.querySelector("dd")
+    ?.textContent;
+}
+
+describe("MeetupDetailPage stats", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const stats: MeetupStats = {
+    attendance: {
+      total_rsvps: 12,
+      arrived_count: 3,
+      not_arrived_count: 9,
+      walkin_count: 2,
+    },
+    cancellations: { cancelled_count: 4, cancelled_but_paid_count: 1 },
+    guest_types: {
+      normal_count: 7,
+      invited_count: 2,
+      vendor_count: 1,
+      staff_count: 2,
+    },
+    payment: { paid_count: 5, unpaid_count: 2, exempt_from_payment_count: 5 },
+  };
+
+  it("renders the grouped counts from the stats endpoint", async () => {
+    renderPage(
+      MEETUP,
+      [guest({ mazmo_user_id: 30, displayname: "Someone", has_paid: true })],
+      stats,
+    );
+
+    const checkIns = await screen.findByRole("region", { name: "Check-ins" });
+    expect(within(checkIns).getByText("25%")).toBeInTheDocument();
+    expect(statValue(checkIns, "Walk-ins")).toBe("2");
+
+    const types = screen.getByRole("region", { name: "Guest types" });
+    expect(statValue(types, "Invited")).toBe("2");
+
+    const payment = screen.getByRole("region", { name: "Payment" });
+    expect(statValue(payment, "Exempt")).toBe("5");
+
+    // Cancellations have no card of their own; the refund check lives
+    // with the payment numbers.
+    expect(
+      screen.queryByRole("region", { name: "Cancelled RSVPs" }),
+    ).not.toBeInTheDocument();
+    expect(statValue(payment, "Cancelled after paying")).toBe("1");
+    expect(
+      within(payment).getByText(/Check whether they need a refund/),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the payment card on a free meetup", async () => {
+    renderPage(
+      { ...MEETUP, requires_payment: false },
+      [guest({ mazmo_user_id: 31, displayname: "Someone", has_paid: false })],
+      stats,
+    );
+
+    expect(
+      await screen.findByRole("region", { name: "Check-ins" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Payment" }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage guest identity extras", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const profile = {
+    avatar_url: "https://cdn.example/avatar.jpg",
+    age: 30,
+    gender: "FEMALE",
+    pronoun: "FEMALE",
+    mazmo_suspended: true,
+    mazmo_banned: false,
+    synced_at: "2026-08-01T12:00:00Z",
+  };
+
+  it("shows Mazmo's own flags apart from the org vant badge", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 40,
+        displayname: "Flagged",
+        has_paid: true,
+        mazmo_profile: profile,
+      }),
+    ]);
+
+    expect(await screen.findByText("Suspended on Mazmo")).toBeInTheDocument();
+    // The short pronoun sits next to the handle, labelled for screen readers.
+    expect(screen.getByTitle("Pronouns: Feminine")).toHaveTextContent(
+      "Pronouns: she/her",
+    );
+    expect(screen.queryByText("Vanted")).not.toBeInTheDocument();
+  });
+
+  it("opens the guest profile sheet when the name is clicked", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 41,
+        displayname: "Clickable",
+        has_paid: true,
+        mazmo_profile: profile,
+      }),
+    ]);
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Clickable" }));
+
+    const sheet = await screen.findByRole("dialog");
+    expect(
+      await within(sheet).findByRole("heading", { name: "Clickable" }),
+    ).toBeInTheDocument();
+    expect(
+      within(sheet).getByText("Pronouns").closest("div"),
+    ).toHaveTextContent("Feminine");
+    expect(
+      within(sheet).getByRole("link", { name: "Open full profile" }),
+    ).toHaveAttribute(
+      "href",
+      `/guests/${"00000000-0000-0000-0000-000000000041"}`,
+    );
+  });
+
+  function rowNames() {
+    return screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => within(row).getAllByRole("button")[0]?.textContent);
+  }
+
+  it("lists guests alphabetically by default", async () => {
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({
+        mazmo_user_id: 52,
+        displayname: "carla",
+        has_paid: false,
+        rsvp_time: "2026-07-01T12:00:00Z",
+      }),
+      guest({
+        mazmo_user_id: 51,
+        displayname: "Bruno",
+        has_paid: false,
+        rsvp_time: "2026-07-03T12:00:00Z",
+      }),
+      guest({
+        mazmo_user_id: 50,
+        displayname: "Ana",
+        has_paid: false,
+        rsvp_time: "2026-07-02T12:00:00Z",
+      }),
+    ]);
+
+    await screen.findByText("Ana");
+    expect(rowNames()).toEqual(["Ana", "Bruno", "carla"]);
+    expect(screen.getByRole("columnheader", { name: /Guest/ })).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+  });
+
+  it("sorts from the toolbar and from the column headers", async () => {
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({
+        mazmo_user_id: 52,
+        displayname: "Carla",
+        has_paid: false,
+        rsvp_time: "2026-07-01T12:00:00Z",
+      }),
+      guest({
+        mazmo_user_id: 50,
+        displayname: "Ana",
+        has_paid: false,
+        rsvp_time: "2026-07-02T12:00:00Z",
+      }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Ana");
+
+    await user.click(screen.getByRole("button", { name: /Sort by/ }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "RSVP time" }),
+    );
+    await user.keyboard("{Escape}");
+    expect(rowNames()).toEqual(["Carla", "Ana"]);
+
+    // Clicking the active header flips the direction.
+    await user.click(screen.getByRole("button", { name: "RSVP" }));
+    expect(rowNames()).toEqual(["Ana", "Carla"]);
+  });
+
+  it("filters by status and clears the filter from its chip", async () => {
+    const arrived = guest({
+      mazmo_user_id: 50,
+      displayname: "Inside",
+      has_paid: false,
+    });
+    arrived.rsvp.has_arrived = true;
+    arrived.rsvp.arrival_order = 1;
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      arrived,
+      guest({ mazmo_user_id: 51, displayname: "Outside", has_paid: false }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Inside");
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Not arrived" }),
+    );
+    await user.keyboard("{Escape}");
+
+    expect(rowNames()).toEqual(["Outside"]);
+    expect(screen.getByText("Showing 1 of 2")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Remove filter: Not arrived" }),
+    );
+    expect(rowNames()).toEqual(["Inside", "Outside"]);
+  });
+
+  it("filters guests who still owe payment on a paid meetup", async () => {
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 50, displayname: "Paid", has_paid: true }),
+      guest({ mazmo_user_id: 51, displayname: "Owes", has_paid: false }),
+      guest({
+        mazmo_user_id: 52,
+        displayname: "Staffer",
+        has_paid: false,
+        guest_type: "STAFF",
+      }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Owes");
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Owes payment" }),
+    );
+    await user.keyboard("{Escape}");
+
+    expect(rowNames()).toEqual(["Owes"]);
+  });
+
+  it("keeps guests with the same RSVP time in a stable order", async () => {
+    const sameTime = "2026-08-01T12:00:00Z";
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({
+        mazmo_user_id: 52,
+        displayname: "Same",
+        has_paid: false,
+        rsvp_time: sameTime,
+      }),
+      guest({
+        mazmo_user_id: 51,
+        displayname: "Same",
+        has_paid: false,
+        rsvp_time: sameTime,
+      }),
+      guest({
+        mazmo_user_id: 50,
+        displayname: "Earliest",
+        has_paid: false,
+        rsvp_time: "2026-07-01T12:00:00Z",
+      }),
+    ]);
+
+    await screen.findByText("Earliest");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "RSVP" }));
+    // Same name and RSVP time: the id decides, so 51 comes before 52.
+    expect(
+      screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => row.querySelector("span.break-all")?.textContent),
+    ).toEqual(["@user50", "@user51", "@user52"]);
+  });
+});
+
+describe("MeetupDetailPage on phones", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+    vi.stubGlobal(
+      "matchMedia",
+      (query: string) =>
+        ({
+          matches: false,
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders one card per guest instead of the table", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 60,
+        displayname: "Phone Exempt",
+        has_paid: false,
+        guest_type: "INVITED",
+      }),
+      guest({
+        mazmo_user_id: 61,
+        displayname: "Phone Unpaid",
+        has_paid: false,
+      }),
+    ]);
+
+    await screen.findByText("Phone Exempt");
+    const list = screen.getByRole("list", { name: "Guest list" });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    const cards = within(list).getAllByRole("listitem");
+    expect(cards).toHaveLength(2);
+    const [exempt, unpaid] = cards;
+    expect(within(exempt!).getByText("Exempt")).toBeInTheDocument();
+    expect(
+      within(exempt!).getByRole("button", { name: "Check in" }),
+    ).toBeEnabled();
+    expect(
+      within(exempt!).getByRole("button", {
+        name: "Guest actions: Phone Exempt",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(unpaid!).getByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+    expect(
+      within(unpaid!).getByRole("button", { name: "Mark paid" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage finalized meetup", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("marks the meetup finalized and blocks actions the backend refuses", async () => {
+    renderPage({ ...MEETUP, is_finalized: true, requires_payment: false }, [
+      guest({ mazmo_user_id: 70, displayname: "After Hours", has_paid: false }),
+    ]);
+
+    expect(await screen.findByText("Finalized")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+    // The door tools give way to a note saying what is closed.
+    expect(
+      screen.queryByRole("button", { name: "Add walk-in" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Sync from Mazmo" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Check-ins, walk-ins, sync, and payments are closed/),
+    ).toBeInTheDocument();
+  });
+
+  it("finalizes the meetup after confirming, with the attendance summary", async () => {
+    const stats = {
+      ...STATS,
+      attendance: {
+        total_rsvps: 10,
+        arrived_count: 7,
+        not_arrived_count: 3,
+        walkin_count: 0,
+      },
+    };
+    const meetup: Meetup = { ...MEETUP, requires_payment: false };
+    renderPage(
+      meetup,
+      [guest({ mazmo_user_id: 74, displayname: "Door", has_paid: false })],
+      stats,
+    );
+    // The backend's answer; refetches see it too.
+    mockApiPatch.mockImplementation(() => {
+      meetup.is_finalized = true;
+      meetup.finalized_at = "2026-09-02T05:00:00Z";
+      return Promise.resolve({ data: { ...meetup }, error: undefined });
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Finalize meetup" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      await within(dialog).findByText("7 of 10 checked in. 3 never arrived."),
+    ).toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole("button", { name: "Finalize meetup" }),
+    );
+
+    expect(mockApiPatch).toHaveBeenCalledWith(
+      "/organizations/{org_id}/meetups/{meetup_id}/finalize",
+      { params: { path: { org_id: "org-1", meetup_id: "meetup-1" } } },
+    );
+    expect(
+      await screen.findByRole("button", { name: "Reopen meetup" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/^Finalized on/)).toBeInTheDocument();
+  });
+
+  it("reopens a finalized meetup", async () => {
+    const meetup: Meetup = {
+      ...MEETUP,
+      is_finalized: true,
+      requires_payment: false,
+    };
+    renderPage(meetup, [
+      guest({ mazmo_user_id: 75, displayname: "Late", has_paid: false }),
+    ]);
+    mockApiPatch.mockImplementation(() => {
+      meetup.is_finalized = false;
+      return Promise.resolve({ data: { ...meetup }, error: undefined });
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Reopen meetup" }),
+    );
+    await user.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Reopen meetup",
+      }),
+    );
+
+    expect(mockApiPatch).toHaveBeenCalledWith(
+      "/organizations/{org_id}/meetups/{meetup_id}/unfinalize",
+      { params: { path: { org_id: "org-1", meetup_id: "meetup-1" } } },
+    );
+    expect(
+      await screen.findByRole("button", { name: "Sync from Mazmo" }),
+    ).toBeEnabled();
+  });
+
+  it("hides finalize from non-admin staff", async () => {
+    mockRole = "STAFF";
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 76, displayname: "Anyone", has_paid: true }),
+    ]);
+
+    await screen.findByText("Anyone");
+    expect(
+      screen.queryByRole("button", { name: "Finalize meetup" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the corrections the backend allows after finalizing", async () => {
+    const arrived = guest({
+      mazmo_user_id: 72,
+      displayname: "Arrived Paid",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    arrived.rsvp.arrival_order = 1;
+    renderPage({ ...MEETUP, is_finalized: true, requires_payment: true }, [
+      arrived,
+      guest({ mazmo_user_id: 73, displayname: "Never Paid", has_paid: false }),
+    ]);
+
+    expect(
+      await screen.findByRole("button", { name: "Mark paid" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Undo payment" })).toBeEnabled();
+  });
+
+  it("marks a cancelled RSVP with a label, not only with opacity", async () => {
+    const cancelled = guest({
+      mazmo_user_id: 71,
+      displayname: "Gone",
+      has_paid: false,
+    });
+    cancelled.rsvp.cancelled_rsvp = true;
+    renderPage({ ...MEETUP, requires_payment: false }, [cancelled]);
+
+    expect(await screen.findByText("Cancelled")).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage profile sheet vant fallback", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("shows the row's vant while the org's vanted list is still loading", async () => {
+    const vanted = guest({
+      mazmo_user_id: 80,
+      displayname: "Still Vanted",
+      has_paid: true,
+      is_banned: true,
+    });
+    renderPage({ ...MEETUP, requires_payment: false }, [vanted]);
+    const base = mockApiGet.getMockImplementation()!;
+    mockApiGet.mockImplementation((path: string, ...rest: unknown[]) =>
+      path === "/organizations/{org_id}/guests/banned"
+        ? new Promise(() => {})
+        : base(path, ...rest),
+    );
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Still Vanted" }),
+    );
+
+    const sheet = await screen.findByRole("dialog");
+    await within(sheet).findByRole("heading", { name: "Still Vanted" });
+    expect(within(sheet).getByText("Vanted")).toBeInTheDocument();
   });
 });
