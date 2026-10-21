@@ -570,11 +570,14 @@ describe("MeetupDetailPage stats", () => {
     const payment = screen.getByRole("region", { name: "Payment" });
     expect(statValue(payment, "Exempt")).toBe("5");
 
-    const cancellations = screen.getByRole("region", {
-      name: "Cancelled RSVPs",
-    });
+    // Cancellations have no card of their own; the refund check lives
+    // with the payment numbers.
     expect(
-      within(cancellations).getByText(/Check whether they need a refund/),
+      screen.queryByRole("region", { name: "Cancelled RSVPs" }),
+    ).not.toBeInTheDocument();
+    expect(statValue(payment, "Cancelled after paying")).toBe("1");
+    expect(
+      within(payment).getByText(/Check whether they need a refund/),
     ).toBeInTheDocument();
   });
 
@@ -604,8 +607,8 @@ describe("MeetupDetailPage guest identity extras", () => {
   const profile = {
     avatar_url: "https://cdn.example/avatar.jpg",
     age: 30,
-    gender: "female",
-    pronoun: "she/her",
+    gender: "FEMALE",
+    pronoun: "FEMALE",
     mazmo_suspended: true,
     mazmo_banned: false,
     synced_at: "2026-08-01T12:00:00Z",
@@ -622,6 +625,10 @@ describe("MeetupDetailPage guest identity extras", () => {
     ]);
 
     expect(await screen.findByText("Suspended on Mazmo")).toBeInTheDocument();
+    // The short pronoun sits next to the handle, labelled for screen readers.
+    expect(screen.getByTitle("Pronouns: Feminine")).toHaveTextContent(
+      "Pronouns: she/her",
+    );
     expect(screen.queryByText("Vanted")).not.toBeInTheDocument();
   });
 
@@ -644,7 +651,7 @@ describe("MeetupDetailPage guest identity extras", () => {
     ).toBeInTheDocument();
     expect(
       within(sheet).getByText("Pronouns").closest("div"),
-    ).toHaveTextContent("she/her");
+    ).toHaveTextContent("Feminine");
     expect(
       within(sheet).getByRole("link", { name: "Open full profile" }),
     ).toHaveAttribute(
@@ -653,18 +660,138 @@ describe("MeetupDetailPage guest identity extras", () => {
     );
   });
 
+  function rowNames() {
+    return screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => within(row).getAllByRole("button")[0]?.textContent);
+  }
+
+  it("lists guests alphabetically by default", async () => {
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({
+        mazmo_user_id: 52,
+        displayname: "carla",
+        has_paid: false,
+        rsvp_time: "2026-07-01T12:00:00Z",
+      }),
+      guest({
+        mazmo_user_id: 51,
+        displayname: "Bruno",
+        has_paid: false,
+        rsvp_time: "2026-07-03T12:00:00Z",
+      }),
+      guest({
+        mazmo_user_id: 50,
+        displayname: "Ana",
+        has_paid: false,
+        rsvp_time: "2026-07-02T12:00:00Z",
+      }),
+    ]);
+
+    await screen.findByText("Ana");
+    expect(rowNames()).toEqual(["Ana", "Bruno", "carla"]);
+    expect(screen.getByRole("columnheader", { name: /Guest/ })).toHaveAttribute(
+      "aria-sort",
+      "ascending",
+    );
+  });
+
+  it("sorts from the toolbar and from the column headers", async () => {
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({
+        mazmo_user_id: 52,
+        displayname: "Carla",
+        has_paid: false,
+        rsvp_time: "2026-07-01T12:00:00Z",
+      }),
+      guest({
+        mazmo_user_id: 50,
+        displayname: "Ana",
+        has_paid: false,
+        rsvp_time: "2026-07-02T12:00:00Z",
+      }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Ana");
+
+    await user.click(screen.getByRole("button", { name: /Sort by/ }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "RSVP time" }),
+    );
+    await user.keyboard("{Escape}");
+    expect(rowNames()).toEqual(["Carla", "Ana"]);
+
+    // Clicking the active header flips the direction.
+    await user.click(screen.getByRole("button", { name: "RSVP" }));
+    expect(rowNames()).toEqual(["Ana", "Carla"]);
+  });
+
+  it("filters by status and clears the filter from its chip", async () => {
+    const arrived = guest({
+      mazmo_user_id: 50,
+      displayname: "Inside",
+      has_paid: false,
+    });
+    arrived.rsvp.has_arrived = true;
+    arrived.rsvp.arrival_order = 1;
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      arrived,
+      guest({ mazmo_user_id: 51, displayname: "Outside", has_paid: false }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Inside");
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Not arrived" }),
+    );
+    await user.keyboard("{Escape}");
+
+    expect(rowNames()).toEqual(["Outside"]);
+    expect(screen.getByText("Showing 1 of 2")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: "Remove filter: Not arrived" }),
+    );
+    expect(rowNames()).toEqual(["Inside", "Outside"]);
+  });
+
+  it("filters guests who still owe payment on a paid meetup", async () => {
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 50, displayname: "Paid", has_paid: true }),
+      guest({ mazmo_user_id: 51, displayname: "Owes", has_paid: false }),
+      guest({
+        mazmo_user_id: 52,
+        displayname: "Staffer",
+        has_paid: false,
+        guest_type: "STAFF",
+      }),
+    ]);
+    const user = userEvent.setup();
+    await screen.findByText("Owes");
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    await user.click(
+      await screen.findByRole("menuitemradio", { name: "Owes payment" }),
+    );
+    await user.keyboard("{Escape}");
+
+    expect(rowNames()).toEqual(["Owes"]);
+  });
+
   it("keeps guests with the same RSVP time in a stable order", async () => {
     const sameTime = "2026-08-01T12:00:00Z";
     renderPage({ ...MEETUP, requires_payment: false }, [
       guest({
         mazmo_user_id: 52,
-        displayname: "Second",
+        displayname: "Same",
         has_paid: false,
         rsvp_time: sameTime,
       }),
       guest({
         mazmo_user_id: 51,
-        displayname: "First",
+        displayname: "Same",
         has_paid: false,
         rsvp_time: sameTime,
       }),
@@ -677,11 +804,15 @@ describe("MeetupDetailPage guest identity extras", () => {
     ]);
 
     await screen.findByText("Earliest");
-    const names = screen
-      .getAllByRole("row")
-      .slice(1)
-      .map((row) => within(row).getAllByRole("button")[0]?.textContent);
-    expect(names).toEqual(["Earliest", "First", "Second"]);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "RSVP" }));
+    // Same name and RSVP time: the id decides, so 51 comes before 52.
+    expect(
+      screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => row.querySelector("span.break-all")?.textContent),
+    ).toEqual(["@user50", "@user51", "@user52"]);
   });
 });
 

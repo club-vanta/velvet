@@ -109,8 +109,6 @@ function SortableHead({
   );
 }
 
-// BannedGuestPublic has no mazmo_profile (backend gap), so on the Vanted
-// tab this always falls back to initials and shows no Mazmo flags.
 function GuestNameCell({
   guest,
   isBanned = false,

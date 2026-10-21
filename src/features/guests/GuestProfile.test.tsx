@@ -23,8 +23,8 @@ const GUEST: Guest = {
   mazmo_profile: {
     avatar_url: null,
     age: 31,
-    gender: "male",
-    pronoun: "he/him",
+    gender: "MALE_CIS",
+    pronoun: "MALE",
     mazmo_suspended: false,
     mazmo_banned: false,
     synced_at: "2026-10-18T03:00:00Z",
@@ -108,9 +108,22 @@ describe("GuestProfile", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Juan P." }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Age").closest("div")).toHaveTextContent("31");
+    expect(screen.getByText("Age").closest("div")).toHaveTextContent(
+      "31 years",
+    );
+    expect(screen.getByText("Gender").closest("div")).toHaveTextContent(
+      "Cis man",
+    );
     expect(screen.getByText("Pronouns").closest("div")).toHaveTextContent(
-      "he/him",
+      "Masculine",
+    );
+    expect(screen.getByRole("link", { name: /@juanp/ })).toHaveAttribute(
+      "href",
+      "https://mazmo.net/@juanp",
+    );
+    expect(screen.getByText("he/him")).toBeInTheDocument();
+    expect(screen.getByText("Mazmo ID").closest("div")).toHaveTextContent(
+      "200003",
     );
     expect(screen.getByRole("link", { name: /@juan\.ig/ })).toHaveAttribute(
       "href",

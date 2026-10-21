@@ -1,10 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/api/client";
 import { useLanguage } from "@/lib/i18n";
-import { meetupStatsKey } from "@/lib/queryKeys";
+import { useMeetupStats } from "@/hooks/useMeetupStats";
 import { cn } from "@/lib/utils";
 
 function StatCard({
@@ -78,24 +76,12 @@ export function MeetupStats({
 }) {
   const { t } = useLanguage();
 
-  const statsQ = useQuery({
-    queryKey: meetupStatsKey(orgId, meetupId),
-    queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/meetups/{meetup_id}/stats",
-        { params: { path: { org_id: orgId, meetup_id: meetupId } } },
-      );
-      if (error) throw new Error(t("failedLoadStats"));
-      return data;
-    },
-    enabled: !!orgId && !!meetupId,
-    refetchInterval: 30_000,
-  });
+  const statsQ = useMeetupStats(orgId, meetupId);
 
-  const cardCount = requiresPayment ? 4 : 3;
+  const cardCount = requiresPayment ? 3 : 2;
   const gridClass = cn(
     "grid gap-2 sm:gap-3 grid-cols-2",
-    cardCount === 4 ? "xl:grid-cols-4" : "xl:grid-cols-3",
+    cardCount === 3 && "xl:grid-cols-3",
   );
 
   if (statsQ.isLoading) {
@@ -194,33 +180,29 @@ export function MeetupStats({
                 label: t("paymentExempt"),
                 value: payment.exempt_from_payment_count,
               },
+              // Only worth a line when someone needs a refund check.
+              ...(cancellations.cancelled_but_paid_count > 0
+                ? [
+                    {
+                      label: t("statsCancelledButPaidRefund"),
+                      value: cancellations.cancelled_but_paid_count,
+                      emphasis: true,
+                    },
+                  ]
+                : []),
             ]}
           />
-          <p className="hidden sm:block text-xs text-muted-foreground">
-            {t("statsExemptHint")}
-          </p>
+          {cancellations.cancelled_but_paid_count > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t("statsRefundHint")}
+            </p>
+          ) : (
+            <p className="hidden sm:block text-xs text-muted-foreground">
+              {t("statsExemptHint")}
+            </p>
+          )}
         </StatCard>
       )}
-
-      <StatCard title={t("statsCancellations")}>
-        <p className="text-2xl sm:text-3xl font-semibold tabular-nums">
-          {cancellations.cancelled_count}
-        </p>
-        <StatRows
-          rows={[
-            {
-              label: t("statsCancelledButPaid"),
-              value: cancellations.cancelled_but_paid_count,
-              emphasis: cancellations.cancelled_but_paid_count > 0,
-            },
-          ]}
-        />
-        {cancellations.cancelled_but_paid_count > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {t("statsRefundHint")}
-          </p>
-        )}
-      </StatCard>
     </div>
   );
 }

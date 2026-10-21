@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, ShieldBan, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -5,10 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GuestAvatar } from "@/components/GuestAvatar";
+import { Fact, FactStrip } from "@/components/FactStrip";
 import { MazmoFlagBadges } from "@/components/GuestBadges";
 import { api } from "@/api/client";
 import { formatFullDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import {
+  MAZMO_GENDER_LABEL,
+  MAZMO_PRONOUN_LABEL,
+  MAZMO_PRONOUN_SHORT,
+  mazmoLabel,
+} from "@/lib/mazmoProfile";
 import { guestHistoryKey, guestKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
@@ -25,21 +34,6 @@ const SOURCE_LABEL: Record<string, TranslationKey> = {
 
 class GuestNotFoundError extends Error {}
 
-function DetailItem({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="min-w-0 space-y-0.5">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm break-words">{children}</dd>
-    </div>
-  );
-}
-
 function SectionTitle({
   as: Heading,
   children,
@@ -48,7 +42,7 @@ function SectionTitle({
   children: React.ReactNode;
 }) {
   return (
-    <Heading className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <Heading className="text-sm font-medium text-muted-foreground">
       {children}
     </Heading>
   );
@@ -153,64 +147,191 @@ function NameHistory({
   );
 }
 
-function MazmoDetails({
+function ExternalProfileLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={label}
+      title={label}
+      className="inline-flex min-w-0 items-center gap-1 rounded-sm break-all underline-offset-4 hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+    >
+      {children}
+      <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+    </a>
+  );
+}
+
+/**
+ * The guest's own avatar, blurred and faded into the card, so each profile
+ * reads as that person's pass rather than a generic form.
+ */
+function Backdrop({ src }: { src: string | null | undefined }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-44 overflow-hidden"
+    >
+      {src && src !== failedSrc ? (
+        <img
+          src={src}
+          alt=""
+          referrerPolicy="no-referrer"
+          onError={() => setFailedSrc(src)}
+          className="size-full scale-125 object-cover opacity-80 blur-2xl saturate-150"
+        />
+      ) : (
+        <div className="size-full bg-gradient-to-br from-muted to-transparent" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-b from-card/0 via-card/45 to-card" />
+    </div>
+  );
+}
+
+function IdentityCard({
   guest,
-  headingAs,
+  Title,
+  detailsAs,
+  showBanned,
 }: {
   guest: Guest;
-  headingAs: "h2" | "h3";
+  Title: "h1" | "h2";
+  detailsAs: "h2" | "h3";
+  showBanned: boolean;
 }) {
   const { t } = useLanguage();
   const profile = guest.mazmo_profile;
+  const mazmoFlagged = !!profile?.mazmo_banned || !!profile?.mazmo_suspended;
   const notSet = <span className="text-muted-foreground">{t("notSet")}</span>;
+  const DetailsHeading = detailsAs;
+
+  // The ring repeats the status badges in the one place the eye lands
+  // first: red for an org vant, orange for Mazmo's own flags.
+  const ringClass = showBanned
+    ? "ring-destructive"
+    : mazmoFlagged
+      ? "ring-orange-500"
+      : "ring-border";
 
   return (
-    <section className="space-y-3">
-      <SectionTitle as={headingAs}>{t("guestDetails")}</SectionTitle>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <DetailItem label={t("mazmoId")}>
-          {guest.mazmo_user_id ?? notSet}
-        </DetailItem>
-        <DetailItem label={t("instagramCol")}>
-          {guest.instagram_username ? (
-            <a
-              href={`https://instagram.com/${encodeURIComponent(guest.instagram_username)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 underline-offset-4 hover:underline"
-            >
-              @{guest.instagram_username}
-              <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
-            </a>
-          ) : (
-            notSet
+    <section className="relative isolate overflow-hidden rounded-xl border bg-card text-card-foreground">
+      <Backdrop src={profile?.avatar_url} />
+
+      <div className="flex flex-col items-start gap-4 px-4 pt-6 pb-5 @md:flex-row @md:items-center @md:gap-6 @md:px-6 @md:pt-8">
+        <GuestAvatar
+          name={guest.displayname}
+          src={profile?.avatar_url}
+          size="lg"
+          alt={t("avatarOf").replace("{0}", guest.displayname)}
+          className={cn(
+            "ring-2 ring-offset-4 ring-offset-card @md:size-24 @md:text-3xl",
+            ringClass,
           )}
-        </DetailItem>
+        />
+        <div className="min-w-0 space-y-2">
+          <Title className="text-2xl font-semibold leading-tight tracking-tight break-words @md:text-3xl">
+            {guest.displayname}
+          </Title>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+            {guest.mazmo_handle ? (
+              <ExternalProfileLink
+                href={`https://mazmo.net/@${encodeURIComponent(guest.mazmo_handle)}`}
+                label={t("mazmoProfileLink").replace("{0}", guest.mazmo_handle)}
+              >
+                @{guest.mazmo_handle}
+              </ExternalProfileLink>
+            ) : (
+              <span>{t("noMazmoHandle")}</span>
+            )}
+            {profile?.pronoun && (
+              <span className="rounded-full border border-foreground/15 bg-background/40 px-2.5 py-0.5 text-xs font-medium text-foreground">
+                {mazmoLabel(MAZMO_PRONOUN_SHORT, profile.pronoun, t)}
+              </span>
+            )}
+          </div>
+          {(showBanned || mazmoFlagged) && (
+            <div className="flex flex-wrap gap-1.5">
+              {showBanned && <Badge variant="destructive">{t("banned")}</Badge>}
+              <MazmoFlagBadges profile={profile} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <DetailsHeading className="sr-only">{t("guestDetails")}</DetailsHeading>
+
+      {profile ? (
+        <FactStrip cols={3} className="border-t">
+          <Fact label={t("gender")}>
+            {profile.gender
+              ? mazmoLabel(MAZMO_GENDER_LABEL, profile.gender, t)
+              : notSet}
+          </Fact>
+          <Fact label={t("age")}>
+            {profile.age != null
+              ? t("ageYears").replace("{0}", String(profile.age))
+              : notSet}
+          </Fact>
+          <Fact label={t("pronouns")}>
+            {profile.pronoun
+              ? mazmoLabel(MAZMO_PRONOUN_LABEL, profile.pronoun, t)
+              : notSet}
+          </Fact>
+        </FactStrip>
+      ) : (
+        <p className="border-t px-4 py-3 text-sm text-muted-foreground @md:px-6">
+          {guest.mazmo_user_id == null
+            ? t("profileNoMazmoAccount")
+            : t("profileNotSyncedYet")}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 border-t bg-muted/30 px-4 py-3 text-sm @md:px-6">
+        <dl className="contents">
+          <div className="flex items-baseline gap-2">
+            <dt className="text-xs text-muted-foreground">{t("mazmoId")}</dt>
+            <dd className="tabular-nums">{guest.mazmo_user_id ?? notSet}</dd>
+          </div>
+          <div className="flex min-w-0 items-baseline gap-2">
+            <dt className="text-xs text-muted-foreground">
+              {t("instagramCol")}
+            </dt>
+            <dd className="min-w-0">
+              {guest.instagram_username ? (
+                <ExternalProfileLink
+                  href={`https://instagram.com/${encodeURIComponent(guest.instagram_username)}`}
+                  label={t("instagramProfileLink").replace(
+                    "{0}",
+                    guest.instagram_username,
+                  )}
+                >
+                  @{guest.instagram_username}
+                </ExternalProfileLink>
+              ) : (
+                notSet
+              )}
+            </dd>
+          </div>
+        </dl>
         {profile && (
-          <>
-            <DetailItem label={t("age")}>{profile.age ?? notSet}</DetailItem>
-            <DetailItem label={t("gender")}>
-              {profile.gender ?? notSet}
-            </DetailItem>
-            <DetailItem label={t("pronouns")}>
-              {profile.pronoun ?? notSet}
-            </DetailItem>
-            <DetailItem label={t("mazmoSyncedAt")}>
-              {formatFullDateTime(profile.synced_at)}
-            </DetailItem>
-          </>
+          <p className="text-xs text-muted-foreground @md:ml-auto">
+            {t("mazmoSyncedAt").replace(
+              "{0}",
+              formatFullDateTime(profile.synced_at),
+            )}
+          </p>
         )}
-      </dl>
-      {guest.mazmo_user_id == null && (
-        <p className="text-sm text-muted-foreground">
-          {t("profileNoMazmoAccount")}
-        </p>
-      )}
-      {guest.mazmo_user_id != null && !profile && (
-        <p className="text-sm text-muted-foreground">
-          {t("profileNotSyncedYet")}
-        </p>
-      )}
+      </div>
     </section>
   );
 }
@@ -317,43 +438,18 @@ export function GuestProfile({
   const mazmoFlagged = !!profile?.mazmo_banned || !!profile?.mazmo_suspended;
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-4">
-        <div className="flex items-center gap-4 min-w-0">
-          <GuestAvatar
-            name={guest.displayname}
-            src={profile?.avatar_url}
-            size="lg"
-            alt={t("avatarOf").replace("{0}", guest.displayname)}
-          />
-          <div className="min-w-0 space-y-1">
-            <Title className="text-2xl font-semibold leading-tight break-words">
-              {guest.displayname}
-            </Title>
-            <p className="text-sm text-muted-foreground break-all">
-              {guest.mazmo_handle
-                ? `@${guest.mazmo_handle}`
-                : t("noMazmoHandle")}
-              {profile?.pronoun && (
-                <span className="break-normal"> · {profile.pronoun}</span>
-              )}
-            </p>
-            {(showBanned || mazmoFlagged) && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {showBanned && (
-                  <Badge variant="destructive">{t("banned")}</Badge>
-                )}
-                <MazmoFlagBadges profile={profile} />
-              </div>
-            )}
-          </div>
+    <div className="@container space-y-6">
+      <IdentityCard
+        guest={guest}
+        Title={Title}
+        detailsAs={sectionAs}
+        showBanned={showBanned}
+      />
+      {actions && (
+        <div className="flex flex-wrap gap-2">
+          {actions(guest, ban, banKnown)}
         </div>
-        {actions && (
-          <div className="flex flex-wrap gap-2">
-            {actions(guest, ban, banKnown)}
-          </div>
-        )}
-      </header>
+      )}
 
       {ban && (
         <Alert variant="destructive">
@@ -398,7 +494,6 @@ export function GuestProfile({
         </Alert>
       )}
 
-      <MazmoDetails guest={guest} headingAs={sectionAs} />
       <NameHistory guestId={guest.id} headingAs={sectionAs} />
     </div>
   );

@@ -4,7 +4,7 @@ import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ExternalLink,
+  Banknote,
   RefreshCw,
   UserPlus,
   ArrowUp,
@@ -46,11 +46,27 @@ import { useAuth } from "@/auth/AuthContext";
 import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
+import { meetupTiming } from "@/lib/meetupTiming";
+import {
+  DEFAULT_GUEST_FILTERS,
+  DEFAULT_GUEST_SORT,
+  viewGuestList,
+  type GuestFilters,
+  type GuestSort,
+  type GuestSortKey,
+  type SortDir,
+} from "@/lib/guestListView";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useRelativeDay } from "@/hooks/useRelativeDay";
 import { isPaymentExempt } from "@/lib/guestType";
+import {
+  MAZMO_PRONOUN_LABEL,
+  MAZMO_PRONOUN_SHORT,
+  mazmoLabel,
+} from "@/lib/mazmoProfile";
 import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
@@ -58,20 +74,20 @@ import {
 } from "@/lib/queryKeys";
 import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
+import { GuestListToolbar } from "./GuestListToolbar";
+import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
 type Guest = components["schemas"]["GuestPublic"];
-
-type SortDir = "asc" | "desc";
 
 function SortIcon({
   col,
   active,
   dir,
 }: {
-  col: string;
-  active: string | null;
+  col: GuestSortKey;
+  active: GuestSortKey;
   dir: SortDir;
 }) {
   if (col !== active) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
@@ -90,16 +106,22 @@ function SortableHead({
   onSort,
   className,
 }: {
-  col: string;
+  col: GuestSortKey;
   label: string;
-  active: string | null;
+  active: GuestSortKey;
   dir: SortDir;
-  onSort: (col: string) => void;
+  onSort: (col: GuestSortKey) => void;
   className?: string;
 }) {
   return (
-    <TableHead className={className}>
+    <TableHead
+      className={className}
+      aria-sort={
+        col === active ? (dir === "asc" ? "ascending" : "descending") : "none"
+      }
+    >
       <button
+        type="button"
         onClick={() => onSort(col)}
         className={cn(
           "flex items-center gap-1 hover:text-foreground transition-colors",
@@ -674,20 +696,19 @@ export function MeetupDetailPage() {
     setProfileGuest(mg);
     setProfileOpen(true);
   }
-  const [sortCol, setSortCol] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [sort, setSort] = useState<GuestSort>(DEFAULT_GUEST_SORT);
+  const [filters, setFilters] = useState<GuestFilters>(DEFAULT_GUEST_FILTERS);
+  const relativeDay = useRelativeDay();
 
-  function handleSort(col: string) {
-    if (col === sortCol) {
-      if (sortDir === "asc") setSortDir("desc");
-      else {
-        setSortCol(null);
-        setSortDir("asc");
-      }
-    } else {
-      setSortCol(col);
-      setSortDir("asc");
-    }
+  // Column headers flip the direction of the active column, or switch to
+  // another column ascending. There is no "unsorted" state: alphabetical is
+  // the default.
+  function handleSort(key: GuestSortKey) {
+    setSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" },
+    );
   }
 
   const meetupQ = useQuery({
@@ -774,33 +795,13 @@ export function MeetupDetailPage() {
   const rawGuests = guestsQ.data?.guests ?? [];
   const rsvpedIds = new Set(rawGuests.map((g) => g.guest.id));
 
-  // The API orders by rsvp_time only, so guests with the same rsvp_time can
-  // swap places after any refetch. Tie-break on id to keep rows still.
-  const byRsvpTime = (a: MeetupGuest, b: MeetupGuest) =>
-    a.rsvp.rsvp_time.localeCompare(b.rsvp.rsvp_time) ||
-    a.guest.id.localeCompare(b.guest.id);
-
-  const sorted = rawGuests.slice().sort((a, b) => {
-    if (!sortCol) return byRsvpTime(a, b);
-    let cmp = 0;
-    if (sortCol === "order")
-      cmp =
-        (a.rsvp.arrival_order ?? Number.MAX_SAFE_INTEGER) -
-        (b.rsvp.arrival_order ?? Number.MAX_SAFE_INTEGER);
-    else if (sortCol === "guest")
-      cmp = a.guest.displayname.localeCompare(b.guest.displayname);
-    else if (sortCol === "rsvp")
-      cmp = a.rsvp.rsvp_time.localeCompare(b.rsvp.rsvp_time);
-    else if (sortCol === "status")
-      cmp = Number(a.rsvp.has_arrived) - Number(b.rsvp.has_arrived);
-    return (sortDir === "asc" ? cmp : -cmp) || byRsvpTime(a, b);
-  });
+  const viewed = viewGuestList(rawGuests, filters, sort, requiresPayment);
 
   const {
     search,
     setSearch,
     filtered: guests,
-  } = useGuestSearch(sorted, (g) => ({
+  } = useGuestSearch(viewed, (g) => ({
     displayname: g.guest.displayname,
     mazmoHandle: g.guest.mazmo_handle,
   }));
@@ -842,6 +843,19 @@ export function MeetupDetailPage() {
                 ? `@${mg.guest.mazmo_handle}`
                 : t("noMazmoHandle")}
             </span>
+            {mg.guest.mazmo_profile?.pronoun && (
+              <span
+                title={`${t("pronouns")}: ${mazmoLabel(MAZMO_PRONOUN_LABEL, mg.guest.mazmo_profile.pronoun, t)}`}
+                className="rounded-full border border-foreground/15 px-2 py-px text-xs font-medium"
+              >
+                <span className="sr-only">{t("pronouns")}: </span>
+                {mazmoLabel(
+                  MAZMO_PRONOUN_SHORT,
+                  mg.guest.mazmo_profile.pronoun,
+                  t,
+                )}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap empty:hidden">
             <GuestTypeBadge guestType={mg.rsvp.guest_type} />
@@ -964,15 +978,20 @@ export function MeetupDetailPage() {
     );
   }
 
+  const timing = meetup ? meetupTiming(meetup.date) : "upcoming";
+
   return (
-    <div className="space-y-6">
+    <div className="@container space-y-6">
       {/* Header */}
       {meetupQ.isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-48" />
+        <div className="flex items-center gap-4 rounded-xl border p-4 @md:p-6">
+          <Skeleton className="size-20 rounded-xl" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
         </div>
-      ) : meetupQ.isError ? (
+      ) : meetupQ.isError || !meetup ? (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             {t("failedLoadMeetup")}
@@ -982,46 +1001,51 @@ export function MeetupDetailPage() {
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between xl:gap-4">
-          <div className="space-y-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold">{meetup?.name}</h1>
-              {isFinalized && (
-                <Badge variant="secondary">{t("meetupFinalized")}</Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {formatDate(meetup?.date ?? "")}
-            </p>
-            <a
-              href={meetup?.mazmo_meetup_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors max-w-full"
-            >
-              <span className="truncate">{meetup?.mazmo_meetup_url}</span>
-              <ExternalLink className="h-3 w-3 shrink-0" />
-            </a>
-          </div>
-          <div className="flex flex-wrap gap-2 xl:shrink-0 xl:justify-end">
-            {isOrgAdmin && (
-              <Button
-                variant="outline"
-                onClick={() => setPaymentToggleOpen(true)}
-                disabled={isFinalized}
-              >
-                {requiresPayment ? t("disablePayment") : t("enablePayment")}
-              </Button>
+        <section
+          aria-labelledby="meetup-title"
+          className="relative isolate overflow-hidden rounded-xl border bg-card text-card-foreground"
+        >
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-x-0 top-0 -z-10 h-40",
+              timing === "today"
+                ? "bg-[radial-gradient(ellipse_at_top_left,--theme(--color-emerald-500/22%),transparent_65%)]"
+                : "bg-[radial-gradient(ellipse_at_top_left,--theme(--color-foreground/7%),transparent_65%)]",
             )}
-            <Button
-              variant="outline"
-              onClick={() => setWalkinOpen(true)}
-              disabled={isFinalized}
-              className="gap-2"
-            >
-              <UserPlus className="h-4 w-4" />
-              {t("addWalkin")}
-            </Button>
+          />
+          <div className="flex items-start gap-4 px-4 pt-5 pb-5 @md:items-center @md:gap-6 @md:px-6 @md:pt-6">
+            <DateTile date={meetup.date} timing={timing} size="lg" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <h1
+                id="meetup-title"
+                className="text-2xl leading-tight font-semibold tracking-tight break-words @md:text-3xl"
+              >
+                {meetup.name}
+              </h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+                <span>
+                  {formatDate(meetup.date)}
+                  {/* The "Today" badge already says it for today's meetup. */}
+                  {timing !== "today" && (
+                    <span className="text-muted-foreground/70">
+                      {" "}
+                      ({relativeDay(meetup.date)})
+                    </span>
+                  )}
+                </span>
+                <MeetupBadges meetup={meetup} timing={timing} />
+              </div>
+              <MazmoUrlLink
+                url={meetup.mazmo_meetup_url}
+                className="max-w-full text-xs text-muted-foreground"
+              />
+            </div>
+          </div>
+          {/* The meetup's tools, in a band of their own like the footer of
+              the guest profile card. Payment is a setting, not a door task,
+              so it sits apart on the right. */}
+          <div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:px-6">
             <Button
               variant="outline"
               onClick={() => syncMutation.mutate()}
@@ -1029,12 +1053,33 @@ export function MeetupDetailPage() {
               className="gap-2"
             >
               <RefreshCw
-                className={`h-4 w-4 ${syncMutation.isPending ? "animate-spin" : ""}`}
+                className={cn(syncMutation.isPending && "animate-spin")}
+                aria-hidden="true"
               />
               {t("syncFromMazmo")}
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setWalkinOpen(true)}
+              disabled={isFinalized}
+              className="gap-2"
+            >
+              <UserPlus aria-hidden="true" />
+              {t("addWalkin")}
+            </Button>
+            {isOrgAdmin && (
+              <Button
+                variant="ghost"
+                onClick={() => setPaymentToggleOpen(true)}
+                disabled={isFinalized}
+                className="gap-2 @md:ml-auto"
+              >
+                <Banknote aria-hidden="true" />
+                {requiresPayment ? t("disablePayment") : t("enablePayment")}
+              </Button>
+            )}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Stats */}
@@ -1046,14 +1091,18 @@ export function MeetupDetailPage() {
         />
       )}
 
-      {/* Search */}
+      {/* Search, filter and sort */}
       {!guestsQ.isLoading && rawGuests.length > 0 && (
-        <Input
-          placeholder={t("searchGuestList")}
-          aria-label={t("searchGuestList")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-2"
+        <GuestListToolbar
+          search={search}
+          onSearch={setSearch}
+          filters={filters}
+          onFilters={setFilters}
+          sort={sort}
+          onSort={setSort}
+          requiresPayment={requiresPayment}
+          shown={guests?.length ?? 0}
+          total={rawGuests.length}
         />
       )}
 
@@ -1075,34 +1124,34 @@ export function MeetupDetailPage() {
             <TableHeader>
               <TableRow>
                 <SortableHead
-                  col="order"
+                  col="arrival"
                   label={t("order")}
-                  active={sortCol}
-                  dir={sortDir}
+                  active={sort.key}
+                  dir={sort.dir}
                   onSort={handleSort}
                   className="w-16 xl:w-[6%]"
                 />
                 <SortableHead
-                  col="guest"
+                  col="name"
                   label={t("guest")}
-                  active={sortCol}
-                  dir={sortDir}
+                  active={sort.key}
+                  dir={sort.dir}
                   onSort={handleSort}
                   className={requiresPayment ? "xl:w-[32%]" : "xl:w-[44%]"}
                 />
                 <SortableHead
                   col="rsvp"
                   label={t("rsvp")}
-                  active={sortCol}
-                  dir={sortDir}
+                  active={sort.key}
+                  dir={sort.dir}
                   onSort={handleSort}
                   className={requiresPayment ? "xl:w-[15%]" : "xl:w-[20%]"}
                 />
                 <SortableHead
                   col="status"
                   label={t("status")}
-                  active={sortCol}
-                  dir={sortDir}
+                  active={sort.key}
+                  dir={sort.dir}
                   onSort={handleSort}
                   className={requiresPayment ? "xl:w-[13%]" : "xl:w-[18%]"}
                 />
@@ -1160,7 +1209,9 @@ export function MeetupDetailPage() {
                       colSpan={requiresPayment ? 6 : 5}
                       className="text-center text-muted-foreground py-8"
                     >
-                      {t("noGuestsMatchSearch")}
+                      {search.trim()
+                        ? t("noGuestsMatchSearch")
+                        : t("noGuestsMatchFilters")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -1204,29 +1255,39 @@ export function MeetupDetailPage() {
             rawGuests.length > 0 &&
             (guests?.length ?? 0) === 0 && (
               <li className="text-center text-sm text-muted-foreground py-8">
-                {t("noGuestsMatchSearch")}
+                {search.trim()
+                  ? t("noGuestsMatchSearch")
+                  : t("noGuestsMatchFilters")}
               </li>
             )}
           {(guests ?? []).map((mg) => (
             <li
               key={mg.guest.id}
               className={cn(
-                "rounded-lg border p-3 space-y-3",
+                // Stacked on phones; one row once the list is wide enough,
+                // with fixed-width columns so rows line up like a table.
+                "flex flex-col gap-3 rounded-lg border p-3 @3xl:flex-row @3xl:items-center @3xl:gap-4",
                 mg.rsvp.cancelled_rsvp && "opacity-50",
               )}
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 flex-1 items-start justify-between gap-2 @3xl:items-center">
                 {renderIdentity(mg)}
                 {mg.rsvp.arrival_order != null && (
                   <span className="shrink-0">{renderArrivalOrder(mg)}</span>
                 )}
               </div>
-              <div className="flex items-end justify-between gap-2">
-                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                  {renderStatus(mg)}
-                  {requiresPayment && renderPayment(mg)}
+              <div className="flex items-end justify-between gap-2 @3xl:contents">
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 @3xl:flex-none @3xl:flex-nowrap @3xl:gap-4">
+                  <p className="text-xs text-muted-foreground @3xl:order-first @3xl:w-40 @3xl:whitespace-nowrap">
+                    <span className="font-medium">{t("rsvp")}</span>{" "}
+                    {formatDateTime(mg.rsvp.rsvp_time)}
+                  </p>
+                  <div className="@3xl:w-32">{renderStatus(mg)}</div>
+                  {requiresPayment && (
+                    <div className="@3xl:w-40">{renderPayment(mg)}</div>
+                  )}
                 </div>
-                <div className="shrink-0">{renderActions(mg)}</div>
+                <div className="shrink-0 @3xl:w-36">{renderActions(mg)}</div>
               </div>
             </li>
           ))}

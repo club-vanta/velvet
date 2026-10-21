@@ -1247,7 +1247,8 @@ export interface components {
      * BannedGuestPublic
      * @description Guest info with ban details, sourced from organization_bans.
      *
-     *     Used in the org-scoped banned guests list endpoint.
+     *     Used in the org-scoped banned guests list endpoint. mazmo_profile
+     *     follows the same rules as GuestPublic.mazmo_profile.
      */
     BannedGuestPublic: {
       /**
@@ -1263,6 +1264,7 @@ export interface components {
       displayname: string;
       /** Instagram Username */
       instagram_username: string | null;
+      mazmo_profile?: components["schemas"]["GuestMazmoProfilePublic"] | null;
       /**
        * Banned At
        * Format: date-time
