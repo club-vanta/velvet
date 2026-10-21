@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
+import { toast } from "sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { GuestsPage } from "./GuestsPage";
 import type { components } from "@/api/types";
@@ -409,6 +410,31 @@ describe("GuestsPage: vant flag in the all guests tab", () => {
     expect(within(fineRow).queryByText("Vanted")).not.toBeInTheDocument();
   });
 
+  it("marks guests whose Mazmo account was deleted", async () => {
+    renderPage([
+      guest({
+        id: "g-d",
+        displayname: "machoarriba",
+        mazmo_handle: "machoarriba",
+        mazmo_profile: {
+          avatar_url: null,
+          age: null,
+          gender: null,
+          pronoun: null,
+          mazmo_suspended: false,
+          mazmo_banned: false,
+          mazmo_deleted: true,
+          synced_at: "2026-10-21T19:35:00Z",
+        },
+      }),
+    ]);
+
+    const row = (
+      await screen.findByRole("link", { name: "machoarriba" })
+    ).closest("li")!;
+    expect(within(row).getByText("Mazmo account deleted")).toBeInTheDocument();
+  });
+
   it("offers Unvant instead of Vant and disables Unlink for a vanted guest", async () => {
     renderPage(
       [guest({ id: "g-v2", displayname: "Vanted Two", mazmo_handle: "v2" })],
@@ -499,5 +525,72 @@ describe("GuestsPage: sorting and filtering", () => {
 
     expect(names()).toEqual(["Manual"]);
     expect(screen.getByText("Showing 1 of 2")).toBeInTheDocument();
+  });
+});
+
+describe("GuestsPage — sync from Mazmo", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("refreshes every guest and reports the count", async () => {
+    mockApiPost.mockResolvedValue({
+      data: { total: 3, refreshed: 3, not_found: 0 },
+      error: undefined,
+      response: { status: 200 },
+    });
+
+    renderPage([]);
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: "Sync from Mazmo" }),
+    );
+
+    expect(mockApiPost).toHaveBeenCalledWith("/guests/refresh-mazmo");
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Updated 3 guests from Mazmo"),
+    );
+  });
+
+  it("mentions guests Mazmo didn't return", async () => {
+    mockApiPost.mockResolvedValue({
+      data: { total: 5, refreshed: 3, not_found: 2 },
+      error: undefined,
+      response: { status: 200 },
+    });
+
+    renderPage([]);
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: "Sync from Mazmo" }),
+    );
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Updated 3 guests from Mazmo. 2 weren't found and kept their data.",
+      ),
+    );
+  });
+
+  it("shows the unreachable message when Mazmo times out", async () => {
+    mockApiPost.mockResolvedValue({
+      data: undefined,
+      error: { detail: "timeout" },
+      response: { status: 504 },
+    });
+
+    renderPage([]);
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: "Sync from Mazmo" }),
+    );
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        "Could not connect to Mazmo. Try again.",
+      ),
+    );
   });
 });

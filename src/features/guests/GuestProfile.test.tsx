@@ -27,6 +27,7 @@ const GUEST: Guest = {
     pronoun: "MALE",
     mazmo_suspended: false,
     mazmo_banned: false,
+    mazmo_deleted: false,
     synced_at: "2026-10-18T03:00:00Z",
   },
 };
@@ -205,6 +206,22 @@ describe("GuestProfile", () => {
     expect(alert).toHaveTextContent(/separate from vants/);
     expect(screen.getByText("Banned on Mazmo")).toBeInTheDocument();
     expect(within(document.body).queryByText("Vanted")).not.toBeInTheDocument();
+  });
+
+  it("marks a deleted Mazmo account and drops the dead profile link", async () => {
+    setup({
+      guest: {
+        ...GUEST,
+        mazmo_handle: "machoarriba",
+        mazmo_profile: { ...GUEST.mazmo_profile!, mazmo_deleted: true },
+      },
+    });
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("This account no longer exists on Mazmo");
+    expect(screen.getByText("Mazmo account deleted")).toBeInTheDocument();
+    expect(screen.getByText("@machoarriba")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /machoarriba/ })).toBeNull();
   });
 
   it("shows a not-found state for an unknown guest", async () => {

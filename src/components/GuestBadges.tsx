@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/i18n";
 import { GUEST_TYPE_LABEL, isGuestType, type GuestType } from "@/lib/guestType";
@@ -42,7 +42,9 @@ const MAZMO_FLAG_CLASS =
 
 /**
  * Mazmo's own account flags. Deliberately styled apart from the red
- * "Vanted" badge: these come from Mazmo, not from an org ban here.
+ * "Vanted" badge: these come from Mazmo, not from an org ban here. A
+ * deleted account is neutral rather than orange: it says nothing about
+ * the person's behavior.
  */
 export function MazmoFlagBadges({
   profile,
@@ -52,11 +54,26 @@ export function MazmoFlagBadges({
   className?: string;
 }) {
   const { t } = useLanguage();
-  if (!profile || (!profile.mazmo_banned && !profile.mazmo_suspended)) {
+  if (
+    !profile ||
+    (!profile.mazmo_banned &&
+      !profile.mazmo_suspended &&
+      !profile.mazmo_deleted)
+  ) {
     return null;
   }
   return (
     <>
+      {profile.mazmo_deleted && (
+        <Badge
+          variant="outline"
+          className={cn("text-muted-foreground", className)}
+          title={t("mazmoDeletedHint")}
+        >
+          <UserX aria-hidden="true" />
+          {t("mazmoDeleted")}
+        </Badge>
+      )}
       {profile.mazmo_banned && (
         <Badge
           variant="outline"

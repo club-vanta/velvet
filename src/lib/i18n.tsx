@@ -361,6 +361,9 @@ export const translations = {
     checkedInToast: "{0} checked in ({1})",
     walkinAddedToast: "{0} added as walk-in",
     syncDoneToast: "Synced: {0} new guests added, {1} skipped",
+    guestsRefreshedToast: "Updated {0} guests from Mazmo",
+    guestsRefreshedPartialToast:
+      "Updated {0} guests from Mazmo. {1} weren't found and kept their data.",
     meetupFinalized: "Finalized",
     checkInBlockedFinalized: "This meetup is finalized",
     rsvpCancelled: "Cancelled",
@@ -432,6 +435,11 @@ export const translations = {
       "Mazmo profile data isn't synced yet. It shows up after the next sync of a meetup this guest RSVPed to.",
     mazmoBanned: "Banned on Mazmo",
     mazmoSuspended: "Suspended on Mazmo",
+    mazmoDeleted: "Mazmo account deleted",
+    mazmoDeletedHint: "This account no longer exists on Mazmo",
+    mazmoDeletedTitle: "This account no longer exists on Mazmo",
+    mazmoDeletedExplanation:
+      "Showing the last name and profile data known before it was deleted. It doesn't block check-in.",
     mazmoFlagHint: "Flag set by Mazmo itself, not a vant in this organization",
     mazmoBannedTitle: "Mazmo banned this account",
     mazmoSuspendedTitle: "Mazmo suspended this account",
@@ -815,6 +823,9 @@ export const translations = {
     checkedInToast: "{0} ingresó ({1})",
     walkinAddedToast: "{0} agregado como discreto",
     syncDoneToast: "Sincronizado: {0} invitados nuevos, {1} omitidos",
+    guestsRefreshedToast: "Se actualizaron {0} invitados desde Mazmo",
+    guestsRefreshedPartialToast:
+      "Se actualizaron {0} invitados desde Mazmo. {1} no se encontraron y quedaron como estaban.",
     meetupFinalized: "Finalizado",
     checkInBlockedFinalized: "Este evento está finalizado",
     rsvpCancelled: "Cancelado",
@@ -888,6 +899,11 @@ export const translations = {
       "Los datos de perfil de Mazmo todavía no se sincronizaron. Aparecen después del próximo sync de un evento al que se anotó.",
     mazmoBanned: "Baneado en Mazmo",
     mazmoSuspended: "Suspendido en Mazmo",
+    mazmoDeleted: "Cuenta de Mazmo eliminada",
+    mazmoDeletedHint: "Esta cuenta ya no existe en Mazmo",
+    mazmoDeletedTitle: "Esta cuenta ya no existe en Mazmo",
+    mazmoDeletedExplanation:
+      "Se muestran el último nombre y los datos de perfil que tenía antes de que la borraran. No bloquea el ingreso.",
     mazmoFlagHint:
       "Marca puesta por Mazmo, no es un vanteo de esta organización",
     mazmoBannedTitle: "Mazmo baneó esta cuenta",

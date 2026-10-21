@@ -477,6 +477,32 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/guests/refresh-mazmo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Refresh every Mazmo-linked guest from Mazmo
+     * @description Re-fetch displayname and Mazmo profile (avatar, age, gender, pronoun,
+     *     suspended, banned) for every guest linked to a Mazmo account.
+     *
+     *     Useful for guests synced before the Mazmo profile existed, or who
+     *     haven't RSVPed to a recently synced meetup. RSVPs, check-ins, and
+     *     payments are never touched. Mazmo is queried before anything is
+     *     written, so a Mazmo failure leaves every guest as it was.
+     */
+    post: operations["refresh_guests_from_mazmo_guests_refresh_mazmo_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/guests/{guest_id}": {
     parameters: {
       query?: never;
@@ -1506,7 +1532,8 @@ export interface components {
      *     mazmo_suspended/mazmo_banned are Mazmo's own account-level flags -
      *     unrelated to this app's own ban system (OrganizationBan / the
      *     is_banned field on GuestWithBanPublic). Prefixed even here to avoid
-     *     that confusion once this is flattened into JSON.
+     *     that confusion once this is flattened into JSON. mazmo_deleted means
+     *     the account no longer exists on Mazmo (its mazmo.net link 404s).
      */
     GuestMazmoProfilePublic: {
       /** Avatar Url */
@@ -1521,11 +1548,29 @@ export interface components {
       mazmo_suspended: boolean;
       /** Mazmo Banned */
       mazmo_banned: boolean;
+      /** Mazmo Deleted */
+      mazmo_deleted: boolean;
       /**
        * Synced At
        * Format: date-time
        */
       synced_at: string;
+    };
+    /**
+     * GuestMazmoRefreshResponse
+     * @description Response after refreshing every Mazmo-linked guest from Mazmo.
+     *
+     *     total counts guests with a mazmo_user_id. not_found counts the ones
+     *     Mazmo's /users endpoint left out of its response; those keep their
+     *     previous data.
+     */
+    GuestMazmoRefreshResponse: {
+      /** Total */
+      total: number;
+      /** Refreshed */
+      refreshed: number;
+      /** Not Found */
+      not_found: number;
     };
     /**
      * GuestPublic
@@ -3567,6 +3612,62 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  refresh_guests_from_mazmo_guests_refresh_mazmo_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Refresh completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestMazmoRefreshResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API error */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Mazmo API timeout */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };

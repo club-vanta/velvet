@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useOrg } from "@/lib/org";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { invalidateAllGuestIdentities } from "@/lib/queryKeys";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { MAZMO_PRONOUN_SHORT, mazmoLabel } from "@/lib/mazmoProfile";
 import type { SortDir } from "@/lib/sortNames";
@@ -133,7 +134,8 @@ function GuestIdentity({
   const { t } = useLanguage();
   const flagged =
     !!guest.mazmo_profile?.mazmo_banned ||
-    !!guest.mazmo_profile?.mazmo_suspended;
+    !!guest.mazmo_profile?.mazmo_suspended ||
+    !!guest.mazmo_profile?.mazmo_deleted;
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
       <GuestAvatar
@@ -760,6 +762,48 @@ function BannedGuestsTab({
   );
 }
 
+function RefreshFromMazmoButton() {
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const refreshMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error, response } = await api.POST("/guests/refresh-mazmo");
+      if (error) {
+        if (response.status === 504) throw new Error(t("mazmoUnreachable"));
+        throw new Error(extractApiError(error, t("somethingWentWrong")));
+      }
+      return data!;
+    },
+    onSuccess: (data) => {
+      invalidateAllGuestIdentities(queryClient);
+      toast.success(
+        data.not_found > 0
+          ? t("guestsRefreshedPartialToast")
+              .replace("{0}", String(data.refreshed))
+              .replace("{1}", String(data.not_found))
+          : t("guestsRefreshedToast").replace("{0}", String(data.refreshed)),
+      );
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => refreshMutation.mutate()}
+      disabled={refreshMutation.isPending}
+      className="gap-2"
+    >
+      <RefreshCw
+        className={cn(refreshMutation.isPending && "animate-spin")}
+        aria-hidden="true"
+      />
+      {t("syncFromMazmo")}
+    </Button>
+  );
+}
+
 export function GuestsPage() {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -782,9 +826,12 @@ export function GuestsPage() {
     <div className="@container space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t("guests")}</h1>
-        <Button onClick={() => setAddGuestOpen(true)}>
-          {t("addNewGuest")}
-        </Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <RefreshFromMazmoButton />
+          <Button onClick={() => setAddGuestOpen(true)}>
+            {t("addNewGuest")}
+          </Button>
+        </div>
       </div>
       <Tabs defaultValue="all">
         <TabsList>
