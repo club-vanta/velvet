@@ -205,6 +205,8 @@ describe("GuestProfile", () => {
     expect(alert).toHaveTextContent("Mazmo banned this account");
     expect(alert).toHaveTextContent(/separate from vants/);
     expect(screen.getByText("Banned on Mazmo")).toBeInTheDocument();
+    expect(screen.getByText("@juanp")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /juanp/ })).toBeNull();
     expect(within(document.body).queryByText("Vanted")).not.toBeInTheDocument();
   });
 

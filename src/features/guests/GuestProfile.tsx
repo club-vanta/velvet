@@ -244,8 +244,8 @@ function IdentityCard({
             {guest.displayname}
           </Title>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
-            {guest.mazmo_handle && mazmoDeleted ? (
-              // The account is gone, so mazmo.net/@handle is a 404.
+            {guest.mazmo_handle && (mazmoDeleted || profile?.mazmo_banned) ? (
+              // mazmo.net/@handle is a 404 for deleted and banned accounts.
               <span className="break-all">@{guest.mazmo_handle}</span>
             ) : guest.mazmo_handle ? (
               <ExternalProfileLink
