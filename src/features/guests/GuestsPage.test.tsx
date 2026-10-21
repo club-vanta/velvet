@@ -383,7 +383,7 @@ describe("GuestsPage — search", () => {
   });
 });
 
-describe("GuestsPage — vant flag in the all guests tab", () => {
+describe("GuestsPage: vant flag in the all guests tab", () => {
   beforeEach(() => {
     mockRole = "ADMIN";
     vi.clearAllMocks();
@@ -407,5 +407,35 @@ describe("GuestsPage — vant flag in the all guests tab", () => {
       .getByRole("link", { name: "Fine One" })
       .closest("tr")!;
     expect(within(fineRow).queryByText("Vanted")).not.toBeInTheDocument();
+  });
+
+  it("offers Unvant instead of Vant and disables Unlink for a vanted guest", async () => {
+    renderPage(
+      [guest({ id: "g-v2", displayname: "Vanted Two", mazmo_handle: "v2" })],
+      ["g-v2"],
+    );
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Guest actions: Vanted Two",
+      }),
+    );
+    // The vanted list loads separately; wait until the menu reflects it.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "Vanted Two" }).closest("tr"),
+      ).toHaveTextContent("Vanted"),
+    );
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Unvant" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "Vant" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Unlink Mazmo account" }),
+    ).toHaveAttribute("aria-disabled", "true");
   });
 });

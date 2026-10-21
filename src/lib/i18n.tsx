@@ -641,10 +641,10 @@ export const translations = {
     paidBeforeExempt: "Pagó",
     checkedInToast: "{0} ingresó ({1})",
     walkinAddedToast: "{0} agregado como discreto",
-    syncDoneToast: "Sincronizado: {0} invitados nuevos, {1} sin cambios",
+    syncDoneToast: "Sincronizado: {0} invitados nuevos, {1} omitidos",
     meetupFinalized: "Finalizado",
     checkInBlockedFinalized: "Este evento está finalizado",
-    rsvpCancelled: "Canceló",
+    rsvpCancelled: "Cancelado",
     guestProfileOf: "Perfil de {0}",
     failedLoadVantStatus:
       "No se pudo verificar si este invitado está vanteado.",

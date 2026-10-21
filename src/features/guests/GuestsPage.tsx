@@ -360,6 +360,7 @@ function AllGuestsTab({
     enabled: !!orgId,
   });
   const bannedIds = new Set(bannedQ.data?.guests.map((g) => g.id) ?? []);
+  const unbanMutation = useUnbanGuest(orgId);
 
   function handleSort(col: string) {
     if (col === sortCol) {
@@ -524,7 +525,11 @@ function AllGuestsTab({
                         {t("editGuest")}
                       </DropdownMenuItem>
                       {g.mazmo_handle ? (
-                        <DropdownMenuItem onClick={() => setUnlinkTarget(g)}>
+                        <DropdownMenuItem
+                          onClick={() => setUnlinkTarget(g)}
+                          // The backend refuses to unlink a vanted guest.
+                          disabled={bannedIds.has(g.id)}
+                        >
                           {t("unlinkMazmoAccount")}
                         </DropdownMenuItem>
                       ) : (
@@ -532,15 +537,25 @@ function AllGuestsTab({
                           {t("linkMazmoAccount")}
                         </DropdownMenuItem>
                       )}
-                      {isOrgAdmin && (
+                      {/* Vant state is only known once the org's list loads. */}
+                      {isOrgAdmin && bannedQ.isSuccess && (
                         <>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setBanTarget(g)}
-                          >
-                            {t("ban")}
-                          </DropdownMenuItem>
+                          {bannedIds.has(g.id) ? (
+                            <DropdownMenuItem
+                              onClick={() => unbanMutation.mutate(g)}
+                              disabled={unbanMutation.isPending}
+                            >
+                              {t("unban")}
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => setBanTarget(g)}
+                            >
+                              {t("ban")}
+                            </DropdownMenuItem>
+                          )}
                         </>
                       )}
                     </DropdownMenuContent>

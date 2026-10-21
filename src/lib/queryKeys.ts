@@ -36,6 +36,7 @@ export function invalidateMeetupGuests(
  */
 export function invalidateAllGuestIdentities(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: ["guests"] });
+  void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
   void queryClient.invalidateQueries({ queryKey: ["guest"] });
 }

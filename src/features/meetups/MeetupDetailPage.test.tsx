@@ -768,6 +768,26 @@ describe("MeetupDetailPage finalized meetup", () => {
     ).toBeDisabled();
   });
 
+  it("keeps the corrections the backend allows after finalizing", async () => {
+    const arrived = guest({
+      mazmo_user_id: 72,
+      displayname: "Arrived Paid",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    arrived.rsvp.arrival_order = 1;
+    renderPage({ ...MEETUP, is_finalized: true, requires_payment: true }, [
+      arrived,
+      guest({ mazmo_user_id: 73, displayname: "Never Paid", has_paid: false }),
+    ]);
+
+    expect(
+      await screen.findByRole("button", { name: "Mark paid" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Undo payment" })).toBeEnabled();
+  });
+
   it("marks a cancelled RSVP with a label, not only with opacity", async () => {
     const cancelled = guest({
       mazmo_user_id: 71,
@@ -778,5 +798,38 @@ describe("MeetupDetailPage finalized meetup", () => {
     renderPage({ ...MEETUP, requires_payment: false }, [cancelled]);
 
     expect(await screen.findByText("Cancelled")).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage profile sheet vant fallback", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("shows the row's vant while the org's vanted list is still loading", async () => {
+    const vanted = guest({
+      mazmo_user_id: 80,
+      displayname: "Still Vanted",
+      has_paid: true,
+      is_banned: true,
+    });
+    renderPage({ ...MEETUP, requires_payment: false }, [vanted]);
+    const base = mockApiGet.getMockImplementation()!;
+    mockApiGet.mockImplementation((path: string, ...rest: unknown[]) =>
+      path === "/organizations/{org_id}/guests/banned"
+        ? new Promise(() => {})
+        : base(path, ...rest),
+    );
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Still Vanted" }),
+    );
+
+    const sheet = await screen.findByRole("dialog");
+    await within(sheet).findByRole("heading", { name: "Still Vanted" });
+    expect(within(sheet).getByText("Vanted")).toBeInTheDocument();
   });
 });

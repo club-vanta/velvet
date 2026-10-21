@@ -284,9 +284,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main
-          className="flex-1 overflow-auto p-4 md:p-6 md:pb-6"
-          // Extra space so the last item never sits flush on the bottom nav.
-          style={{ paddingBottom: `calc(${MOBILE_NAV_HEIGHT} + 1rem)` }}
+          // Bottom padding clears the mobile nav (MOBILE_NAV_HEIGHT) plus 1rem
+          // so the last item never sits flush on it; desktop has no nav.
+          className="flex-1 overflow-auto p-4 pb-[calc(4rem+1rem)] md:p-6 md:pb-6"
         >
           {children}
         </main>

@@ -910,21 +910,31 @@ export function MeetupDetailPage() {
             </span>
           </span>
         ) : (
-          <Button
-            size="sm"
-            variant={mg.guest.is_banned ? "destructive" : "default"}
-            onClick={() => {
-              if (mg.guest.is_banned) {
-                setBannedTarget(mg);
-              } else {
-                checkInMutation.mutate(mg);
+          <>
+            <Button
+              size="sm"
+              variant={mg.guest.is_banned ? "destructive" : "default"}
+              onClick={() => {
+                if (mg.guest.is_banned) {
+                  setBannedTarget(mg);
+                } else {
+                  checkInMutation.mutate(mg);
+                }
+              }}
+              disabled={checkInMutation.isPending || isFinalized}
+              title={isFinalized ? t("checkInBlockedFinalized") : undefined}
+              aria-describedby={
+                isFinalized ? `checkin-finalized-${mg.guest.id}` : undefined
               }
-            }}
-            disabled={checkInMutation.isPending || isFinalized}
-            title={isFinalized ? t("checkInBlockedFinalized") : undefined}
-          >
-            {isCheckingIn ? t("checkingIn") : t("checkIn")}
-          </Button>
+            >
+              {isCheckingIn ? t("checkingIn") : t("checkIn")}
+            </Button>
+            {isFinalized && (
+              <span id={`checkin-finalized-${mg.guest.id}`} className="sr-only">
+                {t("checkInBlockedFinalized")}
+              </span>
+            )}
+          </>
         )}
         <GuestRowActions
           guest={mg}

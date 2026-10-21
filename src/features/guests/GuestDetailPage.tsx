@@ -70,8 +70,9 @@ export function GuestDetailPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setDialog({ kind: "unlink", guest })}
-                // The backend refuses to unlink a vanted guest (ban-evasion
-                // guard), so do not offer it.
+                // The backend refuses to unlink a guest vanted in any org
+                // (ban-evasion guard). Only this org's vants are known here,
+                // so a vant elsewhere still ends in the backend's 409.
                 disabled={!!ban}
                 title={ban ? t("unlinkBlockedVanted") : undefined}
               >
