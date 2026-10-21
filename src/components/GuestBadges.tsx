@@ -11,7 +11,7 @@ const GUEST_TYPE_CLASS: Record<Exclude<GuestType, "NORMAL">, string> = {
   INVITED:
     "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
   VENDOR:
-    "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   STAFF: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
 };
 
@@ -19,22 +19,12 @@ const GUEST_TYPE_CLASS: Record<Exclude<GuestType, "NORMAL">, string> = {
  * Category badge for a guest at a meetup. NORMAL is the default and renders
  * nothing, so only the exceptions stand out in a list.
  */
-export function GuestTypeBadge({
-  guestType,
-  showNormal = false,
-}: {
-  guestType: string;
-  showNormal?: boolean;
-}) {
+export function GuestTypeBadge({ guestType }: { guestType: string }) {
   const { t } = useLanguage();
   if (!isGuestType(guestType)) {
     return <Badge variant="outline">{guestType}</Badge>;
   }
-  if (guestType === "NORMAL") {
-    return showNormal ? (
-      <Badge variant="outline">{t(GUEST_TYPE_LABEL.NORMAL)}</Badge>
-    ) : null;
-  }
+  if (guestType === "NORMAL") return null;
   return (
     <Badge variant="outline" className={GUEST_TYPE_CLASS[guestType]}>
       {t(GUEST_TYPE_LABEL[guestType])}

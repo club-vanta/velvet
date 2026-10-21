@@ -31,6 +31,16 @@ export function invalidateMeetupGuests(
 }
 
 /**
+ * A Mazmo sync can rename any synced guest and refreshes every synced
+ * guest's Mazmo profile, so every guest-identity query is refreshed.
+ */
+export function invalidateAllGuestIdentities(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: ["guests"] });
+  void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
+  void queryClient.invalidateQueries({ queryKey: ["guest"] });
+}
+
+/**
  * A guest's identity (name, Mazmo link, profile snapshot) shows up in the
  * global guest list, the vanted list, every meetup guest list, and the
  * guest's own profile.

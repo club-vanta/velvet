@@ -51,7 +51,11 @@ import { useLanguage } from "@/lib/i18n";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { isPaymentExempt } from "@/lib/guestType";
-import { invalidateMeetupGuests, meetupGuestsKey } from "@/lib/queryKeys";
+import {
+  invalidateAllGuestIdentities,
+  invalidateMeetupGuests,
+  meetupGuestsKey,
+} from "@/lib/queryKeys";
 import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
 import type { components } from "@/api/types";
@@ -141,6 +145,11 @@ function PaymentCell({
             </Button>
           )}
         </div>
+        {has_paid && paid_at && (
+          <p className="text-xs text-muted-foreground">
+            {formatDateTime(paid_at)}
+          </p>
+        )}
       </div>
     );
   }
@@ -640,7 +649,15 @@ export function MeetupDetailPage() {
   const [undoPaymentTarget, setUndoPaymentTarget] =
     useState<MeetupGuest | null>(null);
   const [paymentToggleOpen, setPaymentToggleOpen] = useState(false);
-  const [profileGuestId, setProfileGuestId] = useState<string | null>(null);
+  // Kept after the sheet closes so its content stays put during the
+  // slide-out animation; profileOpen drives visibility.
+  const [profileGuest, setProfileGuest] = useState<MeetupGuest | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  function openProfile(mg: MeetupGuest) {
+    setProfileGuest(mg);
+    setProfileOpen(true);
+  }
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -696,6 +713,7 @@ export function MeetupDetailPage() {
     },
     onSuccess: (data) => {
       invalidateMeetupGuests(queryClient, orgId, id!);
+      invalidateAllGuestIdentities(queryClient);
       toast.success(
         `Synced — ${data!.inserted} new guests added, ${data!.skipped} skipped`,
       );
@@ -790,9 +808,9 @@ export function MeetupDetailPage() {
           <div className="flex items-center gap-x-2 gap-y-1 flex-wrap">
             <button
               type="button"
-              onClick={() => setProfileGuestId(mg.guest.id)}
+              onClick={() => openProfile(mg)}
               className={cn(
-                "text-left font-medium underline-offset-4 hover:underline focus-visible:underline outline-none break-words",
+                "rounded-sm text-left font-medium underline-offset-4 outline-none break-words hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50",
                 mg.guest.is_banned && "text-destructive",
               )}
             >
@@ -888,7 +906,7 @@ export function MeetupDetailPage() {
           meetupId={id!}
           isOrgAdmin={isOrgAdmin}
           isFinalized={meetup?.is_finalized ?? false}
-          onViewProfile={() => setProfileGuestId(mg.guest.id)}
+          onViewProfile={() => openProfile(mg)}
         />
       </div>
     );
@@ -1128,7 +1146,7 @@ export function MeetupDetailPage() {
           </Table>
         </div>
       ) : (
-        <ul className="space-y-2" aria-label={t("guest")}>
+        <ul className="space-y-2" aria-label={t("guestList")}>
           {guestsQ.isLoading &&
             Array.from({ length: 5 }).map((_, i) => (
               <li key={i}>
@@ -1213,34 +1231,37 @@ export function MeetupDetailPage() {
           onClose={() => setUndoPaymentTarget(null)}
         />
       )}
-      <Sheet
-        open={profileGuestId !== null}
-        onOpenChange={(open) => !open && setProfileGuestId(null)}
-      >
-        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+      <Sheet open={profileOpen} onOpenChange={setProfileOpen}>
+        <SheetContent className="overflow-y-auto data-[side=right]:w-full data-[side=right]:sm:max-w-md">
           <SheetHeader className="sr-only">
-            <SheetTitle>{t("guestProfile")}</SheetTitle>
+            <SheetTitle>
+              {t("guestProfileOf").replace(
+                "{0}",
+                profileGuest?.guest.displayname ?? "",
+              )}
+            </SheetTitle>
           </SheetHeader>
-          {profileGuestId && (
-            <div className="px-4 pt-10">
-              <GuestProfile
-                key={profileGuestId}
-                guestId={profileGuestId}
-                orgId={orgId}
-                orgName={activeOrg.org_name}
-                titleAs="h2"
-              />
-            </div>
-          )}
-          {profileGuestId && (
-            <SheetFooter>
-              <Link
-                to={`/guests/${profileGuestId}`}
-                className={buttonVariants({ variant: "outline" })}
-              >
-                {t("openFullProfile")}
-              </Link>
-            </SheetFooter>
+          {profileGuest && (
+            <>
+              <div className="px-4 pt-10">
+                <GuestProfile
+                  key={profileGuest.guest.id}
+                  guestId={profileGuest.guest.id}
+                  orgId={orgId}
+                  orgName={activeOrg.org_name}
+                  titleAs="h2"
+                  knownBanned={profileGuest.guest.is_banned}
+                />
+              </div>
+              <SheetFooter>
+                <Link
+                  to={`/guests/${profileGuest.guest.id}`}
+                  className={buttonVariants({ variant: "outline" })}
+                >
+                  {t("openFullProfile")}
+                </Link>
+              </SheetFooter>
+            </>
           )}
         </SheetContent>
       </Sheet>

@@ -40,11 +40,17 @@ function DetailItem({
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({
+  as: Heading,
+  children,
+}: {
+  as: "h2" | "h3";
+  children: React.ReactNode;
+}) {
   return (
-    <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <Heading className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
       {children}
-    </h2>
+    </Heading>
   );
 }
 
@@ -89,7 +95,13 @@ function HistoryItem({
   );
 }
 
-function NameHistory({ guestId }: { guestId: string }) {
+function NameHistory({
+  guestId,
+  headingAs,
+}: {
+  guestId: string;
+  headingAs: "h2" | "h3";
+}) {
   const { t } = useLanguage();
   const historyQ = useQuery({
     queryKey: guestHistoryKey(guestId),
@@ -105,7 +117,7 @@ function NameHistory({ guestId }: { guestId: string }) {
 
   return (
     <section className="space-y-3">
-      <SectionTitle>{t("nameHistory")}</SectionTitle>
+      <SectionTitle as={headingAs}>{t("nameHistory")}</SectionTitle>
       {historyQ.isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -141,14 +153,20 @@ function NameHistory({ guestId }: { guestId: string }) {
   );
 }
 
-function MazmoDetails({ guest }: { guest: Guest }) {
+function MazmoDetails({
+  guest,
+  headingAs,
+}: {
+  guest: Guest;
+  headingAs: "h2" | "h3";
+}) {
   const { t } = useLanguage();
   const profile = guest.mazmo_profile;
   const notSet = <span className="text-muted-foreground">{t("notSet")}</span>;
 
   return (
     <section className="space-y-3">
-      <SectionTitle>{t("guestDetails")}</SectionTitle>
+      <SectionTitle as={headingAs}>{t("guestDetails")}</SectionTitle>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <DetailItem label={t("mazmoId")}>
           {guest.mazmo_user_id ?? notSet}
@@ -202,21 +220,33 @@ function MazmoDetails({ guest }: { guest: Guest }) {
  * account flags, the Mazmo profile snapshot, and the displayname history.
  *
  * Rendered both as the /guests/:guestId page and inside a side sheet on the
- * meetup page, so the title element and the actions are passed in.
+ * meetup page, so the heading level and the actions are passed in.
+ *
+ * Actions get `banKnown`: until the org's vanted list has loaded, `ban`
+ * being undefined does not mean the guest is not vanted.
  */
 export function GuestProfile({
   guestId,
   orgId,
   orgName,
   titleAs: Title = "h1",
+  knownBanned = false,
   actions,
 }: {
   guestId: string;
   orgId: string;
   orgName?: string;
-  titleAs?: React.ElementType;
-  actions?: (guest: Guest, ban: BannedGuest | undefined) => React.ReactNode;
+  titleAs?: "h1" | "h2";
+  // Vant state already known by the caller (the meetup list has it), shown
+  // while the vanted list is loading or if it fails.
+  knownBanned?: boolean;
+  actions?: (
+    guest: Guest,
+    ban: BannedGuest | undefined,
+    banKnown: boolean,
+  ) => React.ReactNode;
 }) {
+  const sectionAs = Title === "h1" ? "h2" : "h3";
   const { t } = useLanguage();
 
   const guestQ = useQuery({
@@ -229,7 +259,8 @@ export function GuestProfile({
       if (error) throw new Error(t("failedLoadGuest"));
       return data;
     },
-    retry: (count, err) => !(err instanceof GuestNotFoundError) && count < 2,
+    // A 404 will not fix itself; anything else gets the app's single retry.
+    retry: (count, err) => !(err instanceof GuestNotFoundError) && count < 1,
   });
 
   // Same key as the Vanted tab, so the list is shared from cache.
@@ -279,7 +310,9 @@ export function GuestProfile({
   }
 
   const guest = guestQ.data;
+  const banKnown = bannedQ.isSuccess;
   const ban = bannedQ.data?.guests.find((g) => g.id === guest.id);
+  const showBanned = banKnown ? !!ban : knownBanned;
   const profile = guest.mazmo_profile;
   const mazmoFlagged = !!profile?.mazmo_banned || !!profile?.mazmo_suspended;
 
@@ -305,16 +338,20 @@ export function GuestProfile({
                 <span className="break-normal"> · {profile.pronoun}</span>
               )}
             </p>
-            {(ban || mazmoFlagged) && (
+            {(showBanned || mazmoFlagged) && (
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {ban && <Badge variant="destructive">{t("banned")}</Badge>}
+                {showBanned && (
+                  <Badge variant="destructive">{t("banned")}</Badge>
+                )}
                 <MazmoFlagBadges profile={profile} />
               </div>
             )}
           </div>
         </div>
         {actions && (
-          <div className="flex flex-wrap gap-2">{actions(guest, ban)}</div>
+          <div className="flex flex-wrap gap-2">
+            {actions(guest, ban, banKnown)}
+          </div>
         )}
       </header>
 
@@ -338,6 +375,15 @@ export function GuestProfile({
         </Alert>
       )}
 
+      {bannedQ.isError && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm text-muted-foreground">
+          {t("failedLoadVantStatus")}
+          <Button variant="ghost" size="sm" onClick={() => bannedQ.refetch()}>
+            {t("retry")}
+          </Button>
+        </div>
+      )}
+
       {mazmoFlagged && (
         <Alert className="border-orange-500/40 text-orange-700 dark:text-orange-300">
           <TriangleAlert />
@@ -352,8 +398,8 @@ export function GuestProfile({
         </Alert>
       )}
 
-      <MazmoDetails guest={guest} />
-      <NameHistory guestId={guest.id} />
+      <MazmoDetails guest={guest} headingAs={sectionAs} />
+      <NameHistory guestId={guest.id} headingAs={sectionAs} />
     </div>
   );
 }

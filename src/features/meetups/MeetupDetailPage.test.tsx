@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
@@ -522,6 +522,12 @@ describe("MeetupDetailPage guest type menu", () => {
   });
 });
 
+// The <dd> next to a stat label, matched exactly so "12" never passes for "2".
+function statValue(region: HTMLElement, label: string) {
+  return within(region).getByText(label).closest("div")?.querySelector("dd")
+    ?.textContent;
+}
+
 describe("MeetupDetailPage stats", () => {
   beforeEach(() => {
     mockRole = "ADMIN";
@@ -555,19 +561,13 @@ describe("MeetupDetailPage stats", () => {
 
     const checkIns = await screen.findByRole("region", { name: "Check-ins" });
     expect(within(checkIns).getByText("25%")).toBeInTheDocument();
-    expect(
-      within(checkIns).getByText("Walk-ins").closest("div"),
-    ).toHaveTextContent("2");
+    expect(statValue(checkIns, "Walk-ins")).toBe("2");
 
     const types = screen.getByRole("region", { name: "Guest types" });
-    expect(within(types).getByText("Invited").closest("div")).toHaveTextContent(
-      "2",
-    );
+    expect(statValue(types, "Invited")).toBe("2");
 
     const payment = screen.getByRole("region", { name: "Payment" });
-    expect(
-      within(payment).getByText("Exempt").closest("div"),
-    ).toHaveTextContent("5");
+    expect(statValue(payment, "Exempt")).toBe("5");
 
     const cancellations = screen.getByRole("region", {
       name: "Cancelled RSVPs",
@@ -681,5 +681,66 @@ describe("MeetupDetailPage guest identity extras", () => {
       .slice(1)
       .map((row) => within(row).getAllByRole("button")[0]?.textContent);
     expect(names).toEqual(["Earliest", "First", "Second"]);
+  });
+});
+
+describe("MeetupDetailPage on phones", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+    vi.stubGlobal(
+      "matchMedia",
+      (query: string) =>
+        ({
+          matches: false,
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("renders one card per guest instead of the table", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 60,
+        displayname: "Phone Exempt",
+        has_paid: false,
+        guest_type: "INVITED",
+      }),
+      guest({
+        mazmo_user_id: 61,
+        displayname: "Phone Unpaid",
+        has_paid: false,
+      }),
+    ]);
+
+    await screen.findByText("Phone Exempt");
+    const list = screen.getByRole("list", { name: "Guest list" });
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    const cards = within(list).getAllByRole("listitem");
+    expect(cards).toHaveLength(2);
+    const [exempt, unpaid] = cards;
+    expect(within(exempt!).getByText("Exempt")).toBeInTheDocument();
+    expect(
+      within(exempt!).getByRole("button", { name: "Check in" }),
+    ).toBeEnabled();
+    expect(
+      within(exempt!).getByRole("button", {
+        name: "Guest actions: Phone Exempt",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(unpaid!).getByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+    expect(
+      within(unpaid!).getByRole("button", { name: "Mark paid" }),
+    ).toBeInTheDocument();
   });
 });

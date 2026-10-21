@@ -44,7 +44,7 @@ const GUEST: Guest = {
   mazmo_profile: null,
 };
 
-function renderPage(banned: BannedGuest[] = []) {
+function renderPage(banned: BannedGuest[] | "pending" | "error" = []) {
   mockApiGet.mockImplementation((path: string) => {
     if (path === "/guests/{guest_id}")
       return Promise.resolve({
@@ -57,11 +57,15 @@ function renderPage(banned: BannedGuest[] = []) {
         data: { total: 0, history: [] },
         error: undefined,
       });
-    if (path === "/organizations/{org_id}/guests/banned")
+    if (path === "/organizations/{org_id}/guests/banned") {
+      if (banned === "pending") return new Promise(() => {});
+      if (banned === "error")
+        return Promise.resolve({ data: undefined, error: { detail: "x" } });
       return Promise.resolve({
         data: { total: banned.length, guests: banned },
         error: undefined,
       });
+    }
     return Promise.resolve({ data: undefined, error: undefined });
   });
   return render(
@@ -126,6 +130,29 @@ describe("GuestDetailPage", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Unvant" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers neither vant nor unvant until the vanted list has loaded", async () => {
+    renderPage("pending");
+
+    expect(await screen.findByRole("button", { name: "Edit" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Vant" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Unvant" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says so when the vant status could not be checked", async () => {
+    renderPage("error");
+
+    expect(
+      await screen.findByText("Couldn't check whether this guest is vanted."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Vant" }),
     ).not.toBeInTheDocument();
   });
 });

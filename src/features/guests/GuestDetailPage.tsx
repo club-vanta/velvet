@@ -56,7 +56,7 @@ export function GuestDetailPage() {
         guestId={guestId!}
         orgId={orgId}
         orgName={activeOrg.org_name}
-        actions={(guest, ban) => (
+        actions={(guest, ban, banKnown) => (
           <>
             <Button
               variant="outline"
@@ -70,6 +70,10 @@ export function GuestDetailPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setDialog({ kind: "unlink", guest })}
+                // The backend refuses to unlink a vanted guest (ban-evasion
+                // guard), so do not offer it.
+                disabled={!!ban}
+                title={ban ? t("unlinkBlockedVanted") : undefined}
               >
                 {t("unlinkMazmoAccount")}
               </Button>
@@ -83,6 +87,7 @@ export function GuestDetailPage() {
               </Button>
             )}
             {isOrgAdmin &&
+              banKnown &&
               (ban ? (
                 <Button
                   variant="outline"

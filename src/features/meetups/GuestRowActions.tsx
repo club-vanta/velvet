@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MoreHorizontal, UserRound } from "lucide-react";
@@ -45,6 +46,7 @@ export function GuestRowActions({
 }) {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const lockedHintId = useId();
 
   const typeMutation = useMutation({
     mutationFn: async (guestType: GuestType) => {
@@ -102,7 +104,11 @@ export function GuestRowActions({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("guestType")}</DropdownMenuLabel>
+              {/* Base UI's GroupLabel only labels the outer Group, so the
+                  radio group gets its own accessible name. */}
               <DropdownMenuRadioGroup
+                aria-label={t("guestType")}
+                aria-describedby={isFinalized ? lockedHintId : undefined}
                 value={currentType}
                 onValueChange={(value: string) => {
                   if (isGuestType(value) && value !== currentType) {
@@ -127,7 +133,10 @@ export function GuestRowActions({
                 ))}
               </DropdownMenuRadioGroup>
               {isFinalized && (
-                <p className="px-1.5 py-1 text-xs text-muted-foreground">
+                <p
+                  id={lockedHintId}
+                  className="px-1.5 py-1 text-xs text-muted-foreground"
+                >
                   {t("guestTypeLockedFinalized")}
                 </p>
               )}

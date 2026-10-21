@@ -172,7 +172,7 @@ export function MeetupStats({
             {
               label: t("guestTypeVendor"),
               value: guest_types.vendor_count,
-              dotClass: "bg-amber-500",
+              dotClass: "bg-emerald-500",
             },
             {
               label: t("guestTypeStaff"),

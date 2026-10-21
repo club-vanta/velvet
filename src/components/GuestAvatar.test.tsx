@@ -14,6 +14,12 @@ describe("GuestAvatar", () => {
     expect(container).toHaveTextContent("S");
   });
 
+  it("keeps an emoji at the start of a name whole", () => {
+    const { container } = render(<GuestAvatar name="🔥Luna Roja" src={null} />);
+    expect(container).toHaveTextContent("🔥R");
+    expect(container.textContent).not.toContain("\uFFFD");
+  });
+
   it("falls back to initials when the image fails to load", () => {
     const { container } = render(
       <GuestAvatar name="Juan Perez" src="https://cdn.example/broken.jpg" />,
