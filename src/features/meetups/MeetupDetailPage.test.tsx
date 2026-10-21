@@ -611,6 +611,7 @@ describe("MeetupDetailPage guest identity extras", () => {
     pronoun: "FEMALE",
     mazmo_suspended: true,
     mazmo_banned: false,
+    mazmo_deleted: false,
     synced_at: "2026-08-01T12:00:00Z",
   };
 

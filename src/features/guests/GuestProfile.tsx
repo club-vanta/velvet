@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, ShieldBan, TriangleAlert } from "lucide-react";
+import { ExternalLink, ShieldBan, TriangleAlert, UserX } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -212,6 +212,7 @@ function IdentityCard({
   const { t } = useLanguage();
   const profile = guest.mazmo_profile;
   const mazmoFlagged = !!profile?.mazmo_banned || !!profile?.mazmo_suspended;
+  const mazmoDeleted = !!profile?.mazmo_deleted;
   const notSet = <span className="text-muted-foreground">{t("notSet")}</span>;
   const DetailsHeading = detailsAs;
 
@@ -243,7 +244,10 @@ function IdentityCard({
             {guest.displayname}
           </Title>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
-            {guest.mazmo_handle ? (
+            {guest.mazmo_handle && mazmoDeleted ? (
+              // The account is gone, so mazmo.net/@handle is a 404.
+              <span className="break-all">@{guest.mazmo_handle}</span>
+            ) : guest.mazmo_handle ? (
               <ExternalProfileLink
                 href={`https://mazmo.net/@${encodeURIComponent(guest.mazmo_handle)}`}
                 label={t("mazmoProfileLink").replace("{0}", guest.mazmo_handle)}
@@ -259,7 +263,7 @@ function IdentityCard({
               </span>
             )}
           </div>
-          {(showBanned || mazmoFlagged) && (
+          {(showBanned || mazmoFlagged || mazmoDeleted) && (
             <div className="flex flex-wrap gap-1.5">
               {showBanned && <Badge variant="destructive">{t("banned")}</Badge>}
               <MazmoFlagBadges profile={profile} />
@@ -491,6 +495,14 @@ export function GuestProfile({
           <AlertDescription className="text-orange-700/90 dark:text-orange-300/90">
             {t("mazmoFlagExplanation")}
           </AlertDescription>
+        </Alert>
+      )}
+
+      {profile?.mazmo_deleted && (
+        <Alert>
+          <UserX />
+          <AlertTitle>{t("mazmoDeletedTitle")}</AlertTitle>
+          <AlertDescription>{t("mazmoDeletedExplanation")}</AlertDescription>
         </Alert>
       )}
 
