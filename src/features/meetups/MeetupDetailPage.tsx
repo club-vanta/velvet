@@ -119,10 +119,12 @@ function PaymentCell({
   isOrgAdmin,
   onMarkPaid,
   onUndoPayment,
+  isFinalized,
 }: {
   guest: MeetupGuest;
   isExempt: boolean;
   isOrgAdmin: boolean;
+  isFinalized: boolean;
   onMarkPaid: () => void;
   onUndoPayment: () => void;
 }) {
@@ -134,21 +136,26 @@ function PaymentCell({
   if (isExempt) {
     return (
       <div className="space-y-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="outline" title={t("paymentExemptHint")}>
-            {t("paymentExempt")}
-          </Badge>
-          {has_paid && <Badge variant="secondary">{t("paid")}</Badge>}
-          {has_paid && isOrgAdmin && (
-            <Button variant="ghost" size="sm" onClick={onUndoPayment}>
-              {t("undoPayment")}
-            </Button>
-          )}
-        </div>
-        {has_paid && paid_at && (
-          <p className="text-xs text-muted-foreground">
-            {formatDateTime(paid_at)}
-          </p>
+        <Badge variant="outline" title={t("paymentExemptHint")}>
+          {t("paymentExempt")}
+        </Badge>
+        {has_paid && (
+          <div className="flex items-center gap-1 flex-wrap text-xs text-muted-foreground">
+            <span>
+              {t("paidBeforeExempt")}
+              {paid_at ? ` · ${formatDateTime(paid_at)}` : ""}
+            </span>
+            {isOrgAdmin && (
+              <Button
+                variant="link"
+                size="xs"
+                className="h-auto px-0 text-xs"
+                onClick={onUndoPayment}
+              >
+                {t("undoPayment")}
+              </Button>
+            )}
+          </div>
         )}
       </div>
     );
@@ -176,7 +183,12 @@ function PaymentCell({
     <div className="flex items-center gap-2 flex-wrap">
       <Badge variant="secondary">{t("paymentPending")}</Badge>
       {isOrgAdmin && (
-        <Button variant="outline" size="sm" onClick={onMarkPaid}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onMarkPaid}
+          disabled={isFinalized}
+        >
           {t("markPaid")}
         </Button>
       )}
@@ -391,7 +403,9 @@ function CheckInBannedDialog({
     onSuccess: (data) => {
       invalidateMeetupGuests(queryClient, orgId, meetupId);
       toast.success(
-        `${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`,
+        t("checkedInToast")
+          .replace("{0}", data!.guest.displayname)
+          .replace("{1}", ordinal(data!.arrival_order)),
       );
       onClose();
     },
@@ -540,7 +554,7 @@ function WalkinDialog({
     },
     onSuccess: ({ guest }) => {
       invalidateMeetupGuests(queryClient, orgId, meetupId);
-      toast.success(`${guest.displayname} added as walk-in`);
+      toast.success(t("walkinAddedToast").replace("{0}", guest.displayname));
       onClose();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -639,7 +653,9 @@ export function MeetupDetailPage() {
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
   const isOrgAdmin = isSiteAdmin || activeOrg?.role === "ADMIN";
   const queryClient = useQueryClient();
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  // The table needs about 1000px; below xl (with the sidebar open) it would
+  // need sideways scrolling to reach "Check in", so cards are used instead.
+  const isDesktop = useMediaQuery("(min-width: 1280px)");
   const [undoTarget, setUndoTarget] = useState<MeetupGuest | null>(null);
   const [bannedTarget, setBannedTarget] = useState<MeetupGuest | null>(null);
   const [walkinOpen, setWalkinOpen] = useState(false);
@@ -715,7 +731,9 @@ export function MeetupDetailPage() {
       invalidateMeetupGuests(queryClient, orgId, id!);
       invalidateAllGuestIdentities(queryClient);
       toast.success(
-        `Synced — ${data!.inserted} new guests added, ${data!.skipped} skipped`,
+        t("syncDoneToast")
+          .replace("{0}", String(data!.inserted))
+          .replace("{1}", String(data!.skipped)),
       );
     },
     onError: (err: Error) => toast.error(err.message),
@@ -741,13 +759,16 @@ export function MeetupDetailPage() {
     onSuccess: (data) => {
       invalidateMeetupGuests(queryClient, orgId, id!);
       toast.success(
-        `${data!.guest.displayname} checked in (${ordinal(data!.arrival_order)})`,
+        t("checkedInToast")
+          .replace("{0}", data!.guest.displayname)
+          .replace("{1}", ordinal(data!.arrival_order)),
       );
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
   const meetup = meetupQ.data;
+  const isFinalized = meetup?.is_finalized ?? false;
   const requiresPayment = meetup?.requires_payment ?? false;
   const paymentStateKnown = meetupQ.isSuccess;
   const rawGuests = guestsQ.data?.guests ?? [];
@@ -824,6 +845,9 @@ export function MeetupDetailPage() {
           </div>
           <div className="flex items-center gap-1.5 flex-wrap empty:hidden">
             <GuestTypeBadge guestType={mg.rsvp.guest_type} />
+            {mg.rsvp.cancelled_rsvp && (
+              <Badge variant="outline">{t("rsvpCancelled")}</Badge>
+            )}
             {mg.rsvp.is_walkin && (
               <Badge variant="outline">{t("walkinLabel")}</Badge>
             )}
@@ -857,6 +881,7 @@ export function MeetupDetailPage() {
         isExempt={rowState(mg).isExempt}
         isOrgAdmin={isOrgAdmin}
         onMarkPaid={() => setMarkPaidTarget(mg)}
+        isFinalized={isFinalized}
         onUndoPayment={() => setUndoPaymentTarget(mg)}
       />
     );
@@ -895,7 +920,8 @@ export function MeetupDetailPage() {
                 checkInMutation.mutate(mg);
               }
             }}
-            disabled={checkInMutation.isPending}
+            disabled={checkInMutation.isPending || isFinalized}
+            title={isFinalized ? t("checkInBlockedFinalized") : undefined}
           >
             {isCheckingIn ? t("checkingIn") : t("checkIn")}
           </Button>
@@ -905,7 +931,7 @@ export function MeetupDetailPage() {
           orgId={orgId}
           meetupId={id!}
           isOrgAdmin={isOrgAdmin}
-          isFinalized={meetup?.is_finalized ?? false}
+          isFinalized={isFinalized}
           onViewProfile={() => openProfile(mg)}
         />
       </div>
@@ -946,9 +972,14 @@ export function MeetupDetailPage() {
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between xl:gap-4">
           <div className="space-y-1 min-w-0">
-            <h1 className="text-2xl font-semibold">{meetup?.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold">{meetup?.name}</h1>
+              {isFinalized && (
+                <Badge variant="secondary">{t("meetupFinalized")}</Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {formatDate(meetup?.date ?? "")}
             </p>
@@ -962,12 +993,12 @@ export function MeetupDetailPage() {
               <ExternalLink className="h-3 w-3 shrink-0" />
             </a>
           </div>
-          <div className="flex flex-wrap gap-2 md:shrink-0 md:justify-end">
+          <div className="flex flex-wrap gap-2 xl:shrink-0 xl:justify-end">
             {isOrgAdmin && (
               <Button
                 variant="outline"
                 onClick={() => setPaymentToggleOpen(true)}
-                disabled={meetup?.is_finalized}
+                disabled={isFinalized}
               >
                 {requiresPayment ? t("disablePayment") : t("enablePayment")}
               </Button>
@@ -975,6 +1006,7 @@ export function MeetupDetailPage() {
             <Button
               variant="outline"
               onClick={() => setWalkinOpen(true)}
+              disabled={isFinalized}
               className="gap-2"
             >
               <UserPlus className="h-4 w-4" />
@@ -983,7 +1015,7 @@ export function MeetupDetailPage() {
             <Button
               variant="outline"
               onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending}
+              disabled={syncMutation.isPending || isFinalized}
               className="gap-2"
             >
               <RefreshCw

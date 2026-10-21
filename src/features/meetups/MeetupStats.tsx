@@ -143,6 +143,7 @@ export function MeetupStats({
         <Progress
           value={percent}
           aria-label={t("statsCheckIns")}
+          getAriaValueText={() => `${percent}%`}
           className="gap-0"
         />
         <StatRows

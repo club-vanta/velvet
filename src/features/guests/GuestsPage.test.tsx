@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -47,18 +47,27 @@ function guest(overrides: Partial<Guest> & { id: string }): Guest {
   };
 }
 
-function renderPage(guests: Guest[]) {
+function renderPage(guests: Guest[], bannedIds: string[] = []) {
   mockApiGet.mockImplementation((path: string) => {
     if (path === "/guests/")
       return Promise.resolve({
         data: { total: guests.length, guests },
         error: undefined,
       });
-    if (path === "/organizations/{org_id}/guests/banned")
+    if (path === "/organizations/{org_id}/guests/banned") {
+      const banned = guests
+        .filter((g) => bannedIds.includes(g.id))
+        .map((g) => ({
+          ...g,
+          banned_at: "2026-08-22T03:00:00Z",
+          banned_reason: "Reason here",
+          banned_by_id: 1,
+        }));
       return Promise.resolve({
-        data: { total: 0, guests: [] },
+        data: { total: banned.length, guests: banned },
         error: undefined,
       });
+    }
     return Promise.resolve({ data: undefined, error: undefined });
   });
 
@@ -150,7 +159,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
 
     expect(
@@ -168,7 +177,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
 
     expect(
@@ -187,7 +196,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
 
     expect(
@@ -222,7 +231,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
     await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
     const nameInput = screen.getByLabelText("Display Name");
@@ -250,7 +259,7 @@ describe("GuestsPage — per-row identity management", () => {
     const user = userEvent.setup();
 
     await user.click(
-      await screen.findByRole("button", { name: "Guest actions" }),
+      await screen.findByRole("button", { name: /^Guest actions/ }),
     );
     await user.click(await screen.findByRole("menuitem", { name: "Edit" }));
     const igInput = screen.getByLabelText("Instagram (optional)");
@@ -371,5 +380,32 @@ describe("GuestsPage — search", () => {
     expect(
       screen.getByPlaceholderText("Search guest list…"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("GuestsPage — vant flag in the all guests tab", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("marks guests vanted in this org, and only them", async () => {
+    renderPage(
+      [
+        guest({ id: "g-v", displayname: "Vanted One" }),
+        guest({ id: "g-ok", displayname: "Fine One" }),
+      ],
+      ["g-v"],
+    );
+
+    const vantedRow = (
+      await screen.findByRole("link", { name: "Vanted One" })
+    ).closest("tr")!;
+    expect(await within(vantedRow).findByText("Vanted")).toBeInTheDocument();
+    const fineRow = screen
+      .getByRole("link", { name: "Fine One" })
+      .closest("tr")!;
+    expect(within(fineRow).queryByText("Vanted")).not.toBeInTheDocument();
   });
 });

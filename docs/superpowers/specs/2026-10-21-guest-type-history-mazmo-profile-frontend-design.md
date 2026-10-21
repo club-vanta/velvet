@@ -108,14 +108,22 @@ Mazmo's `suspended`/`banned` flags get their own amber "Suspended on Mazmo" /
 a tooltip that states they come from Mazmo. The profile repeats this in a
 callout.
 
-### The guest list becomes cards on phones
+### The guest list becomes cards below `xl`
 
-At the door, staff use phones. The table needed a horizontal scroll to reach
-"Check in", so below `md` the list renders as one card per guest: identity
-on top, status and payment below, and the check-in button and actions menu
-pinned to the right. Both layouts share the same cell renderers, and only
-one is mounted at a time (`useMediaQuery`) so ids and accessible names never
-appear twice. The stats panel uses two columns on phones.
+At the door, staff use phones and tablets. The table is about 1000px wide,
+so next to the sidebar it needed a horizontal scroll to reach "Check in" on
+anything narrower than `xl` (1280px). Below `xl` the list renders as one
+card per guest: identity on top, status and payment below, and the check-in
+button and actions menu pinned to the right. Both layouts share the same
+cell renderers, and only one is mounted at a time (`useMediaQuery`) so ids
+and accessible names never appear twice. The stats panel uses two columns
+below `xl`.
+
+### Finalized meetups say so
+
+The header shows a "Finalized" badge, and check-in, walk-in, sync, and
+"Mark paid" are disabled, matching the backend 409s. Undo check-in and undo
+payment stay available, since the backend allows them as corrections.
 
 ### Stable row order
 

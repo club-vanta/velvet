@@ -413,7 +413,8 @@ describe("MeetupDetailPage guest type payment exemption", () => {
     ]);
 
     expect(await screen.findByText("Exempt")).toBeInTheDocument();
-    expect(screen.getByText("Paid")).toBeInTheDocument();
+    // Shown as a secondary note, never as the primary "Paid" badge.
+    expect(screen.getByText(/^Paid ·/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Undo payment" }),
     ).toBeInTheDocument();
@@ -742,5 +743,40 @@ describe("MeetupDetailPage on phones", () => {
     expect(
       within(unpaid!).getByRole("button", { name: "Mark paid" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage finalized meetup", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("marks the meetup finalized and blocks actions the backend refuses", async () => {
+    renderPage({ ...MEETUP, is_finalized: true, requires_payment: false }, [
+      guest({ mazmo_user_id: 70, displayname: "After Hours", has_paid: false }),
+    ]);
+
+    expect(await screen.findByText("Finalized")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add walk-in" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Sync from Mazmo" }),
+    ).toBeDisabled();
+  });
+
+  it("marks a cancelled RSVP with a label, not only with opacity", async () => {
+    const cancelled = guest({
+      mazmo_user_id: 71,
+      displayname: "Gone",
+      has_paid: false,
+    });
+    cancelled.rsvp.cancelled_rsvp = true;
+    renderPage({ ...MEETUP, requires_payment: false }, [cancelled]);
+
+    expect(await screen.findByText("Cancelled")).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ArrowUp, ArrowDown, ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -112,11 +113,14 @@ function SortableHead({
 // tab this always falls back to initials and shows no Mazmo flags.
 function GuestNameCell({
   guest,
+  isBanned = false,
   className,
 }: {
   guest: Pick<Guest, "id" | "displayname" | "mazmo_profile">;
+  isBanned?: boolean;
   className?: string;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="flex items-center gap-3 min-w-0">
       <GuestAvatar
@@ -126,13 +130,16 @@ function GuestNameCell({
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <Link
           to={`/guests/${guest.id}`}
+          title={guest.displayname}
           className={cn(
             "truncate font-medium underline-offset-4 hover:underline",
+            isBanned && "text-destructive",
             className,
           )}
         >
           {guest.displayname}
         </Link>
+        {isBanned && <Badge variant="destructive">{t("banned")}</Badge>}
         <MazmoFlagBadges profile={guest.mazmo_profile} />
       </div>
     </div>
@@ -338,6 +345,22 @@ function AllGuestsTab({
     placeholderData: keepPreviousData,
   });
 
+  // GuestPublic has no org ban state, so vants come from the org's list
+  // (same query and cache as the Vanted tab).
+  const bannedQ = useQuery({
+    queryKey: ["guests-banned", orgId],
+    queryFn: async () => {
+      const { data, error } = await api.GET(
+        "/organizations/{org_id}/guests/banned",
+        { params: { path: { org_id: orgId } } },
+      );
+      if (error) throw new Error("Failed to load banned guests");
+      return data;
+    },
+    enabled: !!orgId,
+  });
+  const bannedIds = new Set(bannedQ.data?.guests.map((g) => g.id) ?? []);
+
   function handleSort(col: string) {
     if (col === sortCol) {
       if (sortDir === "asc") setSortDir("desc");
@@ -467,7 +490,7 @@ function AllGuestsTab({
             {guests?.map((g) => (
               <TableRow key={g.id}>
                 <TableCell>
-                  <GuestNameCell guest={g} />
+                  <GuestNameCell guest={g} isBanned={bannedIds.has(g.id)} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {g.mazmo_handle ? `@${g.mazmo_handle}` : t("noMazmoHandle")}
@@ -485,7 +508,7 @@ function AllGuestsTab({
                         <Button
                           variant="ghost"
                           size="sm"
-                          aria-label={t("guestActions")}
+                          aria-label={`${t("guestActions")}: ${g.displayname}`}
                         />
                       }
                     >

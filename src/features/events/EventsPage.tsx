@@ -150,7 +150,7 @@ export function EventsPage() {
             setOffset(0);
           }}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48" aria-label={t("type")}>
             <SelectValue placeholder={t("allEvents")}>
               {eventType === "all"
                 ? t("allEvents")
