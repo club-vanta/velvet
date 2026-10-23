@@ -1,3 +1,5 @@
+import { foldForSearch } from "@/lib/searchText";
+
 export type SortDir = "asc" | "desc";
 
 const collator = new Intl.Collator(undefined, {
@@ -5,15 +7,29 @@ const collator = new Intl.Collator(undefined, {
   numeric: true,
 });
 
+// Sorting compares each name about log2(n) times, so a thousand guests would
+// fold the same names tens of thousands of times. Names repeat across
+// renders and lists, so their keys are kept, up to a cap (names, handles,
+// and Instagram users run a few per guest).
+const sortKeys = new Map<string, string>();
+const MAX_SORT_KEYS = 20_000;
+
 /**
- * Mazmo names are often decorated: styled Unicode letters ("𝑩𝑨𝑹𝑴𝑨𝑵") and
- * leading emoji or symbols ("☆ selene ☆"). NFKC folds the styled letters to
- * plain ones and the leading decoration is skipped, so "☆ selene" files
- * under S. A name with no letters or digits at all keeps its raw form.
+ * Mazmo names are often decorated: styled Unicode letters ("𝑩𝑨𝑹𝑴𝑨𝑵",
+ * "ʙᴀʀᴍᴀɴ") and leading emoji or symbols ("☆ selene ☆"). They are folded
+ * the same way search folds them, and the leading decoration is skipped, so
+ * "☆ selene" files under S. A name with no letters or digits at all keeps
+ * its folded form.
  */
 function nameSortKey(name: string): string {
-  const folded = name.normalize("NFKC");
-  return folded.replace(/^[^\p{L}\p{N}]+/u, "") || folded;
+  let key = sortKeys.get(name);
+  if (key === undefined) {
+    const folded = foldForSearch(name);
+    key = folded.replace(/^[^\p{L}\p{N}]+/u, "") || folded;
+    if (sortKeys.size >= MAX_SORT_KEYS) sortKeys.clear();
+    sortKeys.set(name, key);
+  }
+  return key;
 }
 
 /** Compares names the way staff read them; see nameSortKey. */

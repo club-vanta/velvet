@@ -510,9 +510,10 @@ function AllGuestsTab({
     },
     enabled: !!orgId,
   });
-  // Explicit memos: the compiler keys `bannedQ.data?.guests` on the whole
-  // query result, a new object every render, so it would rebuild the set and
-  // re-sort a thousand guests on each keystroke (measured).
+  // Explicit memos: the React Compiler can't memoize a value that lives
+  // across a hook call (`viewed` goes into useGuestSearch, `bannedIds` is read
+  // in the rows below), so without these every keystroke re-sorted a
+  // thousand guests (measured).
   const bannedIds = useMemo(
     () => new Set(bannedQ.data?.guests.map((g) => g.id) ?? []),
     [bannedQ.data],

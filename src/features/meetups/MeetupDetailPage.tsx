@@ -581,8 +581,9 @@ function WalkinDialog({
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Explicit memo: the compiler would key this on the whole query result,
-  // a new object every render, and re-fold the directory on each keystroke.
+  // Explicit memo: the React Compiler can't memoize a value passed into a
+  // hook (useGuestSearch), and a new array would re-fold the directory on
+  // each keystroke.
   const eligible = useMemo(
     () =>
       (allGuestsQ.data?.guests ?? []).filter((g) => !alreadyRsvped.has(g.id)),
