@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -581,12 +581,10 @@ function WalkinDialog({
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Explicit memo: the compiler would key this on the whole query result,
-  // a new object every render, and re-fold the directory on each keystroke.
-  const eligible = useMemo(
-    () =>
-      (allGuestsQ.data?.guests ?? []).filter((g) => !alreadyRsvped.has(g.id)),
-    [allGuestsQ.data, alreadyRsvped],
+  // The React Compiler caches this, so typing doesn't re-fold the directory.
+  // It stops if `eligible` is read after the hooks below (see AllGuestsTab).
+  const eligible = (allGuestsQ.data?.guests ?? []).filter(
+    (g) => !alreadyRsvped.has(g.id),
   );
   const {
     search,

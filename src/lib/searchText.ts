@@ -8,17 +8,28 @@ const EXTRA_FOLDS: Record<string, string> = {
   ø: "o", ł: "l", đ: "d", ħ: "h", ı: "i", ß: "ss", æ: "ae", œ: "oe", þ: "th",
 };
 
+const foldExtras = (text: string) =>
+  text.replace(/[^\p{ASCII}]/gu, (ch) => EXTRA_FOLDS[ch] ?? ch);
+
 /**
- * Folds text so a search matches the way staff type: styled Mazmo letters
- * ("𝑩𝑨𝑹𝑴𝑨𝑵", "ʙᴀʀᴍᴀɴ") become plain ones, accents are dropped ("Pérez"
- * matches "perez"), and case is ignored.
+ * Turns styled letters into plain ones ("𝑩𝑨𝑹𝑴𝑨𝑵", "ʙᴀʀᴍᴀɴ" become
+ * "barman"), maps stroke and ligature letters (ø, ł, æ, ß) to ASCII, and
+ * lowercases. Combining accents (á, ñ) are kept, so sorting can leave them
+ * to the collator and still order "Ñandú" after "Nicolás".
+ */
+export function foldStyles(text: string): string {
+  return foldExtras(text.normalize("NFKC").toLowerCase());
+}
+
+/**
+ * Folds text so a search matches the way staff type: like foldStyles, but
+ * accents are dropped too ("perez" finds "Pérez", "nandu" finds "Ñandú").
+ * Accents come off before the extra letters are mapped, so "ǿ" ends up "o".
  */
 export function foldForSearch(text: string): string {
-  return text
-    .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^\p{ASCII}]/gu, (ch) => EXTRA_FOLDS[ch] ?? ch);
+  return foldExtras(
+    text.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase(),
+  );
 }
 
 /**
