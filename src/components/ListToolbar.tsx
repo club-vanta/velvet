@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { ArrowDownUp, ListFilter, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,6 +204,62 @@ export function FilterChips({
           {t("clearFilters")}
         </Button>
       )}
+    </div>
+  );
+}
+
+/**
+ * The nearest ancestor that actually scrolls (a dialog's list), or null for
+ * the viewport. An overflow:auto box that grows with its content, like the
+ * app's <main>, doesn't count: the window scrolls instead.
+ */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const scrolls = /(auto|scroll)/.test(getComputedStyle(p).overflowY);
+    if (scrolls && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+
+/**
+ * Shows the next page of a long list (see useIncrementalList). Also fires on
+ * its own when scrolled near, so scrolling feels continuous; clicking it
+ * keeps working for keyboard users and where IntersectionObserver is missing.
+ */
+export function ShowMoreButton({
+  count,
+  onShowMore,
+}: {
+  /** Rows the next page adds; renders nothing at 0. */
+  count: number;
+  onShowMore: () => void;
+}) {
+  const { t } = useLanguage();
+  // A callback ref, so the observer attaches whenever the button mounts,
+  // including when a new search brings it back. Stable, so re-renders don't
+  // re-observe (a fresh observer reports at once and would load a page).
+  const observe = useCallback(
+    (el: HTMLButtonElement | null) => {
+      if (!el || typeof IntersectionObserver === "undefined") return;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) onShowMore();
+        },
+        // The margin only applies relative to whatever scrolls.
+        { root: scrollParent(el), rootMargin: "800px 0px" },
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+    },
+    [onShowMore],
+  );
+
+  if (count <= 0) return null;
+  return (
+    <div className="flex justify-center">
+      <Button ref={observe} variant="outline" onClick={onShowMore}>
+        {t("showMoreCount").replace("{0}", String(count))}
+      </Button>
     </div>
   );
 }

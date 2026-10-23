@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,7 +64,10 @@ import {
 } from "@/lib/guestListView";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useAllGuests } from "@/hooks/useAllGuests";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
+import { ShowMoreButton } from "@/components/ListToolbar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRelativeDay } from "@/hooks/useRelativeDay";
 import { isPaymentExempt } from "@/lib/guestType";
@@ -82,6 +85,8 @@ import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
 type Guest = components["schemas"]["GuestPublic"];
+
+const rsvpGuest = (mg: MeetupGuest) => mg.guest;
 
 function SortIcon({
   col,
@@ -547,17 +552,9 @@ function WalkinDialog({
   onClose: () => void;
 }) {
   const { t } = useLanguage();
-  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
-  const allGuestsQ = useQuery({
-    queryKey: ["guests"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/guests/");
-      if (error) throw new Error("Failed to load guests");
-      return data;
-    },
-  });
+  const allGuestsQ = useAllGuests();
 
   const mutation = useMutation({
     mutationFn: async (guest: Guest) => {
@@ -584,13 +581,23 @@ function WalkinDialog({
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const q = search.trim().toLowerCase();
-  const candidates = (allGuestsQ.data?.guests ?? []).filter(
-    (g) =>
-      !alreadyRsvped.has(g.id) &&
-      (q === "" ||
-        g.displayname.toLowerCase().includes(q) ||
-        (g.mazmo_handle ?? "").toLowerCase().includes(q)),
+  // Explicit memo: the compiler would key this on the whole query result,
+  // a new object every render, and re-fold the directory on each keystroke.
+  const eligible = useMemo(
+    () =>
+      (allGuestsQ.data?.guests ?? []).filter((g) => !alreadyRsvped.has(g.id)),
+    [allGuestsQ.data, alreadyRsvped],
+  );
+  const {
+    search,
+    setSearch,
+    filtered: candidates = [],
+    query,
+  } = useGuestSearch(eligible);
+  // The whole directory can be a thousand guests; mount them a page at a time.
+  const { visible, nextCount, showMore } = useIncrementalList(
+    candidates,
+    query,
   );
 
   return (
@@ -621,11 +628,11 @@ function WalkinDialog({
           )}
           {!allGuestsQ.isLoading && candidates.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4 whitespace-pre-line">
-              {q ? t("noEligibleGuests") : t("allGuestsOnList")}
+              {query ? t("noEligibleGuests") : t("allGuestsOnList")}
             </p>
           )}
           <div className="space-y-1 max-h-64 overflow-y-auto">
-            {candidates.map((g) => (
+            {visible?.map((g) => (
               <div
                 key={g.id}
                 className="flex items-center justify-between gap-3 rounded-md px-3 py-2 hover:bg-secondary/50"
@@ -656,6 +663,7 @@ function WalkinDialog({
                 </Button>
               </div>
             ))}
+            <ShowMoreButton count={nextCount} onShowMore={showMore} />
           </div>
         </div>
         <DialogFooter>
@@ -804,10 +812,7 @@ export function MeetupDetailPage() {
     search,
     setSearch,
     filtered: guests,
-  } = useGuestSearch(viewed, (g) => ({
-    displayname: g.guest.displayname,
-    mazmoHandle: g.guest.mazmo_handle,
-  }));
+  } = useGuestSearch(viewed, rsvpGuest);
 
   function rowState(mg: MeetupGuest) {
     const isExempt = isPaymentExempt(mg.rsvp.guest_type);
