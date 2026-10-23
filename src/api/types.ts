@@ -217,6 +217,34 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/guests/{guest_id}/meetups": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List the meetups of this organization a guest signed up for, with attendance
+     * @description Every meetup of this organization the guest has an RSVP for (signed up
+     *     on Mazmo, or added at the door as a walk-in), newest first, each with
+     *     its attendance status. Meetups of other organizations never appear.
+     *
+     *     A meetup only counts as a NO_SHOW once it is finalized; before that a
+     *     guest who has not arrived is UPCOMING. Cancelling is not a no-show.
+     *
+     *     Returns 404 if the organization or the guest doesn't exist. A guest
+     *     with no RSVPs in this organization gets an empty list.
+     */
+    get: operations["list_guest_meetups_organizations__org_id__guests__guest_id__meetups_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/organizations/{org_id}/guests/{guest_id}/ban": {
     parameters: {
       query?: never;
@@ -1480,6 +1508,45 @@ export interface components {
       reason?: string | null;
     };
     /**
+     * GuestAttendanceStatus
+     * @description Outcome of one guest's RSVP to one meetup. Derived from the RSVP and
+     *     meetup flags, never stored: see app.services.attendance for the rule.
+     *
+     *     ATTENDED:  checked in after signing up.
+     *     WALKIN:    checked in at the door without signing up. Counts as attended.
+     *     CANCELLED: withdrew the RSVP on Mazmo and never checked in.
+     *     NO_SHOW:   signed up, did not cancel, and the meetup was finalized
+     *                without a check-in.
+     *     UPCOMING:  signed up and the meetup is not finalized yet, so not having
+     *                arrived says nothing yet.
+     * @enum {string}
+     */
+    GuestAttendanceStatus:
+      | "ATTENDED"
+      | "WALKIN"
+      | "CANCELLED"
+      | "NO_SHOW"
+      | "UPCOMING";
+    /**
+     * GuestAttendanceSummary
+     * @description Counts of a guest's meetups in one org by status.
+     *
+     *     attended includes walk-ins; walkin is the subset of attended who came
+     *     without signing up. attended + no_show + cancelled + upcoming == total.
+     */
+    GuestAttendanceSummary: {
+      /** Attended */
+      attended: number;
+      /** Walkin */
+      walkin: number;
+      /** No Show */
+      no_show: number;
+      /** Cancelled */
+      cancelled: number;
+      /** Upcoming */
+      upcoming: number;
+    };
+    /**
      * GuestDisplaynameHistoryListResponse
      * @description Full displayname history for a guest, newest first.
      *
@@ -1571,6 +1638,54 @@ export interface components {
       refreshed: number;
       /** Not Found */
       not_found: number;
+    };
+    /**
+     * GuestMeetupAttendanceListResponse
+     * @description Every meetup of one org a guest has an RSVP row for, newest first.
+     *
+     *     Not paginated: a guest attends at most a few dozen meetups of one org.
+     */
+    GuestMeetupAttendanceListResponse: {
+      /** Total */
+      total: number;
+      summary: components["schemas"]["GuestAttendanceSummary"];
+      /** Meetups */
+      meetups: components["schemas"]["GuestMeetupAttendancePublic"][];
+    };
+    /**
+     * GuestMeetupAttendancePublic
+     * @description One meetup of the org that a guest signed up for or walked into, with
+     *     its attendance outcome (see app.services.attendance).
+     *
+     *     rsvp_time for a WALKIN is when staff added them at the door, not a
+     *     sign-up.
+     */
+    GuestMeetupAttendancePublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      status: components["schemas"]["GuestAttendanceStatus"];
+      /**
+       * Rsvp Time
+       * Format: date-time
+       */
+      rsvp_time: string;
+      /** Arrival Time */
+      arrival_time?: string | null;
+      /**
+       * Guest Type
+       * @default NORMAL
+       */
+      guest_type: string;
     };
     /**
      * GuestPublic
@@ -2861,6 +2976,65 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["BannedGuestListResponse"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_guest_meetups_organizations__org_id__guests__guest_id__meetups_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        guest_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The guest's meetups in this organization, newest first, with attendance */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GuestMeetupAttendanceListResponse"];
         };
       };
       /** @description Invalid or missing credentials */

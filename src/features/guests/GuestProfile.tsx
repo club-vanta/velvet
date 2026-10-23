@@ -20,6 +20,14 @@ import {
 } from "@/lib/mazmoProfile";
 import { guestHistoryKey, guestKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
+import { GuestMeetups } from "./GuestMeetups";
+import {
+  SectionError,
+  SectionSkeleton,
+  SectionTitle,
+  Timeline,
+  TimelineItem,
+} from "./ProfileSection";
 
 type Guest = components["schemas"]["GuestPublic"];
 type BannedGuest = components["schemas"]["BannedGuestPublic"];
@@ -33,20 +41,6 @@ const SOURCE_LABEL: Record<string, TranslationKey> = {
 };
 
 class GuestNotFoundError extends Error {}
-
-function SectionTitle({
-  as: Heading,
-  children,
-}: {
-  as: "h2" | "h3";
-  children: React.ReactNode;
-}) {
-  return (
-    <Heading className="text-sm font-medium text-muted-foreground">
-      {children}
-    </Heading>
-  );
-}
 
 function HistoryItem({
   entry,
@@ -66,15 +60,7 @@ function HistoryItem({
   ].filter(Boolean);
 
   return (
-    <li className="relative pl-6 pb-4 last:pb-0">
-      <span
-        aria-hidden="true"
-        className={
-          isCurrent
-            ? "absolute left-0 top-1.5 size-2.5 -translate-x-[calc(50%-0.5px)] rounded-full bg-foreground"
-            : "absolute left-0 top-1.5 size-2.5 -translate-x-[calc(50%-0.5px)] rounded-full border-2 border-muted-foreground/60 bg-background"
-        }
-      />
+    <TimelineItem marker={isCurrent ? "filled" : "hollow"}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium break-words">{entry.displayname}</span>
         {isCurrent && <Badge variant="secondary">{t("historyCurrent")}</Badge>}
@@ -85,7 +71,7 @@ function HistoryItem({
           {t("historyBackfillHint")}
         </p>
       )}
-    </li>
+    </TimelineItem>
   );
 }
 
@@ -112,26 +98,18 @@ function NameHistory({
   return (
     <section className="space-y-3">
       <SectionTitle as={headingAs}>{t("nameHistory")}</SectionTitle>
-      {historyQ.isLoading && (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full" />
-          ))}
-        </div>
-      )}
+      {historyQ.isLoading && <SectionSkeleton />}
       {historyQ.isError && (
-        <div className="flex items-center justify-between gap-2 text-sm text-destructive">
-          {t("failedLoadHistory")}
-          <Button variant="ghost" size="sm" onClick={() => historyQ.refetch()}>
-            {t("retry")}
-          </Button>
-        </div>
+        <SectionError
+          message={t("failedLoadHistory")}
+          onRetry={() => void historyQ.refetch()}
+        />
       )}
       {historyQ.data && historyQ.data.history.length === 0 && (
         <p className="text-sm text-muted-foreground">{t("historyEmpty")}</p>
       )}
       {historyQ.data && historyQ.data.history.length > 0 && (
-        <ol className="ml-1.5 border-l border-border">
+        <Timeline>
           {historyQ.data.history.map((entry, i) => (
             <HistoryItem
               // The API has no row id; the timestamp plus value is unique
@@ -141,7 +119,7 @@ function NameHistory({
               isCurrent={i === 0}
             />
           ))}
-        </ol>
+        </Timeline>
       )}
     </section>
   );
@@ -342,7 +320,8 @@ function IdentityCard({
 
 /**
  * Everything known about a guest: identity, org vant status, Mazmo's own
- * account flags, the Mazmo profile snapshot, and the displayname history.
+ * account flags, the Mazmo profile snapshot, the displayname history, and
+ * the meetups of this org the guest signed up for.
  *
  * Rendered both as the /guests/:guestId page and inside a side sheet on the
  * meetup page, so the heading level and the actions are passed in.
@@ -507,6 +486,7 @@ export function GuestProfile({
       )}
 
       <NameHistory guestId={guest.id} headingAs={sectionAs} />
+      <GuestMeetups guestId={guest.id} orgId={orgId} headingAs={sectionAs} />
     </div>
   );
 }
