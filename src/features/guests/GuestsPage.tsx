@@ -539,9 +539,13 @@ function AllGuestsTab({
     search,
     setSearch,
     filtered: guests,
+    query,
   } = useGuestSearch(viewed, searchFields);
-  const { visible, nextCount, showMore } = useIncrementalList(guests);
-  const searching = search.trim() !== "";
+  const { visible, nextCount, showMore } = useIncrementalList(
+    guests,
+    JSON.stringify([query, sort, filters]),
+  );
+  const searching = query !== "";
   const active = activeDirectoryFilters(filters);
   const setFilter = <K extends keyof DirectoryFilters>(
     key: K,
@@ -783,8 +787,12 @@ function BannedGuestsTab({
     search,
     setSearch,
     filtered: guests,
+    query,
   } = useGuestSearch(sorted, searchFields);
-  const { visible, nextCount, showMore } = useIncrementalList(guests);
+  const { visible, nextCount, showMore } = useIncrementalList(
+    guests,
+    JSON.stringify([query, sort]),
+  );
 
   return (
     <>
@@ -811,7 +819,7 @@ function BannedGuestsTab({
           </ListToolbarRow>
           <FilterChips
             chips={[]}
-            narrowed={search.trim() !== ""}
+            narrowed={query !== ""}
             shown={guests?.length ?? 0}
             total={data?.guests.length ?? 0}
             onClear={() => {}}

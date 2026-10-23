@@ -1,6 +1,16 @@
+// Letters that NFKC and accent stripping leave alone: small caps, which
+// Mazmo names use for decoration, and letters with a stroke or ligature.
+// prettier-ignore
+const EXTRA_FOLDS: Record<string, string> = {
+  ᴀ: "a", ʙ: "b", ᴄ: "c", ᴅ: "d", ᴇ: "e", ꜰ: "f", ɢ: "g", ʜ: "h", ɪ: "i",
+  ᴊ: "j", ᴋ: "k", ʟ: "l", ᴍ: "m", ɴ: "n", ᴏ: "o", ᴘ: "p", ǫ: "q", ʀ: "r",
+  ꜱ: "s", ᴛ: "t", ᴜ: "u", ᴠ: "v", ᴡ: "w", ʏ: "y", ᴢ: "z",
+  ø: "o", ł: "l", đ: "d", ħ: "h", ı: "i", ß: "ss", æ: "ae", œ: "oe", þ: "th",
+};
+
 /**
  * Folds text so a search matches the way staff type: styled Mazmo letters
- * ("𝑩𝑨𝑹𝑴𝑨𝑵") become plain ones (NFKC), accents are dropped ("Pérez"
+ * ("𝑩𝑨𝑹𝑴𝑨𝑵", "ʙᴀʀᴍᴀɴ") become plain ones, accents are dropped ("Pérez"
  * matches "perez"), and case is ignored.
  */
 export function foldForSearch(text: string): string {
@@ -8,7 +18,8 @@ export function foldForSearch(text: string): string {
     .normalize("NFKC")
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[^\p{ASCII}]/gu, (ch) => EXTRA_FOLDS[ch] ?? ch);
 }
 
 /**

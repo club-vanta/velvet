@@ -10,6 +10,11 @@ describe("foldForSearch", () => {
     expect(foldForSearch("𝑩𝑨𝑹𝑴𝑨𝑵")).toBe("barman");
   });
 
+  it("folds small caps and letters with a stroke or ligature", () => {
+    expect(foldForSearch("ʙᴀʀᴍᴀɴ")).toBe("barman");
+    expect(foldForSearch("Øyvind Łukasz Straße")).toBe("oyvind lukasz strasse");
+  });
+
   it("keeps emoji and symbols", () => {
     expect(foldForSearch("☆ Luna 🌙")).toBe("☆ luna 🌙");
   });

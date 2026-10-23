@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { ArrowDownUp, ListFilter, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -222,24 +223,28 @@ export function ShowMoreButton({
 }) {
   const { t } = useLanguage();
   // A callback ref, so the observer attaches whenever the button mounts,
-  // including when a new search brings it back.
-  const observe = (el: HTMLButtonElement | null) => {
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) onShowMore();
-      },
-      { rootMargin: "800px 0px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  };
+  // including when a new search brings it back. Stable, so re-renders don't
+  // re-observe (a fresh observer reports at once and would load a page).
+  const observe = useCallback(
+    (el: HTMLButtonElement | null) => {
+      if (!el || typeof IntersectionObserver === "undefined") return;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) onShowMore();
+        },
+        { rootMargin: "800px 0px" },
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+    },
+    [onShowMore],
+  );
 
   if (count <= 0) return null;
   return (
     <div className="flex justify-center">
       <Button ref={observe} variant="outline" onClick={onShowMore}>
-        {t("showMoreGuests").replace("{0}", String(count))}
+        {t("showMoreCount").replace("{0}", String(count))}
       </Button>
     </div>
   );

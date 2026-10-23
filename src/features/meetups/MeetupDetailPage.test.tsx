@@ -1061,3 +1061,45 @@ describe("MeetupDetailPage profile sheet vant fallback", () => {
     expect(within(sheet).getByText("Vanted")).toBeInTheDocument();
   });
 });
+
+describe("MeetupDetailPage walk-in picker", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  it("searches the directory the same way as the Guests page", async () => {
+    const onList = guest({ mazmo_user_id: 1, displayname: "Juan Perez Ya" });
+    renderPage({ ...MEETUP, requires_payment: false }, [onList]);
+    const directory = [
+      onList.guest,
+      { ...guest({ mazmo_user_id: 2, displayname: "Juan Pérez" }).guest },
+      { ...guest({ mazmo_user_id: 3, displayname: "ʙᴀʀᴍᴀɴ" }).guest },
+    ];
+    const base = mockApiGet.getMockImplementation()!;
+    mockApiGet.mockImplementation((path: string, opts?: unknown) =>
+      path === "/guests/"
+        ? Promise.resolve({
+            data: { total: directory.length, guests: directory },
+            error: undefined,
+          })
+        : base(path, opts),
+    );
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add walk-in" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByText("ʙᴀʀᴍᴀɴ");
+    await user.type(within(dialog).getByRole("textbox"), "perez");
+
+    await waitFor(() =>
+      expect(within(dialog).queryByText("ʙᴀʀᴍᴀɴ")).not.toBeInTheDocument(),
+    );
+    // Already on the list, so not offered again.
+    expect(within(dialog).queryByText("Juan Perez Ya")).not.toBeInTheDocument();
+    expect(within(dialog).getByText("Juan Pérez")).toBeInTheDocument();
+  });
+});
