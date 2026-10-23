@@ -209,6 +209,19 @@ export function FilterChips({
 }
 
 /**
+ * The nearest ancestor that actually scrolls (a dialog's list), or null for
+ * the viewport. An overflow:auto box that grows with its content, like the
+ * app's <main>, doesn't count: the window scrolls instead.
+ */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const scrolls = /(auto|scroll)/.test(getComputedStyle(p).overflowY);
+    if (scrolls && p.scrollHeight > p.clientHeight) return p;
+  }
+  return null;
+}
+
+/**
  * Shows the next page of a long list (see useIncrementalList). Also fires on
  * its own when scrolled near, so scrolling feels continuous; clicking it
  * keeps working for keyboard users and where IntersectionObserver is missing.
@@ -232,7 +245,8 @@ export function ShowMoreButton({
         (entries) => {
           if (entries.some((e) => e.isIntersecting)) onShowMore();
         },
-        { rootMargin: "800px 0px" },
+        // The margin only applies relative to whatever scrolls.
+        { root: scrollParent(el), rootMargin: "800px 0px" },
       );
       observer.observe(el);
       return () => observer.disconnect();

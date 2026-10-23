@@ -64,6 +64,7 @@ import {
 } from "@/lib/guestListView";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useAllGuests } from "@/hooks/useAllGuests";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { ShowMoreButton } from "@/components/ListToolbar";
@@ -85,13 +86,7 @@ import type { components } from "@/api/types";
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
 type Guest = components["schemas"]["GuestPublic"];
 
-// Module-level so useGuestSearch only re-folds names when a list changes.
-const guestSearchFields = (g: Guest) => ({
-  displayname: g.displayname,
-  mazmoHandle: g.mazmo_handle,
-});
-const meetupGuestSearchFields = (mg: MeetupGuest) =>
-  guestSearchFields(mg.guest);
+const rsvpGuest = (mg: MeetupGuest) => mg.guest;
 
 function SortIcon({
   col,
@@ -559,14 +554,7 @@ function WalkinDialog({
   const { t } = useLanguage();
   const queryClient = useQueryClient();
 
-  const allGuestsQ = useQuery({
-    queryKey: ["guests"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/guests/");
-      if (error) throw new Error("Failed to load guests");
-      return data;
-    },
-  });
+  const allGuestsQ = useAllGuests();
 
   const mutation = useMutation({
     mutationFn: async (guest: Guest) => {
@@ -593,6 +581,8 @@ function WalkinDialog({
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // Explicit memo: the compiler would key this on the whole query result,
+  // a new object every render, and re-fold the directory on each keystroke.
   const eligible = useMemo(
     () =>
       (allGuestsQ.data?.guests ?? []).filter((g) => !alreadyRsvped.has(g.id)),
@@ -603,7 +593,7 @@ function WalkinDialog({
     setSearch,
     filtered: candidates = [],
     query,
-  } = useGuestSearch(eligible, guestSearchFields);
+  } = useGuestSearch(eligible);
   // The whole directory can be a thousand guests; mount them a page at a time.
   const { visible, nextCount, showMore } = useIncrementalList(
     candidates,
@@ -822,7 +812,7 @@ export function MeetupDetailPage() {
     search,
     setSearch,
     filtered: guests,
-  } = useGuestSearch(viewed, meetupGuestSearchFields);
+  } = useGuestSearch(viewed, rsvpGuest);
 
   function rowState(mg: MeetupGuest) {
     const isExempt = isPaymentExempt(mg.rsvp.guest_type);

@@ -1070,12 +1070,25 @@ describe("MeetupDetailPage walk-in picker", () => {
   });
 
   it("searches the directory the same way as the Guests page", async () => {
-    const onList = guest({ mazmo_user_id: 1, displayname: "Juan Perez Ya" });
+    const onList = guest({
+      mazmo_user_id: 1,
+      displayname: "Juan Perez Ya",
+      has_paid: false,
+    });
     renderPage({ ...MEETUP, requires_payment: false }, [onList]);
     const directory = [
       onList.guest,
-      { ...guest({ mazmo_user_id: 2, displayname: "Juan Pérez" }).guest },
-      { ...guest({ mazmo_user_id: 3, displayname: "ʙᴀʀᴍᴀɴ" }).guest },
+      {
+        ...guest({
+          mazmo_user_id: 2,
+          displayname: "Juan Pérez",
+          has_paid: false,
+        }).guest,
+      },
+      {
+        ...guest({ mazmo_user_id: 3, displayname: "ʙᴀʀᴍᴀɴ", has_paid: false })
+          .guest,
+      },
     ];
     const base = mockApiGet.getMockImplementation()!;
     mockApiGet.mockImplementation((path: string, opts?: unknown) =>

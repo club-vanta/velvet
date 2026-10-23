@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Fact, FactStrip } from "@/components/FactStrip";
 import { api } from "@/api/client";
+import { useAllGuests } from "@/hooks/useAllGuests";
 import { useAuth } from "@/auth/AuthContext";
 import { useOrg } from "@/lib/org";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
@@ -252,14 +253,7 @@ export function DashboardPage() {
     enabled: !!orgId,
   });
 
-  const guestsQ = useQuery({
-    queryKey: ["guests"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/guests/");
-      if (error) throw new Error("Failed to load guests");
-      return data;
-    },
-  });
+  const guestsQ = useAllGuests();
 
   const pendingQ = useQuery({
     queryKey: ["staff", "pending"],

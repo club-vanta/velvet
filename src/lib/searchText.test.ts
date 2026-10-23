@@ -12,6 +12,7 @@ describe("foldForSearch", () => {
 
   it("folds small caps and letters with a stroke or ligature", () => {
     expect(foldForSearch("ʙᴀʀᴍᴀɴ")).toBe("barman");
+    expect(foldForSearch("ꞯᴜᴇᴇɴ")).toBe("queen");
     expect(foldForSearch("Øyvind Łukasz Straße")).toBe("oyvind lukasz strasse");
   });
 

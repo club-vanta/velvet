@@ -45,6 +45,7 @@ import {
   UnlinkMazmoDialog,
 } from "./GuestDialogs";
 import { useUnbanGuest } from "./useUnbanGuest";
+import { useAllGuests } from "@/hooks/useAllGuests";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { api } from "@/api/client";
@@ -72,12 +73,6 @@ import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];
 type BannedGuest = components["schemas"]["BannedGuestPublic"];
-
-// Module-level so the search index is only rebuilt when the list changes.
-const searchFields = (g: Pick<Guest, "displayname" | "mazmo_handle">) => ({
-  displayname: g.displayname,
-  mazmoHandle: g.mazmo_handle,
-});
 
 const DIRECTORY_SORT_LABEL: Record<DirectorySortKey, TranslationKey> = {
   name: "sortName",
@@ -499,14 +494,7 @@ function AllGuestsTab({
 
   // The whole directory is loaded anyway, so search filters it in the
   // browser: no request per query, and accents and styled names match.
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["guests"],
-    queryFn: async () => {
-      const { data, error } = await api.GET("/guests/");
-      if (error) throw new Error("Failed to load guests");
-      return data;
-    },
-  });
+  const { data, isLoading, isError, refetch } = useAllGuests();
 
   // GuestPublic has no org ban state, so vants come from the org's list
   // (same query and cache as the Vanted tab).
@@ -522,25 +510,22 @@ function AllGuestsTab({
     },
     enabled: !!orgId,
   });
+  // Explicit memos: the compiler keys `bannedQ.data?.guests` on the whole
+  // query result, a new object every render, so it would rebuild the set and
+  // re-sort a thousand guests on each keystroke (measured).
   const bannedIds = useMemo(
     () => new Set(bannedQ.data?.guests.map((g) => g.id) ?? []),
     [bannedQ.data],
   );
   const unbanMutation = useUnbanGuest(orgId);
 
-  // Sorting depends on the list, filters, and sort only, so it doesn't rerun
-  // while typing; the search then narrows the sorted list.
+  // Sort first and search second, so typing doesn't re-sort.
   const viewed = useMemo(
     () =>
       data ? viewDirectory(data.guests, filters, sort, bannedIds) : undefined,
     [data, filters, sort, bannedIds],
   );
-  const {
-    search,
-    setSearch,
-    filtered: guests,
-    query,
-  } = useGuestSearch(viewed, searchFields);
+  const { search, setSearch, filtered: guests, query } = useGuestSearch(viewed);
   const { visible, nextCount, showMore } = useIncrementalList(
     guests,
     JSON.stringify([query, sort, filters]),
@@ -779,16 +764,8 @@ function BannedGuestsTab({
 
   const unbanMutation = useUnbanGuest(orgId);
 
-  const sorted = useMemo(
-    () => (data ? viewVanted(data.guests, sort) : undefined),
-    [data, sort],
-  );
-  const {
-    search,
-    setSearch,
-    filtered: guests,
-    query,
-  } = useGuestSearch(sorted, searchFields);
+  const sorted = data ? viewVanted(data.guests, sort) : undefined;
+  const { search, setSearch, filtered: guests, query } = useGuestSearch(sorted);
   const { visible, nextCount, showMore } = useIncrementalList(
     guests,
     JSON.stringify([query, sort]),
