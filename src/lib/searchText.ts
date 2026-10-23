@@ -9,16 +9,24 @@ const EXTRA_FOLDS: Record<string, string> = {
 };
 
 /**
- * Folds text so a search matches the way staff type: styled Mazmo letters
- * ("𝑩𝑨𝑹𝑴𝑨𝑵", "ʙᴀʀᴍᴀɴ") become plain ones, accents are dropped ("Pérez"
- * matches "perez"), and case is ignored.
+ * Turns styled letters into plain ones ("𝑩𝑨𝑹𝑴𝑨𝑵", "ʙᴀʀᴍᴀɴ" become
+ * "barman") and lowercases, but keeps accents and ñ. Sorting uses this, so
+ * the collator can still order "Ñandú" after "Nicolás".
  */
-export function foldForSearch(text: string): string {
+export function foldStyles(text: string): string {
   return text
-    .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
+    .normalize("NFKC")
     .toLowerCase()
     .replace(/[^\p{ASCII}]/gu, (ch) => EXTRA_FOLDS[ch] ?? ch);
+}
+
+/**
+ * Folds text so a search matches the way staff type: styled letters become
+ * plain ones (see foldStyles) and accents are dropped ("perez" finds
+ * "Pérez", "nandu" finds "Ñandú").
+ */
+export function foldForSearch(text: string): string {
+  return foldStyles(text).normalize("NFD").replace(/\p{M}/gu, "");
 }
 
 /**

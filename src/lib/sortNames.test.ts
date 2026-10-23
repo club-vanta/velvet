@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { compareNames, compareOptional } from "./sortNames";
+import { compareOptional, nameComparer } from "./sortNames";
 
-const sorted = (names: string[]) => [...names].sort(compareNames);
+const sorted = (names: string[]) => [...names].sort(nameComparer());
 
-describe("compareNames", () => {
+describe("nameComparer", () => {
   it("files styled letters and small caps under their plain letter", () => {
     expect(sorted(["Carla", "ʙᴀʀᴍᴀɴ", "𝑨𝒍𝒂𝒏", "Diego"])).toEqual([
       "𝑨𝒍𝒂𝒏",
@@ -19,6 +19,14 @@ describe("compareNames", () => {
       "María",
       "☆ selene ☆",
       "zoe",
+    ]);
+  });
+
+  it("files Ñ after N, by Spanish rules on any device", () => {
+    expect(sorted(["Oscar", "Ñandú", "Nicolás"])).toEqual([
+      "Nicolás",
+      "Ñandú",
+      "Oscar",
     ]);
   });
 
@@ -38,15 +46,11 @@ describe("compareNames", () => {
 describe("compareOptional", () => {
   it("sorts missing values last in either direction", () => {
     const values = ["b", null, "a"];
-    expect([...values].sort((x, y) => compareOptional(x, y, "asc"))).toEqual([
-      "a",
-      "b",
-      null,
-    ]);
-    expect([...values].sort((x, y) => compareOptional(x, y, "desc"))).toEqual([
-      "b",
-      "a",
-      null,
-    ]);
+    expect(
+      [...values].sort((x, y) => compareOptional(x, y, "asc", nameComparer())),
+    ).toEqual(["a", "b", null]);
+    expect(
+      [...values].sort((x, y) => compareOptional(x, y, "desc", nameComparer())),
+    ).toEqual(["b", "a", null]);
   });
 });

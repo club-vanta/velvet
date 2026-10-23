@@ -1,5 +1,5 @@
 import { isPaymentExempt, type GuestType } from "@/lib/guestType";
-import { compareNames, type SortDir } from "@/lib/sortNames";
+import { nameComparer, type SortDir, type TextCompare } from "@/lib/sortNames";
 
 export type { SortDir };
 import type { components } from "@/api/types";
@@ -79,10 +79,15 @@ const byRsvpTime = (a: MeetupGuest, b: MeetupGuest) =>
   a.rsvp.rsvp_time.localeCompare(b.rsvp.rsvp_time) ||
   a.guest.id.localeCompare(b.guest.id);
 
-function compare(a: MeetupGuest, b: MeetupGuest, key: GuestSortKey): number {
+function compare(
+  a: MeetupGuest,
+  b: MeetupGuest,
+  key: GuestSortKey,
+  byName: TextCompare,
+): number {
   switch (key) {
     case "name":
-      return compareNames(a.guest.displayname, b.guest.displayname);
+      return byName(a.guest.displayname, b.guest.displayname);
     case "rsvp":
       return a.rsvp.rsvp_time.localeCompare(b.rsvp.rsvp_time);
     case "arrival":
@@ -100,6 +105,7 @@ export function viewGuestList(
   requiresPayment: boolean,
 ): MeetupGuest[] {
   const sign = sort.dir === "asc" ? 1 : -1;
+  const byName = nameComparer();
   return guests
     .filter((mg) => matches(mg, filters, requiresPayment))
     .sort((a, b) => {
@@ -109,11 +115,12 @@ export function viewGuestList(
         const aNone = a.rsvp.arrival_order == null;
         const bNone = b.rsvp.arrival_order == null;
         if (aNone !== bNone) return aNone ? 1 : -1;
-        if (aNone && bNone) return compare(a, b, "name") || byRsvpTime(a, b);
+        if (aNone && bNone)
+          return compare(a, b, "name", byName) || byRsvpTime(a, b);
       }
       return (
-        sign * compare(a, b, sort.key) ||
-        (sort.key !== "name" ? compare(a, b, "name") : 0) ||
+        sign * compare(a, b, sort.key, byName) ||
+        (sort.key !== "name" ? compare(a, b, "name", byName) : 0) ||
         byRsvpTime(a, b)
       );
     });

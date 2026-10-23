@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -581,13 +581,8 @@ function WalkinDialog({
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Explicit memo: the React Compiler can't memoize a value passed into a
-  // hook (useGuestSearch), and a new array would re-fold the directory on
-  // each keystroke.
-  const eligible = useMemo(
-    () =>
-      (allGuestsQ.data?.guests ?? []).filter((g) => !alreadyRsvped.has(g.id)),
-    [allGuestsQ.data, alreadyRsvped],
+  const eligible = (allGuestsQ.data?.guests ?? []).filter(
+    (g) => !alreadyRsvped.has(g.id),
   );
   const {
     search,
