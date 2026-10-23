@@ -1,11 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { MoreHorizontal, RefreshCw } from "lucide-react";
@@ -36,6 +31,7 @@ import {
   FilterMenu,
   ListToolbarRow,
   MenuRadios,
+  ShowMoreButton,
   SortMenu,
 } from "@/components/ListToolbar";
 import { Input } from "@/components/ui/input";
@@ -50,7 +46,7 @@ import {
 } from "./GuestDialogs";
 import { useUnbanGuest } from "./useUnbanGuest";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
 import { useOrg } from "@/lib/org";
@@ -75,6 +71,13 @@ import {
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];
+type BannedGuest = components["schemas"]["BannedGuestPublic"];
+
+// Module-level so the search index is only rebuilt when the list changes.
+const searchFields = (g: Pick<Guest, "displayname" | "mazmo_handle">) => ({
+  displayname: g.displayname,
+  mazmoHandle: g.mazmo_handle,
+});
 
 const DIRECTORY_SORT_LABEL: Record<DirectorySortKey, TranslationKey> = {
   name: "sortName",
@@ -358,6 +361,122 @@ function AddGuestDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+/**
+ * One row of the directory. Its own component, with stable props, so the
+ * React Compiler skips the rows that didn't change when the list re-renders
+ * (typing a search, opening a dialog).
+ */
+function DirectoryRow({
+  guest: g,
+  isBanned,
+  canModerate,
+  unbanPending,
+  onEdit,
+  onLink,
+  onUnlink,
+  onBan,
+  onUnban,
+}: {
+  guest: Guest;
+  isBanned: boolean;
+  /** Vant state is only known once the org's list loads. */
+  canModerate: boolean;
+  unbanPending: boolean;
+  onEdit: (guest: Guest) => void;
+  onLink: (guest: Guest) => void;
+  onUnlink: (guest: Guest) => void;
+  onBan: (guest: Guest) => void;
+  onUnban: (guest: Guest) => void;
+}) {
+  const { t } = useLanguage();
+  return (
+    <li className={ROW_CLASS}>
+      <GuestIdentity guest={g} isBanned={isBanned} />
+      <div className="flex items-center justify-between gap-2 @3xl:contents">
+        <dl className="flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground @3xl:contents">
+          <div className="@3xl:w-32">
+            <dt className="inline font-medium">{t("mazmoId")}</dt>{" "}
+            <dd className="inline tabular-nums">{g.mazmo_user_id ?? "—"}</dd>
+          </div>
+          <div className="min-w-0 @3xl:w-44 @3xl:truncate">
+            <dt className="inline font-medium">{t("instagramCol")}</dt>{" "}
+            <dd className="inline">
+              {g.instagram_username ? (
+                <a
+                  href={`https://instagram.com/${g.instagram_username}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  @{g.instagram_username}
+                </a>
+              ) : (
+                "—"
+              )}
+            </dd>
+          </div>
+        </dl>
+        <div className="shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`${t("guestActions")}: ${g.displayname}`}
+                />
+              }
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem render={<Link to={`/guests/${g.id}`} />}>
+                {t("viewProfile")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(g)}>
+                {t("editGuest")}
+              </DropdownMenuItem>
+              {g.mazmo_handle ? (
+                <DropdownMenuItem
+                  onClick={() => onUnlink(g)}
+                  // The backend refuses to unlink a vanted guest.
+                  disabled={isBanned}
+                >
+                  {t("unlinkMazmoAccount")}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => onLink(g)}>
+                  {t("linkMazmoAccount")}
+                </DropdownMenuItem>
+              )}
+              {canModerate && (
+                <>
+                  <DropdownMenuSeparator />
+                  {isBanned ? (
+                    <DropdownMenuItem
+                      onClick={() => onUnban(g)}
+                      disabled={unbanPending}
+                    >
+                      {t("unban")}
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => onBan(g)}
+                    >
+                      {t("ban")}
+                    </DropdownMenuItem>
+                  )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 function AllGuestsTab({
   isOrgAdmin,
   orgId,
@@ -378,19 +497,15 @@ function AllGuestsTab({
     DEFAULT_DIRECTORY_FILTERS,
   );
 
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search, 300);
-
+  // The whole directory is loaded anyway, so search filters it in the
+  // browser: no request per query, and accents and styled names match.
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: debouncedSearch ? ["guests", debouncedSearch] : ["guests"],
+    queryKey: ["guests"],
     queryFn: async () => {
-      const { data, error } = await api.GET("/guests/", {
-        params: debouncedSearch ? { query: { q: debouncedSearch } } : undefined,
-      });
+      const { data, error } = await api.GET("/guests/");
       if (error) throw new Error("Failed to load guests");
       return data;
     },
-    placeholderData: keepPreviousData,
   });
 
   // GuestPublic has no org ban state, so vants come from the org's list
@@ -407,12 +522,26 @@ function AllGuestsTab({
     },
     enabled: !!orgId,
   });
-  const bannedIds = new Set(bannedQ.data?.guests.map((g) => g.id) ?? []);
+  const bannedIds = useMemo(
+    () => new Set(bannedQ.data?.guests.map((g) => g.id) ?? []),
+    [bannedQ.data],
+  );
   const unbanMutation = useUnbanGuest(orgId);
 
-  const guests = data
-    ? viewDirectory(data.guests, filters, sort, bannedIds)
-    : undefined;
+  // Sorting depends on the list, filters, and sort only, so it doesn't rerun
+  // while typing; the search then narrows the sorted list.
+  const viewed = useMemo(
+    () =>
+      data ? viewDirectory(data.guests, filters, sort, bannedIds) : undefined,
+    [data, filters, sort, bannedIds],
+  );
+  const {
+    search,
+    setSearch,
+    filtered: guests,
+  } = useGuestSearch(viewed, searchFields);
+  const { visible, nextCount, showMore } = useIncrementalList(guests);
+  const searching = search.trim() !== "";
   const active = activeDirectoryFilters(filters);
   const setFilter = <K extends keyof DirectoryFilters>(
     key: K,
@@ -442,7 +571,7 @@ function AllGuestsTab({
           </AlertDescription>
         </Alert>
       )}
-      {!isLoading && (debouncedSearch || (data?.guests.length ?? 0) > 0) && (
+      {!isLoading && (data?.guests.length ?? 0) > 0 && (
         <div className="space-y-2">
           <ListToolbarRow search={search} onSearch={setSearch}>
             <FilterMenu activeCount={active.length}>
@@ -511,7 +640,7 @@ function AllGuestsTab({
               label: chipLabel[key],
               onRemove: () => setFilter(key, DEFAULT_DIRECTORY_FILTERS[key]),
             }))}
-            narrowed={!!debouncedSearch}
+            narrowed={searching}
             shown={guests?.length ?? 0}
             total={data?.guests.length ?? 0}
             onClear={() => setFilters(DEFAULT_DIRECTORY_FILTERS)}
@@ -521,105 +650,31 @@ function AllGuestsTab({
       <ul className="space-y-2" aria-label={t("allGuests")}>
         {isLoading && <RowSkeletons />}
         {!isLoading && (data?.guests.length ?? 0) === 0 && (
-          <EmptyRow>
-            {debouncedSearch ? t("noGuestsMatchSearch") : t("noGuestsYet")}
-          </EmptyRow>
+          <EmptyRow>{t("noGuestsYet")}</EmptyRow>
         )}
         {!isLoading &&
           (data?.guests.length ?? 0) > 0 &&
           (guests?.length ?? 0) === 0 && (
-            <EmptyRow>{t("noGuestsMatchFilters")}</EmptyRow>
+            <EmptyRow>
+              {searching ? t("noGuestsMatchSearch") : t("noGuestsMatchFilters")}
+            </EmptyRow>
           )}
-        {guests?.map((g) => (
-          <li key={g.id} className={ROW_CLASS}>
-            <GuestIdentity guest={g} isBanned={bannedIds.has(g.id)} />
-            <div className="flex items-center justify-between gap-2 @3xl:contents">
-              <dl className="flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground @3xl:contents">
-                <div className="@3xl:w-32">
-                  <dt className="inline font-medium">{t("mazmoId")}</dt>{" "}
-                  <dd className="inline tabular-nums">
-                    {g.mazmo_user_id ?? "—"}
-                  </dd>
-                </div>
-                <div className="min-w-0 @3xl:w-44 @3xl:truncate">
-                  <dt className="inline font-medium">{t("instagramCol")}</dt>{" "}
-                  <dd className="inline">
-                    {g.instagram_username ? (
-                      <a
-                        href={`https://instagram.com/${g.instagram_username}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline-offset-4 hover:text-foreground hover:underline"
-                      >
-                        @{g.instagram_username}
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </dd>
-                </div>
-              </dl>
-              <div className="shrink-0">
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`${t("guestActions")}: ${g.displayname}`}
-                      />
-                    }
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem render={<Link to={`/guests/${g.id}`} />}>
-                      {t("viewProfile")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setEditTarget(g)}>
-                      {t("editGuest")}
-                    </DropdownMenuItem>
-                    {g.mazmo_handle ? (
-                      <DropdownMenuItem
-                        onClick={() => setUnlinkTarget(g)}
-                        // The backend refuses to unlink a vanted guest.
-                        disabled={bannedIds.has(g.id)}
-                      >
-                        {t("unlinkMazmoAccount")}
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem onClick={() => setLinkTarget(g)}>
-                        {t("linkMazmoAccount")}
-                      </DropdownMenuItem>
-                    )}
-                    {/* Vant state is only known once the org's list loads. */}
-                    {isOrgAdmin && bannedQ.isSuccess && (
-                      <>
-                        <DropdownMenuSeparator />
-                        {bannedIds.has(g.id) ? (
-                          <DropdownMenuItem
-                            onClick={() => unbanMutation.mutate(g)}
-                            disabled={unbanMutation.isPending}
-                          >
-                            {t("unban")}
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setBanTarget(g)}
-                          >
-                            {t("ban")}
-                          </DropdownMenuItem>
-                        )}
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </li>
+        {visible?.map((g) => (
+          <DirectoryRow
+            key={g.id}
+            guest={g}
+            isBanned={bannedIds.has(g.id)}
+            canModerate={isOrgAdmin && bannedQ.isSuccess}
+            unbanPending={unbanMutation.isPending}
+            onEdit={setEditTarget}
+            onLink={setLinkTarget}
+            onUnlink={setUnlinkTarget}
+            onBan={setBanTarget}
+            onUnban={unbanMutation.mutate}
+          />
         ))}
       </ul>
+      <ShowMoreButton count={nextCount} onShowMore={showMore} />
       {banTarget && (
         <BanDialog
           guest={banTarget}
@@ -646,6 +701,49 @@ function AllGuestsTab({
         />
       )}
     </>
+  );
+}
+
+/** One row of the Vanted tab; see DirectoryRow for why it's a component. */
+function VantedRow({
+  guest: g,
+  canUnban,
+  unbanPending,
+  onUnban,
+}: {
+  guest: BannedGuest;
+  canUnban: boolean;
+  unbanPending: boolean;
+  onUnban: (guest: BannedGuest) => void;
+}) {
+  const { t } = useLanguage();
+  return (
+    <li className={ROW_CLASS}>
+      <GuestIdentity guest={g} isBanned />
+      <div className="flex items-end justify-between gap-3 @3xl:contents">
+        <dl className="min-w-0 space-y-1 text-sm @3xl:contents">
+          <div className="text-xs text-muted-foreground @3xl:w-52 @3xl:shrink-0 @3xl:whitespace-nowrap">
+            <dt className="inline font-medium">{t("bannedAt")}</dt>{" "}
+            <dd className="inline">{formatDateTime(g.banned_at)}</dd>
+          </div>
+          <div className="@3xl:w-72 @3xl:shrink-0">
+            <dt className="sr-only">{t("reason")}</dt>
+            <dd className="break-words">{g.banned_reason}</dd>
+          </div>
+        </dl>
+        {canUnban && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => onUnban(g)}
+            disabled={unbanPending}
+          >
+            {t("unban")}
+          </Button>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -677,15 +775,16 @@ function BannedGuestsTab({
 
   const unbanMutation = useUnbanGuest(orgId);
 
-  const sorted = data ? viewVanted(data.guests, sort) : undefined;
+  const sorted = useMemo(
+    () => (data ? viewVanted(data.guests, sort) : undefined),
+    [data, sort],
+  );
   const {
     search,
     setSearch,
     filtered: guests,
-  } = useGuestSearch(sorted, (g) => ({
-    displayname: g.displayname,
-    mazmoHandle: g.mazmo_handle,
-  }));
+  } = useGuestSearch(sorted, searchFields);
+  const { visible, nextCount, showMore } = useIncrementalList(guests);
 
   return (
     <>
@@ -729,35 +828,17 @@ function BannedGuestsTab({
           (guests?.length ?? 0) === 0 && (
             <EmptyRow>{t("noGuestsMatchSearch")}</EmptyRow>
           )}
-        {guests?.map((g) => (
-          <li key={g.id} className={ROW_CLASS}>
-            <GuestIdentity guest={g} isBanned />
-            <div className="flex items-end justify-between gap-3 @3xl:contents">
-              <dl className="min-w-0 space-y-1 text-sm @3xl:contents">
-                <div className="text-xs text-muted-foreground @3xl:w-52 @3xl:shrink-0 @3xl:whitespace-nowrap">
-                  <dt className="inline font-medium">{t("bannedAt")}</dt>{" "}
-                  <dd className="inline">{formatDateTime(g.banned_at)}</dd>
-                </div>
-                <div className="@3xl:w-72 @3xl:shrink-0">
-                  <dt className="sr-only">{t("reason")}</dt>
-                  <dd className="break-words">{g.banned_reason}</dd>
-                </div>
-              </dl>
-              {isOrgAdmin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => unbanMutation.mutate(g)}
-                  disabled={unbanMutation.isPending}
-                >
-                  {t("unban")}
-                </Button>
-              )}
-            </div>
-          </li>
+        {visible?.map((g) => (
+          <VantedRow
+            key={g.id}
+            guest={g}
+            canUnban={isOrgAdmin}
+            unbanPending={unbanMutation.isPending}
+            onUnban={unbanMutation.mutate}
+          />
         ))}
       </ul>
+      <ShowMoreButton count={nextCount} onShowMore={showMore} />
     </>
   );
 }

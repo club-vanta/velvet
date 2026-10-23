@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "sonner";
@@ -276,111 +276,95 @@ describe("GuestsPage — per-row identity management", () => {
   });
 });
 
-describe("GuestsPage — search", () => {
+describe("GuestsPage: search", () => {
   beforeEach(() => {
     mockRole = "ADMIN";
     vi.clearAllMocks();
     localStorage.setItem("lang", "en");
-    vi.useFakeTimers({ shouldAdvanceTime: true });
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+  const guestsList = () => screen.getByRole("list", { name: "All Guests" });
+  const guestsCalls = () =>
+    mockApiGet.mock.calls.filter((c) => c[0] === "/guests/");
 
-  it("debounces the search query instead of firing one request per keystroke", async () => {
-    const user = userEvent.setup({
-      advanceTimers: (ms) => vi.advanceTimersByTime(ms),
-    });
-    renderPage([guest({ id: "g-1", displayname: "Cindy" })]);
-
+  it("filters the loaded list in the browser, without a request per keystroke", async () => {
+    const user = userEvent.setup();
+    renderPage([
+      guest({ id: "g-1", displayname: "Cindy" }),
+      guest({ id: "g-2", displayname: "Zoe" }),
+    ]);
     const input = await screen.findByPlaceholderText("Search guest list…");
-    const callsBeforeTyping = mockApiGet.mock.calls.filter(
-      (c) => c[0] === "/guests/",
-    ).length;
 
     await user.type(input, "cin");
 
-    // No new /guests/ GET should have fired yet — the debounce window
-    // (300ms) hasn't elapsed since the last keystroke.
-    const callsRightAfterTyping = mockApiGet.mock.calls.filter(
-      (c) => c[0] === "/guests/",
-    ).length;
-    expect(callsRightAfterTyping).toBe(callsBeforeTyping);
-
-    await vi.advanceTimersByTimeAsync(300);
-
     await waitFor(() => {
-      const callsAfterDebounce = mockApiGet.mock.calls.filter(
-        (c) => c[0] === "/guests/",
-      ).length;
-      expect(callsAfterDebounce).toBe(callsBeforeTyping + 1);
+      expect(screen.queryByText("Zoe")).not.toBeInTheDocument();
     });
-    expect(mockApiGet).toHaveBeenCalledWith(
-      "/guests/",
-      expect.objectContaining({ params: { query: { q: "cin" } } }),
-    );
+    expect(screen.getByText("Cindy")).toBeInTheDocument();
+    expect(screen.getByText("Showing 1 of 2")).toBeInTheDocument();
+    expect(guestsCalls()).toHaveLength(1);
+    expect(guestsCalls()[0]).toHaveLength(1); // no query params
   });
 
-  it("omits q entirely when the search box is empty", async () => {
-    renderPage([guest({ id: "g-1", displayname: "Cindy" })]);
-    await screen.findByText("Cindy");
+  it.each([
+    ["accents", "perez", "Juan Pérez"],
+    ["styled Mazmo letters", "barman", "𝑩𝑨𝑹𝑴𝑨𝑵"],
+    ["words in any order", "perez juan", "Juan Pérez"],
+    ["a handle typed with @", "@cindyd", "Cindy"],
+  ])("matches %s", async (_, query, expected) => {
+    const user = userEvent.setup();
+    renderPage([
+      guest({ id: "g-1", displayname: "Juan Pérez" }),
+      guest({ id: "g-2", displayname: "𝑩𝑨𝑹𝑴𝑨𝑵" }),
+      guest({ id: "g-3", displayname: "Cindy", mazmo_handle: "cindydark" }),
+    ]);
+    const input = await screen.findByPlaceholderText("Search guest list…");
 
-    const initialCall = mockApiGet.mock.calls.find((c) => c[0] === "/guests/");
-    expect(initialCall?.[1]).not.toEqual(
-      expect.objectContaining({ params: { query: { q: "" } } }),
-    );
+    await user.type(input, query);
+
+    await waitFor(() => {
+      expect(within(guestsList()).getAllByRole("listitem")).toHaveLength(1);
+    });
+    expect(within(guestsList()).getByText(expected)).toBeInTheDocument();
   });
 
   it("keeps the search input visible when a search matches nothing, so it can be cleared", async () => {
-    mockApiGet.mockImplementation(
-      (path: string, opts?: { params?: { query?: { q?: string } } }) => {
-        if (path === "/guests/") {
-          const q = opts?.params?.query?.q;
-          const guests = q ? [] : [guest({ id: "g-1", displayname: "Cindy" })];
-          return Promise.resolve({
-            data: { total: guests.length, guests },
-            error: undefined,
-          });
-        }
-        if (path === "/organizations/{org_id}/guests/banned")
-          return Promise.resolve({
-            data: { total: 0, guests: [] },
-            error: undefined,
-          });
-        return Promise.resolve({ data: undefined, error: undefined });
-      },
-    );
-
-    render(
-      <QueryClientProvider
-        client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
-        }
-      >
-        <LanguageProvider>
-          <MemoryRouter>
-            <GuestsPage />
-          </MemoryRouter>
-        </LanguageProvider>
-      </QueryClientProvider>,
-    );
-
-    const user = userEvent.setup({
-      advanceTimers: (ms) => vi.advanceTimersByTime(ms),
-    });
+    const user = userEvent.setup();
+    renderPage([guest({ id: "g-1", displayname: "Cindy" })]);
     const input = await screen.findByPlaceholderText("Search guest list…");
-    await user.type(input, "zzz");
-    await vi.advanceTimersByTimeAsync(300);
 
-    await waitFor(() => {
-      expect(
-        screen.getByText("No guests match that search."),
-      ).toBeInTheDocument();
-    });
+    await user.type(input, "zzz");
+
+    expect(
+      await screen.findByText("No guests match that search."),
+    ).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText("Search guest list…"),
     ).toBeInTheDocument();
+  });
+
+  it("renders a long list a page at a time, and a new search starts from the top", async () => {
+    const user = userEvent.setup();
+    renderPage(
+      Array.from({ length: 150 }, (_, i) =>
+        guest({ id: `g-${i}`, displayname: `Guest ${i}` }),
+      ),
+    );
+    await screen.findByText("Guest 0");
+    const rows = () => within(guestsList()).getAllByRole("listitem");
+    expect(rows()).toHaveLength(100);
+
+    await user.click(screen.getByRole("button", { name: "Show 50 more" }));
+
+    expect(rows()).toHaveLength(150);
+    expect(
+      screen.queryByRole("button", { name: /^Show \d+ more$/ }),
+    ).not.toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText("Search guest list…"), "guest");
+
+    await waitFor(() => expect(rows()).toHaveLength(100));
+    expect(screen.getByText("Showing 150 of 150")).toBeInTheDocument();
   });
 });
 

@@ -206,3 +206,41 @@ export function FilterChips({
     </div>
   );
 }
+
+/**
+ * Shows the next page of a long list (see useIncrementalList). Also fires on
+ * its own when scrolled near, so scrolling feels continuous; clicking it
+ * keeps working for keyboard users and where IntersectionObserver is missing.
+ */
+export function ShowMoreButton({
+  count,
+  onShowMore,
+}: {
+  /** Rows the next page adds; renders nothing at 0. */
+  count: number;
+  onShowMore: () => void;
+}) {
+  const { t } = useLanguage();
+  // A callback ref, so the observer attaches whenever the button mounts,
+  // including when a new search brings it back.
+  const observe = (el: HTMLButtonElement | null) => {
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onShowMore();
+      },
+      { rootMargin: "800px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  };
+
+  if (count <= 0) return null;
+  return (
+    <div className="flex justify-center">
+      <Button ref={observe} variant="outline" onClick={onShowMore}>
+        {t("showMoreGuests").replace("{0}", String(count))}
+      </Button>
+    </div>
+  );
+}

@@ -1,13 +1,20 @@
 import path from "path";
 import { defineConfig } from "vitest/config";
 import { loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      // React Compiler: memoizes components and hooks at build time, so a
+      // keystroke in a search box doesn't re-render every row of a list.
+      babel({ presets: [reactCompilerPreset()] }),
+      tailwindcss(),
+    ],
     server: {
       // Set VITE_HOST_ALL=true in .env.local (or prefix the dev command) to expose
       // the dev server on all network interfaces for LAN testing.
