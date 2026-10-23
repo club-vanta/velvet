@@ -45,12 +45,13 @@ describe("nameComparer", () => {
 
 describe("compareOptional", () => {
   it("sorts missing values last in either direction", () => {
-    const values = ["b", null, "a"];
-    expect(
-      [...values].sort((x, y) => compareOptional(x, y, "asc", nameComparer())),
-    ).toEqual(["a", "b", null]);
-    expect(
-      [...values].sort((x, y) => compareOptional(x, y, "desc", nameComparer())),
-    ).toEqual(["b", "a", null]);
+    const sortedBy = (dir: "asc" | "desc") => {
+      const byName = nameComparer();
+      return ["b", null, "a"].sort((x, y) =>
+        compareOptional(x, y, dir, byName),
+      );
+    };
+    expect(sortedBy("asc")).toEqual(["a", "b", null]);
+    expect(sortedBy("desc")).toEqual(["b", "a", null]);
   });
 });

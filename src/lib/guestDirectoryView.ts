@@ -23,6 +23,8 @@ export const VANTED_SORT_KEYS: readonly VantedSortKey[] = [
   "reason",
 ];
 
+type Optional = string | number | null | undefined;
+
 export type ListSort<K extends string> = { key: K; dir: SortDir };
 
 export type DirectoryFilters = {
@@ -79,31 +81,18 @@ export function viewDirectory(
 ): Guest[] {
   const sign = sort.dir === "asc" ? 1 : -1;
   const byName = nameComparer();
+  const opt = (x: Optional, y: Optional) =>
+    compareOptional(x, y, sort.dir, byName);
   const byKey = (a: Guest, b: Guest) => {
     switch (sort.key) {
       case "name":
         return sign * byName(a.displayname, b.displayname);
       case "handle":
-        return compareOptional(
-          a.mazmo_handle,
-          b.mazmo_handle,
-          sort.dir,
-          byName,
-        );
+        return opt(a.mazmo_handle, b.mazmo_handle);
       case "mazmoId":
-        return compareOptional(
-          a.mazmo_user_id,
-          b.mazmo_user_id,
-          sort.dir,
-          byName,
-        );
+        return opt(a.mazmo_user_id, b.mazmo_user_id);
       case "instagram":
-        return compareOptional(
-          a.instagram_username,
-          b.instagram_username,
-          sort.dir,
-          byName,
-        );
+        return opt(a.instagram_username, b.instagram_username);
     }
   };
   return guests
@@ -111,7 +100,7 @@ export function viewDirectory(
     .sort(
       (a, b) =>
         byKey(a, b) ||
-        byName(a.displayname, b.displayname) ||
+        (sort.key !== "name" ? byName(a.displayname, b.displayname) : 0) ||
         a.id.localeCompare(b.id),
     );
 }
@@ -122,26 +111,18 @@ export function viewVanted(
 ): BannedGuest[] {
   const sign = sort.dir === "asc" ? 1 : -1;
   const byName = nameComparer();
+  const opt = (x: Optional, y: Optional) =>
+    compareOptional(x, y, sort.dir, byName);
   const byKey = (a: BannedGuest, b: BannedGuest) => {
     switch (sort.key) {
       case "name":
         return sign * byName(a.displayname, b.displayname);
       case "handle":
-        return compareOptional(
-          a.mazmo_handle,
-          b.mazmo_handle,
-          sort.dir,
-          byName,
-        );
+        return opt(a.mazmo_handle, b.mazmo_handle);
       case "bannedAt":
         return sign * a.banned_at.localeCompare(b.banned_at);
       case "reason":
-        return compareOptional(
-          a.banned_reason,
-          b.banned_reason,
-          sort.dir,
-          byName,
-        );
+        return opt(a.banned_reason, b.banned_reason);
     }
   };
   return guests
@@ -149,7 +130,7 @@ export function viewVanted(
     .sort(
       (a, b) =>
         byKey(a, b) ||
-        byName(a.displayname, b.displayname) ||
+        (sort.key !== "name" ? byName(a.displayname, b.displayname) : 0) ||
         a.id.localeCompare(b.id),
     );
 }

@@ -581,6 +581,8 @@ function WalkinDialog({
     onError: (err: Error) => toast.error(err.message),
   });
 
+  // The React Compiler caches this, so typing doesn't re-fold the directory.
+  // It stops if `eligible` is read after the hooks below (see AllGuestsTab).
   const eligible = (allGuestsQ.data?.guests ?? []).filter(
     (g) => !alreadyRsvped.has(g.id),
   );

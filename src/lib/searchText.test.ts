@@ -14,6 +14,7 @@ describe("foldForSearch", () => {
     expect(foldForSearch("ʙᴀʀᴍᴀɴ")).toBe("barman");
     expect(foldForSearch("ꞯᴜᴇᴇɴ")).toBe("queen");
     expect(foldForSearch("Øyvind Łukasz Straße")).toBe("oyvind lukasz strasse");
+    expect(foldForSearch("Bjǿrn Ǽsir")).toBe("bjorn aesir");
   });
 
   it("keeps emoji and symbols", () => {
