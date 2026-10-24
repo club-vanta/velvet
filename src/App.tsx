@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LanguageProvider } from "./lib/i18n";
@@ -18,6 +18,14 @@ import { EventsPage } from "./features/events/EventsPage";
 import { OrganizationsPage } from "./features/organizations/OrganizationsPage";
 import { OrganizationDetailPage } from "./features/organizations/OrganizationDetailPage";
 
+// Keyed by id so following a link from one meetup to another (from a guest's
+// profile sheet) starts the page fresh, instead of carrying over the open
+// sheet, search, filters, and dialogs of the previous meetup.
+function MeetupDetailRoute() {
+  const { id } = useParams();
+  return <MeetupDetailPage key={id} />;
+}
+
 function AuthenticatedRoutes() {
   const { user } = useAuth();
   const { activeOrg } = useOrg();
@@ -30,7 +38,7 @@ function AuthenticatedRoutes() {
       <Routes>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/meetups" element={<MeetupsPage />} />
-        <Route path="/meetups/:id" element={<MeetupDetailPage />} />
+        <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
         <Route path="/guests" element={<GuestsPage />} />
         <Route path="/guests/:guestId" element={<GuestDetailPage />} />
         {isSiteAdmin && <Route path="/staff" element={<StaffPage />} />}

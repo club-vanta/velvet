@@ -13,7 +13,7 @@ import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
-import { meetupStatsKey } from "@/lib/queryKeys";
+import { guestMeetupsOrgKey, meetupStatsKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
@@ -59,6 +59,10 @@ export function FinalizeMeetupDialog({
       void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
       void queryClient.invalidateQueries({
         queryKey: meetupStatsKey(orgId, meetup.id),
+      });
+      // Finalizing turns pending RSVPs into no-shows, reopening turns them back.
+      void queryClient.invalidateQueries({
+        queryKey: guestMeetupsOrgKey(orgId),
       });
       toast.success(
         t(reopening ? "meetupReopenedToast" : "meetupFinalizedToast").replace(

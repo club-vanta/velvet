@@ -57,6 +57,21 @@ function renderPage(banned: BannedGuest[] | "pending" | "error" = []) {
         data: { total: 0, history: [] },
         error: undefined,
       });
+    if (path === "/organizations/{org_id}/guests/{guest_id}/meetups")
+      return Promise.resolve({
+        data: {
+          total: 0,
+          summary: {
+            attended: 0,
+            walkin: 0,
+            no_show: 0,
+            cancelled: 0,
+            upcoming: 0,
+          },
+          meetups: [],
+        },
+        error: undefined,
+      });
     if (path === "/organizations/{org_id}/guests/banned") {
       if (banned === "pending") return new Promise(() => {});
       if (banned === "error")
@@ -90,6 +105,19 @@ describe("GuestDetailPage", () => {
     mockRole = "ADMIN";
     vi.clearAllMocks();
     localStorage.setItem("lang", "en");
+  });
+
+  it("shows the guest's meetups as a page section", async () => {
+    renderPage();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Meetups" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Hasn't signed up for any meetups in this organization.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("offers edit, link, and vant to an org admin", async () => {
