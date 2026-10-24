@@ -241,7 +241,7 @@ function ArrivalsContent({
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(single)}>
+      <div className={headlineGrid(4)}>
         <HeadlineStat
           label={t("statsPeakArrival")}
           value={peak ? time(peak.local_time, peak.start_minute) : NO_VALUE}

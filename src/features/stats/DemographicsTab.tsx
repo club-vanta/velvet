@@ -224,13 +224,7 @@ function NoShowTable({
   );
 }
 
-function DemographicsContent({
-  data,
-  single,
-}: {
-  data: Demographics;
-  single: boolean;
-}) {
+function DemographicsContent({ data }: { data: Demographics }) {
   const { t, lang } = useLanguage();
   const labels = useGroupLabels();
   const { gender, age, summary, comparison, comparison_kind } = data;
@@ -289,7 +283,7 @@ function DemographicsContent({
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(single)}>
+      <div className={headlineGrid(3)}>
         <HeadlineStat
           label={t("statsMedianAge")}
           value={formatAge(summary.median_age, lang)}
@@ -334,7 +328,7 @@ export function DemographicsTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="demographics-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <DemographicsContent data={data} single={single} />}
+      {(data) => <DemographicsContent data={data} />}
     </StatsTabGate>
   );
 }

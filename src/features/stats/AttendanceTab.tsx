@@ -150,7 +150,7 @@ function AttendanceContent({
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(single)}>
+      <div className={headlineGrid(single ? 4 : 6)}>
         <HeadlineStat
           label={t("statsAttended")}
           value={count(totals.attended)}

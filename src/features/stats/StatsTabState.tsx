@@ -7,18 +7,16 @@ import { StatsErrorState } from "./StatsErrorState";
 
 /** The loading state of a stats tab: headline cards and one chart. */
 export function StatsTabSkeleton({
-  single,
   cards,
   testId,
 }: {
-  single: boolean;
   /** How many headline cards the loaded tab shows. */
   cards: number;
   testId: string;
 }) {
   return (
     <div data-testid={testId} className="space-y-3">
-      <div className={headlineGrid(single)}>
+      <div className={headlineGrid(cards)}>
         {Array.from({ length: cards }).map((_, i) => (
           <Skeleton key={i} className="h-24 rounded-xl" />
         ))}
@@ -60,7 +58,7 @@ export function StatsTabGate<T>({
   children: (data: T) => ReactNode;
 }) {
   if (statsQ.isPending) {
-    return <StatsTabSkeleton single={single} cards={cards} testId={testId} />;
+    return <StatsTabSkeleton cards={cards} testId={testId} />;
   }
   if (statsQ.isError || !statsQ.data) {
     return (
