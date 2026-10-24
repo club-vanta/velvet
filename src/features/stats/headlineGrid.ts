@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** One layout for the skeleton and the cards, so nothing jumps on load and no card is left alone in a row. */
+/** The grid for `cards` headline cards, shared by the tab and its skeleton so nothing jumps on load. Three columns when the count divides by 3 and not by 4, else four. */
 export function headlineGrid(cards: number): string {
   return cn(
     "grid grid-cols-2 gap-2 sm:gap-3",

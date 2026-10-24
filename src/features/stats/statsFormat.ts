@@ -102,3 +102,16 @@ export function formatAge(age: number | null, locale: string): string {
     maximumFractionDigits: 1,
   }).format(age);
 }
+
+/**
+ * Round ticks for an axis of shares: every 10 points up to half, every 20
+ * beyond, ending at the first tick at or above `max`.
+ */
+export function shareTicks(max: number): number[] {
+  const step = max <= 0.5 ? 10 : 20;
+  const top = Math.max(
+    step,
+    Math.ceil(Math.round(max * 1000) / 10 / step) * step,
+  );
+  return Array.from({ length: top / step + 1 }, (_, i) => (i * step) / 100);
+}

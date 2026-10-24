@@ -32,14 +32,17 @@ const NOBODY: Summary = {
   age_shares: [],
 };
 
+/** A group whose figures agree: no-shows come from the rate, the rest attended. */
 function group(key: string | null, expected: number, rate: number | null) {
+  const noShow = rate === null ? 0 : Math.round(expected * rate);
+  const attended = expected - noShow;
   const g: Group = {
     key,
-    attended: expected,
+    attended,
     expected,
-    no_show: 0,
+    no_show: noShow,
     no_show_rate: rate,
-    attended_share: expected > 0 ? 0.25 : null,
+    attended_share: attended > 0 ? 0.25 : null,
     expected_share: expected > 0 ? 0.25 : null,
   };
   return g;
@@ -232,8 +235,8 @@ describe("DemographicsTab", () => {
     respond(
       ok(
         stats({
-          gender: [group(null, 3, null)],
-          summary: { ...NOBODY },
+          gender: [group(null, 3, 1)],
+          summary: NOBODY,
         }),
       ),
     );
@@ -308,6 +311,37 @@ describe("DemographicsTab", () => {
     const row = groupRow("Mujer");
     expect(part(row, "rate-value")).toBe("–");
     expect(part(row, "sample")).toBeNull();
+  });
+
+  it("splits the table into gender and age groups", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    const headers = Array.from(
+      document.querySelectorAll<HTMLElement>('th[scope="rowgroup"]'),
+    );
+    expect(headers.map((th) => th.textContent)).toEqual(["Género", "Edad"]);
+    const rowsOf = (th: HTMLElement) =>
+      Array.from(
+        th.closest("tbody")!.querySelectorAll('[data-slot="group"]'),
+      ).map((el) => el.textContent);
+    expect(rowsOf(headers[0])).toEqual(["Hombre", "NEW_CODE", "Sin dato"]);
+    expect(rowsOf(headers[1])).toEqual([
+      "18-24",
+      "25-29",
+      "30-34",
+      "35-39",
+      "40-49",
+      "50+",
+      "Sin dato",
+    ]);
+  });
+
+  it("formats the expected counts for the locale", async () => {
+    respond(ok(stats({ gender: [group("FEMALE", 12000, 0.1)] })));
+    renderTab();
+    await headlinesReady();
+    expect(part(groupRow("Mujer"), "expected")).toBe("12.000");
   });
 
   it("explains how gender and age are read", async () => {

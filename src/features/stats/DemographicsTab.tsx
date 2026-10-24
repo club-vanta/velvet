@@ -22,6 +22,7 @@ import {
   formatChange,
   formatCount,
   formatPointChange,
+  shareTicks,
   formatRate,
   formatYearsChange,
   isSmallSample,
@@ -60,14 +61,15 @@ function useGroupLabels() {
 function ShareChart({
   groups,
   label,
-  layout,
+  bars,
 }: {
   groups: Group[];
   label: (key: string | null) => string;
-  layout: "horizontal" | "vertical";
+  /** The direction the bars grow: sideways for long labels, upward otherwise. */
+  bars: "horizontal" | "vertical";
 }) {
   const { t, lang } = useLanguage();
-  const horizontal = layout === "vertical";
+  const horizontal = bars === "horizontal";
   const config: ChartConfig = {
     attended: { label: t("statsSeriesAttended"), color: "var(--chart-1)" },
     expected: { label: t("statsSeriesExpected"), color: "var(--chart-2)" },
@@ -78,6 +80,10 @@ function ShareChart({
     expected: g.expected_share ?? 0,
   }));
   const percent = (value: number) => formatRate(value, lang);
+  const ticks = shareTicks(
+    Math.max(0, ...data.flatMap((d) => [d.attended, d.expected])),
+  );
+  const domain: [number, number] = [0, ticks[ticks.length - 1]];
 
   return (
     <ChartContainer
@@ -87,12 +93,14 @@ function ShareChart({
         height: horizontal ? data.length * ROW_HEIGHT + CHART_CHROME : 256,
       }}
     >
-      <BarChart data={data} layout={layout}>
+      <BarChart data={data} layout={horizontal ? "vertical" : "horizontal"}>
         <CartesianGrid vertical={horizontal} horizontal={!horizontal} />
         {horizontal ? (
           <>
             <XAxis
               type="number"
+              domain={domain}
+              ticks={ticks}
               tickFormatter={percent}
               tickLine={false}
               axisLine={false}
@@ -116,6 +124,8 @@ function ShareChart({
             />
             <YAxis
               width={40}
+              domain={domain}
+              ticks={ticks}
               tickFormatter={percent}
               tickLine={false}
               axisLine={false}
@@ -146,6 +156,67 @@ function ShareChart({
   );
 }
 
+/** One titled block of table rows: a header row, then a row per group. */
+function NoShowGroupRows({
+  title,
+  groups,
+  label,
+}: {
+  title: string;
+  groups: Group[];
+  label: (key: string | null) => string;
+}) {
+  const { t, lang } = useLanguage();
+
+  return (
+    <tbody className="divide-y">
+      <tr>
+        <th
+          colSpan={3}
+          scope="rowgroup"
+          className="pt-3 pb-1 text-left text-xs font-medium text-muted-foreground"
+        >
+          {title}
+        </th>
+      </tr>
+      {groups.map((group) => {
+        const small =
+          group.no_show_rate !== null && isSmallSample(group.expected);
+        return (
+          <tr key={group.key ?? ""} data-slot="group-row">
+            <th
+              scope="row"
+              data-slot="group"
+              className="py-1.5 text-left font-normal"
+            >
+              {label(group.key)}
+            </th>
+            <td data-slot="expected" className="py-1.5 text-right">
+              {formatCount(group.expected, lang)}
+            </td>
+            <td
+              data-slot="rate"
+              className={cn(
+                "py-1.5 text-right",
+                small && "text-muted-foreground",
+              )}
+            >
+              <span data-slot="rate-value">
+                {formatRate(group.no_show_rate, lang)}
+              </span>
+              {small && (
+                <span data-slot="sample" className="ml-2 text-xs">
+                  {t("statsSample").replace("{0}", String(group.expected))}
+                </span>
+              )}
+            </td>
+          </tr>
+        );
+      })}
+    </tbody>
+  );
+}
+
 /** The no-show rate of each gender and age group; a rate from few people is dimmed with its n. */
 function NoShowTable({
   gender,
@@ -158,20 +229,8 @@ function NoShowTable({
   labels: ReturnType<typeof useGroupLabels>;
   labelledBy: string;
 }) {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const head = "py-1.5 text-xs font-medium text-muted-foreground";
-  const rows = [
-    ...gender.map((g) => ({
-      id: `gender-${g.key ?? ""}`,
-      label: labels.gender(g.key),
-      group: g,
-    })),
-    ...age.map((g) => ({
-      id: `age-${g.key ?? ""}`,
-      label: labels.age(g.key),
-      group: g,
-    })),
-  ];
 
   return (
     <table aria-labelledby={labelledBy} className="w-full text-sm tabular-nums">
@@ -188,42 +247,12 @@ function NoShowTable({
           </th>
         </tr>
       </thead>
-      <tbody className="divide-y">
-        {rows.map(({ id, label, group }) => {
-          const small =
-            group.no_show_rate !== null && isSmallSample(group.expected);
-          return (
-            <tr key={id} data-slot="group-row">
-              <th
-                scope="row"
-                data-slot="group"
-                className="py-1.5 text-left font-normal"
-              >
-                {label}
-              </th>
-              <td data-slot="expected" className="py-1.5 text-right">
-                {group.expected}
-              </td>
-              <td
-                data-slot="rate"
-                className={cn(
-                  "py-1.5 text-right",
-                  small && "text-muted-foreground",
-                )}
-              >
-                <span data-slot="rate-value">
-                  {formatRate(group.no_show_rate, lang)}
-                </span>
-                {small && (
-                  <span data-slot="sample" className="ml-2 text-xs">
-                    {t("statsSample").replace("{0}", String(group.expected))}
-                  </span>
-                )}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
+      <NoShowGroupRows
+        title={t("statsGender")}
+        groups={gender}
+        label={labels.gender}
+      />
+      <NoShowGroupRows title={t("statsAge")} groups={age} label={labels.age} />
     </table>
   );
 }
@@ -306,11 +335,11 @@ function DemographicsContent({ data }: { data: Demographics }) {
         />
       </div>
       <ChartCard title={t("statsGender")}>
-        <ShareChart groups={gender} label={labels.gender} layout="vertical" />
+        <ShareChart groups={gender} label={labels.gender} bars="horizontal" />
       </ChartCard>
       <StatsNote>{t("statsNoteGender")}</StatsNote>
       <ChartCard title={t("statsAge")}>
-        <ShareChart groups={age} label={labels.age} layout="horizontal" />
+        <ShareChart groups={age} label={labels.age} bars="vertical" />
       </ChartCard>
       <StatsNote>{t("statsNoteAge")}</StatsNote>
       <ChartCard title={t("statsNoShowByGroup")}>

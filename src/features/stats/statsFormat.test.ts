@@ -12,6 +12,7 @@ import {
   spansYears,
   formatYearsChange,
   formatAge,
+  shareTicks,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -192,5 +193,20 @@ describe("formatAge", () => {
     expect(formatAge(31, "es")).toBe("31,0");
     expect(formatAge(31.25, "en")).toBe("31.3");
     expect(formatAge(null, "es")).toBe("–");
+  });
+});
+
+describe("shareTicks", () => {
+  it("steps by 10 points up to the next round value for small shares", () => {
+    expect(shareTicks(0.26)).toEqual([0, 0.1, 0.2, 0.3]);
+    expect(shareTicks(0.5)).toEqual([0, 0.1, 0.2, 0.3, 0.4, 0.5]);
+  });
+
+  it("steps by 20 points for large shares", () => {
+    expect(shareTicks(0.9)).toEqual([0, 0.2, 0.4, 0.6, 0.8, 1]);
+  });
+
+  it("still draws an axis when there is nothing to show", () => {
+    expect(shareTicks(0)).toEqual([0, 0.1]);
   });
 });
