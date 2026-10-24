@@ -313,8 +313,9 @@ GET /organizations/{org_id}/stats/weather?...
 
 ## Delivery
 
-One phase per tab, each a backend PR (merged first so velvet can generate
-types) followed by a velvet PR, each with its own plan:
+One phase per tab, each with its own plan. The user asked for a single
+backend PR and a single velvet PR covering every phase; the backend PR is
+merged first so velvet can regenerate its types.
 
 1. **Foundation + Asistencia:** stats router, period and audience helpers,
    the attendance endpoint; velvet page, nav entry, selectors, URL state,
