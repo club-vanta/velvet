@@ -5,9 +5,10 @@ import { statsArrivalsKey } from "@/lib/queryKeys";
 import type { StatsQuery } from "@/lib/statsQuery";
 
 /**
- * When guests of finalized meetups arrive and how early they signed up, for the stats filters. `query` is null
- * while the filters are not ready, which keeps the request from firing and
- * keys the query apart from every real filter.
+ * When guests of finalized meetups arrive and how early they signed up, for
+ * the stats filters. `query` is null while the filters are not ready, which
+ * keeps the request from firing and keys the query apart from every real
+ * filter.
  */
 export function useArrivalsStats(orgId: string, query: StatsQuery | null) {
   const { t } = useLanguage();

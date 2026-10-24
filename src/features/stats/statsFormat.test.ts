@@ -118,6 +118,12 @@ describe("formatOffset", () => {
     expect(formatOffset(-75)).toBe("-1:15");
     expect(formatOffset(600)).toBe("+10:00");
   });
+
+  it("rounds a fractional average to whole minutes", () => {
+    expect(formatOffset(64.6)).toBe("+1:05");
+    expect(formatOffset(59.7)).toBe("+1:00");
+    expect(formatOffset(-0.2)).toBe("+0:00");
+  });
 });
 
 describe("formatMinuteChange", () => {

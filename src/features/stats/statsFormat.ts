@@ -4,7 +4,7 @@ import { localDay } from "./statsPeriod";
 /** Rates built from fewer people than this are shown dimmed with `n`. */
 export const SMALL_SAMPLE = 10;
 
-const NO_VALUE = "–";
+export const NO_VALUE = "–";
 
 export function formatRate(rate: number | null, locale: string): string {
   if (rate === null) return NO_VALUE;
@@ -55,8 +55,9 @@ export function spansYears(isos: string[]): boolean {
 
 /** Minutes from an event's start as `+1:15` or `-0:10`. */
 export function formatOffset(minutes: number): string {
-  const abs = Math.abs(minutes);
-  const sign = minutes < 0 ? "-" : "+";
+  const whole = Math.round(minutes);
+  const abs = Math.abs(whole);
+  const sign = whole < 0 ? "-" : "+";
   return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, "0")}`;
 }
 

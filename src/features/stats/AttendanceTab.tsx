@@ -14,10 +14,9 @@ import { parseApiDateTime } from "@/lib/apiDateTime";
 import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
-import { StatsErrorState } from "./StatsErrorState";
 import { StatsNote } from "./StatsNote";
 import { headlineGrid } from "./headlineGrid";
-import { StatsEmptyState, StatsTabSkeleton } from "./StatsTabState";
+import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   formatChange,
   formatCount,
@@ -108,31 +107,15 @@ function AttendanceChart({
   );
 }
 
-export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
+function AttendanceContent({
+  data,
+  single,
+}: {
+  data: Attendance;
+  single: boolean;
+}) {
   const { t, lang } = useLanguage();
-  const statsQ = useAttendanceStats(orgId, query);
-  const single = !!query?.meetupId;
-
-  if (statsQ.isPending) {
-    return (
-      <StatsTabSkeleton
-        single={single}
-        cards={single ? 4 : 6}
-        testId="attendance-skeleton"
-      />
-    );
-  }
-
-  if (statsQ.isError || !statsQ.data) {
-    return (
-      <StatsErrorState
-        onRetry={() => statsQ.refetch()}
-        onShowAll={query?.meetupId ? onShowAll : undefined}
-      />
-    );
-  }
-
-  const { meetups, totals, comparison, comparison_kind } = statsQ.data;
+  const { meetups, totals, comparison, comparison_kind } = data;
   if (meetups.length === 0) {
     return <StatsEmptyState />;
   }
@@ -227,5 +210,22 @@ export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
       </ChartCard>
       <StatsNote>{t("statsNoteAttendance")}</StatsNote>
     </div>
+  );
+}
+
+export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
+  const statsQ = useAttendanceStats(orgId, query);
+  const single = !!query?.meetupId;
+
+  return (
+    <StatsTabGate
+      statsQ={statsQ}
+      single={single}
+      cards={single ? 4 : 6}
+      testId="attendance-skeleton"
+      onShowAll={onShowAll}
+    >
+      {(data) => <AttendanceContent data={data} single={single} />}
+    </StatsTabGate>
   );
 }
