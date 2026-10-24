@@ -81,7 +81,7 @@ describe("FinalizeMeetupDialog", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["stats", "org-1"] });
   });
 
-  it("does not refresh the org stats when the request fails", async () => {
+  it("refreshes nothing when the request fails", async () => {
     mockApiPatch.mockResolvedValue({
       data: undefined,
       error: { detail: "nope" },
@@ -94,8 +94,6 @@ describe("FinalizeMeetupDialog", () => {
 
     await waitFor(() => expect(mockApiPatch).toHaveBeenCalledTimes(1));
     expect(onClose).not.toHaveBeenCalled();
-    expect(invalidate).not.toHaveBeenCalledWith({
-      queryKey: ["stats", "org-1"],
-    });
+    expect(invalidate).not.toHaveBeenCalled();
   });
 });
