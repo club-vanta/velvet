@@ -128,7 +128,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { label: t("navGuests"), href: "/guests", icon: Users, adminOnly: false },
     {
       label: t("navStats"),
-      shortLabel: "Stats",
+      shortLabel: t("navStatsShort"),
       href: "/stats",
       icon: ChartColumn,
       adminOnly: true,
