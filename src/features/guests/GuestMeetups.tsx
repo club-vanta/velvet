@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/api/client";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { GUEST_TYPE_LABEL, isGuestType } from "@/lib/guestType";
+import { GUEST_TYPE_LABEL } from "@/lib/guestType";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { guestMeetupsKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
@@ -112,10 +112,6 @@ function SummaryLine({ summary }: { summary: Summary }) {
 function MeetupItem({ meetup }: { meetup: GuestMeetup }) {
   const { t } = useLanguage();
   const view = STATUS_VIEW[meetup.status];
-  const guestType =
-    isGuestType(meetup.guest_type) && meetup.guest_type !== "NORMAL"
-      ? meetup.guest_type
-      : null;
   const meta = [
     formatDate(meetup.date),
     meetup.status === "WALKIN"
@@ -139,8 +135,10 @@ function MeetupItem({ meetup }: { meetup: GuestMeetup }) {
           {meetup.name}
         </Link>
         <Badge variant={view.badge}>{t(view.label)}</Badge>
-        {guestType && (
-          <Badge variant="outline">{t(GUEST_TYPE_LABEL[guestType])}</Badge>
+        {meetup.guest_type !== "NORMAL" && (
+          <Badge variant="outline">
+            {t(GUEST_TYPE_LABEL[meetup.guest_type])}
+          </Badge>
         )}
       </div>
       <p className="text-xs text-muted-foreground">{meta.join(" · ")}</p>

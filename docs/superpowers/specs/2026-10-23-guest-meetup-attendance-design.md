@@ -39,6 +39,7 @@ in this order:
 | ------------------------------------ | ----------- | ---------- | ---------- |
 | `has_arrived` and `is_walkin`        | `WALKIN`    | Discreto   | Walk-in    |
 | `has_arrived`                        | `ATTENDED`  | Fue        | Attended   |
+| `is_walkin` (never checked in)       | left out    |            |            |
 | `cancelled_rsvp`                     | `CANCELLED` | Se bajó    | Cancelled  |
 | `meetup.is_finalized`                | `NO_SHOW`   | No fue     | No-show    |
 | otherwise (meetup not finalized yet) | `UPCOMING`  | Próximo    | Upcoming   |
@@ -49,6 +50,10 @@ in this order:
   org always finalizes meetups after each event, so the night of the event
   nobody is marked as a no-show yet.
 - A walk-in counts as attended in the totals.
+- A walk-in row is created before the check-in, so one that was never
+  checked in (or whose check-in was undone) is left out entirely: the
+  person never signed up and never got in. Found in code review; without
+  it they would show as "No fue". (Claude's call, pending the user.)
 - A cancellation is not a no-show: telling the org you will not come is not
   the behavior this feature looks for.
 

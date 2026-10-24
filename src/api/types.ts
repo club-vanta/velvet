@@ -226,12 +226,13 @@ export interface paths {
     };
     /**
      * List the meetups of this organization a guest signed up for, with attendance
-     * @description Every meetup of this organization the guest has an RSVP for (signed up
-     *     on Mazmo, or added at the door as a walk-in), newest first, each with
-     *     its attendance status. Meetups of other organizations never appear.
+     * @description Every meetup of this organization the guest signed up for on Mazmo or
+     *     was checked in to as a walk-in, newest first, each with its attendance
+     *     status, plus totals. Meetups of other organizations never appear.
      *
      *     A meetup only counts as a NO_SHOW once it is finalized; before that a
      *     guest who has not arrived is UPCOMING. Cancelling is not a no-show.
+     *     The rule lives in app.services.attendance.
      *
      *     Returns 404 if the organization or the guest doesn't exist. A guest
      *     with no RSVPs in this organization gets an empty list.
@@ -1658,7 +1659,8 @@ export interface components {
      *     its attendance outcome (see app.services.attendance).
      *
      *     rsvp_time for a WALKIN is when staff added them at the door, not a
-     *     sign-up.
+     *     sign-up. Every field is always present so generated clients get them
+     *     as required.
      */
     GuestMeetupAttendancePublic: {
       /**
@@ -1680,12 +1682,8 @@ export interface components {
        */
       rsvp_time: string;
       /** Arrival Time */
-      arrival_time?: string | null;
-      /**
-       * Guest Type
-       * @default NORMAL
-       */
-      guest_type: string;
+      arrival_time: string | null;
+      guest_type: components["schemas"]["GuestType"];
     };
     /**
      * GuestPublic
@@ -3055,7 +3053,7 @@ export interface operations {
           "application/json": unknown;
         };
       };
-      /** @description Organization not found */
+      /** @description Guest or organization not found */
       404: {
         headers: {
           [name: string]: unknown;
