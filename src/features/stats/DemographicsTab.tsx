@@ -151,10 +151,12 @@ function NoShowTable({
   gender,
   age,
   labels,
+  labelledBy,
 }: {
   gender: Group[];
   age: Group[];
   labels: ReturnType<typeof useGroupLabels>;
+  labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
   const head = "py-1.5 text-xs font-medium text-muted-foreground";
@@ -172,7 +174,7 @@ function NoShowTable({
   ];
 
   return (
-    <table className="w-full text-sm tabular-nums">
+    <table aria-labelledby={labelledBy} className="w-full text-sm tabular-nums">
       <thead>
         <tr className="border-b">
           <th scope="col" className={cn(head, "text-left")}>
@@ -209,7 +211,9 @@ function NoShowTable({
                   small && "text-muted-foreground",
                 )}
               >
-                {formatRate(group.no_show_rate, lang)}
+                <span data-slot="rate-value">
+                  {formatRate(group.no_show_rate, lang)}
+                </span>
                 {small && (
                   <span data-slot="sample" className="ml-2 text-xs">
                     {t("statsSample").replace("{0}", String(group.expected))}
@@ -293,7 +297,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
           label={t("statsKnownAge")}
           value={formatRate(summary.known_age_share, lang)}
           comparison={compareKnown()}
-          n={summary.attended}
+          n={summary.known_age_share === null ? undefined : summary.attended}
         />
         <HeadlineStat
           label={t("statsAttendances")}
@@ -310,7 +314,14 @@ function DemographicsContent({ data }: { data: Demographics }) {
       </ChartCard>
       <StatsNote>{t("statsNoteAge")}</StatsNote>
       <ChartCard title={t("statsNoShowByGroup")}>
-        <NoShowTable gender={gender} age={age} labels={labels} />
+        {(headingId) => (
+          <NoShowTable
+            gender={gender}
+            age={age}
+            labels={labels}
+            labelledBy={headingId}
+          />
+        )}
       </ChartCard>
     </div>
   );

@@ -242,6 +242,7 @@ describe("DemographicsTab", () => {
     expect(slot("Edad mediana", "value")).toBe("–");
     expect(slot("Con edad conocida", "value")).toBe("–");
     expect(slot("Asistencias", "value")).toBe("0");
+    expect(slot("Con edad conocida", "sample")).toBeNull();
     expect(document.body).not.toHaveTextContent("NaN");
   });
 
@@ -266,22 +267,47 @@ describe("DemographicsTab", () => {
     ).toEqual(["Grupo", "Se esperaban", "No-show"]);
 
     const male = groupRow("Hombre");
-    expect(part(male, "rate")).toBe("10%");
+    expect(part(male, "rate-value")).toBe("10%");
     expect(part(male, "sample")).toBeNull();
     expect(male.querySelector('[data-slot="rate"]')).not.toHaveClass(
       "text-muted-foreground",
     );
 
     const small = groupRow("NEW_CODE");
-    expect(part(small, "rate")).toBe("50%n = 4");
+    expect(part(small, "rate-value")).toBe("50%");
     expect(part(small, "sample")).toBe("n = 4");
     expect(small.querySelector('[data-slot="rate"]')).toHaveClass(
       "text-muted-foreground",
     );
 
     const none = groupRow("Sin dato");
-    expect(part(none, "rate")).toBe("–");
+    expect(part(none, "rate-value")).toBe("–");
     expect(part(none, "sample")).toBeNull();
+  });
+
+  it("names the no-show table after its card", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    expect(
+      screen.getByRole("table", { name: "No-show por grupo" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows n under the known-age share when few people attended", async () => {
+    respond(ok(stats({ summary: { ...SUMMARY, attended: 5 } })));
+    renderTab();
+    await headlinesReady();
+    expect(slot("Con edad conocida", "sample")).toBe("n = 5");
+  });
+
+  it("shows no n for a group with nobody expected", async () => {
+    respond(ok(stats({ gender: [...GENDER, group("FEMALE", 0, null)] })));
+    renderTab();
+    await headlinesReady();
+    const row = groupRow("Mujer");
+    expect(part(row, "rate-value")).toBe("–");
+    expect(part(row, "sample")).toBeNull();
   });
 
   it("explains how gender and age are read", async () => {

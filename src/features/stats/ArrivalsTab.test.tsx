@@ -284,9 +284,26 @@ describe("ArrivalsTab", () => {
     expect(slot("Llegó el 50%", "value")).toBe("–");
     expect(slot("Llegó el 90%", "value")).toBe("–");
     expect(slot("En la primera hora", "value")).toBe("–");
+    expect(slot("En la primera hora", "sample")).toBeNull();
     expect(screen.getByText("Nadie hizo check-in")).toBeInTheDocument();
     expect(leadRow("El mismo día")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("NaN");
+  });
+
+  it("names the lead-time table after its card", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    expect(
+      screen.getByRole("table", { name: "Con cuánta anticipación se anotan" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows n under the first-hour share when few people arrived", async () => {
+    respond(ok(stats({ summary: { ...SUMMARY, arrivals: 5 } })));
+    renderTab();
+    await headlinesReady();
+    expect(slot("En la primera hora", "sample")).toBe("n = 5");
   });
 
   it("lists the lead times in a table with exact counts and dims small rates", async () => {
@@ -300,7 +317,7 @@ describe("ArrivalsTab", () => {
 
     const sameDay = leadRow("El mismo día");
     expect(part(sameDay, "signed-up")).toBe("120");
-    expect(part(sameDay, "rate")).toBe("10%");
+    expect(part(sameDay, "rate-value")).toBe("10%");
     expect(part(sameDay, "sample")).toBeNull();
     expect(sameDay.querySelector('[data-slot="rate"]')).not.toHaveClass(
       "text-muted-foreground",
@@ -308,7 +325,7 @@ describe("ArrivalsTab", () => {
 
     const fourSeven = leadRow("4-7 días");
     expect(part(fourSeven, "signed-up")).toBe("8");
-    expect(part(fourSeven, "rate")).toBe("50%n = 8");
+    expect(part(fourSeven, "rate-value")).toBe("50%");
     expect(part(fourSeven, "sample")).toBe("n = 8");
     expect(fourSeven.querySelector('[data-slot="rate"]')).toHaveClass(
       "text-muted-foreground",
@@ -316,7 +333,7 @@ describe("ArrivalsTab", () => {
     expect(part(leadRow("2-3 días"), "sample")).toBe("n = 8");
 
     const fifteen = leadRow("15+ días");
-    expect(part(fifteen, "rate")).toBe("–");
+    expect(part(fifteen, "rate-value")).toBe("–");
     expect(part(fifteen, "sample")).toBeNull();
   });
 

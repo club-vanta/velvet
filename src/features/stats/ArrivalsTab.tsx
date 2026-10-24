@@ -113,12 +113,21 @@ function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
 }
 
 /** Sign-ups and the no-show rate of each lead-time bucket; a rate from few people is dimmed with its n. */
-function LeadTimeTable({ rows }: { rows: LeadRow[] }) {
+function LeadTimeTable({
+  rows,
+  labelledBy,
+}: {
+  rows: LeadRow[];
+  labelledBy: string;
+}) {
   const { t, lang } = useLanguage();
   const head = "py-1.5 text-xs font-medium text-muted-foreground";
 
   return (
-    <table className="mt-3 w-full text-sm tabular-nums">
+    <table
+      aria-labelledby={labelledBy}
+      className="mt-3 w-full text-sm tabular-nums"
+    >
       <thead>
         <tr className="border-b">
           <th scope="col" className={cn(head, "text-left")}>
@@ -155,7 +164,9 @@ function LeadTimeTable({ rows }: { rows: LeadRow[] }) {
                   small && "text-muted-foreground",
                 )}
               >
-                {formatRate(r.no_show_rate, lang)}
+                <span data-slot="rate-value">
+                  {formatRate(r.no_show_rate, lang)}
+                </span>
                 {small && (
                   <span data-slot="sample" className="ml-2 text-xs">
                     {t("statsSample").replace("{0}", String(n))}
@@ -266,7 +277,7 @@ function ArrivalsContent({
           label={t("statsFirstHour")}
           value={formatRate(summary.first_hour_share, lang)}
           comparison={compareShare()}
-          n={summary.arrivals}
+          n={summary.first_hour_share === null ? undefined : summary.arrivals}
         />
       </div>
       <ChartCard title={t("statsArrivalCurve")}>
@@ -280,16 +291,18 @@ function ArrivalsContent({
       </ChartCard>
       <StatsNote>{t("statsNoteArrivals")}</StatsNote>
       <ChartCard title={t("statsLeadTime")}>
-        {lead_time.every((r) => r.signed_up === 0) ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {t("statsNoSignups")}
-          </p>
-        ) : (
-          <>
-            <LeadTimeChart rows={lead_time} />
-            <LeadTimeTable rows={lead_time} />
-          </>
-        )}
+        {(headingId) =>
+          lead_time.every((r) => r.signed_up === 0) ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {t("statsNoSignups")}
+            </p>
+          ) : (
+            <>
+              <LeadTimeChart rows={lead_time} />
+              <LeadTimeTable rows={lead_time} labelledBy={headingId} />
+            </>
+          )
+        }
       </ChartCard>
       <StatsNote>{t("statsNoteLeadTime")}</StatsNote>
     </div>
