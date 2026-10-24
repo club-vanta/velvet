@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatChange,
   formatEventDay,
+  formatPointChange,
   formatRate,
   isSmallSample,
   SMALL_SAMPLE,
@@ -30,6 +31,28 @@ describe("formatChange", () => {
     expect(formatChange(5, 0)).toBeNull();
     expect(formatChange(null, 3)).toBeNull();
     expect(formatChange(3, null)).toBeNull();
+  });
+});
+
+describe("formatChange zero", () => {
+  it("never returns -0", () => {
+    expect(Object.is(formatChange(99.9, 100), 0)).toBe(true);
+  });
+});
+
+describe("formatPointChange", () => {
+  it("returns the whole percentage-point change", () => {
+    expect(formatPointChange(0.18, 0.15)).toBe(3);
+    expect(formatPointChange(0.1, 0.25)).toBe(-15);
+  });
+
+  it("returns null when either rate is missing", () => {
+    expect(formatPointChange(null, 0.1)).toBeNull();
+    expect(formatPointChange(0.1, null)).toBeNull();
+  });
+
+  it("never returns -0", () => {
+    expect(Object.is(formatPointChange(0.1, 0.104), 0)).toBe(true);
   });
 });
 

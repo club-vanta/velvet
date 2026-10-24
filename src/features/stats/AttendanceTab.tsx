@@ -11,10 +11,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAttendanceStats } from "@/hooks/useAttendanceStats";
 import { useLanguage } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
-import { formatChange, formatEventDay, formatRate } from "./statsFormat";
+import {
+  formatChange,
+  formatCount,
+  formatEventDay,
+  formatPointChange,
+  formatRate,
+} from "./statsFormat";
 import { useStatsFilters } from "./useStatsFilters";
 
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
@@ -25,6 +32,14 @@ const SERIES = [
   { key: "cancelled", color: "var(--chart-3)" },
 ] as const;
 
+/** One layout for the skeleton and the cards, so nothing jumps on load. */
+function headlineGrid(single: boolean): string {
+  return cn(
+    "grid grid-cols-2 gap-2 sm:gap-3",
+    single ? "xl:grid-cols-4" : "xl:grid-cols-3",
+  );
+}
+
 function ErrorState({
   onRetry,
   onShowAll,
@@ -34,8 +49,11 @@ function ErrorState({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10">
-      {t("failedLoadStats")}
+    <div
+      role="alert"
+      className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
+    >
+      {t("failedLoadOrgStats")}
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" onClick={onRetry}>
           {t("retry")}
@@ -131,12 +149,13 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
   const { t, lang } = useLanguage();
   const { query, setMeetupId } = useStatsFilters();
   const statsQ = useAttendanceStats(orgId, query);
+  const single = !!query?.meetupId;
 
   if (statsQ.isPending) {
     return (
       <div data-testid="attendance-skeleton" className="space-y-3">
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className={headlineGrid(single)}>
+          {Array.from({ length: single ? 4 : 6 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
@@ -163,13 +182,12 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
     );
   }
 
-  const single = !!query?.meetupId;
-
   /** The line under a number: change vs. the previous period, or the period average. */
   function compare(
     current: number | null,
     baseline: number | null | undefined,
     average?: string,
+    unit: "percent" | "points" = "percent",
   ): string | undefined {
     if (comparison_kind === "PERIOD_AVERAGE") {
       return average === undefined
@@ -177,20 +195,24 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
         : t("statsPeriodAverage").replace("{0}", average);
     }
     if (comparison_kind !== "PREVIOUS_PERIOD") return undefined;
-    const change = formatChange(current, baseline ?? null);
+    const points = unit === "points";
+    const change = points
+      ? formatPointChange(current, baseline ?? null)
+      : formatChange(current, baseline ?? null);
     if (change === null) return undefined;
-    return t("statsVsPrevious").replace(
+    const signed = `${change > 0 ? "+" : ""}${change}`;
+    return t(points ? "statsVsPreviousPts" : "statsVsPrevious").replace(
       "{0}",
-      `${change > 0 ? "+" : ""}${change}%`,
+      points ? signed : `${signed}%`,
     );
   }
 
   const rate = (value: number | null) => formatRate(value, lang);
-  const count = (value: number | null) => (value === null ? "–" : `${value}`);
+  const count = (value: number | null) => formatCount(value, lang);
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
+      <div className={headlineGrid(single)}>
         <HeadlineStat
           label={t("statsAttended")}
           value={count(totals.attended)}
@@ -207,6 +229,7 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
             totals.no_show_rate,
             comparison?.no_show_rate,
             comparison ? rate(comparison.no_show_rate) : undefined,
+            "points",
           )}
           n={totals.signed_up - totals.cancelled}
         />
@@ -217,6 +240,7 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
             totals.cancellation_rate,
             comparison?.cancellation_rate,
             comparison ? rate(comparison.cancellation_rate) : undefined,
+            "points",
           )}
           n={totals.signed_up}
         />

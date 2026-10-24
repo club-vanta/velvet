@@ -28,17 +28,28 @@ export function HeadlineStat({
         small && "text-muted-foreground",
       )}
     >
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <p
+        data-slot="label"
+        className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+      >
         {label}
       </p>
-      <p className="text-2xl font-semibold tabular-nums sm:text-3xl">{value}</p>
+      <p
+        data-slot="value"
+        className="text-2xl font-semibold tabular-nums sm:text-3xl"
+      >
+        {value}
+      </p>
       {comparison && (
-        <p className="text-xs text-muted-foreground tabular-nums">
+        <p
+          data-slot="comparison"
+          className="text-xs text-muted-foreground tabular-nums"
+        >
           {comparison}
         </p>
       )}
       {small && (
-        <p className="text-xs tabular-nums">
+        <p data-slot="sample" className="text-xs tabular-nums">
           {t("statsSample").replace("{0}", String(n))}
         </p>
       )}

@@ -109,6 +109,18 @@ function headline(label: string): HTMLElement {
   return card;
 }
 
+/** The text of one part of a headline card, or null when it has none. */
+function slot(label: string, name: string): string | null {
+  return (
+    headline(label).querySelector(`[data-slot="${name}"]`)?.textContent ?? null
+  );
+}
+
+const statsCalls = () =>
+  mockApiGet.mock.calls.filter(
+    ([path]) => path === "/organizations/{org_id}/stats/attendance",
+  );
+
 async function headlinesReady() {
   await waitFor(() => headline("Vinieron"));
 }
@@ -130,7 +142,7 @@ describe("AttendanceTab", () => {
     respond(Promise.resolve({ data: undefined, error: { detail: "nope" } }));
     renderTab("/stats?range=all&meetup=m1");
     expect(
-      await screen.findByText("Error al cargar las estadísticas del evento."),
+      await screen.findByText("No se pudieron cargar las estadísticas."),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeVisible();
     await user.click(
@@ -139,6 +151,18 @@ describe("AttendanceTab", () => {
     await waitFor(() =>
       expect(screen.getByTestId("search").textContent).toBe("?range=all"),
     );
+  });
+
+  it("announces the error and retries the request", async () => {
+    const user = userEvent.setup();
+    respond(Promise.resolve({ data: undefined, error: { detail: "nope" } }));
+    renderTab();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No se pudieron cargar las estadísticas.",
+    );
+    expect(statsCalls()).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    await waitFor(() => expect(statsCalls()).toHaveLength(2));
   });
 
   it("offers no way back to all events on an error without a selected event", async () => {
@@ -163,19 +187,24 @@ describe("AttendanceTab", () => {
       ok(
         stats({
           comparison_kind: "PREVIOUS_PERIOD",
-          comparison: { ...TOTALS, attended: 381 },
+          comparison: { ...TOTALS, attended: 381, no_show_rate: 0.15 },
         }),
       ),
     );
     renderTab();
     await headlinesReady();
-    expect(headline("Vinieron")).toHaveTextContent("412");
-    expect(headline("No-show")).toHaveTextContent("18%");
-    expect(headline("Se bajaron")).toHaveTextContent("10%");
-    expect(headline("Discretos")).toHaveTextContent("12");
-    expect(headline("Eventos")).toHaveTextContent("5");
-    expect(headline("Promedio por evento")).toHaveTextContent("82.4");
-    expect(screen.getByText("+8% vs. período anterior")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Asistencia por evento" }),
+    ).toBeInTheDocument();
+    expect(slot("Vinieron", "value")).toBe("412");
+    expect(slot("Vinieron", "comparison")).toBe("+8% vs. período anterior");
+    expect(slot("No-show", "value")).toBe("18%");
+    expect(slot("No-show", "comparison")).toBe("+3 pts vs. período anterior");
+    expect(slot("Se bajaron", "value")).toBe("10%");
+    expect(slot("Se bajaron", "comparison")).toBe("0 pts vs. período anterior");
+    expect(slot("Discretos", "value")).toBe("12");
+    expect(slot("Eventos", "value")).toBe("5");
+    expect(slot("Promedio por evento", "value")).toBe("82,4");
   });
 
   it("compares a single event with the period average", async () => {
@@ -190,8 +219,9 @@ describe("AttendanceTab", () => {
     );
     renderTab("/stats?range=all&meetup=m1");
     await headlinesReady();
-    expect(screen.getByText("promedio: 82.4")).toBeInTheDocument();
-    expect(screen.getByText("promedio: 20%")).toBeInTheDocument();
+    expect(slot("Vinieron", "comparison")).toBe("promedio: 82,4");
+    expect(slot("No-show", "comparison")).toBe("promedio: 20%");
+    expect(slot("Discretos", "comparison")).toBeNull();
     expect(() => headline("Eventos")).toThrow();
   });
 
@@ -206,7 +236,7 @@ describe("AttendanceTab", () => {
     renderTab();
     await headlinesReady();
     const noShow = headline("No-show");
-    expect(noShow).toHaveTextContent("n = 7");
+    expect(slot("No-show", "sample")).toBe("n = 7");
     expect(noShow).toHaveClass("text-muted-foreground");
     expect(headline("Vinieron")).not.toHaveClass("text-muted-foreground");
   });
@@ -231,8 +261,9 @@ describe("AttendanceTab", () => {
     );
     renderTab();
     await headlinesReady();
-    expect(headline("No-show")).toHaveTextContent("–");
-    expect(headline("Se bajaron")).toHaveTextContent("–");
+    expect(slot("No-show", "value")).toBe("–");
+    expect(slot("Se bajaron", "value")).toBe("–");
+    expect(slot("Promedio por evento", "value")).toBe("–");
     expect(document.body).not.toHaveTextContent("NaN");
   });
 

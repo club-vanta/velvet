@@ -26,7 +26,7 @@ export function useAttendanceStats(orgId: string, query: StatsQuery | null) {
           },
         },
       );
-      if (error) throw new Error(t("failedLoadStats"));
+      if (error) throw new Error(t("failedLoadOrgStats"));
       return data;
     },
     enabled: !!orgId && query !== null,

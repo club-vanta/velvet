@@ -16,7 +16,21 @@ export function formatChange(
   baseline: number | null,
 ): number | null {
   if (current === null || baseline === null || baseline === 0) return null;
-  return Math.round(((current - baseline) / baseline) * 100);
+  return Math.round(((current - baseline) / baseline) * 100) || 0;
+}
+
+/** Whole percentage-point change between two rates, or null when either is missing. */
+export function formatPointChange(
+  current: number | null,
+  baseline: number | null,
+): number | null {
+  if (current === null || baseline === null) return null;
+  return Math.round((current - baseline) * 100) || 0;
+}
+
+export function formatCount(value: number | null, locale: string): string {
+  if (value === null) return NO_VALUE;
+  return new Intl.NumberFormat(locale).format(value);
 }
 
 export function isSmallSample(n: number): boolean {
@@ -28,7 +42,9 @@ export function isSmallSample(n: number): boolean {
  * "Z"), which `new Date` would read as local time.
  */
 export function formatEventDay(iso: string): string {
-  const date = new Date(/[zZ]|[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`);
+  const date = new Date(
+    /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(iso) ? iso : `${iso}Z`,
+  );
   const day = localDay(date);
   return `${day.slice(8)}/${day.slice(5, 7)}`;
 }
