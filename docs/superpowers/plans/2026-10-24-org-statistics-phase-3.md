@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Phase 1 and phase 2 Global Constraints (single PR per repo at the end, branches `feat/org-stats-attendance` / `feat/org-statistics`, local type generation, audience, finalized only, Buenos Aires time, no em dashes, en/es strings).
-- Unit of counting: one audience RSVP (an attendance), not a unique guest. A guest who came to 5 meetups counts 5 times in the aggregate. The tab says so under its first chart ("Cada asistencia cuenta una vez" / "Each attendance counts once").
+- Unit of counting: one audience RSVP (an attendance), not a unique guest. A guest who came to 5 meetups counts 5 times in the aggregate. The tab says so in a `StatsNote` under its first chart.
 - Groups for each RSVP:
   - Gender: `GuestMazmoProfile.gender` as stored (a Mazmo code such as `MALE`, `WOMAN_CIS`); null or empty string or no profile -> `None` (shown as "Sin dato"). `UNDEFINED` is a Mazmo choice and stays its own group.
   - Age bucket (`StatsAgeBucket` StrEnum, in this order): `AGE_18_24`, `AGE_25_29`, `AGE_30_34`, `AGE_35_39`, `AGE_40_49`, `AGE_50_PLUS`, `UNKNOWN`. Ages below 18 or above 99, null, or no profile -> `UNKNOWN` (Mazmo has fake ages like 126).
@@ -75,13 +75,13 @@
 
 - Headlines: Edad mediana (`median_age` with one decimal, comparison `"+1,5 años vs. período anterior"` / `"promedio: 31,2"`), Con edad conocida (`known_age_share`, n = attended), Asistencias (`summary.attended`).
 - Charts (each in a `ChartCard`):
-  - Género: horizontal bars, one row per group, two bars per row: share of attended and share of expected (legend "Vinieron" / "Se esperaban"), labels via `mazmoLabel`, `None` -> "Sin dato". Caption "Cada asistencia cuenta una vez".
+  - Género: horizontal bars, one row per group, two bars per row: share of attended and share of expected (legend "Vinieron" / "Se esperaban"), labels via `mazmoLabel`, `None` -> "Sin dato". A `StatsNote` under it: `statsNoteGender`.
   - Edad: vertical bars per age bucket with the same two series.
   - No-show por grupo: a compact list (gender groups, then age buckets) with `formatRate(no_show_rate)`, dimmed with `n = expected` when small.
-- i18n (en / es): `statsTabDemographics` "Demographics" / "Demografía"; `statsMedianAge` "Median age" / "Edad mediana"; `statsKnownAge` "Age known" / "Con edad conocida"; `statsAttendances` "Attendances" / "Asistencias"; `statsGender` "Gender" / "Género"; `statsAge` "Age" / "Edad"; `statsSeriesExpected` "Expected" / "Se esperaban"; `statsNoShowByGroup` "No-show by group" / "No-show por grupo"; `statsUnknown` "Unknown" / "Sin dato"; `statsEachAttendance` "Each attendance counts once" / "Cada asistencia cuenta una vez"; `statsYearsVsPrevious` "{0} years vs. previous period" / "{0} años vs. período anterior"; age bucket labels `statsAge18to24` "18-24" (same both), ..., `statsAge50Plus` "50+".
+- i18n (en / es): `statsTabDemographics` "Demographics" / "Demografía"; `statsMedianAge` "Median age" / "Edad mediana"; `statsKnownAge` "Age known" / "Con edad conocida"; `statsAttendances` "Attendances" / "Asistencias"; `statsGender` "Gender" / "Género"; `statsAge` "Age" / "Edad"; `statsSeriesExpected` "Expected" / "Se esperaban"; `statsNoShowByGroup` "No-show by group" / "No-show por grupo"; `statsUnknown` "Unknown" / "Sin dato"; notes (via `StatsNote`, user request): `statsNoteGender` en "Gender comes from the Mazmo profile. Each attendance counts once, so someone who came to three events counts three times. Guests without a Mazmo profile show as Unknown." / es "El género sale del perfil de Mazmo. Cada asistencia cuenta una vez: alguien que vino a tres eventos cuenta tres veces. Quien no tiene perfil de Mazmo aparece como Sin dato."; `statsNoteAge` en "Age is today's age on Mazmo, not the age on the day of the event. Ages under 18 or over 99 are treated as Unknown, since some profiles have made-up ages." / es "La edad es la que figura hoy en Mazmo, no la que tenía el día del evento. Las edades menores de 18 o mayores de 99 cuentan como Sin dato, porque algunos perfiles tienen edades inventadas."; `statsYearsVsPrevious` "{0} years vs. previous period" / "{0} años vs. período anterior"; age bucket labels `statsAge18to24` "18-24" (same both), ..., `statsAge50Plus` "50+".
 - `formatYearsChange(current, baseline)`: difference rounded to 1 decimal, sign shown, locale decimal separator; null when either is null.
 
-- [ ] **Step 1: Failing tests:** loading, error, empty; exact headline values; gender rows labelled through `mazmoLabel` (MALE -> "Hombre", unknown code `NEW_CODE` -> "NEW_CODE", null -> "Sin dato"); dimmed small-n no-show row with "n = 4"; query params sent; `formatYearsChange` cases.
+- [ ] **Step 1: Failing tests:** loading, error, empty; both notes render with their exact Spanish text; exact headline values; gender rows labelled through `mazmoLabel` (MALE -> "Hombre", unknown code `NEW_CODE` -> "NEW_CODE", null -> "Sin dato"); dimmed small-n no-show row with "n = 4"; query params sent; `formatYearsChange` cases.
 - [ ] **Step 2:** fail. **Step 3:** implement. **Step 4:** gates. **Step 5: Commit** `feat: add the Demografía stats tab`
 
 ### Task 4: Gate and browser check
