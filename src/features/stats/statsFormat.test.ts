@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   formatChange,
   formatEventDay,
@@ -6,6 +6,7 @@ import {
   formatRate,
   isSmallSample,
   SMALL_SAMPLE,
+  spansYears,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -65,21 +66,44 @@ describe("isSmallSample", () => {
 });
 
 describe("formatEventDay", () => {
-  it("reads a naive backend datetime as UTC and shows the local dd/mm", () => {
-    // 22:00 UTC is still the same local day in Buenos Aires (UTC-3).
-    expect(formatEventDay("2026-04-05T22:00:00")).toBe(
-      localDdMm(new Date("2026-04-05T22:00:00Z")),
-    );
+  beforeEach(() => vi.stubEnv("TZ", "America/Argentina/Buenos_Aires"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("shows the Buenos Aires day of a late event, which is the next day in UTC", () => {
+    // 22:30 on Apr 4 in Buenos Aires.
+    expect(formatEventDay("2026-04-05T01:30:00Z")).toBe("04/04");
   });
 
-  it("gives the same result with or without the Z", () => {
-    expect(formatEventDay("2026-12-31T23:30:00")).toBe(
-      formatEventDay("2026-12-31T23:30:00Z"),
-    );
+  it("reads a naive backend datetime as UTC", () => {
+    expect(formatEventDay("2026-04-05T01:30:00")).toBe("04/04");
+  });
+
+  it("adds a two-digit year when asked", () => {
+    expect(formatEventDay("2027-01-01T02:30:00Z", true)).toBe("31/12/26");
   });
 });
 
-function localDdMm(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
-}
+describe("spansYears", () => {
+  beforeEach(() => vi.stubEnv("TZ", "America/Argentina/Buenos_Aires"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("is false for events in one local year", () => {
+    expect(spansYears(["2026-03-10T22:00:00Z", "2026-12-20T22:00:00Z"])).toBe(
+      false,
+    );
+    expect(spansYears([])).toBe(false);
+  });
+
+  it("is true for events in two local years", () => {
+    expect(spansYears(["2026-03-10T22:00:00Z", "2027-01-10T22:00:00Z"])).toBe(
+      true,
+    );
+  });
+
+  it("puts a late Dec 31 event in its local year", () => {
+    // 23:30 on Dec 31, 2026 in Buenos Aires is Jan 1, 2027 in UTC.
+    expect(spansYears(["2026-03-10T22:00:00Z", "2027-01-01T02:30:00Z"])).toBe(
+      false,
+    );
+  });
+});

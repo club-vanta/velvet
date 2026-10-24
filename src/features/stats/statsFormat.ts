@@ -1,3 +1,4 @@
+import { parseApiDateTime } from "@/lib/apiDateTime";
 import { localDay } from "./statsPeriod";
 
 /** Rates built from fewer people than this are shown dimmed with `n`. */
@@ -37,14 +38,17 @@ export function isSmallSample(n: number): boolean {
   return n < SMALL_SAMPLE;
 }
 
-/**
- * dd/mm of an event's local day. The API sends naive UTC datetimes (no
- * "Z"), which `new Date` would read as local time.
- */
-export function formatEventDay(iso: string): string {
-  const date = new Date(
-    /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(iso) ? iso : `${iso}Z`,
+/** dd/mm of an event's local day, or dd/mm/yy with `withYear`. */
+export function formatEventDay(iso: string, withYear = false): string {
+  const day = localDay(parseApiDateTime(iso));
+  const dayMonth = `${day.slice(8)}/${day.slice(5, 7)}`;
+  return withYear ? `${dayMonth}/${day.slice(2, 4)}` : dayMonth;
+}
+
+/** Whether the events fall on local days of more than one calendar year. */
+export function spansYears(isos: string[]): boolean {
+  const years = new Set(
+    isos.map((iso) => localDay(parseApiDateTime(iso)).slice(0, 4)),
   );
-  const day = localDay(date);
-  return `${day.slice(8)}/${day.slice(5, 7)}`;
+  return years.size > 1;
 }
