@@ -2,13 +2,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
 import { AttendanceTab } from "./AttendanceTab";
+import { StatsErrorState } from "./StatsErrorState";
 import { StatsFilterBar } from "./StatsFilterBar";
+import type { StatsTabProps } from "./statsTab";
 import { useStatsFilters, type StatsTab } from "./useStatsFilters";
 
 export function StatsPage() {
   const { t } = useLanguage();
   const { activeOrg } = useOrg();
   const filters = useStatsFilters();
+  const tabProps: StatsTabProps = {
+    orgId: activeOrg?.org_id ?? "",
+    query: filters.query,
+    onShowAll: () => filters.setMeetupId(undefined),
+  };
+  // Without the events, a selected event cannot be checked, so no tab can
+  // load; the error offers a retry or all events.
+  const eventsError = filters.eventsFailed && (
+    <StatsErrorState
+      onRetry={filters.retryEvents}
+      onShowAll={tabProps.onShowAll}
+    />
+  );
 
   return (
     <div className="space-y-4">
@@ -26,7 +41,7 @@ export function StatsPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="attendance">
-          <AttendanceTab orgId={activeOrg?.org_id ?? ""} />
+          {eventsError || <AttendanceTab {...tabProps} />}
         </TabsContent>
       </Tabs>
     </div>

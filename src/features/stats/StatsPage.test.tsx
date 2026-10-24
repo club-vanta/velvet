@@ -8,7 +8,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { StatsPage } from "./StatsPage";
 import type { components } from "@/api/types";
@@ -55,18 +55,30 @@ const MEETUPS = [
 
 function Probe() {
   const { search } = useLocation();
-  return <div data-testid="search">{search}</div>;
+  const navigate = useNavigate();
+  return (
+    <>
+      <div data-testid="search">{search}</div>
+      <button onClick={() => void navigate(-1)}>back</button>
+    </>
+  );
 }
 
-function renderPage(url = "/stats", meetups: Meetup[] = MEETUPS) {
+const meetupsOk = (meetups: Meetup[]) =>
+  Promise.resolve({
+    data: { total: meetups.length, meetups },
+    error: undefined,
+  });
+
+function renderPage(
+  url = "/stats",
+  meetupsResult: () => unknown = () => meetupsOk(MEETUPS),
+) {
   // The attendance tab has its own tests, so its request just stays pending.
   mockApiGet.mockImplementation((path: string) =>
     path === "/organizations/{org_id}/stats/attendance"
       ? new Promise(() => {})
-      : Promise.resolve({
-          data: { total: meetups.length, meetups },
-          error: undefined,
-        }),
+      : meetupsResult(),
   );
   return render(
     <QueryClientProvider
@@ -90,7 +102,7 @@ async function choosePeriod(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
 ) {
-  await user.click(screen.getByRole("combobox", { name: "Período" }));
+  await user.click(screen.getByRole("combobox", { name: /^Período: / }));
   await user.click(await screen.findByRole("option", { name }));
 }
 
@@ -141,7 +153,7 @@ describe("StatsPage", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText("Todos los eventos");
-    await user.click(screen.getByRole("combobox", { name: "Evento" }));
+    await user.click(screen.getByRole("combobox", { name: /^Evento: / }));
     const options = (await screen.findAllByRole("option")).map(
       (o) => o.textContent,
     );
@@ -152,13 +164,13 @@ describe("StatsPage", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText("Todos los eventos");
-    await user.click(screen.getByRole("combobox", { name: "Evento" }));
+    await user.click(screen.getByRole("combobox", { name: /^Evento: / }));
     await user.click(
       await screen.findByRole("option", { name: "Alter Marzo · 10/03" }),
     );
     expect(search()).toBe("?meetup=in-range");
 
-    await user.click(screen.getByRole("combobox", { name: "Evento" }));
+    await user.click(screen.getByRole("combobox", { name: /^Evento: / }));
     await user.click(
       within(await screen.findByRole("listbox")).getByRole("option", {
         name: "Todos los eventos",
@@ -207,15 +219,103 @@ describe("StatsPage", () => {
     renderPage("/stats?meetup=old");
     await screen.findByText("Todos los eventos");
     await waitFor(() => expect(search()).toBe(""));
-    expect(screen.getByRole("combobox", { name: "Evento" })).toHaveTextContent(
-      "Todos los eventos",
-    );
+    expect(
+      screen.getByRole("combobox", { name: /^Evento: / }),
+    ).toHaveTextContent("Todos los eventos");
   });
 
   it("treats an empty meetup param as no event", async () => {
     renderPage("/stats?meetup=");
-    expect(screen.getByRole("combobox", { name: "Evento" })).toHaveTextContent(
-      "Todos los eventos",
+    expect(
+      screen.getByRole("combobox", { name: /^Evento: / }),
+    ).toHaveTextContent("Todos los eventos");
+  });
+
+  it("names the selects by label and visible value", async () => {
+    renderPage();
+    await screen.findByText("Todos los eventos");
+    expect(
+      screen.getByRole("combobox", { name: "Período: Últimos 3 meses" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: "Evento: Todos los eventos" }),
+    ).toBeInTheDocument();
+  });
+
+  it("undoes a picked event with the browser back button", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Todos los eventos");
+    await user.click(screen.getByRole("combobox", { name: /^Evento: / }));
+    await user.click(
+      await screen.findByRole("option", { name: "Alter Marzo · 10/03" }),
     );
+    expect(search()).toBe("?meetup=in-range");
+
+    await user.click(screen.getByRole("button", { name: "back" }));
+    expect(search()).toBe("");
+    expect(
+      screen.getByRole("combobox", { name: "Evento: Todos los eventos" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the selected event when the meetups fail to load", async () => {
+    const user = userEvent.setup();
+    const failure = () =>
+      Promise.resolve({ data: undefined, error: { detail: "nope" } });
+    renderPage("/stats?meetup=in-range", failure);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "No se pudieron cargar las estadísticas.",
+    );
+    expect(search()).toBe("?meetup=in-range");
+    expect(screen.queryByTestId("attendance-skeleton")).not.toBeInTheDocument();
+
+    const meetupCalls = () =>
+      mockApiGet.mock.calls.filter(
+        ([path]) => path === "/organizations/{org_id}/meetups/",
+      );
+    expect(meetupCalls()).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Reintentar" }));
+    await waitFor(() => expect(meetupCalls()).toHaveLength(2));
+    expect(search()).toBe("?meetup=in-range");
+
+    await user.click(
+      screen.getByRole("button", { name: "Ver todos los eventos" }),
+    );
+    expect(search()).toBe("");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("moves the other date along when a custom range would turn around", () => {
+    renderPage("/stats?range=custom&from=2026-03-01&to=2026-03-31");
+    fireEvent.change(screen.getByLabelText("Desde"), {
+      target: { value: "2026-04-10" },
+    });
+    expect(search()).toBe("?range=custom&from=2026-04-10&to=2026-04-10");
+
+    fireEvent.change(screen.getByLabelText("Hasta"), {
+      target: { value: "2026-02-01" },
+    });
+    expect(search()).toBe("?range=custom&from=2026-02-01&to=2026-02-01");
+  });
+
+  describe("in Buenos Aires", () => {
+    beforeEach(() => vi.stubEnv("TZ", "America/Argentina/Buenos_Aires"));
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("labels a late event with its local day", async () => {
+      const user = userEvent.setup();
+      // 22:30 on Apr 4 in Buenos Aires.
+      const late: Meetup = {
+        ...meetup("late", "Alter Tarde", new Date(0), true),
+        date: "2026-04-05T01:30:00Z",
+      };
+      renderPage("/stats", () => meetupsOk([late]));
+      await screen.findByText("Todos los eventos");
+      await user.click(screen.getByRole("combobox", { name: /^Evento: / }));
+      expect(
+        await screen.findByRole("option", { name: "Alter Tarde · 04/04" }),
+      ).toBeInTheDocument();
+    });
   });
 });

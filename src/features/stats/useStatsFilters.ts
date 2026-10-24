@@ -2,7 +2,9 @@ import type { components } from "@/api/types";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useOrgMeetups } from "@/hooks/useOrgMeetups";
+import { parseApiDateTime } from "@/lib/apiDateTime";
 import { useOrg } from "@/lib/org";
+import type { StatsQuery } from "@/lib/statsQuery";
 import {
   DEFAULT_RANGE,
   addDays,
@@ -11,7 +13,6 @@ import {
   localDay,
   resolveRange,
   type RangePreset,
-  type StatsQuery,
 } from "./statsPeriod";
 
 export type StatsTab = "attendance";
@@ -55,7 +56,7 @@ export function useStatsFilters() {
   // Finalized events inside the period: what the event filter offers.
   const events: OfferedEvent[] = (meetups.data?.meetups ?? [])
     .filter((m) => m.is_finalized)
-    .map((m) => ({ meetup: m, date: new Date(m.date) }))
+    .map((m) => ({ meetup: m, date: parseApiDateTime(m.date) }))
     .filter(({ date }) => {
       const day = localDay(date);
       return (
@@ -64,29 +65,27 @@ export function useStatsFilters() {
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 
-  // The URL param only counts once it is known to be one of the offered events.
+  // The URL param only counts once it is known to be one of the offered
+  // events. A failed meetups request proves nothing, so the param stays.
   const meetupParam = searchParams.get("meetup") || undefined;
-  const meetupsSettled = !meetups.isPending;
   const meetupId = events.some((e) => e.meetup.id === meetupParam)
     ? meetupParam
     : undefined;
-  const staleMeetup = meetupsSettled && meetupParam && !meetupId;
+  const staleMeetup = meetups.isSuccess && meetupParam && !meetupId;
 
-  // null while the events are unknown, so a stats query waits for it.
+  // null while the events are unknown, so a stats query waits for them.
   const query: StatsQuery | null =
-    meetupParam && !meetupsSettled
+    meetupParam && !meetups.isSuccess
       ? null
       : { ...range, ...(meetupId && { meetupId }) };
 
+  /** A filter the user picked: a new history entry, so Back undoes it. */
   function update(change: (next: URLSearchParams) => void) {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        change(next);
-        return next;
-      },
-      { replace: true },
-    );
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      change(next);
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -128,8 +127,15 @@ export function useStatsFilters() {
     });
   }
 
-  function setCustom(r: CustomRange) {
-    update((next) => writePeriod(next, "custom", r));
+  /** A typed `from` past `to` moves `to` along, and the reverse. */
+  function setCustom(r: CustomRange, changed: keyof CustomRange) {
+    const clamped =
+      r.from <= r.to
+        ? r
+        : changed === "from"
+          ? { from: r.from, to: r.from }
+          : { from: r.to, to: r.to };
+    update((next) => writePeriod(next, "custom", clamped));
   }
 
   function setMeetupId(id?: string) {
@@ -150,6 +156,9 @@ export function useStatsFilters() {
     events,
     tab,
     query,
+    /** The events behind a selected event could not be loaded. */
+    eventsFailed: !!meetupParam && meetups.isError,
+    retryEvents: () => void meetups.refetch(),
     setPreset,
     setCustom,
     setMeetupId,

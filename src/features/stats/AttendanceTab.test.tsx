@@ -2,24 +2,19 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, useLocation } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
+import { statsAttendanceKey } from "@/lib/queryKeys";
 import { AttendanceTab } from "./AttendanceTab";
+import type { StatsTabProps } from "./statsTab";
 import type { components } from "@/api/types";
 
 const mockApiGet = vi.fn();
 vi.mock("@/api/client", () => ({
   api: { GET: (...a: unknown[]) => mockApiGet(...a) },
 }));
-vi.mock("@/lib/org", () => ({
-  useOrg: () => ({
-    activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: "ADMIN" },
-  }),
-}));
 
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
 type Totals = components["schemas"]["AttendanceTotalsPublic"];
-type Meetup = components["schemas"]["MeetupPublic"];
 
 const TOTALS: Totals = {
   events: 5,
@@ -37,7 +32,7 @@ const TOTALS: Totals = {
 const ROW: Attendance["meetups"][number] = {
   meetup_id: "m1",
   name: "Alter Marzo",
-  date: "2026-03-10T22:00:00",
+  date: "2026-03-10T22:00:00Z",
   signed_up: 100,
   cancelled: 10,
   attended: 80,
@@ -55,47 +50,30 @@ function stats(overrides: Partial<Attendance> = {}): Attendance {
   };
 }
 
-const M1: Meetup = {
-  id: "m1",
-  name: "Alter Marzo",
-  mazmo_meetup_url: "https://mazmo.net/+eventos/m1",
-  date: "2026-03-10T22:00:00Z",
-  is_finalized: true,
-  finalized_at: null,
-  requires_payment: false,
-};
-
-function respond(statsResult: unknown, meetups: Meetup[] = [M1]) {
-  mockApiGet.mockImplementation((path: string) =>
-    path === "/organizations/{org_id}/stats/attendance"
-      ? statsResult
-      : Promise.resolve({
-          data: { total: meetups.length, meetups },
-          error: undefined,
-        }),
-  );
+function respond(statsResult: unknown) {
+  mockApiGet.mockImplementation(() => statsResult);
 }
 
-function Probe() {
-  const { search } = useLocation();
-  return <div data-testid="search">{search}</div>;
-}
+const PERIOD = { from: "2026-01-15", to: "2026-04-16" };
 
-function renderTab(url = "/stats") {
-  return render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+function renderTab(
+  props: Partial<StatsTabProps> = {},
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
+  const onShowAll = vi.fn();
+  render(
+    <QueryClientProvider client={client}>
       <LanguageProvider>
-        <MemoryRouter initialEntries={[url]}>
-          <AttendanceTab orgId="org-1" />
-          <Probe />
-        </MemoryRouter>
+        <AttendanceTab
+          orgId="org-1"
+          query={PERIOD}
+          onShowAll={onShowAll}
+          {...props}
+        />
       </LanguageProvider>
     </QueryClientProvider>,
   );
+  return { onShowAll };
 }
 
 const ok = (data: Attendance) => Promise.resolve({ data, error: undefined });
@@ -140,7 +118,7 @@ describe("AttendanceTab", () => {
   it('shows the error with retry, and "Ver todos los eventos" when an event is selected', async () => {
     const user = userEvent.setup();
     respond(Promise.resolve({ data: undefined, error: { detail: "nope" } }));
-    renderTab("/stats?range=all&meetup=m1");
+    const { onShowAll } = renderTab({ query: { meetupId: "m1" } });
     expect(
       await screen.findByText("No se pudieron cargar las estadísticas."),
     ).toBeInTheDocument();
@@ -148,9 +126,7 @@ describe("AttendanceTab", () => {
     await user.click(
       screen.getByRole("button", { name: "Ver todos los eventos" }),
     );
-    await waitFor(() =>
-      expect(screen.getByTestId("search").textContent).toBe("?range=all"),
-    );
+    expect(onShowAll).toHaveBeenCalledTimes(1);
   });
 
   it("announces the error and retries the request", async () => {
@@ -217,7 +193,7 @@ describe("AttendanceTab", () => {
         }),
       ),
     );
-    renderTab("/stats?range=all&meetup=m1");
+    renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Vinieron", "comparison")).toBe("promedio: 82,4");
     expect(slot("No-show", "comparison")).toBe("promedio: 20%");
@@ -269,7 +245,9 @@ describe("AttendanceTab", () => {
 
   it("sends from, to and meetup_id to the API", async () => {
     respond(ok(stats()));
-    renderTab("/stats?range=custom&from=2026-03-01&to=2026-03-31&meetup=m1");
+    renderTab({
+      query: { from: "2026-03-01", to: "2026-04-01", meetupId: "m1" },
+    });
     await headlinesReady();
     expect(mockApiGet).toHaveBeenCalledWith(
       "/organizations/{org_id}/stats/attendance",
@@ -280,5 +258,14 @@ describe("AttendanceTab", () => {
         },
       },
     );
+  });
+
+  it("waits without fetching or showing cached numbers while the query is null", () => {
+    const client = new QueryClient();
+    client.setQueryData(statsAttendanceKey("org-1", {}), stats());
+    respond(ok(stats()));
+    renderTab({ query: null }, client);
+    expect(screen.getByTestId("attendance-skeleton")).toBeInTheDocument();
+    expect(mockApiGet).not.toHaveBeenCalled();
   });
 });

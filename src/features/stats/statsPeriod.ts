@@ -1,4 +1,4 @@
-export type StatsQuery = { from?: string; to?: string; meetupId?: string };
+import type { StatsQuery } from "@/lib/statsQuery";
 
 export type RangePreset = "30d" | "3m" | "12m" | "ytd" | "all" | "custom";
 
@@ -69,7 +69,8 @@ export function resolveRange(
     case "custom":
       return custom ? { from: custom.from, to: addDays(custom.to, 1) } : {};
     case "30d":
-      return { from: addDays(today, -30), to: addDays(today, 1) };
+      // 30 days counting today.
+      return { from: addDays(today, -29), to: addDays(today, 1) };
     case "3m":
       return { from: subtractMonths(today, 3), to: addDays(today, 1) };
     case "12m":

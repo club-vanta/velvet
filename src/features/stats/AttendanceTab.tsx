@@ -1,5 +1,4 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { Button } from "@/components/ui/button";
 import {
   ChartContainer,
   ChartLegend,
@@ -13,58 +12,28 @@ import { useAttendanceStats } from "@/hooks/useAttendanceStats";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
+import { parseApiDateTime } from "@/lib/apiDateTime";
+import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
+import { StatsErrorState } from "./StatsErrorState";
 import {
   formatChange,
   formatCount,
   formatEventDay,
   formatPointChange,
   formatRate,
+  spansYears,
 } from "./statsFormat";
-import { useStatsFilters } from "./useStatsFilters";
+import type { StatsTabProps } from "./statsTab";
 
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
-
-const SERIES = [
-  { key: "attended", color: "var(--chart-2)" },
-  { key: "no_show", color: "var(--destructive)" },
-  { key: "cancelled", color: "var(--chart-4)" },
-] as const;
 
 /** One layout for the skeleton and the cards, so nothing jumps on load. */
 function headlineGrid(single: boolean): string {
   return cn(
     "grid grid-cols-2 gap-2 sm:gap-3",
     single ? "xl:grid-cols-4" : "xl:grid-cols-3",
-  );
-}
-
-function ErrorState({
-  onRetry,
-  onShowAll,
-}: {
-  onRetry: () => void;
-  onShowAll?: () => void;
-}) {
-  const { t } = useLanguage();
-  return (
-    <div
-      role="alert"
-      className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
-    >
-      {t("failedLoadOrgStats")}
-      <div className="flex gap-2">
-        <Button variant="ghost" size="sm" onClick={onRetry}>
-          {t("retry")}
-        </Button>
-        {onShowAll && (
-          <Button variant="ghost" size="sm" onClick={onShowAll}>
-            {t("statsBackToAll")}
-          </Button>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -77,15 +46,14 @@ function AttendanceChart({
 }) {
   const { t } = useLanguage();
 
-  const config: ChartConfig = {
-    attended: { label: t("statsAttended"), color: SERIES[0].color },
-    no_show: { label: t("statsNoShowRate"), color: SERIES[1].color },
-    cancelled: { label: t("statsCancelRate"), color: SERIES[2].color },
-  };
-  // Naive ISO datetimes sort correctly as text.
-  const data = [...meetups]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ ...m, day: formatEventDay(m.date) }));
+  const config: ChartConfig = Object.fromEntries(
+    SERIES.map(({ key, label, color }) => [key, { label: t(label), color }]),
+  );
+  const withYear = spansYears(meetups.map((m) => m.date));
+  const data = meetups
+    .map((m) => ({ ...m, time: parseApiDateTime(m.date).getTime() }))
+    .sort((a, b) => a.time - b.time)
+    .map((m) => ({ ...m, day: formatEventDay(m.date, withYear) }));
 
   const bars = SERIES.map(({ key }) => (
     <Bar
@@ -104,7 +72,9 @@ function AttendanceChart({
       }
     />
   );
-  const legend = <ChartLegend content={<ChartLegendContent />} />;
+  const legend = (
+    <ChartLegend itemSorter={legendOrder} content={<ChartLegendContent />} />
+  );
 
   return (
     <ChartContainer
@@ -145,9 +115,8 @@ function AttendanceChart({
   );
 }
 
-export function AttendanceTab({ orgId }: { orgId: string }) {
+export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
   const { t, lang } = useLanguage();
-  const { query, setMeetupId } = useStatsFilters();
   const statsQ = useAttendanceStats(orgId, query);
   const single = !!query?.meetupId;
 
@@ -166,9 +135,9 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
 
   if (statsQ.isError || !statsQ.data) {
     return (
-      <ErrorState
+      <StatsErrorState
         onRetry={() => statsQ.refetch()}
-        onShowAll={query?.meetupId ? () => setMeetupId(undefined) : undefined}
+        onShowAll={query?.meetupId ? onShowAll : undefined}
       />
     );
   }
@@ -245,7 +214,7 @@ export function AttendanceTab({ orgId }: { orgId: string }) {
           n={totals.signed_up}
         />
         <HeadlineStat
-          label={t("statsWalkinsHeadline")}
+          label={t("statsWalkins")}
           value={count(totals.walkin)}
           comparison={compare(totals.walkin, comparison?.walkin)}
         />

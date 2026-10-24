@@ -5,7 +5,7 @@ const TODAY = "2026-10-24";
 
 describe("resolveRange", () => {
   it.each([
-    ["30d", { from: "2026-09-24", to: "2026-10-25" }],
+    ["30d", { from: "2026-09-25", to: "2026-10-25" }],
     ["3m", { from: "2026-07-24", to: "2026-10-25" }],
     ["12m", { from: "2025-10-24", to: "2026-10-25" }],
     ["ytd", { from: "2026-01-01", to: "2026-10-25" }],
@@ -30,7 +30,7 @@ describe("resolveRange", () => {
 
   it("rolls the exclusive end over a year boundary", () => {
     expect(resolveRange("30d", "2026-12-31")).toEqual({
-      from: "2026-12-01",
+      from: "2026-12-02",
       to: "2027-01-01",
     });
   });

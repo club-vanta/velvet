@@ -7,7 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { localDay, type RangePreset } from "./statsPeriod";
+import { formatEventDay } from "./statsFormat";
+import type { RangePreset } from "./statsPeriod";
 import type { useStatsFilters } from "./useStatsFilters";
 
 type Filters = ReturnType<typeof useStatsFilters>;
@@ -67,7 +68,10 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
   } = filters;
 
   const selected = events.find(({ meetup }) => meetup.id === meetupId);
-  const eventName = selected ? eventLabel(selected) : t("statsAllEvents");
+  const eventName = selected
+    ? eventLabel(selected.meetup)
+    : t("statsAllEvents");
+  const presetName = t(PRESET_LABELS[preset]);
 
   return (
     <div className="flex flex-wrap items-end gap-3">
@@ -77,9 +81,9 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
       >
         <SelectTrigger
           className="w-full sm:w-48"
-          aria-label={t("statsPeriodLabel")}
+          aria-label={`${t("statsPeriodLabel")}: ${presetName}`}
         >
-          <SelectValue>{t(PRESET_LABELS[preset])}</SelectValue>
+          <SelectValue>{presetName}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {PRESET_ORDER.map((p) => (
@@ -96,13 +100,13 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
             label={t("statsRangeFrom")}
             value={custom.from}
             max={custom.to}
-            onChange={(from) => setCustom({ from, to: custom.to })}
+            onChange={(from) => setCustom({ from, to: custom.to }, "from")}
           />
           <DateField
             label={t("statsRangeTo")}
             value={custom.to}
             min={custom.from}
-            onChange={(to) => setCustom({ from: custom.from, to })}
+            onChange={(to) => setCustom({ from: custom.from, to }, "to")}
           />
         </div>
       )}
@@ -115,7 +119,7 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
       >
         <SelectTrigger
           className="w-full sm:w-64"
-          aria-label={t("statsEventLabel")}
+          aria-label={`${t("statsEventLabel")}: ${eventName}`}
         >
           <SelectValue>{eventName}</SelectValue>
         </SelectTrigger>
@@ -123,7 +127,7 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
           <SelectItem value={ALL_EVENTS}>{t("statsAllEvents")}</SelectItem>
           {events.map((event) => (
             <SelectItem key={event.meetup.id} value={event.meetup.id}>
-              {eventLabel(event)}
+              {eventLabel(event.meetup)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -132,13 +136,6 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
   );
 }
 
-function eventLabel({
-  meetup,
-  date,
-}: {
-  meetup: { name: string };
-  date: Date;
-}): string {
-  const day = localDay(date);
-  return `${meetup.name} · ${day.slice(8)}/${day.slice(5, 7)}`;
+function eventLabel(meetup: { name: string; date: string }): string {
+  return `${meetup.name} · ${formatEventDay(meetup.date)}`;
 }
