@@ -230,7 +230,8 @@ GET /organizations/{org_id}/stats/operations?...
 GET /organizations/{org_id}/stats/weather?...
 ```
 
-- `from`, `to`: local dates, required. `meetup_id`: optional; when present
+- `from`, `to`: local dates, both optional. Leaving them out means "all
+  time", which has no previous period. `meetup_id`: optional; when present
   the response describes that meetup and the comparison uses the period
   average. A `meetup_id` outside the org or not finalized is `404`.
 - Each response carries its own comparison values (previous period, or
