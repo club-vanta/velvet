@@ -6,7 +6,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useOrgMeetups } from "@/hooks/useOrgMeetups";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { localDay, type RangePreset } from "./statsPeriod";
 import type { useStatsFilters } from "./useStatsFilters";
@@ -55,31 +54,19 @@ function DateField({
   );
 }
 
-export function StatsFilterBar({
-  orgId,
-  filters,
-}: {
-  orgId: string;
-  filters: Filters;
-}) {
+export function StatsFilterBar({ filters }: { filters: Filters }) {
   const { t } = useLanguage();
-  const { data } = useOrgMeetups(orgId);
-  const { preset, custom, meetupId, query, setPreset, setCustom, setMeetupId } =
-    filters;
-
-  const events = (data?.meetups ?? [])
-    .filter((m) => m.is_finalized)
-    .map((m) => ({ meetup: m, date: new Date(m.date) }))
-    .filter(({ date }) => {
-      const day = localDay(date);
-      return (
-        (!query.from || day >= query.from) && (!query.to || day < query.to)
-      );
-    })
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  const {
+    preset,
+    custom,
+    meetupId,
+    events,
+    setPreset,
+    setCustom,
+    setMeetupId,
+  } = filters;
 
   const selected = events.find(({ meetup }) => meetup.id === meetupId);
-
   const eventName = selected ? eventLabel(selected) : t("statsAllEvents");
 
   return (
@@ -90,7 +77,7 @@ export function StatsFilterBar({
       >
         <SelectTrigger
           className="w-full sm:w-48"
-          aria-label={t(PRESET_LABELS[preset])}
+          aria-label={t("statsPeriodLabel")}
         >
           <SelectValue>{t(PRESET_LABELS[preset])}</SelectValue>
         </SelectTrigger>
@@ -126,7 +113,10 @@ export function StatsFilterBar({
           setMeetupId(v && v !== ALL_EVENTS ? v : undefined)
         }
       >
-        <SelectTrigger className="w-full sm:w-64" aria-label={eventName}>
+        <SelectTrigger
+          className="w-full sm:w-64"
+          aria-label={t("statsEventLabel")}
+        >
           <SelectValue>{eventName}</SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -149,7 +139,6 @@ function eventLabel({
   meetup: { name: string };
   date: Date;
 }): string {
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  return `${meetup.name} · ${dd}/${mm}`;
+  const day = localDay(date);
+  return `${meetup.name} · ${day.slice(8)}/${day.slice(5, 7)}`;
 }

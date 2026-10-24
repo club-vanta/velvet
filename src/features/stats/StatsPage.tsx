@@ -1,12 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
-import { useOrg } from "@/lib/org";
 import { StatsFilterBar } from "./StatsFilterBar";
 import { useStatsFilters, type StatsTab } from "./useStatsFilters";
 
 export function StatsPage() {
   const { t } = useLanguage();
-  const { activeOrg } = useOrg();
   const filters = useStatsFilters();
 
   return (
@@ -14,7 +12,7 @@ export function StatsPage() {
       <h1 className="text-2xl font-semibold tracking-tight">
         {t("statsTitle")}
       </h1>
-      <StatsFilterBar orgId={activeOrg?.org_id ?? ""} filters={filters} />
+      <StatsFilterBar filters={filters} />
       <Tabs
         value={filters.tab}
         onValueChange={(v) => filters.setTab(v as StatsTab)}

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -79,11 +85,7 @@ async function choosePeriod(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
 ) {
-  await user.click(
-    screen.getByRole("combobox", {
-      name: /Últimos|Este año|Desde siempre|Rango/,
-    }),
-  );
+  await user.click(screen.getByRole("combobox", { name: "Período" }));
   await user.click(await screen.findByRole("option", { name }));
 }
 
@@ -134,9 +136,7 @@ describe("StatsPage", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText("Todos los eventos");
-    await user.click(
-      screen.getByRole("combobox", { name: /Todos los eventos/ }),
-    );
+    await user.click(screen.getByRole("combobox", { name: "Evento" }));
     const options = (await screen.findAllByRole("option")).map(
       (o) => o.textContent,
     );
@@ -147,15 +147,13 @@ describe("StatsPage", () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText("Todos los eventos");
-    await user.click(
-      screen.getByRole("combobox", { name: /Todos los eventos/ }),
-    );
+    await user.click(screen.getByRole("combobox", { name: "Evento" }));
     await user.click(
       await screen.findByRole("option", { name: "Alter Marzo · 10/03" }),
     );
     expect(search()).toBe("?meetup=in-range");
 
-    await user.click(screen.getByRole("combobox", { name: /Alter Marzo/ }));
+    await user.click(screen.getByRole("combobox", { name: "Evento" }));
     await user.click(
       within(await screen.findByRole("listbox")).getByRole("option", {
         name: "Todos los eventos",
@@ -193,12 +191,26 @@ describe("StatsPage", () => {
     expect(screen.getByLabelText("Hasta")).toHaveAttribute("min", "2026-03-01");
   });
 
-  it("picking a custom date updates the URL and drops the event", async () => {
-    renderPage(
-      "/stats?range=custom&from=2026-03-01&to=2026-03-31&meetup=in-range",
-    );
+  it("picking a custom date updates the URL and keeps the other params", async () => {
+    renderPage("/stats?range=custom&from=2026-03-01&to=2026-03-31&keep=1");
     const from = screen.getByLabelText("Desde");
     fireEvent.change(from, { target: { value: "2026-03-05" } });
-    expect(search()).toBe("?range=custom&from=2026-03-05&to=2026-03-31");
+    expect(search()).toBe("?range=custom&from=2026-03-05&to=2026-03-31&keep=1");
+  });
+
+  it("removes a meetup param that is not an offered event", async () => {
+    renderPage("/stats?meetup=old");
+    await screen.findByText("Todos los eventos");
+    await waitFor(() => expect(search()).toBe(""));
+    expect(screen.getByRole("combobox", { name: "Evento" })).toHaveTextContent(
+      "Todos los eventos",
+    );
+  });
+
+  it("treats an empty meetup param as no event", async () => {
+    renderPage("/stats?meetup=");
+    expect(screen.getByRole("combobox", { name: "Evento" })).toHaveTextContent(
+      "Todos los eventos",
+    );
   });
 });

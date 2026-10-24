@@ -46,8 +46,14 @@ describe("Shell nav", () => {
   it("shows the Estadísticas link to org admins", () => {
     role = "ADMIN";
     renderShell();
-    expect(
-      screen.getAllByRole("link", { name: "Estadísticas" })[0],
-    ).toHaveAttribute("href", "/stats");
+    // One link in the sidebar and one in the mobile bottom nav (labelled "Stats").
+    expect(screen.getByRole("link", { name: "Estadísticas" })).toHaveAttribute(
+      "href",
+      "/stats",
+    );
+    expect(screen.getByRole("link", { name: "Stats" })).toHaveAttribute(
+      "href",
+      "/stats",
+    );
   });
 });

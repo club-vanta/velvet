@@ -1,4 +1,8 @@
+import type { components } from "@/api/types";
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useOrgMeetups } from "@/hooks/useOrgMeetups";
+import { useOrg } from "@/lib/org";
 import {
   DEFAULT_RANGE,
   addDays,
@@ -12,6 +16,10 @@ import {
 
 export type StatsTab = "attendance";
 
+type Meetup = components["schemas"]["MeetupPublic"];
+
+type OfferedEvent = { meetup: Meetup; date: Date };
+
 type CustomRange = { from: string; to: string };
 
 /** Range shown when "custom" is picked from "all time", which has no bounds. */
@@ -22,6 +30,8 @@ const CUSTOM_SEED_FROM_ALL: RangePreset = "3m";
  * reload. A missing, unknown, or malformed `range` falls back to the default.
  */
 export function useStatsFilters() {
+  const { activeOrg } = useOrg();
+  const meetups = useOrgMeetups(activeOrg?.org_id ?? "");
   const [searchParams, setSearchParams] = useSearchParams();
   // Once per render, so every range in this render shares one "today".
   const today = localDay(new Date());
@@ -38,11 +48,35 @@ export function useStatsFilters() {
   const custom: CustomRange | undefined =
     preset === "custom" && customValid ? { from, to } : undefined;
 
-  const meetupId = searchParams.get("meetup") ?? undefined;
   const tab: StatsTab = "attendance";
 
   const range = resolveRange(preset, today, custom);
-  const query: StatsQuery = { ...range, ...(meetupId && { meetupId }) };
+
+  // Finalized events inside the period: what the event filter offers.
+  const events: OfferedEvent[] = (meetups.data?.meetups ?? [])
+    .filter((m) => m.is_finalized)
+    .map((m) => ({ meetup: m, date: new Date(m.date) }))
+    .filter(({ date }) => {
+      const day = localDay(date);
+      return (
+        (!range.from || day >= range.from) && (!range.to || day < range.to)
+      );
+    })
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  // The URL param only counts once it is known to be one of the offered events.
+  const meetupParam = searchParams.get("meetup") || undefined;
+  const meetupsSettled = !meetups.isPending;
+  const meetupId = events.some((e) => e.meetup.id === meetupParam)
+    ? meetupParam
+    : undefined;
+  const staleMeetup = meetupsSettled && meetupParam && !meetupId;
+
+  // null while the events are unknown, so a stats query waits for it.
+  const query: StatsQuery | null =
+    meetupParam && !meetupsSettled
+      ? null
+      : { ...range, ...(meetupId && { meetupId }) };
 
   function update(change: (next: URLSearchParams) => void) {
     setSearchParams(
@@ -54,6 +88,19 @@ export function useStatsFilters() {
       { replace: true },
     );
   }
+
+  useEffect(() => {
+    if (staleMeetup) {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("meetup");
+          return next;
+        },
+        { replace: true },
+      );
+    }
+  }, [staleMeetup, setSearchParams]);
 
   /** A new period drops the event, which may sit outside it. */
   function writePeriod(next: URLSearchParams, p: RangePreset, c?: CustomRange) {
@@ -100,6 +147,7 @@ export function useStatsFilters() {
     preset,
     custom,
     meetupId,
+    events,
     tab,
     query,
     setPreset,
