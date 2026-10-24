@@ -75,6 +75,7 @@ import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
   meetupGuestsKey,
+  meetupsKey,
 } from "@/lib/queryKeys";
 import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
@@ -502,7 +503,7 @@ function PaymentRequirementDialog({
       void queryClient.invalidateQueries({
         queryKey: ["meetup", orgId, meetupId],
       });
-      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
+      void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
       toast.success(t("paymentRequirementUpdated"));
       onClose();
     },

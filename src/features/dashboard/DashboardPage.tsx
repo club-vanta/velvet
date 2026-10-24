@@ -22,6 +22,7 @@ import {
 } from "@/features/meetups/MeetupListItem";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
 import { useRelativeDay } from "@/hooks/useRelativeDay";
+import { meetupsKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
@@ -241,7 +242,7 @@ export function DashboardPage() {
   const orgId = activeOrg?.org_id ?? "";
 
   const meetupsQ = useQuery({
-    queryKey: ["meetups", orgId],
+    queryKey: meetupsKey(orgId),
     queryFn: async () => {
       const { data, error } = await api.GET(
         "/organizations/{org_id}/meetups/",

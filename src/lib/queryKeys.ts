@@ -1,5 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { StatsQuery } from "@/features/stats/statsPeriod";
+import type { StatsQuery } from "./statsQuery";
+
+export const meetupsKey = (orgId: string) => ["meetups", orgId] as const;
 
 export const meetupGuestsKey = (orgId: string, meetupId: string) =>
   ["meetup-guests", orgId, meetupId] as const;
@@ -26,7 +28,9 @@ export const guestMeetupsKey = (orgId: string, guestId: string) =>
 // so they invalidate the whole org prefix.
 export const statsOrgKey = (orgId: string) => ["stats", orgId] as const;
 
-export const statsAttendanceKey = (orgId: string, filters: StatsQuery) =>
+// `null` filters key the query that waits for the event filter, so it never
+// shows another period's cached numbers.
+export const statsAttendanceKey = (orgId: string, filters: StatsQuery | null) =>
   [...statsOrgKey(orgId), "attendance", filters] as const;
 
 /**

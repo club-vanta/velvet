@@ -25,6 +25,7 @@ import { useOrg } from "@/lib/org";
 import { formatDateTime } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import { GUEST_TYPE_LABEL, isGuestType } from "@/lib/guestType";
+import { meetupsKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 type EventLog = components["schemas"]["EventLogPublic"];
@@ -96,7 +97,7 @@ export function EventsPage() {
   }
 
   const { data: meetupsData } = useQuery({
-    queryKey: ["meetups", orgId],
+    queryKey: meetupsKey(orgId),
     queryFn: async () => {
       const { data } = await api.GET("/organizations/{org_id}/meetups/", {
         params: { path: { org_id: orgId } },

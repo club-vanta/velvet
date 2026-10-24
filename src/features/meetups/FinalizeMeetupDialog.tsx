@@ -15,6 +15,7 @@ import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
 import {
   guestMeetupsOrgKey,
+  meetupsKey,
   meetupStatsKey,
   statsOrgKey,
 } from "@/lib/queryKeys";
@@ -60,7 +61,7 @@ export function FinalizeMeetupDialog({
       void queryClient.invalidateQueries({
         queryKey: ["meetup", orgId, meetup.id],
       });
-      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
+      void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
       void queryClient.invalidateQueries({
         queryKey: meetupStatsKey(orgId, meetup.id),
       });

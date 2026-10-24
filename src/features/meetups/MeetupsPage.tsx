@@ -23,6 +23,7 @@ import { groupMeetupsByTiming } from "@/lib/meetupTiming";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { MeetupRow } from "./MeetupListItem";
+import { meetupsKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
@@ -142,7 +143,7 @@ function NewMeetupDialog({
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
+      void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
       toast.success(t("meetupCreated"));
       setName("");
       setUrl("");
