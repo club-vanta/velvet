@@ -150,6 +150,18 @@ describe("GuestProfile", () => {
     );
   });
 
+  it("shows the meetups section for the active org", async () => {
+    setup();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Meetups" }),
+    ).toBeInTheDocument();
+    expect(mockApiGet).toHaveBeenCalledWith(
+      "/organizations/{org_id}/guests/{guest_id}/meetups",
+      { params: { path: { org_id: "org-1", guest_id: "g-1" } } },
+    );
+  });
+
   it("lists the name history newest first, with source and actor", async () => {
     setup();
 

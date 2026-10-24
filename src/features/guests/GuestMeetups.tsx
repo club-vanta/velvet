@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useMatch } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { GuestTypeBadge } from "@/components/GuestBadges";
 import { api } from "@/api/client";
-import { formatDate, formatDateTime } from "@/lib/format";
-import { GUEST_TYPE_LABEL } from "@/lib/guestType";
+import { formatDate, formatTime } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { guestMeetupsKey } from "@/lib/queryKeys";
+import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 import {
   SectionError,
@@ -52,6 +53,10 @@ const STATUS_VIEW: Record<
   },
 };
 
+// The shared destructive badge text is under 4.5:1 on its tint in light
+// mode, and "No fue" is the one signal this section exists for.
+const NO_SHOW_BADGE_CLASS = "text-red-700 dark:text-red-300";
+
 function SummaryLine({ summary }: { summary: Summary }) {
   const { t } = useLanguage();
   const items = [
@@ -86,30 +91,34 @@ function SummaryLine({ summary }: { summary: Summary }) {
   ].filter((item) => item.count > 0);
 
   return (
-    <dl
-      aria-label={t("guestMeetupsSummary")}
-      className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground"
-    >
-      {items.map((item) => (
-        <div key={item.label} className="flex items-baseline gap-1.5">
-          <dt>{t(item.label)}</dt>
-          <dd
-            className={
-              item.danger
-                ? "font-semibold tabular-nums text-destructive"
-                : "font-semibold tabular-nums text-foreground"
-            }
-          >
-            {item.count}
-          </dd>
-          {item.note && <dd className="text-xs">{item.note}</dd>}
-        </div>
-      ))}
-    </dl>
+    <div role="group" aria-label={t("guestMeetupsSummary")}>
+      <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-baseline gap-1.5">
+            <dt>{t(item.label)}</dt>
+            <dd
+              className={cn(
+                "font-semibold tabular-nums text-foreground",
+                item.danger && "text-destructive",
+              )}
+            >
+              {item.count}
+            </dd>
+            {item.note && <dd className="text-xs">{item.note}</dd>}
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 
-function MeetupItem({ meetup }: { meetup: GuestMeetup }) {
+function MeetupItem({
+  meetup,
+  isCurrent,
+}: {
+  meetup: GuestMeetup;
+  isCurrent: boolean;
+}) {
   const { t } = useLanguage();
   const view = STATUS_VIEW[meetup.status];
   const meta = [
@@ -118,27 +127,37 @@ function MeetupItem({ meetup }: { meetup: GuestMeetup }) {
       ? t("attendanceNoSignup")
       : t("attendanceSignedUp").replace("{0}", formatDate(meetup.rsvp_time)),
     meetup.arrival_time
-      ? t("attendanceArrived").replace(
-          "{0}",
-          formatDateTime(meetup.arrival_time),
-        )
+      ? t("attendanceArrived").replace("{0}", formatTime(meetup.arrival_time))
       : null,
   ].filter(Boolean);
 
   return (
     <TimelineItem marker={view.marker}>
       <div className="flex flex-wrap items-center gap-2">
-        <Link
-          to={`/meetups/${meetup.meetup_id}`}
-          className="rounded-sm font-medium break-words underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        {isCurrent ? (
+          // Linking the meetup page to itself would do nothing.
+          <span className="font-medium break-words">{meetup.name}</span>
+        ) : (
+          <Link
+            to={`/meetups/${meetup.meetup_id}`}
+            className="rounded-sm font-medium break-words underline decoration-muted-foreground/40 underline-offset-4 outline-none hover:decoration-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            {meetup.name}
+          </Link>
+        )}
+        <Badge
+          variant={view.badge}
+          className={
+            meetup.status === "NO_SHOW" ? NO_SHOW_BADGE_CLASS : undefined
+          }
         >
-          {meetup.name}
-        </Link>
-        <Badge variant={view.badge}>{t(view.label)}</Badge>
-        {meetup.guest_type !== "NORMAL" && (
-          <Badge variant="outline">
-            {t(GUEST_TYPE_LABEL[meetup.guest_type])}
-          </Badge>
+          {t(view.label)}
+        </Badge>
+        <GuestTypeBadge guestType={meetup.guest_type} />
+        {isCurrent && (
+          <span className="text-xs text-muted-foreground">
+            {t("attendanceThisMeetup")}
+          </span>
         )}
       </div>
       <p className="text-xs text-muted-foreground">{meta.join(" · ")}</p>
@@ -161,6 +180,8 @@ export function GuestMeetups({
   headingAs: "h2" | "h3";
 }) {
   const { t } = useLanguage();
+  // Set when the profile is open in the meetup page's side sheet.
+  const currentMeetupId = useMatch("/meetups/:id")?.params.id;
   const meetupsQ = useQuery({
     queryKey: guestMeetupsKey(orgId, guestId),
     queryFn: async () => {
@@ -187,17 +208,21 @@ export function GuestMeetups({
           onRetry={() => void meetupsQ.refetch()}
         />
       )}
-      {meetupsQ.data && meetupsQ.data.total === 0 && (
+      {meetupsQ.data && meetupsQ.data.meetups.length === 0 && (
         <p className="text-sm text-muted-foreground">
           {t("guestMeetupsEmpty")}
         </p>
       )}
-      {meetupsQ.data && meetupsQ.data.total > 0 && (
+      {meetupsQ.data && meetupsQ.data.meetups.length > 0 && (
         <>
           <SummaryLine summary={meetupsQ.data.summary} />
           <Timeline>
             {meetupsQ.data.meetups.map((meetup) => (
-              <MeetupItem key={meetup.meetup_id} meetup={meetup} />
+              <MeetupItem
+                key={meetup.meetup_id}
+                meetup={meetup}
+                isCurrent={meetup.meetup_id === currentMeetupId}
+              />
             ))}
           </Timeline>
         </>

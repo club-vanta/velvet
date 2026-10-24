@@ -135,7 +135,17 @@ Response shape:
   faint outline for upcoming (a dashed border does not read on a 10px dot).
   The "No fue" badge is red.
 - Summary line above the timeline, label then count, so Spanish verbs never
-  need plural forms: "Fue 2 (Discreto: 1) · No fue 2 · Se bajó 1 · Próximo 1".
+  need plural forms: "Fue 2 (Discreto: 1) No fue 2 Se bajó 1 Próximo 1"
+  (pairs separated by spacing, as a `dl` inside a labelled group).
+- The section is titled "Eventos" in Spanish and "Meetups" in English, the
+  words the rest of the app already uses.
+- The arrival shows only the time: the date is already on the same row.
+- In the meetup page's side sheet, the meetup the page is on is named, not
+  linked, and marked "Este evento". Links to other meetups remount the
+  meetup page (the route is keyed by id) so the sheet, search, and dialogs
+  of the previous meetup do not carry over.
+- The guest type badge reuses `GuestTypeBadge`, the same colored badge as the
+  meetup page.
 - Works in both places `GuestProfile` renders: the `/guests/:guestId` page
   and the side sheet on the meetup page, both of which already pass `orgId`.
 - Query key `guestMeetupsKey(orgId, guestId)` in `src/lib/queryKeys.ts`,

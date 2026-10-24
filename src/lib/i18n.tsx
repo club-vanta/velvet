@@ -466,7 +466,7 @@ export const translations = {
     eventGuestDisplaynameChanged: "Name changed",
     guestMeetups: "Meetups",
     failedLoadGuestMeetups: "Failed to load meetups.",
-    guestMeetupsEmpty: "Hasn't signed up for any meetup of this organization.",
+    guestMeetupsEmpty: "Hasn't signed up for any meetups in this organization.",
     guestMeetupsSummary: "Totals",
     attendanceAttended: "Attended",
     attendanceNoShow: "No-show",
@@ -475,6 +475,7 @@ export const translations = {
     attendanceSignedUp: "Signed up {0}",
     attendanceNoSignup: "Didn't sign up",
     attendanceArrived: "Arrived {0}",
+    attendanceThisMeetup: "This meetup",
   },
   es: {
     // Nav
@@ -941,9 +942,9 @@ export const translations = {
       "Nombre que ya tenía cuando empezó a guardarse el historial. La fecha es la del inicio del historial, no la del cambio.",
     eventGuestTypeChanged: "Tipo de invitado cambiado",
     eventGuestDisplaynameChanged: "Nombre cambiado",
-    guestMeetups: "Meetups",
-    failedLoadGuestMeetups: "Error al cargar los meetups.",
-    guestMeetupsEmpty: "No se anotó a ningún meetup de esta organización.",
+    guestMeetups: "Eventos",
+    failedLoadGuestMeetups: "Error al cargar los eventos.",
+    guestMeetupsEmpty: "No se anotó a ningún evento de esta organización.",
     guestMeetupsSummary: "Totales",
     attendanceAttended: "Fue",
     attendanceNoShow: "No fue",
@@ -952,6 +953,7 @@ export const translations = {
     attendanceSignedUp: "Se anotó el {0}",
     attendanceNoSignup: "Sin anotarse",
     attendanceArrived: "Llegó {0}",
+    attendanceThisMeetup: "Este evento",
   },
 } satisfies Record<Lang, Record<string, string>>;
 

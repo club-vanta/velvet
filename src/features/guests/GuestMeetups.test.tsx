@@ -51,11 +51,19 @@ const RESPONSE: Response = {
   ],
 };
 
+const EMPTY: Response = {
+  total: 0,
+  summary: { attended: 0, walkin: 0, no_show: 0, cancelled: 0, upcoming: 0 },
+  meetups: [],
+};
+
 function setup({
   orgId = "org-1",
+  path = "/guests/g-1",
   result = { data: RESPONSE, error: undefined },
 }: {
   orgId?: string;
+  path?: string;
   result?: { data?: Response; error?: unknown };
 } = {}) {
   mockApiGet.mockResolvedValue(result);
@@ -66,12 +74,22 @@ function setup({
       }
     >
       <LanguageProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[path]}>
           <GuestMeetups guestId="g-1" orgId={orgId} headingAs="h2" />
         </MemoryRouter>
       </LanguageProvider>
     </QueryClientProvider>,
   );
+}
+
+async function rows() {
+  return within(await screen.findByRole("list")).getAllByRole("listitem");
+}
+
+// The count next to a summary term, e.g. "No-show" -> "1".
+function totalFor(term: string) {
+  const group = screen.getByRole("group", { name: /Totals|Totales/ });
+  return within(group).getByText(term).nextElementSibling;
 }
 
 describe("GuestMeetups", () => {
@@ -83,7 +101,7 @@ describe("GuestMeetups", () => {
   it("asks the org-scoped endpoint for this guest", async () => {
     setup();
 
-    await screen.findByText("Sadoplace");
+    await rows();
     expect(mockApiGet).toHaveBeenCalledWith(
       "/organizations/{org_id}/guests/{guest_id}/meetups",
       { params: { path: { org_id: "org-1", guest_id: "g-1" } } },
@@ -93,55 +111,19 @@ describe("GuestMeetups", () => {
   it("renders each meetup with its status label, newest first", async () => {
     setup();
 
-    const list = await screen.findByRole("list");
-    const items = within(list).getAllByRole("listitem");
-    expect(items.map((li) => li.textContent)).toEqual([
-      expect.stringContaining("SadoplaceUpcoming"),
-      expect.stringContaining("CuerdasNo-show"),
-      expect.stringContaining("Munch PalermoAttended"),
-      expect.stringContaining("SeptiembreCancelled"),
-      expect.stringContaining("Munch AgostoWalk-in"),
-    ]);
-  });
-
-  it("uses Discreto for walk-ins in Spanish", async () => {
-    localStorage.setItem("lang", "es");
-    setup();
-
-    const items = await screen.findAllByRole("listitem");
-    expect(items[4]).toHaveTextContent("Discreto");
-    expect(items[1]).toHaveTextContent("No fue");
-    expect(items[3]).toHaveTextContent("Se bajó");
-  });
-
-  it("summary shows walk-ins inside attended", async () => {
-    setup();
-
-    const totals = await screen.findByLabelText("Totals");
-    expect(totals).toHaveTextContent(
-      "Attended2(Walk-in: 1)No-show1Cancelled1Upcoming1",
-    );
-  });
-
-  it("summary hides zero counts", async () => {
-    setup({
-      result: {
-        data: {
-          total: 1,
-          summary: {
-            attended: 0,
-            walkin: 0,
-            no_show: 1,
-            cancelled: 0,
-            upcoming: 0,
-          },
-          meetups: [meetup({ status: "NO_SHOW" })],
-        },
-      },
+    const items = await rows();
+    const expected = [
+      ["Sadoplace", "Upcoming"],
+      ["Cuerdas", "No-show"],
+      ["Munch Palermo", "Attended"],
+      ["Septiembre", "Cancelled"],
+      ["Munch Agosto", "Walk-in"],
+    ];
+    expect(items).toHaveLength(expected.length);
+    expected.forEach(([name, label], i) => {
+      expect(within(items[i]).getByRole("link")).toHaveTextContent(name);
+      expect(within(items[i]).getByText(label)).toBeInTheDocument();
     });
-
-    const totals = await screen.findByLabelText("Totals");
-    expect(totals).toHaveTextContent(/^No-show1$/);
   });
 
   it("links each meetup to its page", async () => {
@@ -152,47 +134,88 @@ describe("GuestMeetups", () => {
     ).toHaveAttribute("href", "/meetups/m-4");
   });
 
+  it("does not link the meetup the page is already on, and marks it", async () => {
+    setup({ path: "/meetups/m-4" });
+
+    const items = await rows();
+    expect(within(items[1]).queryByRole("link")).not.toBeInTheDocument();
+    expect(within(items[1]).getByText("Cuerdas")).toBeInTheDocument();
+    expect(within(items[1]).getByText("This meetup")).toBeInTheDocument();
+    expect(within(items[0]).getByRole("link")).toBeInTheDocument();
+  });
+
   it("shows the guest type badge only when it is not NORMAL", async () => {
     setup();
 
-    const items = await screen.findAllByRole("listitem");
-    expect(items[2]).toHaveTextContent("Vendor");
+    const items = await rows();
+    expect(within(items[2]).getByText("Vendor")).toBeInTheDocument();
     expect(screen.queryByText("Regular")).not.toBeInTheDocument();
   });
 
-  it("says a walk-in did not sign up, and shows arrival times", async () => {
+  it("says a walk-in did not sign up, and shows arrival only when present", async () => {
     setup();
 
-    const items = await screen.findAllByRole("listitem");
+    const items = await rows();
     expect(items[4]).toHaveTextContent("Didn't sign up");
     expect(items[4]).toHaveTextContent("Arrived");
     expect(items[1]).toHaveTextContent("Signed up");
     expect(items[1]).not.toHaveTextContent("Arrived");
   });
 
-  it("shows the empty state", async () => {
+  it("summary counts each status and shows walk-ins inside attended", async () => {
+    setup();
+
+    await rows();
+    expect(totalFor("Attended")).toHaveTextContent("2");
+    expect(totalFor("Attended")?.nextElementSibling).toHaveTextContent(
+      "(Walk-in: 1)",
+    );
+    expect(totalFor("No-show")).toHaveTextContent("1");
+    expect(totalFor("Cancelled")).toHaveTextContent("1");
+    expect(totalFor("Upcoming")).toHaveTextContent("1");
+  });
+
+  it("summary uses the Spanish labels, with Discreto for walk-ins", async () => {
+    localStorage.setItem("lang", "es");
+    setup();
+
+    const items = await rows();
+    expect(within(items[4]).getByText("Discreto")).toBeInTheDocument();
+    expect(totalFor("Fue")).toHaveTextContent("2");
+    expect(totalFor("Fue")?.nextElementSibling).toHaveTextContent(
+      "(Discreto: 1)",
+    );
+    expect(totalFor("No fue")).toHaveTextContent("1");
+    expect(totalFor("Se bajó")).toHaveTextContent("1");
+    expect(totalFor("Próximo")).toHaveTextContent("1");
+  });
+
+  it("summary hides zero counts", async () => {
     setup({
       result: {
         data: {
-          total: 0,
-          summary: {
-            attended: 0,
-            walkin: 0,
-            no_show: 0,
-            cancelled: 0,
-            upcoming: 0,
-          },
-          meetups: [],
+          total: 1,
+          summary: { ...EMPTY.summary, no_show: 1 },
+          meetups: [meetup({ status: "NO_SHOW" })],
         },
       },
     });
 
+    await rows();
+    const group = screen.getByRole("group", { name: "Totals" });
+    expect(within(group).getAllByRole("term")).toHaveLength(1);
+    expect(totalFor("No-show")).toHaveTextContent("1");
+  });
+
+  it("shows the empty state", async () => {
+    setup({ result: { data: EMPTY } });
+
     expect(
       await screen.findByText(
-        "Hasn't signed up for any meetup of this organization.",
+        "Hasn't signed up for any meetups in this organization.",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Totals")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group")).not.toBeInTheDocument();
   });
 
   it("shows retry when meetups fail, and recovers", async () => {
@@ -204,7 +227,7 @@ describe("GuestMeetups", () => {
 
     mockApiGet.mockResolvedValue({ data: RESPONSE, error: undefined });
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText("Sadoplace")).toBeInTheDocument();
+    expect(await rows()).toHaveLength(5);
   });
 
   it("renders nothing and does not query without an org", () => {

@@ -6,8 +6,8 @@ export const meetupGuestsKey = (orgId: string, meetupId: string) =>
 export const meetupStatsKey = (orgId: string, meetupId: string) =>
   ["meetup-stats", orgId, meetupId] as const;
 
-// Prefix of every per-guest query, so invalidating it also refreshes the
-// displayname history.
+// Prefix of every per-guest identity query, so invalidating it also
+// refreshes the displayname history.
 export const guestKey = (guestId: string) => ["guest", guestId] as const;
 
 export const guestHistoryKey = (guestId: string) =>
