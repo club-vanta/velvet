@@ -116,7 +116,7 @@ describe("AttendanceTab", () => {
     const note = screen.getByText(/^Solo cuentan los eventos finalizados/);
     expect(note.tagName).toBe("BLOCKQUOTE");
     expect(note).toHaveTextContent(
-      "Solo cuentan los eventos finalizados. El staff y los vendors no se cuentan. Un discreto que nunca hizo check-in no cuenta.",
+      "Solo cuentan los eventos finalizados. El staff y los vendors no se cuentan. Un discreto que nunca ingresó no cuenta.",
     );
   });
 

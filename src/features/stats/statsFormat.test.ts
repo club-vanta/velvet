@@ -13,6 +13,7 @@ import {
   formatYearsChange,
   formatAge,
   shareTicks,
+  formatClockWindow,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -208,5 +209,16 @@ describe("shareTicks", () => {
 
   it("still draws an axis when there is nothing to show", () => {
     expect(shareTicks(0)).toEqual([0, 0.1]);
+  });
+});
+
+describe("formatClockWindow", () => {
+  it("shows the 15 minutes a clock bucket covers", () => {
+    expect(formatClockWindow("23:30")).toBe("23:30-23:45");
+    expect(formatClockWindow("20:00")).toBe("20:00-20:15");
+  });
+
+  it("wraps past midnight", () => {
+    expect(formatClockWindow("23:45")).toBe("23:45-00:00");
   });
 });

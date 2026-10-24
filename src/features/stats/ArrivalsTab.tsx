@@ -15,6 +15,7 @@ import { StatsNote } from "./StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
+  formatClockWindow,
   formatCurveLabel,
   formatMinuteChange,
   formatOffset,
@@ -134,7 +135,7 @@ function LeadTimeTable({
             {t("statsLeadTimeHeader")}
           </th>
           <th scope="col" className={cn(head, "text-right")}>
-            {t("statsRsvps")}
+            {t("statsSeriesSignedUp")}
           </th>
           <th scope="col" className={cn(head, "text-right")}>
             {t("statsNoShowRate")}
@@ -249,13 +250,18 @@ function ArrivalsContent({
     (single ? local : null) ??
     (minutes === null ? NO_VALUE : formatOffset(minutes));
   const peak = summary.peak;
+  // The peak is a 15-minute bucket: one event shows the window it covers.
+  const peakLabel = (p: NonNullable<typeof peak>) =>
+    single && p.local_time
+      ? formatClockWindow(p.local_time)
+      : formatOffset(p.start_minute);
 
   return (
     <div className="space-y-3">
       <div className={headlineGrid(4)}>
         <HeadlineStat
           label={t("statsPeakArrival")}
-          value={peak ? time(peak.local_time, peak.start_minute) : NO_VALUE}
+          value={peak ? peakLabel(peak) : NO_VALUE}
         />
         <HeadlineStat
           label={t("statsHalfArrived")}

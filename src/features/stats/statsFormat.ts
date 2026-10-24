@@ -115,3 +115,11 @@ export function shareTicks(max: number): number[] {
   );
   return Array.from({ length: top / step + 1 }, (_, i) => (i * step) / 100);
 }
+
+/** The 15 minutes a clock-time bucket covers, as `23:30-23:45`. */
+export function formatClockWindow(start: string): string {
+  const [hours, minutes] = start.split(":").map(Number);
+  const end = (hours * 60 + minutes + 15) % (24 * 60);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${start}-${pad(Math.floor(end / 60))}:${pad(end % 60)}`;
+}

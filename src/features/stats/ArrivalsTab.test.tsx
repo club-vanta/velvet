@@ -264,7 +264,7 @@ describe("ArrivalsTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot("Pico de llegada", "value")).toBe("23:30");
+    expect(slot("Pico de llegada", "value")).toBe("23:30-23:45");
     expect(slot("Llegó el 50%", "value")).toBe("23:45");
     expect(slot("Llegó el 50%", "comparison")).toBe(
       "+0:45 desde el inicio · promedio: +1:05",
@@ -285,9 +285,19 @@ describe("ArrivalsTab", () => {
     expect(slot("Llegó el 90%", "value")).toBe("–");
     expect(slot("En la primera hora", "value")).toBe("–");
     expect(slot("En la primera hora", "sample")).toBeNull();
-    expect(screen.getByText("Nadie hizo check-in")).toBeInTheDocument();
+    expect(screen.getByText("Nadie ingresó")).toBeInTheDocument();
     expect(leadRow("El mismo día")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("NaN");
+  });
+
+  it("heads the English lead-time table like its tooltip series", async () => {
+    localStorage.setItem("lang", "en");
+    respond(ok(stats()));
+    renderTab();
+    await waitFor(() => screen.getAllByRole("columnheader"));
+    expect(
+      screen.getAllByRole("columnheader").map((th) => th.textContent),
+    ).toEqual(["Lead time", "Signed up", "No-show"]);
   });
 
   it("names the lead-time table after its card", async () => {
@@ -353,9 +363,7 @@ describe("ArrivalsTab", () => {
     );
     renderTab();
     await headlinesReady();
-    expect(
-      screen.getByText("No hubo inscripciones en este período"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("No hubo inscripciones")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
@@ -363,10 +371,10 @@ describe("ArrivalsTab", () => {
     respond(ok(stats()));
     renderTab();
     await headlinesReady();
-    const arrivals = screen.getByText(/^Los horarios salen del check-in/);
+    const arrivals = screen.getByText(/^Los horarios salen del ingreso/);
     expect(arrivals.tagName).toBe("BLOCKQUOTE");
     expect(arrivals).toHaveTextContent(
-      "Los horarios salen del check-in en la puerta. En el agregado, los minutos se cuentan desde el inicio de cada evento para que eventos a distintas horas se puedan comparar.",
+      "Los horarios salen del ingreso en la puerta. En el agregado, los minutos se cuentan desde el inicio de cada evento para que eventos a distintas horas se puedan comparar.",
     );
     expect(
       screen.getByText("Los discretos no se cuentan porque nunca se anotaron.")
