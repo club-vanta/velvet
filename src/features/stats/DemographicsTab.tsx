@@ -22,10 +22,10 @@ import {
   formatChange,
   formatCount,
   formatPointChange,
-  shareTicks,
   formatRate,
   formatYearsChange,
   isSmallSample,
+  shareTicks,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
 

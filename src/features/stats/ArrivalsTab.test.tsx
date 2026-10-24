@@ -18,6 +18,7 @@ type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 
 const SUMMARY: Summary = {
   arrivals: 200,
+  excluded_arrivals: 0,
   peak: { start_minute: 30, local_time: null, arrivals: 40 },
   median_minutes: 45,
   p90_minutes: 90,
@@ -28,6 +29,7 @@ const SUMMARY: Summary = {
 
 const NOBODY: Summary = {
   arrivals: 0,
+  excluded_arrivals: 0,
   peak: null,
   median_minutes: null,
   p90_minutes: null,
@@ -380,6 +382,24 @@ describe("ArrivalsTab", () => {
       screen.getByText("Los discretos no se cuentan porque nunca se anotaron.")
         .tagName,
     ).toBe("BLOCKQUOTE");
+  });
+
+  it("says how many check-ins were left out of the curve", async () => {
+    respond(ok(stats({ summary: { ...SUMMARY, excluded_arrivals: 12000 } })));
+    renderTab();
+    await headlinesReady();
+    const note = screen.getByText(/^Se dejaron afuera/);
+    expect(note.tagName).toBe("BLOCKQUOTE");
+    expect(note).toHaveTextContent(
+      "Se dejaron afuera 12.000 ingresos de más de 2 horas antes o 12 horas después del inicio, porque probablemente se cargaron tarde.",
+    );
+  });
+
+  it("shows no left-out note when nothing was excluded", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    expect(screen.queryByText(/^Se dejaron afuera/)).not.toBeInTheDocument();
   });
 
   it("sends from, to and meetup_id to the API", async () => {

@@ -1346,12 +1346,16 @@ export interface components {
     /**
      * ArrivalSummaryPublic
      * @description Offsets are minutes from the meetup start. The *_local_time fields are
-     *     "HH:MM" only for one meetup's own summary. Everything but arrivals is null
-     *     when nobody arrived.
+     *     "HH:MM" only for one meetup's own summary. arrivals counts the arrivals
+     *     from 120 minutes before to 720 minutes after the start; excluded_arrivals
+     *     counts those outside that window, which no other field includes. The
+     *     optional fields are null when nobody arrived inside the window.
      */
     ArrivalSummaryPublic: {
       /** Arrivals */
       arrivals: number;
+      /** Excluded Arrivals */
+      excluded_arrivals: number;
       peak: components["schemas"]["ArrivalBucketPublic"] | null;
       /** Median Minutes */
       median_minutes: number | null;

@@ -16,6 +16,7 @@ import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   formatClockWindow,
+  formatCount,
   formatCurveLabel,
   formatMinuteChange,
   formatOffset,
@@ -156,7 +157,7 @@ function LeadTimeTable({
                 {t(LEAD_LABELS[r.bucket])}
               </th>
               <td data-slot="signed-up" className="py-1.5 text-right">
-                {r.signed_up}
+                {formatCount(r.signed_up, lang)}
               </td>
               <td
                 data-slot="rate"
@@ -296,6 +297,14 @@ function ArrivalsContent({
         )}
       </ChartCard>
       <StatsNote>{t("statsNoteArrivals")}</StatsNote>
+      {summary.excluded_arrivals > 0 && (
+        <StatsNote>
+          {t("statsNoteExcludedArrivals").replace(
+            "{0}",
+            formatCount(summary.excluded_arrivals, lang),
+          )}
+        </StatsNote>
+      )}
       <ChartCard title={t("statsLeadTime")}>
         {(headingId) =>
           lead_time.every((r) => r.signed_up === 0) ? (

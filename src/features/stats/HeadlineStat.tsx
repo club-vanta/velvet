@@ -1,6 +1,6 @@
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { isSmallSample } from "./statsFormat";
+import { formatCount, isSmallSample } from "./statsFormat";
 
 /**
  * One big number with an optional comparison line. When `n` (the people the
@@ -17,7 +17,7 @@ export function HeadlineStat({
   comparison?: string;
   n?: number;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const small = n !== undefined && isSmallSample(n);
 
   return (
@@ -50,7 +50,7 @@ export function HeadlineStat({
       )}
       {small && (
         <p data-slot="sample" className="text-xs tabular-nums">
-          {t("statsSample").replace("{0}", String(n))}
+          {t("statsSample").replace("{0}", formatCount(n, lang))}
         </p>
       )}
     </div>

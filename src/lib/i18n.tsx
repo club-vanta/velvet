@@ -355,6 +355,8 @@ export const translations = {
     statsArrivalsSeries: "Arrivals",
     statsSeriesSignedUp: "Signed up",
     statsNoSignups: "No sign-ups",
+    statsNoteExcludedArrivals:
+      "{0} check-ins more than 2 hours before or 12 hours after the start were left out, since they are likely late entries.",
     statsTabDemographics: "Demographics",
     statsMedianAge: "Median age",
     statsKnownAge: "Age known",
@@ -908,6 +910,8 @@ export const translations = {
     statsArrivalsSeries: "Llegadas",
     statsSeriesSignedUp: "Anotados",
     statsNoSignups: "No hubo inscripciones",
+    statsNoteExcludedArrivals:
+      "Se dejaron afuera {0} ingresos de más de 2 horas antes o 12 horas después del inicio, porque probablemente se cargaron tarde.",
     statsTabDemographics: "Demografía",
     statsMedianAge: "Edad mediana",
     statsKnownAge: "Con edad conocida",
