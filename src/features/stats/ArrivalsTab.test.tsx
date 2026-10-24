@@ -125,7 +125,9 @@ const respond = (result: unknown) =>
 function headline(label: string): HTMLElement {
   const card = Array.from(
     document.querySelectorAll<HTMLElement>("[data-headline]"),
-  ).find((el) => el.querySelector("p")?.textContent === label);
+  ).find(
+    (el) => el.querySelector('[data-slot="label"]')?.textContent === label,
+  );
   if (!card) throw new Error(`No headline ${label}`);
   return card;
 }
@@ -200,6 +202,9 @@ describe("ArrivalsTab", () => {
     expect(
       await screen.findByText("No hay eventos finalizados en este período"),
     ).toBeInTheDocument();
+    expect(document.querySelector("[data-headline]")).toBeNull();
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
   it("shows exact headline values in aggregate mode", async () => {
@@ -261,8 +266,13 @@ describe("ArrivalsTab", () => {
     await headlinesReady();
     expect(slot("Pico de llegada", "value")).toBe("23:30");
     expect(slot("Llegó el 50%", "value")).toBe("23:45");
-    expect(slot("Llegó el 50%", "comparison")).toBe("promedio: +1:05");
+    expect(slot("Llegó el 50%", "comparison")).toBe(
+      "+0:45 desde el inicio · promedio: +1:05",
+    );
     expect(slot("Llegó el 90%", "value")).toBe("00:30");
+    expect(slot("Llegó el 90%", "comparison")).toBe(
+      "+1:30 desde el inicio · promedio: +1:35",
+    );
     expect(slot("En la primera hora", "comparison")).toBe("promedio: 86%");
   });
 
@@ -279,29 +289,57 @@ describe("ArrivalsTab", () => {
     expect(document.body).not.toHaveTextContent("NaN");
   });
 
-  it("lists exact counts and dims a no-show rate from fewer than 10 people", async () => {
+  it("lists the lead times in a table with exact counts and dims small rates", async () => {
     respond(ok(stats()));
     renderTab();
     await headlinesReady();
 
+    expect(
+      screen.getAllByRole("columnheader").map((th) => th.textContent),
+    ).toEqual(["Anticipación", "Anotados", "No-show"]);
+
     const sameDay = leadRow("El mismo día");
     expect(part(sameDay, "signed-up")).toBe("120");
-    expect(part(sameDay, "rate")).toBe("No-show 10%");
+    expect(part(sameDay, "rate")).toBe("10%");
     expect(part(sameDay, "sample")).toBeNull();
-    expect(sameDay).not.toHaveClass("text-muted-foreground");
+    expect(sameDay.querySelector('[data-slot="rate"]')).not.toHaveClass(
+      "text-muted-foreground",
+    );
 
     const fourSeven = leadRow("4-7 días");
     expect(part(fourSeven, "signed-up")).toBe("8");
-    expect(part(fourSeven, "rate")).toBe("No-show 50%");
+    expect(part(fourSeven, "rate")).toBe("50%n = 8");
     expect(part(fourSeven, "sample")).toBe("n = 8");
-    expect(fourSeven).toHaveClass("text-muted-foreground");
-
-    const twoThree = leadRow("2-3 días");
-    expect(part(twoThree, "sample")).toBe("n = 8");
+    expect(fourSeven.querySelector('[data-slot="rate"]')).toHaveClass(
+      "text-muted-foreground",
+    );
+    expect(part(leadRow("2-3 días"), "sample")).toBe("n = 8");
 
     const fifteen = leadRow("15+ días");
-    expect(part(fifteen, "rate")).toBe("No-show –");
-    expect(part(fifteen, "sample")).toBe("n = 0");
+    expect(part(fifteen, "rate")).toBe("–");
+    expect(part(fifteen, "sample")).toBeNull();
+  });
+
+  it("says there were no sign-ups instead of drawing an empty lead-time chart", async () => {
+    respond(
+      ok(
+        stats({
+          lead_time: LEAD.map((r) => ({
+            ...r,
+            signed_up: 0,
+            cancelled: 0,
+            no_show: 0,
+            no_show_rate: null,
+          })),
+        }),
+      ),
+    );
+    renderTab();
+    await headlinesReady();
+    expect(
+      screen.getByText("No hubo inscripciones en este período"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
   it("explains what the numbers leave out", async () => {

@@ -69,3 +69,13 @@ export function formatMinuteChange(
   if (current === null || baseline === null) return null;
   return Math.round(current - baseline) || 0;
 }
+
+/** The x-axis label of an arrival bucket: clock time for one event, else the offset from the start. */
+export function formatCurveLabel(
+  bucket: { start_minute: number; local_time: string | null },
+  single: boolean,
+): string {
+  return (
+    (single ? bucket.local_time : null) ?? formatOffset(bucket.start_minute)
+  );
+}

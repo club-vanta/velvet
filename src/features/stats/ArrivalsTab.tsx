@@ -15,6 +15,7 @@ import { StatsNote } from "./StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
+  formatCurveLabel,
   formatMinuteChange,
   formatOffset,
   formatPointChange,
@@ -25,7 +26,6 @@ import {
 import type { StatsTabProps } from "./statsTab";
 
 type Arrivals = components["schemas"]["ArrivalStatsPublic"];
-type Summary = components["schemas"]["ArrivalSummaryPublic"];
 type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 
 const LEAD_LABELS: Record<LeadRow["bucket"], TranslationKey> = {
@@ -46,18 +46,15 @@ function ArrivalCurve({
 }) {
   const { t } = useLanguage();
   const config: ChartConfig = {
-    arrivals: { label: t("statsArrivalCurve"), color: "var(--chart-1)" },
+    arrivals: { label: t("statsArrivalsSeries"), color: "var(--chart-1)" },
   };
   const data = curve.map((b) => ({
-    label: (single ? b.local_time : null) ?? formatOffset(b.start_minute),
+    label: formatCurveLabel(b, single),
     arrivals: b.arrivals,
   }));
 
   return (
-    <ChartContainer
-      config={config}
-      className="aspect-auto h-64 min-h-48 w-full"
-    >
+    <ChartContainer config={config} className="aspect-auto h-64 w-full">
       <BarChart data={data}>
         <CartesianGrid vertical={false} />
         <XAxis
@@ -83,7 +80,7 @@ function ArrivalCurve({
 function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
   const { t } = useLanguage();
   const config: ChartConfig = {
-    signed_up: { label: t("statsRsvps"), color: "var(--chart-2)" },
+    signed_up: { label: t("statsSeriesSignedUp"), color: "var(--chart-2)" },
   };
   const data = rows.map((r) => ({
     label: t(LEAD_LABELS[r.bucket]),
@@ -91,13 +88,15 @@ function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
   }));
 
   return (
-    <ChartContainer
-      config={config}
-      className="aspect-auto h-56 min-h-48 w-full"
-    >
+    <ChartContainer config={config} className="aspect-auto h-56 w-full">
       <BarChart data={data} layout="vertical">
         <CartesianGrid horizontal={false} />
-        <XAxis type="number" allowDecimals={false} />
+        <XAxis
+          type="number"
+          allowDecimals={false}
+          tickLine={false}
+          axisLine={false}
+        />
         <YAxis
           type="category"
           dataKey="label"
@@ -113,40 +112,61 @@ function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
   );
 }
 
-/** The no-show rate of each lead-time bucket, dimmed when few people back it. */
-function LeadTimeRates({ rows }: { rows: LeadRow[] }) {
+/** Sign-ups and the no-show rate of each lead-time bucket; a rate from few people is dimmed with its n. */
+function LeadTimeTable({ rows }: { rows: LeadRow[] }) {
   const { t, lang } = useLanguage();
+  const head = "py-1.5 text-xs font-medium text-muted-foreground";
 
   return (
-    <ul className="mt-3 divide-y text-sm">
-      {rows.map((r) => {
-        const n = r.signed_up - r.cancelled;
-        const small = isSmallSample(n);
-        return (
-          <li
-            key={r.bucket}
-            data-slot="lead-row"
-            className={cn(
-              "flex flex-wrap items-baseline justify-between gap-x-3 py-1.5 tabular-nums",
-              small && "text-muted-foreground",
-            )}
-          >
-            <span data-slot="bucket">{t(LEAD_LABELS[r.bucket])}</span>
-            <span data-slot="signed-up">{r.signed_up}</span>
-            <span>
-              <span data-slot="rate">
-                {t("statsNoShowRate")} {formatRate(r.no_show_rate, lang)}
-              </span>
-              {small && (
-                <span data-slot="sample" className="ml-2 text-xs">
-                  {t("statsSample").replace("{0}", String(n))}
-                </span>
-              )}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
+    <table className="mt-3 w-full text-sm tabular-nums">
+      <thead>
+        <tr className="border-b">
+          <th scope="col" className={cn(head, "text-left")}>
+            {t("statsLeadTimeHeader")}
+          </th>
+          <th scope="col" className={cn(head, "text-right")}>
+            {t("statsRsvps")}
+          </th>
+          <th scope="col" className={cn(head, "text-right")}>
+            {t("statsNoShowRate")}
+          </th>
+        </tr>
+      </thead>
+      <tbody className="divide-y">
+        {rows.map((r) => {
+          const n = r.signed_up - r.cancelled;
+          const small = r.no_show_rate !== null && isSmallSample(n);
+          return (
+            <tr key={r.bucket} data-slot="lead-row">
+              <th
+                scope="row"
+                data-slot="bucket"
+                className="py-1.5 text-left font-normal"
+              >
+                {t(LEAD_LABELS[r.bucket])}
+              </th>
+              <td data-slot="signed-up" className="py-1.5 text-right">
+                {r.signed_up}
+              </td>
+              <td
+                data-slot="rate"
+                className={cn(
+                  "py-1.5 text-right",
+                  small && "text-muted-foreground",
+                )}
+              >
+                {formatRate(r.no_show_rate, lang)}
+                {small && (
+                  <span data-slot="sample" className="ml-2 text-xs">
+                    {t("statsSample").replace("{0}", String(n))}
+                  </span>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
@@ -164,22 +184,26 @@ function ArrivalsContent({
     return <StatsEmptyState />;
   }
 
-  const base: Summary | null = comparison;
-  const offset = (minutes: number | null | undefined) =>
-    minutes === null || minutes === undefined
-      ? undefined
-      : formatOffset(minutes);
-
-  /** The line under a time: change vs. the previous period, or the period average. */
+  /**
+   * The line under a time. One event: its offset from the start (its card
+   * shows a clock time) and the period average. Aggregate: the change vs. the
+   * previous period.
+   */
   function compareMinutes(
     current: number | null,
     baseline: number | null | undefined,
   ): string | undefined {
     if (comparison_kind === "PERIOD_AVERAGE") {
-      const average = offset(baseline);
-      return average === undefined
-        ? undefined
-        : t("statsPeriodAverage").replace("{0}", average);
+      const fromStart =
+        current === null
+          ? []
+          : [t("statsFromStart").replace("{0}", formatOffset(current))];
+      const average =
+        baseline == null
+          ? []
+          : [t("statsPeriodAverage").replace("{0}", formatOffset(baseline))];
+      const parts = [...fromStart, ...average];
+      return parts.length > 0 ? parts.join(" · ") : undefined;
     }
     if (comparison_kind !== "PREVIOUS_PERIOD") return undefined;
     const change = formatMinuteChange(current, baseline ?? null);
@@ -191,17 +215,17 @@ function ArrivalsContent({
   }
 
   function compareShare(): string | undefined {
-    if (!base) return undefined;
+    if (!comparison) return undefined;
     if (comparison_kind === "PERIOD_AVERAGE") {
       return t("statsPeriodAverage").replace(
         "{0}",
-        formatRate(base.first_hour_share, lang),
+        formatRate(comparison.first_hour_share, lang),
       );
     }
     if (comparison_kind !== "PREVIOUS_PERIOD") return undefined;
     const change = formatPointChange(
       summary.first_hour_share,
-      base.first_hour_share,
+      comparison.first_hour_share,
     );
     if (change === null) return undefined;
     return t("statsVsPreviousPts").replace(
@@ -227,13 +251,16 @@ function ArrivalsContent({
           value={time(summary.median_local_time, summary.median_minutes)}
           comparison={compareMinutes(
             summary.median_minutes,
-            base?.median_minutes,
+            comparison?.median_minutes,
           )}
         />
         <HeadlineStat
           label={t("statsNinetyArrived")}
           value={time(summary.p90_local_time, summary.p90_minutes)}
-          comparison={compareMinutes(summary.p90_minutes, base?.p90_minutes)}
+          comparison={compareMinutes(
+            summary.p90_minutes,
+            comparison?.p90_minutes,
+          )}
         />
         <HeadlineStat
           label={t("statsFirstHour")}
@@ -253,8 +280,16 @@ function ArrivalsContent({
       </ChartCard>
       <StatsNote>{t("statsNoteArrivals")}</StatsNote>
       <ChartCard title={t("statsLeadTime")}>
-        <LeadTimeChart rows={lead_time} />
-        <LeadTimeRates rows={lead_time} />
+        {lead_time.every((r) => r.signed_up === 0) ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            {t("statsNoSignups")}
+          </p>
+        ) : (
+          <>
+            <LeadTimeChart rows={lead_time} />
+            <LeadTimeTable rows={lead_time} />
+          </>
+        )}
       </ChartCard>
       <StatsNote>{t("statsNoteLeadTime")}</StatsNote>
     </div>

@@ -350,6 +350,11 @@ export const translations = {
     statsNoteArrivals:
       "Times use the check-in at the door. In the aggregate, minutes count from each event's start so events at different hours line up.",
     statsNoteLeadTime: "Walk-ins are left out because they never signed up.",
+    statsFromStart: "{0} from start",
+    statsLeadTimeHeader: "Lead time",
+    statsArrivalsSeries: "Arrivals",
+    statsSeriesSignedUp: "Signed up",
+    statsNoSignups: "No sign-ups in this period",
     organizations: "Organizations",
     noOrganization: "No organization assigned. Contact an administrator.",
     orgName: "Name",
@@ -876,6 +881,11 @@ export const translations = {
     statsNoteArrivals:
       "Los horarios salen del check-in en la puerta. En el agregado, los minutos se cuentan desde el inicio de cada evento para que eventos a distintas horas se puedan comparar.",
     statsNoteLeadTime: "Los discretos no se cuentan porque nunca se anotaron.",
+    statsFromStart: "{0} desde el inicio",
+    statsLeadTimeHeader: "Anticipación",
+    statsArrivalsSeries: "Llegadas",
+    statsSeriesSignedUp: "Anotados",
+    statsNoSignups: "No hubo inscripciones en este período",
     organizations: "Organizaciones",
     noOrganization: "Sin organización asignada. Contactá a un administrador.",
     orgName: "Nombre",
