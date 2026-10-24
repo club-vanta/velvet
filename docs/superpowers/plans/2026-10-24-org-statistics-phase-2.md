@@ -115,7 +115,7 @@
 - `type StatsTab = "attendance" | "arrivals"`; `useStatsFilters` reads `tab` from the URL with fallback `"attendance"`; `setTab` pushes history.
 - `statsArrivalsKey(orgId, query)` under `statsOrgKey`. `useArrivalsStats(orgId, query)` mirrors `useAttendanceStats` (skipToken while null, `failedLoadOrgStats`).
 - `formatOffset(minutes: number): string` (`75 -> "+1:15"`, `-10 -> "-0:10"`, `0 -> "+0:00"`), `formatMinuteChange(current, baseline): number | null` (difference in whole minutes).
-- Tabs follow the phase 1 tab props contract (`StatsTabProps`: read `src/features/stats` for it after the phase 1 fix wave). Only the active tab mounts, so hidden tabs make no request: check whether the base-ui `TabsContent` in `src/components/ui/tabs.tsx` keeps hidden panels mounted, and if it does, render only the active tab's component.
+- Tabs follow the phase 1 tab props contract (`StatsTabProps`: `src/features/stats/statsTab.ts`). Only the active tab mounts, so hidden tabs make no request: check whether the base-ui `TabsContent` in `src/components/ui/tabs.tsx` keeps hidden panels mounted, and if it does, render only the active tab's component.
 - The `TabsList` scrolls sideways on phones (`overflow-x-auto`, no wrap) per the spec.
 - i18n: `statsTabArrivals` "Timing" / "Horarios".
 
