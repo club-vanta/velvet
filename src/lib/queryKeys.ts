@@ -6,16 +6,25 @@ export const meetupGuestsKey = (orgId: string, meetupId: string) =>
 export const meetupStatsKey = (orgId: string, meetupId: string) =>
   ["meetup-stats", orgId, meetupId] as const;
 
-// Prefix of every per-guest query, so invalidating it also refreshes the
-// displayname history.
+// Prefix of every per-guest identity query, so invalidating it also
+// refreshes the displayname history.
 export const guestKey = (guestId: string) => ["guest", guestId] as const;
 
 export const guestHistoryKey = (guestId: string) =>
   ["guest", guestId, "displayname-history"] as const;
 
+// Prefixed by org, not by guest: RSVP changes on a meetup page touch many
+// guests at once, so they invalidate the whole org prefix.
+export const guestMeetupsOrgKey = (orgId: string) =>
+  ["guest-meetups", orgId] as const;
+
+export const guestMeetupsKey = (orgId: string, guestId: string) =>
+  [...guestMeetupsOrgKey(orgId), guestId] as const;
+
 /**
  * Anything that changes an RSVP (check-in, payment, guest type, walk-in,
- * sync) also changes the meetup stats, so both are always refreshed together.
+ * sync) also changes the meetup stats and the attendance shown on guest
+ * profiles, so all three are always refreshed together.
  */
 export function invalidateMeetupGuests(
   queryClient: QueryClient,
@@ -28,6 +37,7 @@ export function invalidateMeetupGuests(
   void queryClient.invalidateQueries({
     queryKey: meetupStatsKey(orgId, meetupId),
   });
+  void queryClient.invalidateQueries({ queryKey: guestMeetupsOrgKey(orgId) });
 }
 
 /**

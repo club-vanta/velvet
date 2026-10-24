@@ -15,6 +15,15 @@ export function formatDateTime(iso: string): string {
   });
 }
 
+// For a time whose day is already on screen next to it (an arrival on the
+// meetup's own row).
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-AR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function ordinal(n: number): string {
   return `#${n}`;
 }

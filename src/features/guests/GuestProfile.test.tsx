@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { GuestProfile } from "./GuestProfile";
 import type { components } from "@/api/types";
@@ -76,6 +77,21 @@ function setup({
         data: { total: history.length, history },
         error: undefined,
       });
+    if (path === "/organizations/{org_id}/guests/{guest_id}/meetups")
+      return Promise.resolve({
+        data: {
+          total: 0,
+          summary: {
+            attended: 0,
+            walkin: 0,
+            no_show: 0,
+            cancelled: 0,
+            upcoming: 0,
+          },
+          meetups: [],
+        },
+        error: undefined,
+      });
     if (path === "/organizations/{org_id}/guests/banned")
       return Promise.resolve({
         data: { total: banned.length, guests: banned },
@@ -91,7 +107,9 @@ function setup({
       }
     >
       <LanguageProvider>
-        <GuestProfile guestId="g-1" orgId="org-1" orgName="Club Vanta" />
+        <MemoryRouter>
+          <GuestProfile guestId="g-1" orgId="org-1" orgName="Club Vanta" />
+        </MemoryRouter>
       </LanguageProvider>
     </QueryClientProvider>,
   );
@@ -129,6 +147,18 @@ describe("GuestProfile", () => {
     expect(screen.getByRole("link", { name: /@juan\.ig/ })).toHaveAttribute(
       "href",
       "https://instagram.com/juan.ig",
+    );
+  });
+
+  it("shows the meetups section for the active org", async () => {
+    setup();
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Meetups" }),
+    ).toBeInTheDocument();
+    expect(mockApiGet).toHaveBeenCalledWith(
+      "/organizations/{org_id}/guests/{guest_id}/meetups",
+      { params: { path: { org_id: "org-1", guest_id: "g-1" } } },
     );
   });
 

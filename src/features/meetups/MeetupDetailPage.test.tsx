@@ -125,6 +125,31 @@ function renderPage(
           data: { total: 0, history: [] },
           error: undefined,
         });
+      if (path === "/organizations/{org_id}/guests/{guest_id}/meetups")
+        return Promise.resolve({
+          data: {
+            total: 1,
+            summary: {
+              attended: 0,
+              walkin: 0,
+              no_show: 0,
+              cancelled: 0,
+              upcoming: 1,
+            },
+            meetups: [
+              {
+                meetup_id: meetup.id,
+                name: meetup.name,
+                date: meetup.date,
+                status: "UPCOMING",
+                rsvp_time: "2026-03-01T12:00:00Z",
+                arrival_time: null,
+                guest_type: "NORMAL",
+              },
+            ],
+          },
+          error: undefined,
+        });
       if (path === "/guests/{guest_id}") {
         const found = guests.find(
           (g) => g.guest.id === opts?.params?.path?.guest_id,
@@ -659,6 +684,14 @@ describe("MeetupDetailPage guest identity extras", () => {
       "href",
       `/guests/${"00000000-0000-0000-0000-000000000041"}`,
     );
+    expect(
+      within(sheet).getByRole("heading", { level: 3, name: "Meetups" }),
+    ).toBeInTheDocument();
+    // The meetup the sheet is open on is named, not linked to itself.
+    expect(await within(sheet).findByText("This meetup")).toBeInTheDocument();
+    expect(
+      within(sheet).queryByRole("link", { name: MEETUP.name }),
+    ).not.toBeInTheDocument();
   });
 
   function rowNames() {
