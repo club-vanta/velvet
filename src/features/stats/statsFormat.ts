@@ -79,3 +79,26 @@ export function formatCurveLabel(
     (single ? bucket.local_time : null) ?? formatOffset(bucket.start_minute)
   );
 }
+
+/** Difference in years with one decimal and a sign (`+1,5`), or null when either side is missing. */
+export function formatYearsChange(
+  current: number | null,
+  baseline: number | null,
+  locale: string,
+): string | null {
+  if (current === null || baseline === null) return null;
+  const diff = Math.round((current - baseline) * 10) / 10 || 0;
+  const text = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 1,
+  }).format(diff);
+  return diff > 0 ? `+${text}` : text;
+}
+
+/** An age in years with one decimal. */
+export function formatAge(age: number | null, locale: string): string {
+  if (age === null) return NO_VALUE;
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(age);
+}

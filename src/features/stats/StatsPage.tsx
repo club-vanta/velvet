@@ -3,6 +3,7 @@ import { useLanguage } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
 import { ArrivalsTab } from "./ArrivalsTab";
 import { AttendanceTab } from "./AttendanceTab";
+import { DemographicsTab } from "./DemographicsTab";
 import { StatsErrorState } from "./StatsErrorState";
 import { StatsFilterBar } from "./StatsFilterBar";
 import type { StatsTabProps } from "./statsTab";
@@ -41,12 +42,18 @@ export function StatsPage() {
             {t("statsTabAttendance")}
           </TabsTrigger>
           <TabsTrigger value="arrivals">{t("statsTabArrivals")}</TabsTrigger>
+          <TabsTrigger value="demographics">
+            {t("statsTabDemographics")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="attendance">
           {eventsError || <AttendanceTab {...tabProps} />}
         </TabsContent>
         <TabsContent value="arrivals">
           {eventsError || <ArrivalsTab {...tabProps} />}
+        </TabsContent>
+        <TabsContent value="demographics">
+          {eventsError || <DemographicsTab {...tabProps} />}
         </TabsContent>
       </Tabs>
     </div>

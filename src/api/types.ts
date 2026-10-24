@@ -1204,6 +1204,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/demographics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Gender and age of the people who attend finalized meetups */
+    get: operations["get_demographic_stats_organizations__org_id__stats_demographics_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -1531,6 +1548,56 @@ export interface components {
       instagram_username?: string | null;
     };
     /**
+     * DemographicGroupPublic
+     * @description One gender or age group of audience RSVPs. key is a Mazmo gender code (null:
+     *     unknown) or a StatsAgeBucket value. Rates and shares are null with nothing to divide by.
+     */
+    DemographicGroupPublic: {
+      /** Key */
+      key: string | null;
+      /** Attended */
+      attended: number;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Attended Share */
+      attended_share: number | null;
+      /** Expected Share */
+      expected_share: number | null;
+    };
+    /**
+     * DemographicStatsPublic
+     * @description Gender and age of the people who attend, with the figures to compare against. One RSVP counts once.
+     */
+    DemographicStatsPublic: {
+      /** Gender */
+      gender: components["schemas"]["DemographicGroupPublic"][];
+      /** Age */
+      age: components["schemas"]["DemographicGroupPublic"][];
+      summary: components["schemas"]["DemographicSummaryPublic"];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["DemographicSummaryPublic"] | null;
+    };
+    /**
+     * DemographicSummaryPublic
+     * @description The figures compared between two scopes. median_age and known_age_share are null when nobody attended.
+     */
+    DemographicSummaryPublic: {
+      /** Attended */
+      attended: number;
+      /** Median Age */
+      median_age: number | null;
+      /** Known Age Share */
+      known_age_share: number | null;
+      /** Gender Shares */
+      gender_shares: components["schemas"]["GroupSharePublic"][];
+      /** Age Shares */
+      age_shares: components["schemas"]["GroupSharePublic"][];
+    };
+    /**
      * DisableUserRequest
      * @description Request body for disabling a staff account.
      *
@@ -1625,6 +1692,16 @@ export interface components {
       meetup_id?: string | null;
       /** Reason */
       reason?: string | null;
+    };
+    /**
+     * GroupSharePublic
+     * @description Share of the attended RSVPs that fall in one group (null when nobody attended).
+     */
+    GroupSharePublic: {
+      /** Key */
+      key: string | null;
+      /** Attended Share */
+      attended_share: number | null;
     };
     /**
      * GuestAttendanceStatus
@@ -5898,6 +5975,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ArrivalStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_demographic_stats_organizations__org_id__stats_demographics_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Gender and age of the people who attended finalized meetups in the period */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DemographicStatsPublic"];
         };
       };
       /** @description Invalid or missing credentials */

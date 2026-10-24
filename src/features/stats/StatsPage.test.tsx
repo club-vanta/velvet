@@ -77,7 +77,8 @@ function renderPage(
   // The attendance tab has its own tests, so its request just stays pending.
   mockApiGet.mockImplementation((path: string) =>
     path === "/organizations/{org_id}/stats/attendance" ||
-    path === "/organizations/{org_id}/stats/arrivals"
+    path === "/organizations/{org_id}/stats/arrivals" ||
+    path === "/organizations/{org_id}/stats/demographics"
       ? new Promise(() => {})
       : meetupsResult(),
   );
@@ -332,6 +333,14 @@ describe("StatsPage", () => {
       await screen.findByTestId("attendance-skeleton");
       expect(statsPaths()).toEqual([
         "/organizations/{org_id}/stats/attendance",
+      ]);
+    });
+
+    it("requests only the demographics of tab=demographics", async () => {
+      renderPage("/stats?tab=demographics");
+      await screen.findByTestId("demographics-skeleton");
+      expect(statsPaths()).toEqual([
+        "/organizations/{org_id}/stats/demographics",
       ]);
     });
 

@@ -10,6 +10,8 @@ import {
   isSmallSample,
   SMALL_SAMPLE,
   spansYears,
+  formatYearsChange,
+  formatAge,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -164,5 +166,31 @@ describe("formatCurveLabel", () => {
     expect(
       formatCurveLabel({ start_minute: -15, local_time: null }, true),
     ).toBe("-0:15");
+  });
+});
+
+describe("formatYearsChange", () => {
+  it("signs the difference with one decimal and the locale separator", () => {
+    expect(formatYearsChange(32.7, 31.2, "es")).toBe("+1,5");
+    expect(formatYearsChange(32.7, 31.2, "en")).toBe("+1.5");
+    expect(formatYearsChange(30, 31.2, "es")).toBe("-1,2");
+  });
+
+  it("rounds to one decimal and never returns -0", () => {
+    expect(formatYearsChange(31.24, 31.2, "es")).toBe("0");
+    expect(formatYearsChange(31.16, 31.2, "es")).toBe("0");
+  });
+
+  it("returns null when either side is missing", () => {
+    expect(formatYearsChange(null, 31, "es")).toBeNull();
+    expect(formatYearsChange(31, null, "es")).toBeNull();
+  });
+});
+
+describe("formatAge", () => {
+  it("shows one decimal or a dash", () => {
+    expect(formatAge(31, "es")).toBe("31,0");
+    expect(formatAge(31.25, "en")).toBe("31.3");
+    expect(formatAge(null, "es")).toBe("–");
   });
 });
