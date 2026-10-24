@@ -123,3 +123,13 @@ export function formatClockWindow(start: string): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${start}-${pad(Math.floor(end / 60))}:${pad(end % 60)}`;
 }
+
+/** A cohort month (`2026-01`) as a short month and year, such as `ene 2026`. */
+export function formatCohortMonth(month: string, locale: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, monthNumber - 1, 1)));
+}

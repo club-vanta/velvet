@@ -14,6 +14,7 @@ import {
   formatAge,
   shareTicks,
   formatClockWindow,
+  formatCohortMonth,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -220,5 +221,18 @@ describe("formatClockWindow", () => {
 
   it("wraps past midnight", () => {
     expect(formatClockWindow("23:45")).toBe("23:45-00:00");
+  });
+});
+
+describe("formatCohortMonth", () => {
+  it("shows a cohort month as a short month and year", () => {
+    expect(formatCohortMonth("2026-01", "es")).toBe("ene 2026");
+    expect(formatCohortMonth("2026-01", "en")).toBe("Jan 2026");
+  });
+
+  it("keeps the month whatever the browser time zone", () => {
+    vi.stubEnv("TZ", "Pacific/Kiritimati");
+    expect(formatCohortMonth("2026-12", "es")).toBe("dic 2026");
+    vi.unstubAllEnvs();
   });
 });

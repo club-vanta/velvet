@@ -1221,6 +1221,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/retention": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** New and returning guests of finalized meetups */
+    get: operations["get_retention_stats_organizations__org_id__stats_retention_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -1529,6 +1546,20 @@ export interface components {
       username: string;
     };
     /**
+     * CohortRowPublic
+     * @description Guests whose first time was in month ("YYYY-MM", Buenos Aires). retention[i] is the
+     *     share of them who attended in month i + 1 after it. Months that have not happened
+     *     yet are left out, so the list can be shorter than 12.
+     */
+    CohortRowPublic: {
+      /** Month */
+      month: string;
+      /** Size */
+      size: number;
+      /** Retention */
+      retention: number[];
+    };
+    /**
      * CreateGuestRequest
      * @description Request body for creating a guest by Mazmo username (POST /guests/mazmo).
      */
@@ -1696,6 +1727,15 @@ export interface components {
       meetup_id?: string | null;
       /** Reason */
       reason?: string | null;
+    };
+    /**
+     * FrequencyRowPublic
+     * @description Unique guests with a number of attendances in the period, in one StatsFrequencyBucket.
+     */
+    FrequencyRowPublic: {
+      bucket: components["schemas"]["StatsFrequencyBucket"];
+      /** Guests */
+      guests: number;
     };
     /**
      * GroupSharePublic
@@ -1999,6 +2039,26 @@ export interface components {
       };
     };
     /**
+     * LapsedRegularPublic
+     * @description A guest with several attendances before the period and none in it.
+     */
+    LapsedRegularPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Attended Before */
+      attended_before: number;
+      /**
+       * Last Attended
+       * Format: date-time
+       */
+      last_attended: string;
+    };
+    /**
      * LeadTimeRowPublic
      * @description Audience sign-ups made in one lead-time bucket. no_show_rate is null with nobody to divide by.
      */
@@ -2106,6 +2166,28 @@ export interface components {
       total: number;
       /** Meetups */
       meetups: components["schemas"]["MeetupPublic"][];
+    };
+    /**
+     * MeetupNewReturningPublic
+     * @description Unique attendees of one finalized meetup: new ones had their first time there.
+     */
+    MeetupNewReturningPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** New */
+      new: number;
+      /** Returning */
+      returning: number;
     };
     /**
      * MeetupPublic
@@ -2296,6 +2378,44 @@ export interface components {
       username: string;
     };
     /**
+     * RetentionStatsPublic
+     * @description New and returning guests, cohorts, frequency and lapsed regulars, with the figures to
+     *     compare against. For one meetup the lists are empty and lapsed_total is null; for a
+     *     period without a start, lapsed is empty and lapsed_total is null.
+     */
+    RetentionStatsPublic: {
+      summary: components["schemas"]["RetentionSummaryPublic"];
+      /** Meetups */
+      meetups: components["schemas"]["MeetupNewReturningPublic"][];
+      /** Cohorts */
+      cohorts: components["schemas"]["CohortRowPublic"][];
+      /** Frequency */
+      frequency: components["schemas"]["FrequencyRowPublic"][];
+      /** Lapsed */
+      lapsed: components["schemas"]["LapsedRegularPublic"][];
+      /** Lapsed Total */
+      lapsed_total: number | null;
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["RetentionSummaryPublic"] | null;
+    };
+    /**
+     * RetentionSummaryPublic
+     * @description Unique guests in scope. new_share and first_timer_return_rate are null with nothing to
+     *     divide by; the return rate counts later attendances even after the period ends.
+     */
+    RetentionSummaryPublic: {
+      /** Attendees */
+      attendees: number;
+      /** New Guests */
+      new_guests: number;
+      /** Returning */
+      returning: number;
+      /** New Share */
+      new_share: number | null;
+      /** First Timer Return Rate */
+      first_timer_return_rate: number | null;
+    };
+    /**
      * RolePublic
      * @description Public representation of a user role.
      *
@@ -2395,6 +2515,12 @@ export interface components {
      * @enum {string}
      */
     StatsComparisonKind: "PREVIOUS_PERIOD" | "PERIOD_AVERAGE";
+    /**
+     * StatsFrequencyBucket
+     * @description How many times a guest attended in the selected period.
+     * @enum {string}
+     */
+    StatsFrequencyBucket: "ONE" | "TWO" | "THREE_FIVE" | "SIX_PLUS";
     /**
      * StatsLeadTimeBucket
      * @description How many whole local days before the meetup an RSVP was made.
@@ -6044,6 +6170,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["DemographicStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_retention_stats_organizations__org_id__stats_retention_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description New and returning guests, cohorts, frequency and lapsed regulars of finalized meetups */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetentionStatsPublic"];
         };
       };
       /** @description Invalid or missing credentials */

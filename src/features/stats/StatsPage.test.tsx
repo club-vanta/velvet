@@ -78,7 +78,8 @@ function renderPage(
   mockApiGet.mockImplementation((path: string) =>
     path === "/organizations/{org_id}/stats/attendance" ||
     path === "/organizations/{org_id}/stats/arrivals" ||
-    path === "/organizations/{org_id}/stats/demographics"
+    path === "/organizations/{org_id}/stats/demographics" ||
+    path === "/organizations/{org_id}/stats/retention"
       ? new Promise(() => {})
       : meetupsResult(),
   );
@@ -342,6 +343,16 @@ describe("StatsPage", () => {
       expect(statsPaths()).toEqual([
         "/organizations/{org_id}/stats/demographics",
       ]);
+    });
+
+    it("requests only the retention of tab=retention", async () => {
+      renderPage("/stats?tab=retention");
+      await screen.findByTestId("retention-skeleton");
+      expect(screen.getByRole("tab", { name: "Fidelidad" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(statsPaths()).toEqual(["/organizations/{org_id}/stats/retention"]);
     });
 
     it("does not request the attendance of a hidden tab", async () => {
