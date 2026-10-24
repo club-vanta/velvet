@@ -45,10 +45,12 @@ Start with `git switch -c feat/org-stats-attendance` from an up-to-date `main`.
 ### Task 1: SQL twin of the attendance rule
 
 **Files:**
+
 - Modify: `app/services/attendance.py`
 - Test: `tests/test_guest_attendance.py`
 
 **Interfaces:**
+
 - Produces: `attendance_status_expr() -> ColumnElement[str | None]` in `app/services/attendance.py`. A SQLAlchemy `case(...)` over `MeetupRsvp.has_arrived`, `MeetupRsvp.is_walkin`, `MeetupRsvp.cancelled_rsvp`, and `Meetup.is_finalized`, returning the `GuestAttendanceStatus` values as strings, `NULL` for a walk-in never checked in. Callers must join `Meetup`.
 
 - [ ] **Step 1: Write the failing parity test**
@@ -101,10 +103,12 @@ git commit -m "feat: add a SQL form of the attendance rule with a parity test"
 ### Task 2: Stats period and scope helpers
 
 **Files:**
+
 - Create: `app/services/stats/__init__.py`, `app/services/stats/scope.py`
 - Test: `tests/test_stats_scope.py`
 
 **Interfaces:**
+
 - Produces, in `app/services/stats/scope.py`:
   - `STATS_TZ = ZoneInfo("America/Argentina/Buenos_Aires")`
   - `AUDIENCE_GUEST_TYPES: tuple[str, ...] = (GuestType.NORMAL.value, GuestType.INVITED.value)`
@@ -146,10 +150,12 @@ git commit -m "feat: add the shared period and scope filters for org stats"
 ### Task 3: Attendance stats service
 
 **Files:**
+
 - Create: `app/services/stats/attendance.py`
 - Test: `tests/test_stats_attendance.py` (service tests in this task; endpoint tests are added in Task 4)
 
 **Interfaces:**
+
 - Consumes: `attendance_status_expr()` (Task 1); `StatsPeriod`, `AUDIENCE_GUEST_TYPES`, `finalized_meetups_in` (Task 2).
 - Produces, in `app/services/stats/attendance.py`:
   - `@dataclass(frozen=True) class MeetupAttendanceRow: meetup_id: uuid.UUID; name: str; date: datetime; signed_up: int; cancelled: int; attended: int; walkin: int; no_show: int`
@@ -199,11 +205,13 @@ git commit -m "feat: compute org attendance stats per meetup and per period"
 ### Task 4: Attendance stats endpoint
 
 **Files:**
+
 - Create: `app/schemas/stats.py`, `app/routers/stats.py`, `app/openapi_examples/stats_examples.py`
 - Modify: `app/schemas/__init__.py` (re-export), `app/main.py` (`include_router(stats.router)`), `openapi.json` (regenerated)
 - Test: `tests/test_stats_attendance.py`
 
 **Interfaces:**
+
 - Consumes: `attendance_stats`, `AttendanceStats`, `StatsPeriod`, `InvalidStatsPeriodError` (Tasks 2-3).
 - Produces: `GET /organizations/{org_id}/stats/attendance` with query `from: date | None`, `to: date | None`, `meetup_id: uuid.UUID | None`, response `AttendanceStatsPublic`:
   - `MeetupAttendanceRowPublic`: `meetup_id: uuid.UUID, name: str, date: datetime, signed_up: int, cancelled: int, attended: int, walkin: int, no_show: int`
@@ -213,6 +221,7 @@ git commit -m "feat: compute org attendance stats per meetup and per period"
 - `from` and `to` are optional (leaving both out is "all time"). Use `Query(alias="from")` for `from`.
 
 Router rules:
+
 - Module docstring lists the route, like `meetups.py`.
 - `_admin: User = Depends(get_org_admin)`.
 - `InvalidStatsPeriodError` -> 422, detail `"Cannot compute stats: 'from' ({from}) must be before 'to' ({to}). Pick a later 'to' date."`
@@ -268,11 +277,13 @@ Expected: 0 errors, no lint findings, no files to reformat, all tests pass.
 ### Task 6: Types, chart component, and query keys
 
 **Files:**
+
 - Modify: `src/api/types.ts` (generated), `package.json` / `package-lock.json` (recharts via shadcn), `src/lib/queryKeys.ts`, `src/features/meetups/FinalizeMeetupDialog.tsx`
 - Create: `src/components/ui/chart.tsx` (shadcn CLI)
 - Test: `src/lib/queryKeys.test.ts`
 
 **Interfaces:**
+
 - Produces, in `src/lib/queryKeys.ts`:
   - `statsOrgKey(orgId: string) => ["stats", orgId] as const`
   - `statsAttendanceKey(orgId: string, filters: StatsQuery) => [...statsOrgKey(orgId), "attendance", filters] as const`, where `type StatsQuery = { from?: string; to?: string; meetupId?: string }` is created now in `src/features/stats/statsPeriod.ts` (the file holds only this type until Task 7 fills it in).
@@ -306,11 +317,13 @@ git commit -m "feat: add stats types, chart component, and stats query keys"
 ### Task 7: Period resolution and stat formatting
 
 **Files:**
+
 - Modify: `src/features/stats/statsPeriod.ts` (created in Task 6 with only `StatsQuery`)
 - Create: `src/features/stats/statsFormat.ts`
 - Test: `src/features/stats/statsPeriod.test.ts`, `src/features/stats/statsFormat.test.ts`
 
 **Interfaces:**
+
 - Produces, in `statsPeriod.ts`:
   - `type RangePreset = "30d" | "3m" | "12m" | "ytd" | "all" | "custom"`; `DEFAULT_RANGE: RangePreset = "3m"`
   - `type StatsQuery = { from?: string; to?: string; meetupId?: string }` (dates as `YYYY-MM-DD`)
@@ -347,11 +360,13 @@ git commit -m "feat: add stats period presets and number formatting"
 ### Task 8: Stats page shell, filters in the URL, nav entry
 
 **Files:**
+
 - Create: `src/hooks/useOrgMeetups.ts`, `src/features/stats/useStatsFilters.ts`, `src/features/stats/StatsFilterBar.tsx`, `src/features/stats/StatsPage.tsx`
 - Modify: `src/features/meetups/MeetupsPage.tsx` (use `useOrgMeetups` instead of its inline query), `src/App.tsx`, `src/layout/Shell.tsx`, `src/lib/i18n.tsx`
 - Test: `src/features/stats/StatsPage.test.tsx`
 
 **Interfaces:**
+
 - Produces:
   - `useOrgMeetups(orgId: string)`: the existing `["meetups", orgId]` query moved out of `MeetupsPage` unchanged, returning the `useQuery` result.
   - `useStatsFilters(): { preset: RangePreset; custom?: { from: string; to: string }; meetupId?: string; tab: StatsTab; query: StatsQuery; setPreset(p: RangePreset): void; setCustom(r: { from: string; to: string }): void; setMeetupId(id?: string): void; setTab(t: StatsTab): void }` backed by `useSearchParams`. Params: `range`, `from`, `to` (custom only, inclusive end as picked), `meetup`, `tab`. Invalid or missing `range` falls back to `DEFAULT_RANGE`. `type StatsTab = "attendance"` for now.
@@ -390,11 +405,13 @@ git commit -m "feat: add the stats page with period and event filters in the URL
 ### Task 9: Asistencia tab
 
 **Files:**
+
 - Create: `src/hooks/useAttendanceStats.ts`, `src/features/stats/HeadlineStat.tsx`, `src/features/stats/ChartCard.tsx`, `src/features/stats/AttendanceTab.tsx`
 - Modify: `src/features/stats/StatsPage.tsx`, `src/lib/i18n.tsx`; if the card look is shared, extract `StatCard` from `src/features/meetups/MeetupStats.tsx` into `src/components/StatCard.tsx` and use it in both
 - Test: `src/features/stats/AttendanceTab.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `statsAttendanceKey`, `StatsQuery`, `formatRate`, `formatChange`, `isSmallSample`, `useStatsFilters`, `chart.tsx`.
 - Produces:
   - `useAttendanceStats(orgId: string, query: StatsQuery)`: `GET /organizations/{org_id}/stats/attendance` with `from`, `to`, `meetup_id`; throws `t("failedLoadStats")` on error; no polling.
