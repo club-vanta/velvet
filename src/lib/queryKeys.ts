@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import type { StatsQuery } from "@/features/stats/statsPeriod";
 
 export const meetupGuestsKey = (orgId: string, meetupId: string) =>
   ["meetup-guests", orgId, meetupId] as const;
@@ -21,10 +22,18 @@ export const guestMeetupsOrgKey = (orgId: string) =>
 export const guestMeetupsKey = (orgId: string, guestId: string) =>
   [...guestMeetupsOrgKey(orgId), guestId] as const;
 
+// Prefixed by org: check-ins and finalizing change every period's numbers,
+// so they invalidate the whole org prefix.
+export const statsOrgKey = (orgId: string) => ["stats", orgId] as const;
+
+export const statsAttendanceKey = (orgId: string, filters: StatsQuery) =>
+  [...statsOrgKey(orgId), "attendance", filters] as const;
+
 /**
  * Anything that changes an RSVP (check-in, payment, guest type, walk-in,
- * sync) also changes the meetup stats and the attendance shown on guest
- * profiles, so all three are always refreshed together.
+ * sync) also changes the meetup stats, the attendance shown on guest
+ * profiles, and the org statistics, so all four are always refreshed
+ * together.
  */
 export function invalidateMeetupGuests(
   queryClient: QueryClient,
@@ -38,6 +47,7 @@ export function invalidateMeetupGuests(
     queryKey: meetupStatsKey(orgId, meetupId),
   });
   void queryClient.invalidateQueries({ queryKey: guestMeetupsOrgKey(orgId) });
+  void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
 }
 
 /**

@@ -1170,6 +1170,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/attendance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Attendance of finalized meetups in a period */
+    get: operations["get_attendance_stats_organizations__org_id__stats_attendance_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -1279,6 +1296,43 @@ export interface components {
       not_arrived_count: number;
       /** Walkin Count */
       walkin_count: number;
+    };
+    /**
+     * AttendanceStatsPublic
+     * @description Attendance per meetup and in total, with the figures to compare against.
+     */
+    AttendanceStatsPublic: {
+      /** Meetups */
+      meetups: components["schemas"]["MeetupAttendanceRowPublic"][];
+      totals: components["schemas"]["AttendanceTotalsPublic"];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["AttendanceTotalsPublic"] | null;
+    };
+    /**
+     * AttendanceTotalsPublic
+     * @description Sums over several meetups. A rate or average with nothing to divide by is null.
+     */
+    AttendanceTotalsPublic: {
+      /** Events */
+      events: number;
+      /** Signed Up */
+      signed_up: number;
+      /** Cancelled */
+      cancelled: number;
+      /** Attended */
+      attended: number;
+      /** Walkin */
+      walkin: number;
+      /** No Show */
+      no_show: number;
+      /** Cancellation Rate */
+      cancellation_rate: number | null;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Avg Signed Up Per Event */
+      avg_signed_up_per_event: number | null;
+      /** Avg Attended Per Event */
+      avg_attended_per_event: number | null;
     };
     /**
      * BanGuestRequest
@@ -1811,6 +1865,34 @@ export interface components {
       username: string;
     };
     /**
+     * MeetupAttendanceRowPublic
+     * @description Audience attendance of one finalized meetup. attended includes walkin.
+     */
+    MeetupAttendanceRowPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Signed Up */
+      signed_up: number;
+      /** Cancelled */
+      cancelled: number;
+      /** Attended */
+      attended: number;
+      /** Walkin */
+      walkin: number;
+      /** No Show */
+      no_show: number;
+    };
+    /**
      * MeetupCreate
      * @description Request body for creating a new meetup.
      *
@@ -2144,6 +2226,15 @@ export interface components {
       /** Password */
       password: string;
     };
+    /**
+     * StatsComparisonKind
+     * @description What an org statistics block is compared against.
+     *
+     *     PREVIOUS_PERIOD: the period of the same length right before the selected one.
+     *     PERIOD_AVERAGE:  one meetup compared with the whole selected period.
+     * @enum {string}
+     */
+    StatsComparisonKind: "PREVIOUS_PERIOD" | "PERIOD_AVERAGE";
     /**
      * SyncResponse
      * @description Response after syncing guests from Mazmo.
@@ -5622,6 +5713,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_attendance_stats_organizations__org_id__stats_attendance_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Attendance of finalized meetups in the period */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };

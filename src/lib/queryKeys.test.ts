@@ -16,6 +16,15 @@ describe("invalidateMeetupGuests", () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: guestMeetupsOrgKey("org-1") });
   });
 
+  it("refreshes the org's stats, which count finalized check-ins", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateMeetupGuests(queryClient, "org-1", "meetup-1");
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["stats", "org-1"] });
+  });
+
   it("scopes the attendance prefix so it matches a guest's query", () => {
     const [prefixA, prefixB] = guestMeetupsOrgKey("org-1");
 

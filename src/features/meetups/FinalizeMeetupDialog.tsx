@@ -13,7 +13,11 @@ import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
-import { guestMeetupsOrgKey, meetupStatsKey } from "@/lib/queryKeys";
+import {
+  guestMeetupsOrgKey,
+  meetupStatsKey,
+  statsOrgKey,
+} from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
@@ -64,6 +68,8 @@ export function FinalizeMeetupDialog({
       void queryClient.invalidateQueries({
         queryKey: guestMeetupsOrgKey(orgId),
       });
+      // Only finalized meetups count in the org statistics.
+      void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
       toast.success(
         t(reopening ? "meetupReopenedToast" : "meetupFinalizedToast").replace(
           "{0}",
