@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
 import { useOrg } from "@/lib/org";
+import { useOrgMeetups } from "@/hooks/useOrgMeetups";
 import { groupMeetupsByTiming } from "@/lib/meetupTiming";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -222,18 +223,7 @@ export function MeetupsPage() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const orgId = activeOrg?.org_id ?? "";
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["meetups", orgId],
-    queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/meetups/",
-        { params: { path: { org_id: orgId } } },
-      );
-      if (error) throw new Error(t("failedLoadMeetups"));
-      return data;
-    },
-    enabled: !!orgId,
-  });
+  const { data, isLoading, isError, refetch } = useOrgMeetups(orgId);
 
   function handleSort(col: string) {
     if (col === sortCol) {

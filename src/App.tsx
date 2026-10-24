@@ -12,6 +12,7 @@ import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { MeetupsPage } from "./features/meetups/MeetupsPage";
 import { MeetupDetailPage } from "./features/meetups/MeetupDetailPage";
 import { GuestsPage } from "./features/guests/GuestsPage";
+import { StatsPage } from "./features/stats/StatsPage";
 import { GuestDetailPage } from "./features/guests/GuestDetailPage";
 import { StaffPage } from "./features/staff/StaffPage";
 import { EventsPage } from "./features/events/EventsPage";
@@ -41,6 +42,7 @@ function AuthenticatedRoutes() {
         <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
         <Route path="/guests" element={<GuestsPage />} />
         <Route path="/guests/:guestId" element={<GuestDetailPage />} />
+        {canSeeOrgs && <Route path="/stats" element={<StatsPage />} />}
         {isSiteAdmin && <Route path="/staff" element={<StaffPage />} />}
         {canSeeOrgs && <Route path="/events" element={<EventsPage />} />}
         {canSeeOrgs && (

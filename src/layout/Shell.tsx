@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Building2,
+  ChartColumn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -125,6 +126,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
       adminOnly: false,
     },
     { label: t("navGuests"), href: "/guests", icon: Users, adminOnly: false },
+    {
+      label: t("navStats"),
+      shortLabel: "Stats",
+      href: "/stats",
+      icon: ChartColumn,
+      adminOnly: true,
+    },
     {
       label: t("navStaff"),
       href: "/staff",

@@ -17,6 +17,18 @@ export function isRangePreset(value: string | null): value is RangePreset {
   return value !== null && PRESETS.includes(value);
 }
 
+/** True for a real calendar day written as YYYY-MM-DD. */
+export function isValidDay(value: string | null): value is string {
+  if (value === null || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  return formatDay(parseDay(value)) === value;
+}
+
+/** A date's calendar day in browser local time, as YYYY-MM-DD. */
+export function localDay(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 function parseDay(day: string): Date {
   const [year, month, date] = day.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, date));
@@ -26,7 +38,7 @@ function formatDay(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function addDays(day: string, days: number): string {
+export function addDays(day: string, days: number): string {
   const date = parseDay(day);
   date.setUTCDate(date.getUTCDate() + days);
   return formatDay(date);
