@@ -27,9 +27,9 @@ import { useStatsFilters } from "./useStatsFilters";
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
 
 const SERIES = [
-  { key: "attended", color: "var(--chart-1)" },
-  { key: "no_show", color: "var(--chart-2)" },
-  { key: "cancelled", color: "var(--chart-3)" },
+  { key: "attended", color: "var(--chart-2)" },
+  { key: "no_show", color: "var(--destructive)" },
+  { key: "cancelled", color: "var(--chart-4)" },
 ] as const;
 
 /** One layout for the skeleton and the cards, so nothing jumps on load. */
