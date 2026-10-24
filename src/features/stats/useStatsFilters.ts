@@ -15,7 +15,13 @@ import {
   type RangePreset,
 } from "./statsPeriod";
 
-export type StatsTab = "attendance";
+const TABS = ["attendance", "arrivals"] as const;
+
+export type StatsTab = (typeof TABS)[number];
+
+function isStatsTab(value: string | null): value is StatsTab {
+  return TABS.some((t) => t === value);
+}
 
 type Meetup = components["schemas"]["MeetupPublic"];
 
@@ -49,7 +55,8 @@ export function useStatsFilters() {
   const custom: CustomRange | undefined =
     preset === "custom" && customValid ? { from, to } : undefined;
 
-  const tab: StatsTab = "attendance";
+  const tabParam = searchParams.get("tab");
+  const tab: StatsTab = isStatsTab(tabParam) ? tabParam : "attendance";
 
   const range = resolveRange(preset, today, custom);
 
@@ -80,12 +87,15 @@ export function useStatsFilters() {
       : { ...range, ...(meetupId && { meetupId }) };
 
   /** A filter the user picked: a new history entry, so Back undoes it. */
-  function update(change: (next: URLSearchParams) => void) {
+  function update(
+    change: (next: URLSearchParams) => void,
+    options?: { replace: boolean },
+  ) {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       change(next);
       return next;
-    });
+    }, options);
   }
 
   useEffect(() => {
@@ -127,7 +137,11 @@ export function useStatsFilters() {
     });
   }
 
-  /** A typed `from` past `to` moves `to` along, and the reverse. */
+  /**
+   * A typed `from` past `to` moves `to` along, and the reverse. Each date pick
+   * replaces the entry, so Back leaves the custom range instead of undoing
+   * one keystroke at a time.
+   */
   function setCustom(r: CustomRange, changed: keyof CustomRange) {
     const clamped =
       r.from <= r.to
@@ -135,7 +149,7 @@ export function useStatsFilters() {
         : changed === "from"
           ? { from: r.from, to: r.from }
           : { from: r.to, to: r.to };
-    update((next) => writePeriod(next, "custom", clamped));
+    update((next) => writePeriod(next, "custom", clamped), { replace: true });
   }
 
   function setMeetupId(id?: string) {

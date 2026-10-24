@@ -76,7 +76,8 @@ function renderPage(
 ) {
   // The attendance tab has its own tests, so its request just stays pending.
   mockApiGet.mockImplementation((path: string) =>
-    path === "/organizations/{org_id}/stats/attendance"
+    path === "/organizations/{org_id}/stats/attendance" ||
+    path === "/organizations/{org_id}/stats/arrivals"
       ? new Promise(() => {})
       : meetupsResult(),
   );
@@ -284,6 +285,77 @@ describe("StatsPage", () => {
     );
     expect(search()).toBe("");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("selects Horarios for tab=arrivals", () => {
+    renderPage("/stats?tab=arrivals");
+    expect(screen.getByRole("tab", { name: "Horarios" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("falls back to Asistencia for an unknown tab", () => {
+    renderPage("/stats?tab=bogus");
+    expect(screen.getByRole("tab", { name: "Asistencia" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("writes the tab to the URL and Back returns to Asistencia", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole("tab", { name: "Horarios" }));
+    expect(search()).toBe("?tab=arrivals");
+    expect(screen.getByRole("tab", { name: "Horarios" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    await user.click(screen.getByRole("button", { name: "back" }));
+    expect(search()).toBe("");
+    expect(screen.getByRole("tab", { name: "Asistencia" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  describe("tab requests", () => {
+    const statsPaths = () =>
+      mockApiGet.mock.calls
+        .map(([path]) => path as string)
+        .filter((path) => path.includes("/stats/"));
+
+    it("does not request the arrivals of a hidden tab", async () => {
+      renderPage("/stats?tab=attendance");
+      await screen.findByTestId("attendance-skeleton");
+      expect(statsPaths()).toEqual([
+        "/organizations/{org_id}/stats/attendance",
+      ]);
+    });
+
+    it("does not request the attendance of a hidden tab", async () => {
+      renderPage("/stats?tab=arrivals");
+      await screen.findByTestId("arrivals-skeleton");
+      expect(statsPaths()).toEqual(["/organizations/{org_id}/stats/arrivals"]);
+    });
+  });
+
+  it("replaces the history entry for each custom date pick", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await choosePeriod(user, "Rango a medida");
+    fireEvent.change(screen.getByLabelText("Desde"), {
+      target: { value: "2026-02-01" },
+    });
+    fireEvent.change(screen.getByLabelText("Hasta"), {
+      target: { value: "2026-03-01" },
+    });
+    expect(search()).toBe("?range=custom&from=2026-02-01&to=2026-03-01");
+
+    await user.click(screen.getByRole("button", { name: "back" }));
+    expect(search()).toBe("");
   });
 
   it("moves the other date along when a custom range would turn around", () => {

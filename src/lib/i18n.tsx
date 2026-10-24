@@ -314,6 +314,9 @@ export const translations = {
     statsPeriodLabel: "Period",
     statsEventLabel: "Event",
     statsTabAttendance: "Attendance",
+    statsTabArrivals: "Timing",
+    statsNoteAttendance:
+      "Only finalized events count. Staff and vendors are left out. A walk-in who never checked in is not counted.",
     statsAttended: "Attended",
     statsNoShowRate: "No-show",
     statsCancelRate: "Cancelled",
@@ -820,6 +823,9 @@ export const translations = {
     statsPeriodLabel: "Período",
     statsEventLabel: "Evento",
     statsTabAttendance: "Asistencia",
+    statsTabArrivals: "Horarios",
+    statsNoteAttendance:
+      "Solo cuentan los eventos finalizados. El staff y los vendors no se cuentan. Un discreto que nunca hizo check-in no cuenta.",
     statsAttended: "Vinieron",
     statsNoShowRate: "No-show",
     statsCancelRate: "Se bajaron",

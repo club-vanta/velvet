@@ -7,16 +7,17 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAttendanceStats } from "@/hooks/useAttendanceStats";
 import { useLanguage } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 import { parseApiDateTime } from "@/lib/apiDateTime";
 import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
 import { StatsErrorState } from "./StatsErrorState";
+import { StatsNote } from "./StatsNote";
+import { headlineGrid } from "./headlineGrid";
+import { StatsEmptyState, StatsTabSkeleton } from "./StatsTabState";
 import {
   formatChange,
   formatCount,
@@ -28,14 +29,6 @@ import {
 import type { StatsTabProps } from "./statsTab";
 
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
-
-/** One layout for the skeleton and the cards, so nothing jumps on load. */
-function headlineGrid(single: boolean): string {
-  return cn(
-    "grid grid-cols-2 gap-2 sm:gap-3",
-    single ? "xl:grid-cols-4" : "xl:grid-cols-3",
-  );
-}
 
 function AttendanceChart({
   meetups,
@@ -122,14 +115,11 @@ export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
 
   if (statsQ.isPending) {
     return (
-      <div data-testid="attendance-skeleton" className="space-y-3">
-        <div className={headlineGrid(single)}>
-          {Array.from({ length: single ? 4 : 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
-          ))}
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-      </div>
+      <StatsTabSkeleton
+        single={single}
+        cards={single ? 4 : 6}
+        testId="attendance-skeleton"
+      />
     );
   }
 
@@ -144,11 +134,7 @@ export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
 
   const { meetups, totals, comparison, comparison_kind } = statsQ.data;
   if (meetups.length === 0) {
-    return (
-      <p className="rounded-xl px-4 py-6 text-center text-sm text-muted-foreground ring-1 ring-foreground/10">
-        {t("statsEmptyPeriod")}
-      </p>
-    );
+    return <StatsEmptyState />;
   }
 
   /** The line under a number: change vs. the previous period, or the period average. */
@@ -239,6 +225,7 @@ export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
       <ChartCard title={t("statsAttendanceChart")}>
         <AttendanceChart meetups={meetups} single={single} />
       </ChartCard>
+      <StatsNote>{t("statsNoteAttendance")}</StatsNote>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
+import { ArrivalsTab } from "./ArrivalsTab";
 import { AttendanceTab } from "./AttendanceTab";
 import { StatsErrorState } from "./StatsErrorState";
 import { StatsFilterBar } from "./StatsFilterBar";
@@ -35,13 +36,17 @@ export function StatsPage() {
         value={filters.tab}
         onValueChange={(v) => filters.setTab(v as StatsTab)}
       >
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="attendance">
             {t("statsTabAttendance")}
           </TabsTrigger>
+          <TabsTrigger value="arrivals">{t("statsTabArrivals")}</TabsTrigger>
         </TabsList>
         <TabsContent value="attendance">
           {eventsError || <AttendanceTab {...tabProps} />}
+        </TabsContent>
+        <TabsContent value="arrivals">
+          {eventsError || <ArrivalsTab {...tabProps} />}
         </TabsContent>
       </Tabs>
     </div>

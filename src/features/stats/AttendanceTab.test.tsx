@@ -109,6 +109,17 @@ describe("AttendanceTab", () => {
     localStorage.clear();
   });
 
+  it("explains what the numbers leave out", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    const note = screen.getByText(/^Solo cuentan los eventos finalizados/);
+    expect(note.tagName).toBe("BLOCKQUOTE");
+    expect(note).toHaveTextContent(
+      "Solo cuentan los eventos finalizados. El staff y los vendors no se cuentan. Un discreto que nunca hizo check-in no cuenta.",
+    );
+  });
+
   it("shows a skeleton while loading", () => {
     respond(new Promise(() => {}));
     renderTab();

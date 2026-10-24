@@ -52,3 +52,19 @@ export function spansYears(isos: string[]): boolean {
   );
   return years.size > 1;
 }
+
+/** Minutes from an event's start as `+1:15` or `-0:10`. */
+export function formatOffset(minutes: number): string {
+  const abs = Math.abs(minutes);
+  const sign = minutes < 0 ? "-" : "+";
+  return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, "0")}`;
+}
+
+/** Whole-minute difference between two offsets, or null when either is missing. */
+export function formatMinuteChange(
+  current: number | null,
+  baseline: number | null,
+): number | null {
+  if (current === null || baseline === null) return null;
+  return Math.round(current - baseline) || 0;
+}

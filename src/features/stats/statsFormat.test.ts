@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   formatChange,
   formatEventDay,
+  formatMinuteChange,
+  formatOffset,
   formatPointChange,
   formatRate,
   isSmallSample,
@@ -105,5 +107,32 @@ describe("spansYears", () => {
     expect(spansYears(["2026-03-10T22:00:00Z", "2027-01-01T02:30:00Z"])).toBe(
       false,
     );
+  });
+});
+
+describe("formatOffset", () => {
+  it("shows hours and minutes from the start with a sign", () => {
+    expect(formatOffset(75)).toBe("+1:15");
+    expect(formatOffset(-10)).toBe("-0:10");
+    expect(formatOffset(0)).toBe("+0:00");
+    expect(formatOffset(-75)).toBe("-1:15");
+    expect(formatOffset(600)).toBe("+10:00");
+  });
+});
+
+describe("formatMinuteChange", () => {
+  it("returns the whole-minute difference", () => {
+    expect(formatMinuteChange(45, 40)).toBe(5);
+    expect(formatMinuteChange(30, 45)).toBe(-15);
+    expect(formatMinuteChange(30.4, 30)).toBe(0);
+  });
+
+  it("returns null when either side is missing", () => {
+    expect(formatMinuteChange(null, 10)).toBeNull();
+    expect(formatMinuteChange(10, null)).toBeNull();
+  });
+
+  it("never returns -0", () => {
+    expect(Object.is(formatMinuteChange(29.6, 30), 0)).toBe(true);
   });
 });

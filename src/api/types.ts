@@ -1187,6 +1187,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/arrivals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Arrival times and sign-up lead time of finalized meetups */
+    get: operations["get_arrival_stats_organizations__org_id__stats_arrivals_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -1282,6 +1299,53 @@ export interface components {
     ApproveUserRequest: {
       /** Is Approved */
       is_approved: boolean;
+    };
+    /**
+     * ArrivalBucketPublic
+     * @description Arrivals in one 15 minute bucket starting start_minute minutes from the
+     *     meetup start (negative = before). local_time is "HH:MM" for one meetup, null otherwise.
+     */
+    ArrivalBucketPublic: {
+      /** Start Minute */
+      start_minute: number;
+      /** Local Time */
+      local_time: string | null;
+      /** Arrivals */
+      arrivals: number;
+    };
+    /**
+     * ArrivalStatsPublic
+     * @description When people arrive and how far ahead they signed up, with the figures to compare against.
+     */
+    ArrivalStatsPublic: {
+      /** Curve */
+      curve: components["schemas"]["ArrivalBucketPublic"][];
+      summary: components["schemas"]["ArrivalSummaryPublic"];
+      /** Lead Time */
+      lead_time: components["schemas"]["LeadTimeRowPublic"][];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["ArrivalSummaryPublic"] | null;
+    };
+    /**
+     * ArrivalSummaryPublic
+     * @description Offsets are minutes from the meetup start. The *_local_time fields are
+     *     "HH:MM" only for one meetup's own summary. Everything but arrivals is null
+     *     when nobody arrived.
+     */
+    ArrivalSummaryPublic: {
+      /** Arrivals */
+      arrivals: number;
+      peak: components["schemas"]["ArrivalBucketPublic"] | null;
+      /** Median Minutes */
+      median_minutes: number | null;
+      /** P90 Minutes */
+      p90_minutes: number | null;
+      /** Median Local Time */
+      median_local_time: string | null;
+      /** P90 Local Time */
+      p90_local_time: string | null;
+      /** First Hour Share */
+      first_hour_share: number | null;
     };
     /**
      * AttendanceStats
@@ -1854,6 +1918,21 @@ export interface components {
       };
     };
     /**
+     * LeadTimeRowPublic
+     * @description Audience sign-ups made in one lead-time bucket. no_show_rate is null with nobody to divide by.
+     */
+    LeadTimeRowPublic: {
+      bucket: components["schemas"]["StatsLeadTimeBucket"];
+      /** Signed Up */
+      signed_up: number;
+      /** Cancelled */
+      cancelled: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
      * LinkMazmoRequest
      * @description Request body for linking an existing guest to a Mazmo account.
      */
@@ -2235,6 +2314,18 @@ export interface components {
      * @enum {string}
      */
     StatsComparisonKind: "PREVIOUS_PERIOD" | "PERIOD_AVERAGE";
+    /**
+     * StatsLeadTimeBucket
+     * @description How many whole local days before the meetup an RSVP was made.
+     * @enum {string}
+     */
+    StatsLeadTimeBucket:
+      | "SAME_DAY"
+      | "ONE_DAY"
+      | "TWO_THREE"
+      | "FOUR_SEVEN"
+      | "EIGHT_FOURTEEN"
+      | "FIFTEEN_PLUS";
     /**
      * SyncResponse
      * @description Response after syncing guests from Mazmo.
@@ -5742,6 +5833,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["AttendanceStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_arrival_stats_organizations__org_id__stats_arrivals_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Arrival times and sign-up lead time of finalized meetups in the period */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ArrivalStatsPublic"];
         };
       };
       /** @description Invalid or missing credentials */
