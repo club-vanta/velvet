@@ -1,10 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
+import { useOrg } from "@/lib/org";
+import { AttendanceTab } from "./AttendanceTab";
 import { StatsFilterBar } from "./StatsFilterBar";
 import { useStatsFilters, type StatsTab } from "./useStatsFilters";
 
 export function StatsPage() {
   const { t } = useLanguage();
+  const { activeOrg } = useOrg();
   const filters = useStatsFilters();
 
   return (
@@ -23,7 +26,7 @@ export function StatsPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="attendance">
-          <div data-testid="attendance-tab" />
+          <AttendanceTab orgId={activeOrg?.org_id ?? ""} />
         </TabsContent>
       </Tabs>
     </div>

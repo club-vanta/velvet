@@ -59,10 +59,15 @@ function Probe() {
 }
 
 function renderPage(url = "/stats", meetups: Meetup[] = MEETUPS) {
-  mockApiGet.mockResolvedValue({
-    data: { total: meetups.length, meetups },
-    error: undefined,
-  });
+  // The attendance tab has its own tests, so its request just stays pending.
+  mockApiGet.mockImplementation((path: string) =>
+    path === "/organizations/{org_id}/stats/attendance"
+      ? new Promise(() => {})
+      : Promise.resolve({
+          data: { total: meetups.length, meetups },
+          error: undefined,
+        }),
+  );
   return render(
     <QueryClientProvider
       client={

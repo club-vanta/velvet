@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatChange,
+  formatEventDay,
   formatRate,
   isSmallSample,
   SMALL_SAMPLE,
@@ -39,3 +40,23 @@ describe("isSmallSample", () => {
     expect(isSmallSample(10)).toBe(false);
   });
 });
+
+describe("formatEventDay", () => {
+  it("reads a naive backend datetime as UTC and shows the local dd/mm", () => {
+    // 22:00 UTC is still the same local day in Buenos Aires (UTC-3).
+    expect(formatEventDay("2026-04-05T22:00:00")).toBe(
+      localDdMm(new Date("2026-04-05T22:00:00Z")),
+    );
+  });
+
+  it("gives the same result with or without the Z", () => {
+    expect(formatEventDay("2026-12-31T23:30:00")).toBe(
+      formatEventDay("2026-12-31T23:30:00Z"),
+    );
+  });
+});
+
+function localDdMm(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
+}

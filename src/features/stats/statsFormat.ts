@@ -1,3 +1,5 @@
+import { localDay } from "./statsPeriod";
+
 /** Rates built from fewer people than this are shown dimmed with `n`. */
 export const SMALL_SAMPLE = 10;
 
@@ -19,4 +21,14 @@ export function formatChange(
 
 export function isSmallSample(n: number): boolean {
   return n < SMALL_SAMPLE;
+}
+
+/**
+ * dd/mm of an event's local day. The API sends naive UTC datetimes (no
+ * "Z"), which `new Date` would read as local time.
+ */
+export function formatEventDay(iso: string): string {
+  const date = new Date(/[zZ]|[+-]\d{2}:\d{2}$/.test(iso) ? iso : `${iso}Z`);
+  const day = localDay(date);
+  return `${day.slice(8)}/${day.slice(5, 7)}`;
 }
