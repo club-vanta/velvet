@@ -224,6 +224,10 @@ describe("MeetupLocation", () => {
         },
       ),
     );
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith("Location removed"),
+    );
+    expect(toast.success).toHaveBeenCalledTimes(1);
   });
 
   it("offers no removal when there is no location", () => {

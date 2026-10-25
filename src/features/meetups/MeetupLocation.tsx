@@ -39,10 +39,13 @@ export function MeetupLocation({
   const setLocation = useSetMeetupLocation(orgId, meetup.id);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const save = (location: components["schemas"]["MeetupLocationUpdate"]) =>
+  const save = (
+    location: components["schemas"]["MeetupLocationUpdate"],
+    successMessage: string,
+  ) =>
     setLocation.mutate(location, {
       onSuccess: () => {
-        toast.success(t("meetupLocationSaved"));
+        toast.success(successMessage);
         searchRef.current?.focus();
       },
       onError: (err) => toast.error(err.message),
@@ -50,44 +53,45 @@ export function MeetupLocation({
 
   return (
     <div className="space-y-2 text-sm">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="flex items-start gap-2">
         <MapPin
-          className="size-4 shrink-0 text-muted-foreground"
+          className="mt-0.5 size-4 shrink-0 text-muted-foreground"
           aria-hidden="true"
         />
         <span className="sr-only">{t("meetupLocation")}</span>
         {label !== null && latitude !== null && longitude !== null ? (
-          <>
-            <span className="min-w-0 break-words">{label}</span>
-            <a
-              href={mapUrl(latitude, longitude)}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={`${t("meetupLocationOpenMap")}: ${label}`}
-              className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            >
-              {t("meetupLocationOpenMap")}
-              <ExternalLink className="size-3" aria-hidden="true" />
-            </a>
-            {canEdit && (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={setLocation.isPending}
-                onClick={() =>
-                  save({
-                    location_label: null,
-                    latitude: null,
-                    longitude: null,
-                  })
-                }
-                className="gap-1 text-muted-foreground"
+          <div className="min-w-0 space-y-1">
+            <p className="break-words">{label}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <a
+                href={mapUrl(latitude, longitude)}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${t("meetupLocationOpenMap")}: ${label}`}
+                className="inline-flex items-center gap-1 rounded-sm text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
-                <X className="size-3.5" aria-hidden="true" />
-                {t("meetupLocationRemove")}
-              </Button>
-            )}
-          </>
+                {t("meetupLocationOpenMap")}
+                <ExternalLink className="size-3" aria-hidden="true" />
+              </a>
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={setLocation.isPending}
+                  onClick={() =>
+                    save(
+                      { location_label: null, latitude: null, longitude: null },
+                      t("meetupLocationRemoved"),
+                    )
+                  }
+                  className="h-auto gap-1 px-0 py-0 text-xs text-muted-foreground hover:bg-transparent"
+                >
+                  <X className="size-3" aria-hidden="true" />
+                  {t("meetupLocationRemove")}
+                </Button>
+              )}
+            </div>
+          </div>
         ) : (
           <span className="text-muted-foreground">
             {t("meetupLocationNone")}
@@ -100,11 +104,14 @@ export function MeetupLocation({
           orgId={orgId}
           saving={setLocation.isPending}
           onPick={(result) =>
-            save({
-              location_label: result.label,
-              latitude: result.latitude,
-              longitude: result.longitude,
-            })
+            save(
+              {
+                location_label: result.label,
+                latitude: result.latitude,
+                longitude: result.longitude,
+              },
+              t("meetupLocationSaved"),
+            )
           }
         />
       )}
