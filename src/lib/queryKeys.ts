@@ -57,6 +57,9 @@ export const statsRetentionKey = (orgId: string, filters: StatsQuery | null) =>
 export const statsOperationsKey = (orgId: string, filters: StatsQuery | null) =>
   [...statsOrgKey(orgId), "operations", filters] as const;
 
+export const statsWeatherKey = (orgId: string, filters: StatsQuery | null) =>
+  [...statsOrgKey(orgId), "weather", filters] as const;
+
 // Address search results; the query is the trimmed text typed so far.
 export const geocodeKey = (orgId: string, q: string) =>
   ["geocode", orgId, q] as const;

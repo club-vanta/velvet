@@ -21,6 +21,7 @@ const TABS = [
   "demographics",
   "retention",
   "operations",
+  "weather",
 ] as const;
 
 export type StatsTab = (typeof TABS)[number];

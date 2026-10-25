@@ -79,7 +79,8 @@ function renderPage(
     path === "/organizations/{org_id}/stats/arrivals" ||
     path === "/organizations/{org_id}/stats/demographics" ||
     path === "/organizations/{org_id}/stats/retention" ||
-    path === "/organizations/{org_id}/stats/operations"
+    path === "/organizations/{org_id}/stats/operations" ||
+    path === "/organizations/{org_id}/stats/weather"
       ? new Promise(() => {})
       : meetupsResult(),
   );
@@ -365,6 +366,16 @@ describe("StatsPage", () => {
       expect(statsPaths()).toEqual([
         "/organizations/{org_id}/stats/operations",
       ]);
+    });
+
+    it("requests only the weather of tab=weather", async () => {
+      renderPage("/stats?tab=weather");
+      await screen.findByTestId("weather-skeleton");
+      expect(screen.getByRole("tab", { name: "Clima" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(statsPaths()).toEqual(["/organizations/{org_id}/stats/weather"]);
     });
 
     it("does not request the attendance of a hidden tab", async () => {

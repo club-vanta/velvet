@@ -8,6 +8,7 @@ import { OperationsTab } from "./OperationsTab";
 import { RetentionTab } from "./RetentionTab";
 import { StatsErrorState } from "./StatsErrorState";
 import { StatsFilterBar } from "./StatsFilterBar";
+import { WeatherTab } from "./WeatherTab";
 import type { StatsTabProps } from "./statsTab";
 import { useStatsFilters, type StatsTab } from "./useStatsFilters";
 
@@ -51,6 +52,7 @@ export function StatsPage() {
           <TabsTrigger value="operations">
             {t("statsTabOperations")}
           </TabsTrigger>
+          <TabsTrigger value="weather">{t("statsTabWeather")}</TabsTrigger>
         </TabsList>
         <TabsContent value="attendance">
           {eventsError || <AttendanceTab {...tabProps} />}
@@ -66,6 +68,9 @@ export function StatsPage() {
         </TabsContent>
         <TabsContent value="operations">
           {eventsError || <OperationsTab {...tabProps} />}
+        </TabsContent>
+        <TabsContent value="weather">
+          {eventsError || <WeatherTab {...tabProps} />}
         </TabsContent>
       </Tabs>
     </div>
