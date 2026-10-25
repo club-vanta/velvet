@@ -6,6 +6,7 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupDetailPage } from "./MeetupDetailPage";
 import type { components } from "@/api/types";
+import { makeMeetup } from "@/tests/fixtures";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -39,18 +40,12 @@ vi.mock("@/auth/AuthContext", () => ({
   }),
 }));
 
-const MEETUP: Meetup = {
-  id: "meetup-1",
+const MEETUP: Meetup = makeMeetup({
   name: "Alter Test",
   mazmo_meetup_url: "https://mazmo.net/eventos/alter-test",
   date: "2026-09-01T22:00:00Z",
-  is_finalized: false,
-  finalized_at: null,
   requires_payment: true,
-  location_label: null,
-  latitude: null,
-  longitude: null,
-};
+});
 
 function guest(overrides: {
   mazmo_user_id: number;

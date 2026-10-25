@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/lib/i18n";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import type { components } from "@/api/types";
+import { makeMeetup } from "@/tests/fixtures";
 
 const mockApiGet = vi.fn();
 const mockApiPatch = vi.fn();
@@ -22,18 +23,10 @@ vi.mock("sonner", () => ({
 type Meetup = components["schemas"]["MeetupPublic"];
 
 function meetup(isFinalized: boolean): Meetup {
-  return {
-    id: "meetup-1",
-    name: "Alter Night",
-    mazmo_meetup_url: "https://mazmo.net/+eventos/meetup-1",
-    date: "2026-10-01T22:00:00Z",
+  return makeMeetup({
     is_finalized: isFinalized,
     finalized_at: isFinalized ? "2026-10-02T03:00:00Z" : null,
-    requires_payment: false,
-    location_label: null,
-    latitude: null,
-    longitude: null,
-  };
+  });
 }
 
 function renderDialog(m: Meetup) {

@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupsPage } from "./MeetupsPage";
 import type { components } from "@/api/types";
+import { makeMeetup } from "@/tests/fixtures";
 
 const mockApiGet = vi.fn();
 const mockApiPost = vi.fn();
@@ -36,18 +37,12 @@ function daysFromNow(days: number): string {
 }
 
 function meetup(id: string, name: string, date: string): Meetup {
-  return {
+  return makeMeetup({
     id,
     name,
     mazmo_meetup_url: `https://mazmo.net/+eventos/${id}`,
     date,
-    is_finalized: false,
-    finalized_at: null,
-    requires_payment: false,
-    location_label: null,
-    latitude: null,
-    longitude: null,
-  };
+  });
 }
 
 function renderPage({

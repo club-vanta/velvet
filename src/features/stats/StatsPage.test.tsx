@@ -12,6 +12,7 @@ import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { StatsPage } from "./StatsPage";
 import type { components } from "@/api/types";
+import { makeMeetup } from "@/tests/fixtures";
 
 const mockApiGet = vi.fn();
 vi.mock("@/api/client", () => ({
@@ -36,18 +37,13 @@ function meetup(
   date: Date,
   is_finalized: boolean,
 ): Meetup {
-  return {
+  return makeMeetup({
     id,
     name,
     mazmo_meetup_url: `https://mazmo.net/+eventos/${id}`,
     date: date.toISOString(),
     is_finalized,
-    finalized_at: null,
-    requires_payment: false,
-    location_label: null,
-    latitude: null,
-    longitude: null,
-  };
+  });
 }
 
 const MEETUPS = [
