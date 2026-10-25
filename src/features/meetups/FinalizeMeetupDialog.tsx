@@ -15,6 +15,7 @@ import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
 import {
   guestMeetupsOrgKey,
+  meetupKey,
   meetupsKey,
   meetupStatsKey,
   statsOrgKey,
@@ -57,9 +58,9 @@ export function FinalizeMeetupDialog({
     onSuccess: (data) => {
       // Write the answer straight into the cache so the page locks or
       // unlocks at once, then refetch what depends on it.
-      if (data) queryClient.setQueryData(["meetup", orgId, meetup.id], data);
+      if (data) queryClient.setQueryData(meetupKey(orgId, meetup.id), data);
       void queryClient.invalidateQueries({
-        queryKey: ["meetup", orgId, meetup.id],
+        queryKey: meetupKey(orgId, meetup.id),
       });
       void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
       void queryClient.invalidateQueries({

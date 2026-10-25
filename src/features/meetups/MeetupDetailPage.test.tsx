@@ -992,9 +992,6 @@ describe("MeetupDetailPage finalized meetup", () => {
       ...MEETUP,
       is_finalized: true,
       requires_payment: false,
-      location_label: null,
-      latitude: null,
-      longitude: null,
     };
     renderPage(meetup, [
       guest({ mazmo_user_id: 75, displayname: "Late", has_paid: false }),
