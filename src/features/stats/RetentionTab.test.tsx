@@ -315,7 +315,7 @@ describe("RetentionTab", () => {
     await headlinesReady();
     expect(slot("Personas", "comparison")).toBeNull();
     expect(slot("Primera vez", "comparison")).toBe("41% del total");
-    expect(slot("Volvieron", "comparison")).toBe("+5 pts vs. el período");
+    expect(slot("Volvieron", "comparison")).toBe("promedio: 30%");
     expect(
       document.querySelector('[data-slot="event-came-back"]')?.textContent,
     ).toBe("De quienes vinieron por primera vez, volvieron 35%");

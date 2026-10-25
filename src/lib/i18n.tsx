@@ -368,7 +368,6 @@ export const translations = {
     statsGroupHeader: "Group",
     statsUnknown: "Unknown",
     statsYearsVsPrevious: "{0} years vs. previous period",
-    statsPtsVsPeriod: "{0} pts vs. period",
     statsNoteGender:
       "Gender comes from the Mazmo profile. Each attendance counts once, so someone who came to three events counts three times. Guests without a Mazmo profile show as Unknown.",
     statsNoteAge:
@@ -951,7 +950,6 @@ export const translations = {
     statsGroupHeader: "Grupo",
     statsUnknown: "Sin dato",
     statsYearsVsPrevious: "{0} años vs. período anterior",
-    statsPtsVsPeriod: "{0} pts vs. el período",
     statsNoteGender:
       "El género sale del perfil de Mazmo. Cada asistencia cuenta una vez: alguien que vino a tres eventos cuenta tres veces. Quien no tiene perfil de Mazmo aparece como Sin dato.",
     statsNoteAge:

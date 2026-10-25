@@ -225,9 +225,7 @@ describe("DemographicsTab", () => {
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Edad mediana", "comparison")).toBe("promedio: 31,2");
-    expect(slot("Con edad conocida", "comparison")).toBe(
-      "+10 pts vs. el período",
-    );
+    expect(slot("Con edad conocida", "comparison")).toBe("promedio: 80%");
     expect(slot("Asistencias", "comparison")).toBeNull();
   });
 

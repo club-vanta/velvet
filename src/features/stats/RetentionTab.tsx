@@ -209,16 +209,21 @@ function RetentionContent({
 
   function compareReturnRate(): string | undefined {
     if (!comparison) return undefined;
+    if (comparison_kind === "PERIOD_AVERAGE") {
+      return t("statsPeriodAverage").replace(
+        "{0}",
+        formatRate(comparison.first_timer_return_rate, lang),
+      );
+    }
     const change = formatPointChange(
       summary.first_timer_return_rate,
       comparison.first_timer_return_rate,
     );
     if (change === null) return undefined;
-    return t(
-      comparison_kind === "PERIOD_AVERAGE"
-        ? "statsPtsVsPeriod"
-        : "statsVsPreviousPts",
-    ).replace("{0}", `${change > 0 ? "+" : ""}${change}`);
+    return t("statsVsPreviousPts").replace(
+      "{0}",
+      `${change > 0 ? "+" : ""}${change}`,
+    );
   }
 
   const returnRate = summary.first_timer_return_rate;

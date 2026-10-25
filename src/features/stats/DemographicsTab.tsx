@@ -289,16 +289,21 @@ function DemographicsContent({ data }: { data: Demographics }) {
 
   function compareKnown(): string | undefined {
     if (!comparison) return undefined;
+    if (comparison_kind === "PERIOD_AVERAGE") {
+      return t("statsPeriodAverage").replace(
+        "{0}",
+        formatRate(comparison.known_age_share, lang),
+      );
+    }
     const change = formatPointChange(
       summary.known_age_share,
       comparison.known_age_share,
     );
     if (change === null) return undefined;
-    return t(
-      comparison_kind === "PERIOD_AVERAGE"
-        ? "statsPtsVsPeriod"
-        : "statsVsPreviousPts",
-    ).replace("{0}", `${change > 0 ? "+" : ""}${change}`);
+    return t("statsVsPreviousPts").replace(
+      "{0}",
+      `${change > 0 ? "+" : ""}${change}`,
+    );
   }
 
   // The comparison's count is a period total for one event, so it only
