@@ -3,10 +3,10 @@ import { toast } from "sonner";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatsNote } from "@/features/stats/StatsNote";
-import { formatDecimal } from "@/features/stats/statsFormat";
+import { StatsNote } from "@/components/StatsNote";
 import { useMeetupWeather } from "@/hooks/useMeetupWeather";
 import { useRefreshMeetupWeather } from "@/hooks/useRefreshMeetupWeather";
+import { formatDecimal } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 

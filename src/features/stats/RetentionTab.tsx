@@ -16,7 +16,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
 import { CohortTable } from "./CohortTable";
 import { HeadlineStat } from "./HeadlineStat";
-import { StatsNote } from "./StatsNote";
+import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {

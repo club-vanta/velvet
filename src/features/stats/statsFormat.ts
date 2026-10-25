@@ -1,4 +1,5 @@
 import { parseApiDateTime } from "@/lib/apiDateTime";
+import { formatDecimal } from "@/lib/format";
 import { localDay } from "./statsPeriod";
 
 /** Rates built from fewer people than this are shown dimmed with `n`. */
@@ -110,14 +111,6 @@ export function signed(n: number, locale?: string): string {
           value,
         );
   return value > 0 ? `+${text}` : text;
-}
-
-/** A number with exactly one decimal. */
-export function formatDecimal(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value);
 }
 
 /** An age in years with one decimal. */

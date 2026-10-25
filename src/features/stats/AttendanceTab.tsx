@@ -13,7 +13,7 @@ import type { components } from "@/api/types";
 import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
-import { StatsNote } from "./StatsNote";
+import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {

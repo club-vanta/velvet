@@ -39,3 +39,11 @@ export function formatFullDateTime(iso: string): string {
     minute: "2-digit",
   });
 }
+
+/** A number with exactly one decimal. */
+export function formatDecimal(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value);
+}

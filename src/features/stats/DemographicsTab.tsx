@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
 import { RateCell } from "./RateCell";
-import { StatsNote } from "./StatsNote";
+import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
