@@ -1365,6 +1365,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/weather": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Rain and temperature against the attendance of finalized meetups */
+    get: operations["get_weather_stats_organizations__org_id__stats_weather_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -2878,6 +2895,17 @@ export interface components {
       | "EIGHT_FOURTEEN"
       | "FIFTEEN_PLUS";
     /**
+     * StatsTemperatureBand
+     * @description Average temperature of a meetup's first 6 hours, in degrees Celsius. The lower bound is inclusive.
+     * @enum {string}
+     */
+    StatsTemperatureBand:
+      | "BELOW_10"
+      | "FROM_10_TO_15"
+      | "FROM_15_TO_20"
+      | "FROM_20_TO_25"
+      | "FROM_25";
+    /**
      * SyncResponse
      * @description Response after syncing guests from Mazmo.
      *
@@ -2891,6 +2919,19 @@ export interface components {
       skipped: number;
       /** Total In Db */
       total_in_db: number;
+    };
+    /**
+     * TemperatureBandRowPublic
+     * @description Meetups whose average temperature falls in one band; figures as in WeatherGroupPublic.
+     */
+    TemperatureBandRowPublic: {
+      band: components["schemas"]["StatsTemperatureBand"];
+      /** Events */
+      events: number;
+      /** Avg Attended */
+      avg_attended: number | null;
+      /** No Show Rate */
+      no_show_rate: number | null;
     };
     /**
      * TokenResponse
@@ -3003,6 +3044,96 @@ export interface components {
       username: string;
       /** Code */
       code: string;
+    };
+    /**
+     * WeatherEventPublic
+     * @description The weather standing of one meetup (as GET .../meetups/{id}/weather) plus its attendance.
+     */
+    WeatherEventPublic: {
+      status: components["schemas"]["WeatherStatus"];
+      weather: components["schemas"]["MeetupWeatherPublic"] | null;
+      /** Ready */
+      ready: boolean;
+      /** Attended */
+      attended: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * WeatherGroupPublic
+     * @description Meetups that share a weather condition. avg_attended is the mean attended per
+     *     event; no_show_rate is pooled over the group (all no-shows over all expected
+     *     guests, not an average of rates). Both are null for a group with no events.
+     */
+    WeatherGroupPublic: {
+      /** Events */
+      events: number;
+      /** Avg Attended */
+      avg_attended: number | null;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * WeatherMeetupRowPublic
+     * @description One finalized meetup with its attendance and weather. The weather fields are
+     *     null without a value: all three when the meetup has no weather row, and
+     *     rained and total_precipitation_mm when the provider had no precipitation data.
+     */
+    WeatherMeetupRowPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Attended */
+      attended: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Avg Temperature */
+      avg_temperature: number | null;
+      /** Rained */
+      rained: boolean | null;
+      /** Total Precipitation Mm */
+      total_precipitation_mm: number | null;
+    };
+    /**
+     * WeatherStatsPublic
+     * @description How weather relates to attendance, over finalized meetups.
+     *
+     *     Aggregate mode (no meetup_id): event is null. meetups lists every meetup in
+     *     the period by date ascending. rainy is rained true and dry is rained false;
+     *     a meetup whose weather row has no precipitation data (rained null) joins
+     *     neither. temperature_bands always has all five bands in order, lower bound
+     *     inclusive, over avg_temperature; a meetup whose row has no temperature joins
+     *     none. without_weather counts only the meetups with no weather row at all;
+     *     a row with a null value is not counted there.
+     *
+     *     One-event mode (meetup_id): event is set; meetups, temperature_bands are
+     *     empty, rainy and dry are null and without_weather is 0.
+     *
+     *     The tab compares groups of events against each other instead of against
+     *     another period, so comparison_kind and comparison are always null.
+     */
+    WeatherStatsPublic: {
+      event: components["schemas"]["WeatherEventPublic"] | null;
+      /** Meetups */
+      meetups: components["schemas"]["WeatherMeetupRowPublic"][];
+      rainy: components["schemas"]["WeatherGroupPublic"] | null;
+      dry: components["schemas"]["WeatherGroupPublic"] | null;
+      /** Temperature Bands */
+      temperature_bands: components["schemas"]["TemperatureBandRowPublic"][];
+      /** Without Weather */
+      without_weather: number;
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      /** Comparison */
+      comparison: null;
     };
     /**
      * WeatherStatus
@@ -6926,6 +7057,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["OperationsStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_weather_stats_organizations__org_id__stats_weather_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weather against the attendance of finalized meetups */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WeatherStatsPublic"];
         };
       };
       /** @description Invalid or missing credentials */
