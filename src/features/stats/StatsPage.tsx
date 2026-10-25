@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
@@ -16,6 +17,14 @@ export function StatsPage() {
   const { t } = useLanguage();
   const { activeOrg } = useOrg();
   const filters = useStatsFilters();
+  const tabListRef = useRef<HTMLDivElement>(null);
+
+  // On a phone the strip scrolls sideways; keep the selected tab visible.
+  useEffect(() => {
+    tabListRef.current
+      ?.querySelector('[role="tab"][aria-selected="true"]')
+      ?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [filters.tab]);
   const tabProps: StatsTabProps = {
     orgId: activeOrg?.org_id ?? "",
     query: filters.query,
@@ -40,7 +49,10 @@ export function StatsPage() {
         value={filters.tab}
         onValueChange={(v) => filters.setTab(v as StatsTab)}
       >
-        <TabsList className="max-w-full justify-start overflow-x-auto">
+        <TabsList
+          ref={tabListRef}
+          className="max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           <TabsTrigger value="attendance">
             {t("statsTabAttendance")}
           </TabsTrigger>

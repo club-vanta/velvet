@@ -119,6 +119,45 @@ describe("StatsPage", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  describe("tab strip", () => {
+    const original = Element.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    beforeEach(() => {
+      scrollIntoView.mockClear();
+      Element.prototype.scrollIntoView = scrollIntoView;
+    });
+    afterEach(() => {
+      Element.prototype.scrollIntoView = original;
+    });
+
+    const scrolled = () =>
+      scrollIntoView.mock.contexts.map((el) => (el as Element).textContent);
+
+    it("scrolls the selected tab into view on load", () => {
+      renderPage("/stats?tab=weather");
+      expect(scrolled()).toEqual(["Clima"]);
+      expect(scrollIntoView).toHaveBeenCalledWith({
+        inline: "nearest",
+        block: "nearest",
+      });
+    });
+
+    it("scrolls a newly selected tab into view", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByRole("tab", { name: "Operación" }));
+      expect(scrolled()).toEqual(["Asistencia", "Operación"]);
+    });
+
+    it("hides the scrollbar of the strip", () => {
+      renderPage();
+      expect(screen.getByRole("tablist")).toHaveClass(
+        "[scrollbar-width:none]",
+        "[&::-webkit-scrollbar]:hidden",
+      );
+    });
+  });
+
   it('renders the default period "Últimos 3 meses" and "Todos los eventos"', async () => {
     renderPage();
     expect(
