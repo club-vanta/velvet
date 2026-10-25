@@ -26,6 +26,7 @@ import {
   spansYears,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
+import { useComparisonLine } from "./useComparisonLine";
 
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
 
@@ -116,6 +117,7 @@ function AttendanceContent({
 }) {
   const { t, lang } = useLanguage();
   const { meetups, totals, comparison, comparison_kind } = data;
+  const line = useComparisonLine(comparison_kind);
   if (meetups.length === 0) {
     return <StatsEmptyState />;
   }
@@ -127,22 +129,14 @@ function AttendanceContent({
     average?: string,
     unit: "percent" | "points" = "percent",
   ): string | undefined {
-    if (comparison_kind === "PERIOD_AVERAGE") {
-      return average === undefined
-        ? undefined
-        : t("statsPeriodAverage").replace("{0}", average);
-    }
-    if (comparison_kind !== "PREVIOUS_PERIOD") return undefined;
-    const points = unit === "points";
-    const change = points
-      ? formatPointChange(current, baseline ?? null)
-      : formatChange(current, baseline ?? null);
-    if (change === null) return undefined;
-    const signed = `${change > 0 ? "+" : ""}${change}`;
-    return t(points ? "statsVsPreviousPts" : "statsVsPrevious").replace(
-      "{0}",
-      points ? signed : `${signed}%`,
-    );
+    return line({
+      unit,
+      average,
+      change:
+        unit === "points"
+          ? formatPointChange(current, baseline ?? null)
+          : formatChange(current, baseline ?? null),
+    });
   }
 
   const rate = (value: number | null) => formatRate(value, lang);

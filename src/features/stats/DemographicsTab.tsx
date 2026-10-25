@@ -28,6 +28,7 @@ import {
   shareTicks,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
+import { useComparisonLine } from "./useComparisonLine";
 
 type Demographics = components["schemas"]["DemographicStatsPublic"];
 type Group = components["schemas"]["DemographicGroupPublic"];
@@ -242,6 +243,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
   const { t, lang } = useLanguage();
   const labels = useGroupLabels();
   const { gender, age, summary, comparison, comparison_kind } = data;
+  const line = useComparisonLine(comparison_kind);
 
   if (summary.attended === 0 && age.every((g) => g.expected === 0)) {
     return <StatsEmptyState />;
@@ -250,54 +252,36 @@ function DemographicsContent({ data }: { data: Demographics }) {
   /** One event: the period average; aggregate: the change vs. the previous period. */
   function compareAge(): string | undefined {
     if (!comparison) return undefined;
-    if (comparison_kind === "PERIOD_AVERAGE") {
-      return comparison.median_age === null
-        ? undefined
-        : t("statsPeriodAverage").replace(
-            "{0}",
-            formatAge(comparison.median_age, lang),
-          );
-    }
-    const change = formatYearsChange(
-      summary.median_age,
-      comparison.median_age,
-      lang,
-    );
-    return change === null
-      ? undefined
-      : t("statsYearsVsPrevious").replace("{0}", change);
+    return line({
+      unit: "years",
+      change: formatYearsChange(summary.median_age, comparison.median_age),
+      average:
+        comparison.median_age === null
+          ? undefined
+          : formatAge(comparison.median_age, lang),
+    });
   }
 
   function compareKnown(): string | undefined {
     if (!comparison) return undefined;
-    if (comparison_kind === "PERIOD_AVERAGE") {
-      return t("statsPeriodAverage").replace(
-        "{0}",
-        formatRate(comparison.known_age_share, lang),
-      );
-    }
-    const change = formatPointChange(
-      summary.known_age_share,
-      comparison.known_age_share,
-    );
-    if (change === null) return undefined;
-    return t("statsVsPreviousPts").replace(
-      "{0}",
-      `${change > 0 ? "+" : ""}${change}`,
-    );
+    return line({
+      unit: "points",
+      change: formatPointChange(
+        summary.known_age_share,
+        comparison.known_age_share,
+      ),
+      average: formatRate(comparison.known_age_share, lang),
+    });
   }
 
-  // The comparison's count is a period total for one event, so it only
-  // compares against the previous period.
+  // The comparison's count is a period total for one event, so it has no
+  // average and only compares against the previous period.
   function compareAttended(): string | undefined {
-    if (!comparison || comparison_kind !== "PREVIOUS_PERIOD") return undefined;
-    const change = formatChange(summary.attended, comparison.attended);
-    return change === null
-      ? undefined
-      : t("statsVsPrevious").replace(
-          "{0}",
-          `${change > 0 ? "+" : ""}${change}%`,
-        );
+    if (!comparison) return undefined;
+    return line({
+      unit: "percent",
+      change: formatChange(summary.attended, comparison.attended),
+    });
   }
 
   return (

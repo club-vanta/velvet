@@ -15,6 +15,7 @@ import {
   shareTicks,
   formatClockWindow,
   formatCohortMonth,
+  signed,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -173,20 +174,38 @@ describe("formatCurveLabel", () => {
 });
 
 describe("formatYearsChange", () => {
-  it("signs the difference with one decimal and the locale separator", () => {
-    expect(formatYearsChange(32.7, 31.2, "es")).toBe("+1,5");
-    expect(formatYearsChange(32.7, 31.2, "en")).toBe("+1.5");
-    expect(formatYearsChange(30, 31.2, "es")).toBe("-1,2");
+  it("returns the difference rounded to one decimal", () => {
+    expect(formatYearsChange(32.7, 31.2)).toBe(1.5);
+    expect(formatYearsChange(30, 31.2)).toBe(-1.2);
   });
 
-  it("rounds to one decimal and never returns -0", () => {
-    expect(formatYearsChange(31.24, 31.2, "es")).toBe("0");
-    expect(formatYearsChange(31.16, 31.2, "es")).toBe("0");
+  it("never returns -0", () => {
+    expect(Object.is(formatYearsChange(31.16, 31.2), 0)).toBe(true);
+    expect(formatYearsChange(31.24, 31.2)).toBe(0);
   });
 
   it("returns null when either side is missing", () => {
-    expect(formatYearsChange(null, 31, "es")).toBeNull();
-    expect(formatYearsChange(31, null, "es")).toBeNull();
+    expect(formatYearsChange(null, 31)).toBeNull();
+    expect(formatYearsChange(31, null)).toBeNull();
+  });
+});
+
+describe("signed", () => {
+  it("puts a plus on gains and keeps the minus on losses", () => {
+    expect(signed(8)).toBe("+8");
+    expect(signed(-3)).toBe("-3");
+    expect(signed(0)).toBe("0");
+  });
+
+  it("never shows -0", () => {
+    expect(signed(-0)).toBe("0");
+    expect(signed(-0, "es")).toBe("0");
+  });
+
+  it("uses the locale's decimal separator", () => {
+    expect(signed(1.5, "es")).toBe("+1,5");
+    expect(signed(1.5, "en")).toBe("+1.5");
+    expect(signed(-1.2, "es")).toBe("-1,2");
   });
 });
 

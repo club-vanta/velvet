@@ -28,6 +28,7 @@ import {
   spansYears,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
+import { useComparisonLine } from "./useComparisonLine";
 
 type Retention = components["schemas"]["RetentionStatsPublic"];
 type FrequencyRow = components["schemas"]["FrequencyRowPublic"];
@@ -189,41 +190,32 @@ function RetentionContent({
     comparison,
     comparison_kind,
   } = data;
+  const line = useComparisonLine(comparison_kind);
 
   if (summary.attendees === 0) {
     return <StatsEmptyState />;
   }
 
-  // The comparison's count is a period total for one event, so it only
-  // compares against the previous period.
+  // The comparison's count is a period total for one event, so it has no
+  // average and only compares against the previous period.
   function compareAttendees(): string | undefined {
-    if (!comparison || comparison_kind !== "PREVIOUS_PERIOD") return undefined;
-    const change = formatChange(summary.attendees, comparison.attendees);
-    return change === null
-      ? undefined
-      : t("statsVsPrevious").replace(
-          "{0}",
-          `${change > 0 ? "+" : ""}${change}%`,
-        );
+    if (!comparison) return undefined;
+    return line({
+      unit: "percent",
+      change: formatChange(summary.attendees, comparison.attendees),
+    });
   }
 
   function compareReturnRate(): string | undefined {
     if (!comparison) return undefined;
-    if (comparison_kind === "PERIOD_AVERAGE") {
-      return t("statsPeriodAverage").replace(
-        "{0}",
-        formatRate(comparison.first_timer_return_rate, lang),
-      );
-    }
-    const change = formatPointChange(
-      summary.first_timer_return_rate,
-      comparison.first_timer_return_rate,
-    );
-    if (change === null) return undefined;
-    return t("statsVsPreviousPts").replace(
-      "{0}",
-      `${change > 0 ? "+" : ""}${change}`,
-    );
+    return line({
+      unit: "points",
+      change: formatPointChange(
+        summary.first_timer_return_rate,
+        comparison.first_timer_return_rate,
+      ),
+      average: formatRate(comparison.first_timer_return_rate, lang),
+    });
   }
 
   const returnRate = summary.first_timer_return_rate;

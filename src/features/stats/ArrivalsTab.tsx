@@ -26,6 +26,7 @@ import {
   NO_VALUE,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
+import { useComparisonLine } from "./useComparisonLine";
 
 type Arrivals = components["schemas"]["ArrivalStatsPublic"];
 type LeadRow = components["schemas"]["LeadTimeRowPublic"];
@@ -173,6 +174,7 @@ function ArrivalsContent({
 }) {
   const { t, lang } = useLanguage();
   const { curve, summary, lead_time, comparison, comparison_kind } = data;
+  const line = useComparisonLine(comparison_kind);
 
   if (summary.arrivals === 0 && lead_time.every((r) => r.signed_up === 0)) {
     return <StatsEmptyState />;
@@ -199,33 +201,22 @@ function ArrivalsContent({
       const parts = [...fromStart, ...average];
       return parts.length > 0 ? parts.join(" · ") : undefined;
     }
-    if (comparison_kind !== "PREVIOUS_PERIOD") return undefined;
-    const change = formatMinuteChange(current, baseline ?? null);
-    if (change === null) return undefined;
-    return t("statsMinutesVsPrevious").replace(
-      "{0}",
-      `${change > 0 ? "+" : ""}${change}`,
-    );
+    return line({
+      unit: "minutes",
+      change: formatMinuteChange(current, baseline ?? null),
+    });
   }
 
   function compareShare(): string | undefined {
     if (!comparison) return undefined;
-    if (comparison_kind === "PERIOD_AVERAGE") {
-      return t("statsPeriodAverage").replace(
-        "{0}",
-        formatRate(comparison.first_hour_share, lang),
-      );
-    }
-    if (comparison_kind !== "PREVIOUS_PERIOD") return undefined;
-    const change = formatPointChange(
-      summary.first_hour_share,
-      comparison.first_hour_share,
-    );
-    if (change === null) return undefined;
-    return t("statsVsPreviousPts").replace(
-      "{0}",
-      `${change > 0 ? "+" : ""}${change}`,
-    );
+    return line({
+      unit: "points",
+      change: formatPointChange(
+        summary.first_hour_share,
+        comparison.first_hour_share,
+      ),
+      average: formatRate(comparison.first_hour_share, lang),
+    });
   }
 
   const time = (local: string | null, minutes: number | null) =>

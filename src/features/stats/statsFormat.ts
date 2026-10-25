@@ -80,18 +80,25 @@ export function formatCurveLabel(
   );
 }
 
-/** Difference in years with one decimal and a sign (`+1,5`), or null when either side is missing. */
+/** Difference in years rounded to one decimal, or null when either side is missing. */
 export function formatYearsChange(
   current: number | null,
   baseline: number | null,
-  locale: string,
-): string | null {
+): number | null {
   if (current === null || baseline === null) return null;
-  const diff = Math.round((current - baseline) * 10) / 10 || 0;
-  const text = new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 1,
-  }).format(diff);
-  return diff > 0 ? `+${text}` : text;
+  return Math.round((current - baseline) * 10) / 10 || 0;
+}
+
+/** A change with its sign, such as `+8`, `-3` or `0`; with `locale`, one decimal at most (`+1,5`). */
+export function signed(n: number, locale?: string): string {
+  const value = n || 0;
+  const text =
+    locale === undefined
+      ? String(value)
+      : new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
+          value,
+        );
+  return value > 0 ? `+${text}` : text;
 }
 
 /** An age in years with one decimal. */
