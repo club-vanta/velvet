@@ -84,6 +84,7 @@ import { GuestListToolbar } from "./GuestListToolbar";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
 import { MeetupLocation } from "./MeetupLocation";
+import { MeetupWeather } from "./MeetupWeather";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -1126,6 +1127,10 @@ export function MeetupDetailPage() {
             )}
           </div>
         </section>
+      )}
+
+      {meetupQ.isSuccess && (
+        <MeetupWeather orgId={orgId} meetupId={id!} canRefresh={isOrgAdmin} />
       )}
 
       {/* Stats */}

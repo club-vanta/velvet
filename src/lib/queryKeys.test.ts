@@ -7,8 +7,10 @@ import {
   invalidateGuestIdentity,
   invalidateMeetupGuests,
   invalidateMeetupLocation,
+  invalidateMeetupWeather,
   meetupKey,
   meetupsKey,
+  meetupWeatherKey,
   statsOrgKey,
   statsRetentionKey,
   statsRootKey,
@@ -72,17 +74,35 @@ describe("guest identity invalidation", () => {
 });
 
 describe("invalidateMeetupLocation", () => {
-  it("refreshes the meetup, the meetup list and the org stats", () => {
+  it("refreshes the meetup, the list, the weather and the org stats", () => {
     const queryClient = new QueryClient();
     const spy = vi.spyOn(queryClient, "invalidateQueries");
 
     invalidateMeetupLocation(queryClient, "org-1", "meetup-1");
 
-    expect(spy).toHaveBeenCalledTimes(3);
+    expect(spy).toHaveBeenCalledTimes(4);
     expect(spy).toHaveBeenCalledWith({
       queryKey: meetupKey("org-1", "meetup-1"),
     });
     expect(spy).toHaveBeenCalledWith({ queryKey: meetupsKey("org-1") });
+    expect(spy).toHaveBeenCalledWith({
+      queryKey: meetupWeatherKey("org-1", "meetup-1"),
+    });
+    expect(spy).toHaveBeenCalledWith({ queryKey: statsOrgKey("org-1") });
+  });
+});
+
+describe("invalidateMeetupWeather", () => {
+  it("refreshes the meetup's weather and the org stats", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateMeetupWeather(queryClient, "org-1", "meetup-1");
+
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledWith({
+      queryKey: meetupWeatherKey("org-1", "meetup-1"),
+    });
     expect(spy).toHaveBeenCalledWith({ queryKey: statsOrgKey("org-1") });
   });
 });

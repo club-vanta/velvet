@@ -12,6 +12,7 @@ import {
   spansYears,
   formatYearsChange,
   formatAge,
+  formatDecimal,
   shareTicks,
   formatClockWindow,
   formatCohortMonth,
@@ -267,5 +268,12 @@ describe("sortByDate", () => {
     ];
     expect(sortByDate(events).map((e) => e.id)).toEqual(["a", "b", "c"]);
     expect(events.map((e) => e.id)).toEqual(["b", "c", "a"]);
+  });
+});
+
+describe("formatDecimal", () => {
+  it("always shows one decimal with the locale separator", () => {
+    expect(formatDecimal(22, "en")).toBe("22.0");
+    expect(formatDecimal(22.46, "es")).toBe("22,5");
   });
 });

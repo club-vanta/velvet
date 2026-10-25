@@ -97,6 +97,12 @@ const STATS: MeetupStats = {
   payment: { paid_count: 0, unpaid_count: 0, exempt_from_payment_count: 0 },
 };
 
+const WEATHER_STATUS: components["schemas"]["MeetupWeatherStatusPublic"] = {
+  status: "NOT_FETCHED",
+  weather: null,
+  ready: true,
+};
+
 function renderPage(
   meetup: Meetup,
   guests: MeetupGuest[],
@@ -113,6 +119,8 @@ function renderPage(
         });
       if (path === "/organizations/{org_id}/meetups/{meetup_id}/stats")
         return Promise.resolve({ data: stats, error: undefined });
+      if (path === "/organizations/{org_id}/meetups/{meetup_id}/weather")
+        return Promise.resolve({ data: WEATHER_STATUS, error: undefined });
       if (path === "/organizations/{org_id}/guests/banned")
         return Promise.resolve({
           data: { total: 0, guests: [] },
@@ -1190,6 +1198,25 @@ describe("MeetupDetailPage location", () => {
     mockRole = "STAFF";
     renderPage(makeMeetup({ name: "Alter Test" }), []);
     expect(await screen.findByText("No location yet")).toBeInTheDocument();
+  });
+
+  it("shows the weather card with a refresh for an org admin", async () => {
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(
+      await screen.findByRole("button", { name: "Update weather" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("The weather has not loaded yet")).toBeVisible();
+  });
+
+  it("shows staff the weather card without a refresh", async () => {
+    mockRole = "STAFF";
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(
+      await screen.findByText("The weather has not loaded yet"),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Update weather" }),
+    ).not.toBeInTheDocument();
   });
 
   it("clears a half-typed address search when the route moves to another meetup", async () => {

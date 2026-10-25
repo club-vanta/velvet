@@ -9,6 +9,9 @@ export const meetupKey = (orgId: string, meetupId: string) =>
 export const meetupGuestsKey = (orgId: string, meetupId: string) =>
   ["meetup-guests", orgId, meetupId] as const;
 
+export const meetupWeatherKey = (orgId: string, meetupId: string) =>
+  ["meetup-weather", orgId, meetupId] as const;
+
 export const meetupStatsKey = (orgId: string, meetupId: string) =>
   ["meetup-stats", orgId, meetupId] as const;
 
@@ -110,8 +113,24 @@ export function invalidateGuestIdentity(
 }
 
 /**
- * A meetup's location shows on its page and in the meetup list, and the
- * stats read it, so all three are refreshed together.
+ * A meetup's weather shows on its page and feeds the weather tab of the org
+ * stats, so both are refreshed together.
+ */
+export function invalidateMeetupWeather(
+  queryClient: QueryClient,
+  orgId: string,
+  meetupId: string,
+): void {
+  void queryClient.invalidateQueries({
+    queryKey: meetupWeatherKey(orgId, meetupId),
+  });
+  void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
+}
+
+/**
+ * A meetup's location shows on its page and in the meetup list, and a change
+ * replaces its weather, so the meetup, the list and the weather are refreshed
+ * together.
  */
 export function invalidateMeetupLocation(
   queryClient: QueryClient,
@@ -120,5 +139,5 @@ export function invalidateMeetupLocation(
 ): void {
   void queryClient.invalidateQueries({ queryKey: meetupKey(orgId, meetupId) });
   void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
-  void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
+  invalidateMeetupWeather(queryClient, orgId, meetupId);
 }

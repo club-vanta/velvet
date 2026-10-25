@@ -112,13 +112,18 @@ export function signed(n: number, locale?: string): string {
   return value > 0 ? `+${text}` : text;
 }
 
-/** An age in years with one decimal. */
-export function formatAge(age: number | null, locale: string): string {
-  if (age === null) return NO_VALUE;
+/** A number with exactly one decimal. */
+export function formatDecimal(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
-  }).format(age);
+  }).format(value);
+}
+
+/** An age in years with one decimal. */
+export function formatAge(age: number | null, locale: string): string {
+  if (age === null) return NO_VALUE;
+  return formatDecimal(age, locale);
 }
 
 /**
