@@ -397,6 +397,7 @@ export const translations = {
     statsLapsed: "Stopped coming",
     statsLapsedCame: "came {0} times",
     statsLapsedMore: "and {0} more",
+    statsLapsedNone: "Nobody stopped coming",
     statsEventCameBack: "Of the first-timers, {0} came back",
     statsNoteRetention:
       "First time means the first event of this organization a person attended, ever. Coming as staff does not count.",
@@ -979,6 +980,7 @@ export const translations = {
     statsLapsed: "Dejaron de venir",
     statsLapsedCame: "vino {0} veces",
     statsLapsedMore: "y {0} más",
+    statsLapsedNone: "Nadie dejó de venir",
     statsEventCameBack: "De quienes vinieron por primera vez, volvieron {0}",
     statsNoteRetention:
       "Primera vez es el primer evento de esta organización al que la persona vino, desde siempre. Venir como staff no cuenta.",

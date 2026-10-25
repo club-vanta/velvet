@@ -380,6 +380,16 @@ describe("RetentionTab", () => {
     expect(document.querySelector('[data-slot="lapsed-more"]')).toBeNull();
   });
 
+  it("says nobody stopped coming when the period has a start and no lapsed regulars", async () => {
+    respond(ok(stats({ lapsed: [], lapsed_total: 0 })));
+    renderTab();
+    await headlinesReady();
+    const card = screen.getByRole("region", { name: "Dejaron de venir" });
+    expect(within(card).getByText("Nadie dejó de venir")).toBeInTheDocument();
+    expect(within(card).queryByRole("list")).not.toBeInTheDocument();
+    expect(document.querySelector('[data-slot="lapsed-more"]')).toBeNull();
+  });
+
   it("leaves out the lapsed list for a period without a start", async () => {
     respond(ok(stats({ lapsed: [], lapsed_total: null })));
     renderTab({ query: { to: "2026-04-16" } });

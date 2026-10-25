@@ -272,10 +272,16 @@ function RetentionContent({
               <StatsNote>{t("statsNoteCohorts")}</StatsNote>
             </>
           )}
-          {lapsed_total !== null && lapsed.length > 0 && (
+          {lapsed_total !== null && (
             <>
               <ChartCard title={t("statsLapsed")}>
-                <LapsedList lapsed={lapsed} total={lapsed_total} />
+                {lapsed_total === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("statsLapsedNone")}
+                  </p>
+                ) : (
+                  <LapsedList lapsed={lapsed} total={lapsed_total} />
+                )}
               </ChartCard>
               <StatsNote>{t("statsNoteLapsed")}</StatsNote>
             </>
