@@ -3131,7 +3131,8 @@ export interface components {
       temperature_bands: components["schemas"]["TemperatureBandRowPublic"][];
       /** Without Weather */
       without_weather: number;
-      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      /** Comparison Kind */
+      comparison_kind: null;
       /** Comparison */
       comparison: null;
     };
