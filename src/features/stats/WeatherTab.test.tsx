@@ -13,11 +13,25 @@ vi.mock("@/api/client", () => ({
   api: { GET: (...a: unknown[]) => mockApiGet(...a) },
 }));
 
+let mockOrgRole = "USER";
+let mockSiteRole = "USER";
+vi.mock("@/lib/org", () => ({
+  useOrg: () => ({
+    activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: mockOrgRole },
+  }),
+}));
+vi.mock("@/auth/AuthContext", () => ({
+  useAuth: () => ({
+    user: { id: 1, username: "u", role: { name: mockSiteRole } },
+  }),
+}));
+
 type Weather = components["schemas"]["WeatherStatsPublic"];
 type Row = components["schemas"]["WeatherMeetupRowPublic"];
 type Band = components["schemas"]["TemperatureBandRowPublic"];
 type Group = components["schemas"]["WeatherGroupPublic"];
 type Event = components["schemas"]["WeatherEventPublic"];
+type MeetupWeather = components["schemas"]["MeetupWeatherPublic"];
 
 function row(overrides: Partial<Row> = {}): Row {
   return {
@@ -92,24 +106,25 @@ function stats(overrides: Partial<Weather> = {}): Weather {
   };
 }
 
+const MEETUP_WEATHER: MeetupWeather = {
+  avg_temperature: 21.5,
+  avg_apparent_temperature: 20,
+  total_precipitation_mm: 0,
+  max_wind_kmh: 12,
+  rained: false,
+  fetched_at: "2026-03-10T10:00:00Z",
+  source: "open-meteo-historical-forecast",
+};
+
 function event(overrides: Partial<Event> = {}): Event {
   return {
     status: "OK",
     ready: true,
     attended: 140,
     no_show_rate: 0.15,
-    weather: {
-      avg_temperature: 21.5,
-      avg_apparent_temperature: 20,
-      total_precipitation_mm: 0,
-      max_wind_kmh: 12,
-      rained: false,
-      fetched_at: "2026-03-10T10:00:00Z",
-      source: "open-meteo-historical-forecast",
-      hourly: {},
-    },
+    weather: MEETUP_WEATHER,
     ...overrides,
-  } as Event;
+  };
 }
 
 const PERIOD = { from: "2026-01-15", to: "2026-04-16" };
@@ -177,6 +192,8 @@ describe("WeatherTab", () => {
     vi.clearAllMocks();
     localStorage.clear();
     vi.stubEnv("TZ", "America/Argentina/Buenos_Aires");
+    mockOrgRole = "USER";
+    mockSiteRole = "USER";
   });
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -237,9 +254,11 @@ describe("WeatherTab", () => {
     await ready();
     expect(slot("Con lluvia", "value")).toBe("80");
     expect(slot("Con lluvia", "subline")).toBe("31% no-show");
+    // The rainy group has 12 events, at or above the small-sample threshold.
     expect(slot("Con lluvia", "sample")).toBeNull();
     expect(slot("Sin lluvia", "value")).toBe("120");
     expect(slot("Sin lluvia", "subline")).toBe("18% no-show");
+    // 12 events is not a small sample, so no n; 3 events is.
     expect(slot("Sin lluvia", "sample")).toBe("n = 3");
     expect(slot("Sin clima", "value")).toBe("1");
     expect(slot("Sin clima", "comparison")).toBeNull();
@@ -317,7 +336,7 @@ describe("WeatherTab", () => {
     );
   });
 
-  it("charts the scatter with two points with temperature", async () => {
+  it("charts the scatter and lists its points in date order", async () => {
     respond(ok(stats()));
     renderTab();
     await ready();
@@ -325,6 +344,33 @@ describe("WeatherTab", () => {
       name: "Asistencia y temperatura",
     });
     expect(card).not.toHaveTextContent("para graficar");
+    const rows = within(
+      within(card).getByRole("table", { hidden: true }),
+    ).getAllByRole("row", { hidden: true });
+    const cells = (r: HTMLElement, name: string) => part(r, name);
+    const body = rows.slice(1);
+    expect(body.map((r) => cells(r, "name"))).toEqual([
+      "Alter Febrero",
+      "Alter Marzo",
+    ]);
+    expect(body.map((r) => cells(r, "date"))).toEqual([
+      "9 de feb de 2026",
+      "9 de mar de 2026",
+    ]);
+    expect(body.map((r) => cells(r, "temperature"))).toEqual(["25,4", "18,2"]);
+    expect(body.map((r) => cells(r, "attended"))).toEqual(["90", "100"]);
+  });
+
+  it("defines a color for every series the charts paint", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await ready();
+    // jsdom cannot see the paint, so check the CSS variables the marks use.
+    const css = Array.from(document.querySelectorAll("[data-chart] style"))
+      .map((el) => el.textContent)
+      .join("");
+    expect(css).toContain("--color-avg_attended: var(--chart-1);");
+    expect(css).toContain("--color-attended: var(--chart-1);");
   });
 
   it("lists the events without weather in date order, linked to the event", async () => {
@@ -409,7 +455,6 @@ describe("WeatherTab", () => {
       expect(screen.queryByRole("button")).toBeNull();
       expect(notes()).toEqual([
         "Datos: Open-Meteo, las 6 horas desde el inicio",
-        "Clima de Open-Meteo para las 6 horas desde el inicio de cada evento, en su dirección. Los eventos sin ubicación o sin clima todavía quedan fuera de las comparaciones.",
       ]);
     });
 
@@ -426,6 +471,20 @@ describe("WeatherTab", () => {
       expect(
         document.querySelector('[data-slot="weather-temperature"]'),
       ).toBeNull();
+    });
+
+    it.each([
+      ["an org admin", "ADMIN", "USER"],
+      ["a site admin", "USER", "SITE_ADMIN"],
+    ])("tells %s to set the location", async (_who, orgRole, siteRole) => {
+      mockOrgRole = orgRole;
+      mockSiteRole = siteRole;
+      respond(ok(oneEvent(event({ status: "NO_LOCATION", weather: null }))));
+      renderTab({ query: single });
+      await waitFor(() => headline("Vinieron"));
+      expect(screen.getByRole("region", { name: "Clima" })).toHaveTextContent(
+        "Cargá la ubicación para ver el clima",
+      );
     });
 
     it("shows a dash when the event has no no-show rate", async () => {

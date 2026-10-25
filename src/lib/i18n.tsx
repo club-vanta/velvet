@@ -466,6 +466,8 @@ export const translations = {
     statsAvgAttended: "Average attended",
     statsNoShowLine: "{0} no-show",
     statsTemperatureAxis: "Temperature (°C)",
+    statsEventHeader: "Event",
+    statsDateHeader: "Date",
     statsNoTempPoints: "Not enough events with temperature to chart",
     statsWithoutWeatherList: "Events without weather",
     statsNoteWeather:
@@ -1117,6 +1119,8 @@ export const translations = {
     statsAvgAttended: "Promedio de asistentes",
     statsNoShowLine: "{0} no-show",
     statsTemperatureAxis: "Temperatura (°C)",
+    statsEventHeader: "Evento",
+    statsDateHeader: "Fecha",
     statsNoTempPoints: "Hay pocos eventos con temperatura para graficar",
     statsWithoutWeatherList: "Eventos sin clima",
     statsNoteWeather:

@@ -17,10 +17,12 @@ import {
 } from "@/components/ui/chart";
 import { StatCard } from "@/components/StatCard";
 import { StatsNote } from "@/components/StatsNote";
+import { useAuth } from "@/auth/AuthContext";
 import { useWeatherStats } from "@/hooks/useWeatherStats";
 import { parseApiDateTime } from "@/lib/apiDateTime";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDecimal } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import { useOrg } from "@/lib/org";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
@@ -54,6 +56,7 @@ const roundAverage = (value: number | null) =>
   value === null ? null : Math.round(value);
 
 type Point = {
+  id: string;
   name: string;
   date: string;
   temperature: number;
@@ -67,6 +70,7 @@ function scatterPoints(meetups: Row[]): Point[] {
       ? []
       : [
           {
+            id: m.meetup_id,
             name: m.name,
             date: m.date,
             temperature: m.avg_temperature,
@@ -101,6 +105,8 @@ function GroupStat({ label, group }: { label: string; group: Group }) {
   );
 }
 
+// The charts use their own tooltip because ChartTooltipContent shows only the
+// series value, not the events count or the meetup name and date.
 function TooltipBox({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs shadow-xl">
@@ -254,7 +260,7 @@ function TemperatureScatter({ points }: { points: Point[] }) {
                 </p>
                 <p className="tabular-nums">
                   {t("statsTemperatureAxis")}:{" "}
-                  {point.temperature.toLocaleString(lang)}
+                  {formatDecimal(point.temperature, lang)}
                 </p>
                 <p className="tabular-nums">
                   {t("statsAttended")}: {formatCount(point.attended, lang)}
@@ -266,6 +272,46 @@ function TemperatureScatter({ points }: { points: Point[] }) {
         <Scatter data={points} fill="var(--color-attended)" />
       </ScatterChart>
     </ChartContainer>
+  );
+}
+
+/** The scatter's points as text, for screen readers. */
+function ScatterTable({
+  points,
+  labelledBy,
+}: {
+  points: Point[];
+  labelledBy: string;
+}) {
+  const { t, lang } = useLanguage();
+
+  return (
+    <table aria-labelledby={labelledBy} className="sr-only">
+      <thead>
+        <tr>
+          <th scope="col">{t("statsEventHeader")}</th>
+          <th scope="col">{t("statsDateHeader")}</th>
+          <th scope="col">{t("statsTemperatureAxis")}</th>
+          <th scope="col">{t("statsAttended")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {points.map((p) => (
+          <tr key={p.id}>
+            <th scope="row" data-slot="name">
+              {p.name}
+            </th>
+            <td data-slot="date">
+              {formatDate(parseApiDateTime(p.date).toISOString())}
+            </td>
+            <td data-slot="temperature">
+              {formatDecimal(p.temperature, lang)}
+            </td>
+            <td data-slot="attended">{formatCount(p.attended, lang)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -325,13 +371,18 @@ function WeatherAggregate({ data }: { data: Weather }) {
         )}
       </ChartCard>
       <ChartCard title={t("statsTempVsAttendance")}>
-        {points.length < MIN_POINTS ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {t("statsNoTempPoints")}
-          </p>
-        ) : (
-          <TemperatureScatter points={points} />
-        )}
+        {(headingId) =>
+          points.length < MIN_POINTS ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {t("statsNoTempPoints")}
+            </p>
+          ) : (
+            <>
+              <TemperatureScatter points={points} />
+              <ScatterTable points={points} labelledBy={headingId} />
+            </>
+          )
+        }
       </ChartCard>
       {missing.length > 0 && (
         <ChartCard title={t("statsWithoutWeatherList")}>
@@ -344,6 +395,11 @@ function WeatherAggregate({ data }: { data: Weather }) {
 
 function WeatherEvent({ event }: { event: Event }) {
   const { t, lang } = useLanguage();
+  const { user } = useAuth();
+  const { activeOrg } = useOrg();
+  // As on the meetup page: site admins and org admins can set the location.
+  const canSetLocation =
+    user?.role.name === "SITE_ADMIN" || activeOrg?.role === "ADMIN";
 
   return (
     <div className="space-y-3">
@@ -358,14 +414,12 @@ function WeatherEvent({ event }: { event: Event }) {
         />
       </div>
       <StatCard title={t("weatherTitle")}>
-        {/* Stats are read-only, so the advice is the one for staff. */}
         <WeatherDetails
           status={event.status}
           weather={event.weather}
-          canSetLocation={false}
+          canSetLocation={canSetLocation}
         />
       </StatCard>
-      <StatsNote>{t("statsNoteWeather")}</StatsNote>
     </div>
   );
 }
