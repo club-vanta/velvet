@@ -108,6 +108,7 @@ describe("MeetupLocation", () => {
     expect(geocodeCalls()).toHaveLength(1);
     expect(geocodeCalls()[0][1]).toEqual({
       params: { path: { org_id: "org-1" }, query: { q: "Av. Corrientes" } },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -247,18 +248,21 @@ describe("MeetupLocation", () => {
     mockApiGet.mockResolvedValue({ data: [], error: undefined });
     renderLocation();
     await type("Zzzz");
-    expect(await screen.findByText("No addresses found")).toBeInTheDocument();
+    expect(await screen.findByText(/^No addresses found$/)).toBeInTheDocument();
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 
   it("reports a failed save through a toast", async () => {
-    mockApiPatch.mockResolvedValue({ data: undefined, error: { detail: "x" } });
+    mockApiPatch.mockResolvedValue({ data: undefined, error: {} });
     renderLocation();
     await type("Av.");
     await user.click(
       await screen.findByRole("option", { name: CORRIENTES.label }),
     );
-    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Could not save the location."),
+    );
+    expect(toast.error).toHaveBeenCalledTimes(1);
     expect(toast.success).not.toHaveBeenCalled();
   });
 
@@ -270,5 +274,47 @@ describe("MeetupLocation", () => {
     await user.type(searchBox(), "i");
     await act(() => vi.advanceTimersByTimeAsync(300));
     expect(screen.getByRole("listbox")).toHaveAttribute("aria-busy", "true");
+  });
+
+  it("wraps from the last option back to the first", async () => {
+    renderLocation();
+    await type("Av.");
+    await screen.findByRole("listbox");
+    await user.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}");
+    expect(searchBox()).toHaveAttribute(
+      "aria-activedescendant",
+      screen.getByRole("option", { name: CORRIENTES.label }).id,
+    );
+  });
+
+  it("resets the highlighted option when the results change", async () => {
+    renderLocation();
+    await type("Av.");
+    await screen.findByRole("listbox");
+    await user.keyboard("{ArrowDown}");
+    mockApiGet.mockResolvedValue({ data: [CALLAO], error: undefined });
+    await type("x");
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(1));
+    expect(searchBox()).not.toHaveAttribute("aria-activedescendant");
+  });
+
+  it("keeps focus and ignores a second pick while saving", async () => {
+    mockApiPatch.mockImplementation(() => new Promise(() => {}));
+    renderLocation();
+    await type("Av.");
+    await user.click(
+      await screen.findByRole("option", { name: CORRIENTES.label }),
+    );
+    expect(searchBox()).toHaveFocus();
+    expect(searchBox()).toHaveAttribute("readonly");
+    await type("Av.");
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(mockApiPatch).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns focus to the search after removing the location", async () => {
+    renderLocation(LOCATED);
+    await user.click(screen.getByRole("button", { name: "Remove location" }));
+    await waitFor(() => expect(searchBox()).toHaveFocus());
   });
 });

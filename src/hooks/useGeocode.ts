@@ -20,13 +20,18 @@ export function useGeocode(orgId: string, q: string) {
     queryKey: geocodeKey(orgId, query),
     queryFn:
       orgId && query.length >= MIN_QUERY_LENGTH
-        ? async () => {
+        ? async ({ signal }) => {
             const { data, error } = await api.GET(
               "/organizations/{org_id}/geocode",
-              { params: { path: { org_id: orgId }, query: { q: query } } },
+              {
+                params: { path: { org_id: orgId }, query: { q: query } },
+                signal,
+              },
             );
             if (error)
-              throw new Error(extractApiError(error, t("failedSearchAddress")));
+              throw new Error(
+                extractApiError(error, t("meetupLocationSearchFailed")),
+              );
             return data;
           }
         : skipToken,

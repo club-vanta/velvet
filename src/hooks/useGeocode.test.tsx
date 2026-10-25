@@ -56,6 +56,7 @@ describe("useGeocode", () => {
     expect(mockApiGet).toHaveBeenCalledTimes(1);
     expect(mockApiGet).toHaveBeenCalledWith("/organizations/{org_id}/geocode", {
       params: { path: { org_id: "org-1" }, query: { q: "abc" } },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -90,7 +91,7 @@ describe("useGeocode", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error?.message).toBe(
-      "No se pudo buscar la dirección.",
+      "No se pudo buscar la dirección. Probá de nuevo.",
     );
   });
 
@@ -125,5 +126,28 @@ describe("useGeocode", () => {
 
     await waitFor(() => expect(result.current.data).toEqual([next]));
     expect(result.current.isPlaceholderData).toBe(false);
+  });
+
+  it("aborts the previous request when the query changes", async () => {
+    const signals: AbortSignal[] = [];
+    mockApiGet.mockImplementation(
+      (_p: string, opts: { signal: AbortSignal }) => {
+        signals.push(opts.signal);
+        return new Promise(() => {});
+      },
+    );
+    const { rerender } = renderHook(({ q }) => useGeocode("org-1", q), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={newClient()}>
+          <LanguageProvider>{children}</LanguageProvider>
+        </QueryClientProvider>
+      ),
+      initialProps: { q: "Corrientes" },
+    });
+    await waitFor(() => expect(signals).toHaveLength(1));
+    rerender({ q: "Corrientes 12" });
+    await waitFor(() => expect(signals).toHaveLength(2));
+    expect(signals[0].aborted).toBe(true);
+    expect(signals[1].aborted).toBe(false);
   });
 });

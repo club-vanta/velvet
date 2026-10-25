@@ -1033,7 +1033,7 @@ export function MeetupDetailPage() {
                 </span>
                 <MeetupBadges meetup={meetup} timing={timing} />
               </div>
-              {/* Keyed so a half-typed search never carries over to another meetup. */}
+              {/* Keyed by meetup so the search state resets when the route param changes. */}
               <MeetupLocation
                 key={meetup.id}
                 orgId={orgId}

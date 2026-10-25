@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { Link, MemoryRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupDetailPage } from "./MeetupDetailPage";
 import type { components } from "@/api/types";
@@ -1190,5 +1190,59 @@ describe("MeetupDetailPage location", () => {
     mockRole = "STAFF";
     renderPage(makeMeetup({ name: "Alter Test" }), []);
     expect(await screen.findByText("No location yet")).toBeInTheDocument();
+  });
+
+  it("clears a half-typed address search when the route moves to another meetup", async () => {
+    const OTHER = makeMeetup({ id: "meetup-2", name: "Other Night" });
+    mockApiGet.mockImplementation(
+      (path: string, opts?: { params?: { path?: { meetup_id?: string } } }) => {
+        if (path === "/organizations/{org_id}/meetups/{meetup_id}")
+          return Promise.resolve({
+            data:
+              opts?.params?.path?.meetup_id === "meetup-2" ? OTHER : LOCATED,
+            error: undefined,
+          });
+        if (path === "/organizations/{org_id}/geocode")
+          return Promise.resolve({
+            data: [{ label: "Av. Callao 500", latitude: 1, longitude: 2 }],
+            error: undefined,
+          });
+        if (path.endsWith("/guests"))
+          return Promise.resolve({
+            data: { total: 0, guests: [] },
+            error: undefined,
+          });
+        return Promise.resolve({ data: undefined, error: undefined });
+      },
+    );
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <LanguageProvider>
+          <MemoryRouter initialEntries={["/meetups/meetup-1"]}>
+            <Link to="/meetups/meetup-2">next</Link>
+            <Routes>
+              <Route path="/meetups/:id" element={<MeetupDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </LanguageProvider>
+      </QueryClientProvider>,
+    );
+    const box = await screen.findByRole("combobox", {
+      name: "Search an address",
+    });
+    await user.type(box, "Callao");
+    await screen.findByRole("listbox");
+
+    await user.click(screen.getByRole("link", { name: "next" }));
+    await screen.findByRole("heading", { name: "Other Night" });
+    expect(
+      screen.getByRole("combobox", { name: "Search an address" }),
+    ).toHaveValue("");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
 });

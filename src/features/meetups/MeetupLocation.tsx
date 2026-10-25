@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExternalLink, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ function mapUrl(latitude: number, longitude: number) {
 /**
  * Where the meetup happens: the address with a map link for every member, and
  * for org admins an address search (an ARIA combobox) plus a remove action.
+ * Not a FactStrip: this block is editable and has to grow for the search list.
  */
 export function MeetupLocation({
   orgId,
@@ -36,10 +37,14 @@ export function MeetupLocation({
   const { t } = useLanguage();
   const { location_label: label, latitude, longitude } = meetup;
   const setLocation = useSetMeetupLocation(orgId, meetup.id);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const save = (location: components["schemas"]["MeetupLocationUpdate"]) =>
     setLocation.mutate(location, {
-      onSuccess: () => toast.success(t("meetupLocationSaved")),
+      onSuccess: () => {
+        toast.success(t("meetupLocationSaved"));
+        searchRef.current?.focus();
+      },
       onError: (err) => toast.error(err.message),
     });
 
@@ -91,8 +96,9 @@ export function MeetupLocation({
       </div>
       {canEdit && (
         <AddressSearch
+          ref={searchRef}
           orgId={orgId}
-          disabled={setLocation.isPending}
+          saving={setLocation.isPending}
           onPick={(result) =>
             save({
               location_label: result.label,
@@ -107,17 +113,21 @@ export function MeetupLocation({
 }
 
 function AddressSearch({
+  ref,
   orgId,
-  disabled,
+  saving,
   onPick,
 }: {
+  ref: React.Ref<HTMLInputElement>;
   orgId: string;
-  disabled: boolean;
+  // The input stays enabled (read-only) while saving so it keeps focus.
+  saving: boolean;
   onPick: (result: GeocodeResult) => void;
 }) {
   const { t } = useLanguage();
   const baseId = useId();
   const listId = `${baseId}-list`;
+  const inputId = `${baseId}-input`;
   const hintId = `${baseId}-hint`;
   const [input, setInput] = useState("");
   const [open, setOpen] = useState(false);
@@ -133,7 +143,22 @@ function AddressSearch({
   const settled = searchable && !search.isPlaceholderData;
   const optionId = (index: number) => `${baseId}-option-${index}`;
 
+  // A new result list invalidates the highlighted row.
+  const [seenData, setSeenData] = useState(search.data);
+  if (seenData !== search.data) {
+    setSeenData(search.data);
+    setActiveIndex(-1);
+  }
+
+  useEffect(() => {
+    if (expanded && activeIndex >= 0)
+      document
+        .getElementById(`${baseId}-option-${activeIndex}`)
+        ?.scrollIntoView?.({ block: "nearest" });
+  }, [expanded, activeIndex, baseId]);
+
   const pick = (result: GeocodeResult) => {
+    if (saving) return;
     onPick(result);
     setInput("");
     setOpen(false);
@@ -159,10 +184,17 @@ function AddressSearch({
   };
 
   return (
-    <div className="relative max-w-md">
+    <div className="max-w-md">
+      <label
+        htmlFor={inputId}
+        className="mb-1 block text-xs text-muted-foreground"
+      >
+        {t("meetupLocationSearch")}
+      </label>
       <Input
+        ref={ref}
+        id={inputId}
         role="combobox"
-        aria-label={t("meetupLocationSearch")}
         aria-autocomplete="list"
         aria-expanded={expanded}
         aria-controls={listId}
@@ -171,9 +203,8 @@ function AddressSearch({
         }
         aria-describedby={hintId}
         autoComplete="off"
-        placeholder={t("meetupLocationSearch")}
         value={input}
-        disabled={disabled}
+        readOnly={saving}
         onChange={(e) => {
           setInput(e.target.value);
           setOpen(true);
@@ -188,7 +219,7 @@ function AddressSearch({
         aria-label={t("meetupLocationSearch")}
         aria-busy={search.isPlaceholderData}
         hidden={!expanded}
-        className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+        className="mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-popover p-1 text-popover-foreground"
       >
         {options.map((option, index) => (
           <li
@@ -202,7 +233,7 @@ function AddressSearch({
               pick(option);
             }}
             className={cn(
-              "cursor-pointer rounded-md px-2 py-1.5 text-sm break-words",
+              "cursor-pointer rounded-md px-2 py-1.5 text-sm break-words hover:bg-accent hover:text-accent-foreground",
               index === activeIndex && "bg-accent text-accent-foreground",
             )}
           >
