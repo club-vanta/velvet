@@ -96,18 +96,28 @@ describe("CohortTable", () => {
     expect(future.style.backgroundColor).toBe("");
   });
 
-  it("dims a cohort of fewer than 10 people and shows its n, without a tint", () => {
+  it("dims a cohort of fewer than 10 people without a tint, its size already in the Personas column", () => {
     renderTable();
     const feb = row("feb 2026");
     expect(feb).toHaveClass("text-muted-foreground");
-    expect(part(feb, "sample")).toBe("n = 4");
+    expect(within(feb).getByRole("rowheader").textContent).toBe("feb 2026");
+    expect(part(feb, "size")).toBe("4");
     const [first] = cells(feb);
     expect(first.textContent).toBe("25%");
     expect(first.style.backgroundColor).toBe("");
 
     const jan = row("ene 2026");
     expect(jan).not.toHaveClass("text-muted-foreground");
-    expect(part(jan, "sample")).toBeNull();
+  });
+
+  it("keeps the month column in view while the shares scroll sideways", () => {
+    renderTable();
+    const table = screen.getByRole("table", { name: "Cohortes" });
+    const [monthHeader] = within(table).getAllByRole("columnheader");
+    expect(monthHeader).toHaveClass("sticky", "left-0", "bg-card");
+    for (const th of within(table).getAllByRole("rowheader")) {
+      expect(th).toHaveClass("sticky", "left-0", "bg-card");
+    }
   });
 
   it("formats the cohort size for the locale", () => {

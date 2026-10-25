@@ -27,7 +27,8 @@ function tint(rate: number): string {
 /**
  * One row per month in which people came for the first time, with the share
  * of them who came back each month after. A cohort of few people is dimmed
- * with its n and left untinted, since its shares say little.
+ * and left untinted, since its shares say little. The month column stays in
+ * view while the shares scroll sideways.
  */
 export function CohortTable({
   cohorts,
@@ -47,7 +48,10 @@ export function CohortTable({
       >
         <thead>
           <tr className="border-b">
-            <th scope="col" className={cn(head, "pl-0 text-left")}>
+            <th
+              scope="col"
+              className={cn(head, "sticky left-0 bg-card pl-0 text-left")}
+            >
               {t("statsCohortMonth")}
             </th>
             <th scope="col" className={cn(head, "text-right")}>
@@ -70,19 +74,10 @@ export function CohortTable({
               >
                 <th
                   scope="row"
-                  className="py-1.5 pr-2 text-left font-normal whitespace-nowrap"
+                  data-slot="month"
+                  className="sticky left-0 bg-card py-1.5 pr-2 text-left font-normal whitespace-nowrap"
                 >
-                  <span data-slot="month">
-                    {formatCohortMonth(cohort.month, lang)}
-                  </span>
-                  {small && (
-                    <span data-slot="sample" className="ml-2 text-xs">
-                      {t("statsSample").replace(
-                        "{0}",
-                        formatCount(cohort.size, lang),
-                      )}
-                    </span>
-                  )}
+                  {formatCohortMonth(cohort.month, lang)}
                 </th>
                 <td data-slot="size" className="px-2 py-1.5 text-right">
                   {formatCount(cohort.size, lang)}
