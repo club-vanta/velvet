@@ -31,15 +31,18 @@ import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
 
 type Demographics = components["schemas"]["DemographicStatsPublic"];
-type Group = components["schemas"]["DemographicGroupPublic"];
+type GenderGroup = components["schemas"]["GenderGroupPublic"];
+type AgeGroup = components["schemas"]["AgeGroupPublic"];
+type Group = GenderGroup | AgeGroup;
 
-const AGE_LABELS: Record<string, TranslationKey> = {
+const AGE_LABELS: Record<AgeGroup["key"], TranslationKey> = {
   AGE_18_24: "statsAge18to24",
   AGE_25_29: "statsAge25to29",
   AGE_30_34: "statsAge30to34",
   AGE_35_39: "statsAge35to39",
   AGE_40_49: "statsAge40to49",
   AGE_50_PLUS: "statsAge50Plus",
+  UNKNOWN: "statsUnknown",
 };
 
 /** Bar height per row of a horizontal chart, plus room for the axis and legend. */
@@ -51,21 +54,18 @@ function useGroupLabels() {
   return {
     gender: (key: string | null) =>
       key === null ? t("statsUnknown") : mazmoLabel(MAZMO_GENDER_LABEL, key, t),
-    age: (key: string | null) =>
-      key !== null && Object.hasOwn(AGE_LABELS, key)
-        ? t(AGE_LABELS[key])
-        : t("statsUnknown"),
+    age: (key: AgeGroup["key"]) => t(AGE_LABELS[key]),
   };
 }
 
 /** Each group's share of the people who came next to its share of those expected. */
-function ShareChart({
+function ShareChart<G extends Group>({
   groups,
   label,
   bars,
 }: {
-  groups: Group[];
-  label: (key: string | null) => string;
+  groups: G[];
+  label: (key: G["key"]) => string;
   /** The direction the bars grow: sideways for long labels, upward otherwise. */
   bars: "horizontal" | "vertical";
 }) {
@@ -158,14 +158,14 @@ function ShareChart({
 }
 
 /** One titled block of table rows: a header row, then a row per group. */
-function NoShowGroupRows({
+function NoShowGroupRows<G extends Group>({
   title,
   groups,
   label,
 }: {
   title: string;
-  groups: Group[];
-  label: (key: string | null) => string;
+  groups: G[];
+  label: (key: G["key"]) => string;
 }) {
   const { lang } = useLanguage();
 
@@ -206,8 +206,8 @@ function NoShowTable({
   labels,
   labelledBy,
 }: {
-  gender: Group[];
-  age: Group[];
+  gender: GenderGroup[];
+  age: AgeGroup[];
   labels: ReturnType<typeof useGroupLabels>;
   labelledBy: string;
 }) {

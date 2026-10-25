@@ -1238,6 +1238,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/operations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Door operations of finalized meetups: guest types, payments, check-ins and bans */
+    get: operations["get_operations_stats_organizations__org_id__stats_operations_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -1322,6 +1339,26 @@ export interface components {
     AddOrgMemberRequest: {
       /** Role */
       role: string;
+    };
+    /**
+     * AgeGroupPublic
+     * @description One age group of audience RSVPs, keyed by a StatsAgeBucket. Rates and
+     *     shares are null with nothing to divide by.
+     */
+    AgeGroupPublic: {
+      key: components["schemas"]["StatsAgeBucket"];
+      /** Attended */
+      attended: number;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Attended Share */
+      attended_share: number | null;
+      /** Expected Share */
+      expected_share: number | null;
     };
     /**
      * ApproveUserRequest
@@ -1445,6 +1482,28 @@ export interface components {
       reason: string;
     };
     /**
+     * BanRowPublic
+     * @description A ban logged in scope. reason and actor_username are null when not recorded or the actor was deleted.
+     */
+    BanRowPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Reason */
+      reason: string | null;
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string;
+      /** Actor Username */
+      actor_username: string | null;
+    };
+    /**
      * BannedGuestListResponse
      * @description Response for listing all banned guests in an organization.
      */
@@ -1509,6 +1568,23 @@ export interface components {
        * Format: password
        */
       client_secret?: string | null;
+    };
+    /**
+     * BusiestSlotPublic
+     * @description The quarter hour with the most check-ins; local_time is its "HH:MM" start in Buenos Aires.
+     */
+    BusiestSlotPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Meetup Name */
+      meetup_name: string;
+      /** Local Time */
+      local_time: string;
+      /** Checkins */
+      checkins: number;
     };
     /**
      * CancellationStats
@@ -1583,35 +1659,14 @@ export interface components {
       instagram_username?: string | null;
     };
     /**
-     * DemographicGroupPublic
-     * @description One gender or age group of audience RSVPs. key is a Mazmo gender code (null:
-     *     unknown) or a StatsAgeBucket value. Rates and shares are null with nothing to divide by.
-     */
-    DemographicGroupPublic: {
-      /** Key */
-      key: string | null;
-      /** Attended */
-      attended: number;
-      /** Expected */
-      expected: number;
-      /** No Show */
-      no_show: number;
-      /** No Show Rate */
-      no_show_rate: number | null;
-      /** Attended Share */
-      attended_share: number | null;
-      /** Expected Share */
-      expected_share: number | null;
-    };
-    /**
      * DemographicStatsPublic
      * @description Gender and age of the people who attend, with the figures to compare against. One RSVP counts once.
      */
     DemographicStatsPublic: {
       /** Gender */
-      gender: components["schemas"]["DemographicGroupPublic"][];
+      gender: components["schemas"]["GenderGroupPublic"][];
       /** Age */
-      age: components["schemas"]["DemographicGroupPublic"][];
+      age: components["schemas"]["AgeGroupPublic"][];
       summary: components["schemas"]["DemographicSummaryPublic"];
       comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
       comparison: components["schemas"]["DemographicSummaryPublic"] | null;
@@ -1627,10 +1682,6 @@ export interface components {
       median_age: number | null;
       /** Known Age Share */
       known_age_share: number | null;
-      /** Gender Shares */
-      gender_shares: components["schemas"]["GroupSharePublic"][];
-      /** Age Shares */
-      age_shares: components["schemas"]["GroupSharePublic"][];
     };
     /**
      * DisableUserRequest
@@ -1738,14 +1789,25 @@ export interface components {
       guests: number;
     };
     /**
-     * GroupSharePublic
-     * @description Share of the attended RSVPs that fall in one group (null when nobody attended).
+     * GenderGroupPublic
+     * @description One gender group of audience RSVPs. key is a Mazmo gender code (null:
+     *     unknown). Rates and shares are null with nothing to divide by.
      */
-    GroupSharePublic: {
+    GenderGroupPublic: {
       /** Key */
       key: string | null;
+      /** Attended */
+      attended: number;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
       /** Attended Share */
       attended_share: number | null;
+      /** Expected Share */
+      expected_share: number | null;
     };
     /**
      * GuestAttendanceStatus
@@ -1966,6 +2028,17 @@ export interface components {
      * @enum {string}
      */
     GuestType: "NORMAL" | "INVITED" | "VENDOR" | "STAFF";
+    /**
+     * GuestTypeRowPublic
+     * @description Attended RSVPs of one guest type; share is of all attended, null when nobody attended.
+     */
+    GuestTypeRowPublic: {
+      guest_type: components["schemas"]["GuestType"];
+      /** Attended */
+      attended: number;
+      /** Share */
+      share: number | null;
+    };
     /**
      * GuestTypeStats
      * @description Per-category guest counts for a meetup, excluding cancelled RSVPs.
@@ -2227,6 +2300,57 @@ export interface components {
       cancellations: components["schemas"]["CancellationStats"];
       guest_types: components["schemas"]["GuestTypeStats"];
       payment: components["schemas"]["PaymentStats"];
+    };
+    /**
+     * OperationsPaymentStatsPublic
+     * @description Attended RSVPs of the meetups that require payment. Only NORMAL guests pay; every other
+     *     type is exempt. paid_share is paid / (paid + pending), null when nobody owes entry.
+     */
+    OperationsPaymentStatsPublic: {
+      /** Paying Events */
+      paying_events: number;
+      /** Paid */
+      paid: number;
+      /** Pending */
+      pending: number;
+      /** Exempt */
+      exempt: number;
+      /** Cancelled But Paid */
+      cancelled_but_paid: number;
+      /** Paid Share */
+      paid_share: number | null;
+    };
+    /**
+     * OperationsStatsPublic
+     * @description Door operations over every guest type, with the figures to compare against. payments is
+     *     null when no meetup in scope requires payment; ban_list holds the newest 20 of summary.bans.
+     */
+    OperationsStatsPublic: {
+      summary: components["schemas"]["OperationsSummaryPublic"];
+      /** Guest Types */
+      guest_types: components["schemas"]["GuestTypeRowPublic"][];
+      payments: components["schemas"]["OperationsPaymentStatsPublic"] | null;
+      /** Staff */
+      staff: components["schemas"]["StaffCheckinsPublic"][];
+      busiest: components["schemas"]["BusiestSlotPublic"] | null;
+      /** Ban List */
+      ban_list: components["schemas"]["BanRowPublic"][];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["OperationsSummaryPublic"] | null;
+    };
+    /**
+     * OperationsSummaryPublic
+     * @description The figures compared between two scopes. avg_peak_checkins is the mean of each meetup's busiest quarter hour.
+     */
+    OperationsSummaryPublic: {
+      /** Attended */
+      attended: number;
+      /** Paid Share */
+      paid_share: number | null;
+      /** Avg Peak Checkins */
+      avg_peak_checkins: number | null;
+      /** Bans */
+      bans: number;
     };
     /**
      * OrgCreate
@@ -2494,6 +2618,18 @@ export interface components {
      */
     ServiceStatus: "healthy" | "unhealthy" | "degraded";
     /**
+     * StaffCheckinsPublic
+     * @description Check-ins by one staff user. user_id and username are null for check-ins with no recorded checker.
+     */
+    StaffCheckinsPublic: {
+      /** User Id */
+      user_id: number | null;
+      /** Username */
+      username: string | null;
+      /** Checkins */
+      checkins: number;
+    };
+    /**
      * StaffRegisterRequest
      * @description Request body for staff registration.
      *
@@ -2506,6 +2642,19 @@ export interface components {
       /** Password */
       password: string;
     };
+    /**
+     * StatsAgeBucket
+     * @description Age range of an attendee, from the Mazmo profile. UNKNOWN covers missing and implausible ages.
+     * @enum {string}
+     */
+    StatsAgeBucket:
+      | "AGE_18_24"
+      | "AGE_25_29"
+      | "AGE_30_34"
+      | "AGE_35_39"
+      | "AGE_40_49"
+      | "AGE_50_PLUS"
+      | "UNKNOWN";
     /**
      * StatsComparisonKind
      * @description What an org statistics block is compared against.
@@ -6235,6 +6384,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RetentionStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_operations_stats_organizations__org_id__stats_operations_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Door operations of finalized meetups: guest types, payments, check-ins and bans */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OperationsStatsPublic"];
         };
       };
       /** @description Invalid or missing credentials */

@@ -14,29 +14,30 @@ vi.mock("@/api/client", () => ({
 
 type Demographics = components["schemas"]["DemographicStatsPublic"];
 type Summary = components["schemas"]["DemographicSummaryPublic"];
-type Group = components["schemas"]["DemographicGroupPublic"];
+type GenderGroup = components["schemas"]["GenderGroupPublic"];
+type AgeGroup = components["schemas"]["AgeGroupPublic"];
 
 const SUMMARY: Summary = {
   attended: 200,
   median_age: 32.7,
   known_age_share: 0.9,
-  gender_shares: [],
-  age_shares: [],
 };
 
 const NOBODY: Summary = {
   attended: 0,
   median_age: null,
   known_age_share: null,
-  gender_shares: [],
-  age_shares: [],
 };
 
 /** A group whose figures agree: no-shows come from the rate, the rest attended. */
-function group(key: string | null, expected: number, rate: number | null) {
+function group<K extends GenderGroup["key"] | AgeGroup["key"]>(
+  key: K,
+  expected: number,
+  rate: number | null,
+) {
   const noShow = rate === null ? 0 : Math.round(expected * rate);
   const attended = expected - noShow;
-  const g: Group = {
+  const g: Omit<GenderGroup, "key"> & { key: K } = {
     key,
     attended,
     expected,
@@ -48,13 +49,13 @@ function group(key: string | null, expected: number, rate: number | null) {
   return g;
 }
 
-const GENDER = [
+const GENDER: GenderGroup[] = [
   group("MALE", 100, 0.1),
   group("NEW_CODE", 4, 0.5),
   group(null, 30, null),
 ];
 
-const AGE = [
+const AGE: AgeGroup[] = [
   group("AGE_18_24", 50, 0.2),
   group("AGE_25_29", 60, 0.1),
   group("AGE_30_34", 40, 0.05),
