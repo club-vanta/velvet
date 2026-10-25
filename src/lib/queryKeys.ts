@@ -24,9 +24,13 @@ export const guestMeetupsOrgKey = (orgId: string) =>
 export const guestMeetupsKey = (orgId: string, guestId: string) =>
   [...guestMeetupsOrgKey(orgId), guestId] as const;
 
+// Prefix of every org's stats. Guest identity changes (names, Mazmo
+// profiles) reach the stats of any org, so they invalidate this root.
+export const statsRootKey = ["stats"] as const;
+
 // Prefixed by org: check-ins and finalizing change every period's numbers,
 // so they invalidate the whole org prefix.
-export const statsOrgKey = (orgId: string) => ["stats", orgId] as const;
+export const statsOrgKey = (orgId: string) => [...statsRootKey, orgId] as const;
 
 // `null` filters key the query that waits for the event filter, so it never
 // shows another period's cached numbers.
@@ -67,19 +71,22 @@ export function invalidateMeetupGuests(
 
 /**
  * A Mazmo sync can rename any synced guest and refreshes every synced
- * guest's Mazmo profile, so every guest-identity query is refreshed.
+ * guest's Mazmo profile, so every guest-identity query is refreshed, and so
+ * are the stats, which show displaynames and read Mazmo profiles.
  */
 export function invalidateAllGuestIdentities(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: ["guests"] });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
   void queryClient.invalidateQueries({ queryKey: ["guest"] });
+  void queryClient.invalidateQueries({ queryKey: statsRootKey });
 }
 
 /**
  * A guest's identity (name, Mazmo link, profile snapshot) shows up in the
- * global guest list, the vanted list, every meetup guest list, and the
- * guest's own profile.
+ * global guest list, the vanted list, every meetup guest list, the guest's
+ * own profile, and the stats of every org the guest attended (which have no
+ * org id here, so all stats are refreshed).
  */
 export function invalidateGuestIdentity(
   queryClient: QueryClient,
@@ -89,4 +96,5 @@ export function invalidateGuestIdentity(
   void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });
+  void queryClient.invalidateQueries({ queryKey: statsRootKey });
 }

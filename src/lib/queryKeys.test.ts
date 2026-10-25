@@ -3,7 +3,12 @@ import { QueryClient } from "@tanstack/react-query";
 import {
   guestMeetupsKey,
   guestMeetupsOrgKey,
+  invalidateAllGuestIdentities,
+  invalidateGuestIdentity,
   invalidateMeetupGuests,
+  statsOrgKey,
+  statsRetentionKey,
+  statsRootKey,
 } from "./queryKeys";
 
 describe("invalidateMeetupGuests", () => {
@@ -31,6 +36,34 @@ describe("invalidateMeetupGuests", () => {
     expect(guestMeetupsKey("org-1", "g-1").slice(0, 2)).toEqual([
       prefixA,
       prefixB,
+    ]);
+  });
+});
+
+describe("guest identity invalidation", () => {
+  it("refreshes every org's stats after a Mazmo sync, since stats show names and profiles", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateAllGuestIdentities(queryClient);
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["stats"] });
+  });
+
+  it("refreshes every org's stats after one guest's identity changes", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateGuestIdentity(queryClient, "g-1");
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["stats"] });
+  });
+
+  it("prefixes every org's stats keys with the stats root", () => {
+    expect(statsRootKey).toEqual(["stats"]);
+    expect(statsOrgKey("org-1").slice(0, 1)).toEqual([...statsRootKey]);
+    expect(statsRetentionKey("org-1", null).slice(0, 1)).toEqual([
+      ...statsRootKey,
     ]);
   });
 });
