@@ -344,9 +344,11 @@ describe("WeatherTab", () => {
       name: "Asistencia y temperatura",
     });
     expect(card).not.toHaveTextContent("para graficar");
-    const rows = within(
-      within(card).getByRole("table", { hidden: true }),
-    ).getAllByRole("row", { hidden: true });
+    const table = within(card).getByRole("table", { hidden: true });
+    // A table ignores a width limit, so the sr-only class sits on its wrapper.
+    expect(table).not.toHaveClass("sr-only");
+    expect(table.parentElement).toHaveClass("sr-only");
+    const rows = within(table).getAllByRole("row", { hidden: true });
     const cells = (r: HTMLElement, name: string) => part(r, name);
     const body = rows.slice(1);
     expect(body.map((r) => cells(r, "name"))).toEqual([

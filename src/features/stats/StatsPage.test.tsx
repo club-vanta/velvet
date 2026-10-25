@@ -130,11 +130,32 @@ describe("StatsPage", () => {
       Element.prototype.scrollIntoView = original;
     });
 
+    // Frames run when the test says so, like the browser after layout.
+    let frames: FrameRequestCallback[] = [];
+    const flushFrames = () => {
+      const due = frames;
+      frames = [];
+      due.forEach((cb) => cb(0));
+    };
+    beforeEach(() => {
+      frames = [];
+      vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+        frames.push(cb);
+        return frames.length;
+      });
+      vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+        frames = frames.filter((_, i) => i + 1 !== id);
+      });
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
     const scrolled = () =>
       scrollIntoView.mock.contexts.map((el) => (el as Element).textContent);
 
     it("scrolls the selected tab into view on load", () => {
       renderPage("/stats?tab=weather");
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      flushFrames();
       expect(scrolled()).toEqual(["Clima"]);
       expect(scrollIntoView).toHaveBeenCalledWith({
         inline: "nearest",
@@ -145,7 +166,9 @@ describe("StatsPage", () => {
     it("scrolls a newly selected tab into view", async () => {
       const user = userEvent.setup();
       renderPage();
+      flushFrames();
       await user.click(screen.getByRole("tab", { name: "Operación" }));
+      flushFrames();
       expect(scrolled()).toEqual(["Asistencia", "Operación"]);
     });
 

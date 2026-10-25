@@ -19,11 +19,15 @@ export function StatsPage() {
   const filters = useStatsFilters();
   const tabListRef = useRef<HTMLDivElement>(null);
 
-  // On a phone the strip scrolls sideways; keep the selected tab visible.
+  // On a phone the strip scrolls sideways; keep the selected tab visible. The
+  // scroll waits for the next frame, when the strip has its final layout.
   useEffect(() => {
-    tabListRef.current
-      ?.querySelector('[role="tab"][aria-selected="true"]')
-      ?.scrollIntoView({ inline: "nearest", block: "nearest" });
+    const frame = requestAnimationFrame(() => {
+      tabListRef.current
+        ?.querySelector('[role="tab"][aria-selected="true"]')
+        ?.scrollIntoView({ inline: "nearest", block: "nearest" });
+    });
+    return () => cancelAnimationFrame(frame);
   }, [filters.tab]);
   const tabProps: StatsTabProps = {
     orgId: activeOrg?.org_id ?? "",

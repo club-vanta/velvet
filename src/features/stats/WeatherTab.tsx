@@ -286,32 +286,36 @@ function ScatterTable({
   const { t, lang } = useLanguage();
 
   return (
-    <table aria-labelledby={labelledBy} className="sr-only">
-      <thead>
-        <tr>
-          <th scope="col">{t("statsEventHeader")}</th>
-          <th scope="col">{t("statsDateHeader")}</th>
-          <th scope="col">{t("statsTemperatureAxis")}</th>
-          <th scope="col">{t("statsAttended")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {points.map((p) => (
-          <tr key={p.id}>
-            <th scope="row" data-slot="name">
-              {p.name}
-            </th>
-            <td data-slot="date">
-              {formatDate(parseApiDateTime(p.date).toISOString())}
-            </td>
-            <td data-slot="temperature">
-              {formatDecimal(p.temperature, lang)}
-            </td>
-            <td data-slot="attended">{formatCount(p.attended, lang)}</td>
+    // sr-only on the wrapper: a table sizes to its content and would still
+    // widen the page.
+    <div className="sr-only">
+      <table aria-labelledby={labelledBy}>
+        <thead>
+          <tr>
+            <th scope="col">{t("statsEventHeader")}</th>
+            <th scope="col">{t("statsDateHeader")}</th>
+            <th scope="col">{t("statsTemperatureAxis")}</th>
+            <th scope="col">{t("statsAttended")}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {points.map((p) => (
+            <tr key={p.id}>
+              <th scope="row" data-slot="name">
+                {p.name}
+              </th>
+              <td data-slot="date">
+                {formatDate(parseApiDateTime(p.date).toISOString())}
+              </td>
+              <td data-slot="temperature">
+                {formatDecimal(p.temperature, lang)}
+              </td>
+              <td data-slot="attended">{formatCount(p.attended, lang)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
