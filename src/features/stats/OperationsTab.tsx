@@ -24,13 +24,13 @@ type Operations = components["schemas"]["OperationsStatsPublic"];
 type Payments = components["schemas"]["OperationsPaymentStatsPublic"];
 type GuestTypeRow = components["schemas"]["GuestTypeRowPublic"];
 
-/** One chart color per guest type, in the order the API sends them. */
-const TYPE_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-];
+/** One chart color per guest type, so a type keeps its color in any order. */
+const TYPE_COLORS: Record<GuestTypeRow["guest_type"], string> = {
+  NORMAL: "var(--chart-1)",
+  INVITED: "var(--chart-2)",
+  STAFF: "var(--chart-3)",
+  VENDOR: "var(--chart-4)",
+};
 
 const LINK_CLASS =
   "min-w-0 rounded-sm font-medium break-words underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50";
@@ -41,7 +41,7 @@ function GuestTypeBars({ rows }: { rows: GuestTypeRow[] }) {
 
   return (
     <ul className="space-y-2 text-sm">
-      {rows.map((row, i) => (
+      {rows.map((row) => (
         <li key={row.guest_type} className="space-y-1">
           <div className="flex items-baseline justify-between gap-3">
             <span data-slot="name" className="min-w-0 break-words">
@@ -62,7 +62,7 @@ function GuestTypeBars({ rows }: { rows: GuestTypeRow[] }) {
               className="h-full rounded-full"
               style={{
                 width: `${(row.share ?? 0) * 100}%`,
-                backgroundColor: TYPE_COLORS[i % TYPE_COLORS.length],
+                backgroundColor: TYPE_COLORS[row.guest_type],
               }}
             />
           </div>
@@ -212,18 +212,20 @@ function OperationsContent({ data }: { data: Operations }) {
     comparison_kind,
   } = data;
   const line = useComparisonLine(comparison_kind);
+  // For one event the comparison holds period totals and averages.
+  const isOneEvent = comparison_kind === "PERIOD_AVERAGE";
 
   if (summary.attended === 0) {
     return <StatsEmptyState />;
   }
 
-  // The comparison's counts are period totals for one event, so they have no
-  // average and only compare against the previous period.
+  // A count compared with a period total has no average, so for one event it
+  // shows no line at all.
   function compareCount(
     current: number,
     baseline: number | undefined,
   ): string | undefined {
-    if (baseline === undefined) return undefined;
+    if (isOneEvent || baseline === undefined) return undefined;
     return line({ unit: "percent", change: formatChange(current, baseline) });
   }
 
@@ -236,16 +238,18 @@ function OperationsContent({ data }: { data: Operations }) {
     });
   }
 
+  // The API has no previous busiest slot, so only one event compares: its
+  // busiest slot against the period's average peak.
   function comparePeak(): string | undefined {
-    if (!comparison) return undefined;
-    const baseline = comparison.avg_peak_checkins;
+    if (!isOneEvent || !comparison) return undefined;
+    const average = comparison.avg_peak_checkins;
     return line({
       unit: "percent",
-      change: formatChange(summary.avg_peak_checkins, baseline),
+      change: null,
       average:
-        baseline === null
+        average === null
           ? NO_VALUE
-          : formatCount(Math.round(baseline * 10) / 10, lang),
+          : formatCount(Math.round(average * 10) / 10, lang),
     });
   }
 
@@ -276,7 +280,7 @@ function OperationsContent({ data }: { data: Operations }) {
           value={formatCount(busiest?.checkins ?? null, lang)}
           subline={
             busiest
-              ? comparison_kind === "PERIOD_AVERAGE"
+              ? isOneEvent
                 ? busiest.local_time
                 : `${busiest.meetup_name} · ${busiest.local_time}`
               : undefined
@@ -304,7 +308,7 @@ function OperationsContent({ data }: { data: Operations }) {
       <ChartCard title={t("statsStaffCheckins")}>
         <StaffList staff={staff} />
       </ChartCard>
-      {summary.bans > 0 && (
+      {ban_list.length > 0 && (
         <ChartCard title={t("statsBans")}>
           <BanList bans={ban_list} total={summary.bans} />
         </ChartCard>

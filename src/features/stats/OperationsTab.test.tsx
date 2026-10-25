@@ -217,9 +217,7 @@ describe("OperationsTab", () => {
     expect(slot("Pagaron", "sample")).toBeNull();
     expect(slot("Pico en la puerta", "value")).toBe("62");
     expect(slot("Pico en la puerta", "subline")).toBe("Alter Marzo · 23:15");
-    expect(slot("Pico en la puerta", "comparison")).toBe(
-      "+25% vs. período anterior",
-    );
+    expect(slot("Pico en la puerta", "comparison")).toBeNull();
     expect(slot("Baneos", "value")).toBe("3");
     expect(slot("Baneos", "comparison")).toBe("+200% vs. período anterior");
   });
