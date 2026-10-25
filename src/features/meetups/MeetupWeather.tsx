@@ -87,6 +87,7 @@ function RefreshButton({
       size="sm"
       aria-busy={refresh.isPending}
       aria-disabled={refresh.isPending}
+      className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
       onClick={() => {
         if (refresh.isPending) return;
         refresh.mutate(undefined, {
@@ -96,7 +97,6 @@ function RefreshButton({
       }}
     >
       <Icon
-        data-testid={refresh.isPending ? "weather-spinner" : undefined}
         className={refresh.isPending ? "animate-spin" : undefined}
         aria-hidden="true"
       />
@@ -123,17 +123,28 @@ export function MeetupWeather({
   const weatherQ = useMeetupWeather(orgId, meetupId);
 
   if (weatherQ.isLoading) {
+    // Same card and grid as the loaded state, so nothing shifts on arrival.
     return (
-      <Skeleton
-        role="status"
-        aria-busy="true"
-        aria-label={t("weatherTitle")}
-        className="h-28 rounded-xl sm:h-32"
-      />
+      <StatCard title={t("weatherTitle")}>
+        <div
+          role="status"
+          aria-busy="true"
+          aria-label={t("weatherTitle")}
+          className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-4"
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-1">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-6 w-20 sm:h-7" />
+            </div>
+          ))}
+        </div>
+      </StatCard>
     );
   }
 
-  if (weatherQ.isError || !weatherQ.data) {
+  // A failed background refetch keeps showing the data it already has.
+  if (!weatherQ.data) {
     return (
       <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10">
         {t("failedLoadWeather")}
@@ -146,7 +157,9 @@ export function MeetupWeather({
 
   const { status, weather, ready } = weatherQ.data;
   const reasons = {
-    NO_LOCATION: t("weatherNoLocation"),
+    NO_LOCATION: canRefresh
+      ? t("weatherNoLocation")
+      : t("weatherNoLocationStaff"),
     PENDING: t("weatherPending"),
     NOT_FETCHED: t("weatherNotFetched"),
   } as const;

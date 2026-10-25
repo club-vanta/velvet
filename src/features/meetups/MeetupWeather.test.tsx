@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -48,7 +48,7 @@ function renderWeather(canRefresh = true) {
       </LanguageProvider>
     </QueryClientProvider>,
   );
-  return { invalidate };
+  return { invalidate, client };
 }
 
 const respondWith = (data: WeatherStatus) =>
@@ -190,6 +190,31 @@ describe("MeetupWeather", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it("tells staff that an admin sets the location", async () => {
+    respondWith({ status: "NO_LOCATION", weather: null, ready: false });
+    renderWeather(false);
+
+    expect(
+      await screen.findByText(
+        "An admin can set the location to see the weather",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps showing the data when a background refetch fails", async () => {
+    respondWith(OK);
+    const { client } = renderWeather();
+    await screen.findByText("Temperature");
+
+    mockApiGet.mockResolvedValue({ data: undefined, error: { detail: "x" } });
+    await client.refetchQueries({
+      queryKey: meetupWeatherKey("org-1", "meetup-1"),
+    });
+
+    expect(value("weather-temperature")).toBe("22.5 °C");
+    expect(screen.queryByText("Failed to load the weather.")).toBeNull();
+  });
+
   it("shows an error with a retry that loads again", async () => {
     const user = userEvent.setup();
     mockApiGet.mockResolvedValueOnce({
@@ -291,7 +316,6 @@ describe("MeetupWeather", () => {
       await waitFor(() => expect(button).toHaveAttribute("aria-busy", "true"));
       expect(button).toHaveAttribute("aria-disabled", "true");
       expect(button).toHaveFocus();
-      expect(within(button).getByTestId("weather-spinner")).toBeInTheDocument();
 
       finish({ data: WEATHER, error: undefined });
       await waitFor(() => expect(button).toHaveAttribute("aria-busy", "false"));

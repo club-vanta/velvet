@@ -347,6 +347,7 @@ export const translations = {
     weatherRefresh: "Update weather",
     weatherRefreshed: "Weather updated",
     weatherNoLocation: "Set the location to see the weather",
+    weatherNoLocationStaff: "An admin can set the location to see the weather",
     weatherPending: "The weather loads 2 hours after the event ends",
     weatherNotFetched: "The weather has not loaded yet",
     weatherSource: "Data: Open-Meteo, the 6 hours from the start",
@@ -974,6 +975,8 @@ export const translations = {
     weatherRefresh: "Actualizar clima",
     weatherRefreshed: "Clima actualizado",
     weatherNoLocation: "Cargá la ubicación para ver el clima",
+    weatherNoLocationStaff:
+      "Un admin puede cargar la ubicación para ver el clima",
     weatherPending:
       "El clima se carga 2 horas después de que termina el evento",
     weatherNotFetched: "Todavía no se cargó el clima",
