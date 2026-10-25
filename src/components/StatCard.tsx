@@ -10,7 +10,8 @@ export function StatCard({
 }) {
   return (
     <section
-      aria-label={title}
+      aria-label={headingId ? undefined : title}
+      aria-labelledby={headingId}
       className="rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 space-y-2 sm:space-y-3 min-w-0"
     >
       <h2
