@@ -25,6 +25,7 @@ import {
   formatEventDay,
   formatPointChange,
   formatRate,
+  sortByDate,
   spansYears,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -48,7 +49,7 @@ function NewReturningChart({ meetups }: { meetups: Retention["meetups"] }) {
     returning: { label: t("statsSeriesReturning"), color: "var(--chart-2)" },
   };
   const withYear = spansYears(meetups.map((m) => m.date));
-  const data = meetups.map((m) => ({
+  const data = sortByDate(meetups).map((m) => ({
     ...m,
     day: formatEventDay(m.date, withYear),
   }));

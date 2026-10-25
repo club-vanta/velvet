@@ -45,6 +45,17 @@ export function formatEventDay(iso: string, withYear = false): string {
   return withYear ? `${dayMonth}/${day.slice(2, 4)}` : dayMonth;
 }
 
+/**
+ * A copy of `items` in date order. Charts of per-event data sort on the
+ * client too, so they never depend on the order the API sends.
+ */
+export function sortByDate<T extends { date: string }>(items: T[]): T[] {
+  return items
+    .map((item) => ({ item, time: parseApiDateTime(item.date).getTime() }))
+    .sort((a, b) => a.time - b.time)
+    .map(({ item }) => item);
+}
+
 /** Whether the events fall on local days of more than one calendar year. */
 export function spansYears(isos: string[]): boolean {
   const years = new Set(

@@ -16,6 +16,7 @@ import {
   formatClockWindow,
   formatCohortMonth,
   signed,
+  sortByDate,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -244,6 +245,8 @@ describe("formatClockWindow", () => {
 });
 
 describe("formatCohortMonth", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it("shows a cohort month as a short month and year", () => {
     expect(formatCohortMonth("2026-01", "es")).toBe("ene 2026");
     expect(formatCohortMonth("2026-01", "en")).toBe("Jan 2026");
@@ -252,6 +255,17 @@ describe("formatCohortMonth", () => {
   it("keeps the month whatever the browser time zone", () => {
     vi.stubEnv("TZ", "Pacific/Kiritimati");
     expect(formatCohortMonth("2026-12", "es")).toBe("dic 2026");
-    vi.unstubAllEnvs();
+  });
+});
+
+describe("sortByDate", () => {
+  it("orders events by their instant, not their text, without changing the input", () => {
+    const events = [
+      { id: "b", date: "2026-03-10T01:00:00Z" },
+      { id: "c", date: "2026-03-10T00:30:00-03:00" },
+      { id: "a", date: "2026-02-01T23:00:00" },
+    ];
+    expect(sortByDate(events).map((e) => e.id)).toEqual(["a", "b", "c"]);
+    expect(events.map((e) => e.id)).toEqual(["b", "c", "a"]);
   });
 });

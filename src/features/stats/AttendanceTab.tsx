@@ -10,7 +10,6 @@ import {
 import { useAttendanceStats } from "@/hooks/useAttendanceStats";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
-import { parseApiDateTime } from "@/lib/apiDateTime";
 import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
@@ -23,6 +22,7 @@ import {
   formatEventDay,
   formatPointChange,
   formatRate,
+  sortByDate,
   spansYears,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -43,10 +43,10 @@ function AttendanceChart({
     SERIES.map(({ key, label, color }) => [key, { label: t(label), color }]),
   );
   const withYear = spansYears(meetups.map((m) => m.date));
-  const data = meetups
-    .map((m) => ({ ...m, time: parseApiDateTime(m.date).getTime() }))
-    .sort((a, b) => a.time - b.time)
-    .map((m) => ({ ...m, day: formatEventDay(m.date, withYear) }));
+  const data = sortByDate(meetups).map((m) => ({
+    ...m,
+    day: formatEventDay(m.date, withYear),
+  }));
 
   const bars = SERIES.map(({ key }) => (
     <Bar
