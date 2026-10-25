@@ -6,6 +6,9 @@ import {
   invalidateAllGuestIdentities,
   invalidateGuestIdentity,
   invalidateMeetupGuests,
+  invalidateMeetupLocation,
+  meetupKey,
+  meetupsKey,
   statsOrgKey,
   statsRetentionKey,
   statsRootKey,
@@ -65,5 +68,21 @@ describe("guest identity invalidation", () => {
     expect(statsRetentionKey("org-1", null).slice(0, 1)).toEqual([
       ...statsRootKey,
     ]);
+  });
+});
+
+describe("invalidateMeetupLocation", () => {
+  it("refreshes the meetup, the meetup list and the org stats", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateMeetupLocation(queryClient, "org-1", "meetup-1");
+
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(spy).toHaveBeenCalledWith({
+      queryKey: meetupKey("org-1", "meetup-1"),
+    });
+    expect(spy).toHaveBeenCalledWith({ queryKey: meetupsKey("org-1") });
+    expect(spy).toHaveBeenCalledWith({ queryKey: statsOrgKey("org-1") });
   });
 });

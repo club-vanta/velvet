@@ -44,6 +44,9 @@ function meetup(
     is_finalized,
     finalized_at: null,
     requires_payment: false,
+    location_label: null,
+    latitude: null,
+    longitude: null,
   };
 }
 

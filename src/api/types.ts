@@ -292,6 +292,33 @@ export interface paths {
     patch: operations["unban_guest_organizations__org_id__guests__guest_id__unban_patch"];
     trace?: never;
   };
+  "/organizations/{org_id}/geocode": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search addresses in Argentina to set a meetup's location
+     * @description Proxies the query to Photon (OpenStreetMap data), biased toward Buenos
+     *     Aires, and returns at most 5 matches in Argentina, best first. Results
+     *     in other countries are dropped. The query is trimmed before the length
+     *     check, so 3 to 200 characters of real text are required.
+     *
+     *     Photon is called at most once per second per process; concurrent
+     *     searches wait their turn. Returns 502 if Photon times out or fails;
+     *     setting a location by hand is unaffected.
+     */
+    get: operations["geocode_address_organizations__org_id__geocode_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/staff/": {
     parameters: {
       query?: never;
@@ -1002,6 +1029,31 @@ export interface paths {
      *     Returns 409 if the meetup already requires payment or is finalized.
      */
     patch: operations["enable_payment_requirement_organizations__org_id__meetups__meetup_id__enable_payment_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/location": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Set or clear the venue of a meetup (org admin only)
+     * @description Set the venue of a meetup (label, latitude and longitude together) or
+     *     clear it by sending all three as null.
+     *
+     *     Allowed on finalized meetups: the venue is descriptive metadata and does
+     *     not affect check-ins or payments. Returns 422 if the fields are not set
+     *     or cleared together, or are out of range.
+     */
+    patch: operations["update_meetup_location_organizations__org_id__meetups__meetup_id__location_patch"];
     trace?: never;
   };
   "/organizations/{org_id}/meetups/{meetup_id}/disable-payment": {
@@ -1810,6 +1862,18 @@ export interface components {
       expected_share: number | null;
     };
     /**
+     * GeocodeResult
+     * @description One address match from the geocoding search.
+     */
+    GeocodeResult: {
+      /** Label */
+      label: string;
+      /** Latitude */
+      latitude: number;
+      /** Longitude */
+      longitude: number;
+    };
+    /**
      * GuestAttendanceStatus
      * @description Outcome of one guest's RSVP to one meetup. Derived from the RSVP and
      *     meetup flags, never stored: see app.services.attendance for the rule.
@@ -2241,6 +2305,22 @@ export interface components {
       meetups: components["schemas"]["MeetupPublic"][];
     };
     /**
+     * MeetupLocationUpdate
+     * @description Request body for setting or clearing a meetup's location.
+     *
+     *     All three keys are required. Send them all null to clear the location,
+     *     or all set to store it: a label of 1..255 characters (trimmed), a latitude
+     *     in [-90, 90] and a longitude in [-180, 180].
+     */
+    MeetupLocationUpdate: {
+      /** Location Label */
+      location_label: string | null;
+      /** Latitude */
+      latitude: number | null;
+      /** Longitude */
+      longitude: number | null;
+    };
+    /**
      * MeetupNewReturningPublic
      * @description Unique attendees of one finalized meetup: new ones had their first time there.
      */
@@ -2290,6 +2370,12 @@ export interface components {
       finalized_at: string | null;
       /** Requires Payment */
       requires_payment: boolean;
+      /** Location Label */
+      location_label: string | null;
+      /** Latitude */
+      latitude: number | null;
+      /** Longitude */
+      longitude: number | null;
     };
     /**
      * MeetupStatsPublic
@@ -3747,6 +3833,76 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  geocode_address_organizations__org_id__geocode_get: {
+    parameters: {
+      query: {
+        /** @description Address text to search for */
+        q: string;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Up to 5 matching addresses in Argentina, best match first */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GeocodeResult"][];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Address search unavailable */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };
@@ -5638,6 +5794,69 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_meetup_location_organizations__org_id__meetups__meetup_id__location_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MeetupLocationUpdate"];
+      };
+    };
+    responses: {
+      /** @description Meetup location updated (also allowed on finalized meetups) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };

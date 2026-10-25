@@ -30,6 +30,9 @@ function meetup(isFinalized: boolean): Meetup {
     is_finalized: isFinalized,
     finalized_at: isFinalized ? "2026-10-02T03:00:00Z" : null,
     requires_payment: false,
+    location_label: null,
+    latitude: null,
+    longitude: null,
   };
 }
 

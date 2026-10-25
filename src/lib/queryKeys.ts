@@ -3,6 +3,9 @@ import type { StatsQuery } from "./statsQuery";
 
 export const meetupsKey = (orgId: string) => ["meetups", orgId] as const;
 
+export const meetupKey = (orgId: string, meetupId: string) =>
+  ["meetup", orgId, meetupId] as const;
+
 export const meetupGuestsKey = (orgId: string, meetupId: string) =>
   ["meetup-guests", orgId, meetupId] as const;
 
@@ -50,6 +53,10 @@ export const statsRetentionKey = (orgId: string, filters: StatsQuery | null) =>
 
 export const statsOperationsKey = (orgId: string, filters: StatsQuery | null) =>
   [...statsOrgKey(orgId), "operations", filters] as const;
+
+// Address search results; the query is the trimmed text typed so far.
+export const geocodeKey = (orgId: string, q: string) =>
+  ["geocode", orgId, q] as const;
 
 /**
  * Anything that changes an RSVP (check-in, payment, guest type, walk-in,
@@ -100,4 +107,18 @@ export function invalidateGuestIdentity(
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });
   void queryClient.invalidateQueries({ queryKey: statsRootKey });
+}
+
+/**
+ * A meetup's location shows on its page and in the meetup list, and the
+ * stats read it, so all three are refreshed together.
+ */
+export function invalidateMeetupLocation(
+  queryClient: QueryClient,
+  orgId: string,
+  meetupId: string,
+): void {
+  void queryClient.invalidateQueries({ queryKey: meetupKey(orgId, meetupId) });
+  void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
+  void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
 }

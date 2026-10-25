@@ -75,6 +75,7 @@ import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
   meetupGuestsKey,
+  meetupKey,
   meetupsKey,
 } from "@/lib/queryKeys";
 import { MeetupStats } from "./MeetupStats";
@@ -501,7 +502,7 @@ function PaymentRequirementDialog({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["meetup", orgId, meetupId],
+        queryKey: meetupKey(orgId, meetupId),
       });
       void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
       toast.success(t("paymentRequirementUpdated"));
@@ -722,7 +723,7 @@ export function MeetupDetailPage() {
   }
 
   const meetupQ = useQuery({
-    queryKey: ["meetup", orgId, id],
+    queryKey: meetupKey(orgId, id!),
     queryFn: async () => {
       const { data, error } = await api.GET(
         "/organizations/{org_id}/meetups/{meetup_id}",

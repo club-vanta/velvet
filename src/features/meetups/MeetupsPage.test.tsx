@@ -44,6 +44,9 @@ function meetup(id: string, name: string, date: string): Meetup {
     is_finalized: false,
     finalized_at: null,
     requires_payment: false,
+    location_label: null,
+    latitude: null,
+    longitude: null,
   };
 }
 
