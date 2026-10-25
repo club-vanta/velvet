@@ -1012,9 +1012,14 @@ export function MeetupDetailPage() {
                 : "bg-[radial-gradient(ellipse_at_top_left,--theme(--color-foreground/7%),transparent_65%)]",
             )}
           />
-          <div className="flex items-start gap-4 px-4 pt-5 pb-5 @md:items-center @md:gap-6 @md:px-6 @md:pt-6">
-            <DateTile date={meetup.date} timing={timing} size="lg" />
-            <div className="min-w-0 flex-1 space-y-2">
+          {/* Below @md the location and Mazmo link span both columns, so the
+              space under the date tile is used. From @md they sit in the text
+              column and the tile is centered against the whole block. */}
+          <div className="grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-2 px-4 pt-5 pb-5 @md:gap-x-6 @md:px-6 @md:pt-6">
+            <div className="@md:row-span-2 @md:self-center">
+              <DateTile date={meetup.date} timing={timing} size="lg" />
+            </div>
+            <div className="min-w-0 space-y-2 @md:col-start-2">
               <h1
                 id="meetup-title"
                 className="text-2xl leading-tight font-semibold tracking-tight break-words @md:text-3xl"
@@ -1034,6 +1039,8 @@ export function MeetupDetailPage() {
                 </span>
                 <MeetupBadges meetup={meetup} timing={timing} />
               </div>
+            </div>
+            <div className="col-span-2 min-w-0 space-y-2 empty:hidden @md:col-span-1 @md:col-start-2">
               {/* Keyed by meetup so the search state resets when the route param changes. */}
               <MeetupLocation
                 key={meetup.id}
