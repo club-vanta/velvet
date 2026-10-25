@@ -4,6 +4,7 @@ import { useOrg } from "@/lib/org";
 import { ArrivalsTab } from "./ArrivalsTab";
 import { AttendanceTab } from "./AttendanceTab";
 import { DemographicsTab } from "./DemographicsTab";
+import { OperationsTab } from "./OperationsTab";
 import { RetentionTab } from "./RetentionTab";
 import { StatsErrorState } from "./StatsErrorState";
 import { StatsFilterBar } from "./StatsFilterBar";
@@ -47,6 +48,9 @@ export function StatsPage() {
             {t("statsTabDemographics")}
           </TabsTrigger>
           <TabsTrigger value="retention">{t("statsTabRetention")}</TabsTrigger>
+          <TabsTrigger value="operations">
+            {t("statsTabOperations")}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="attendance">
           {eventsError || <AttendanceTab {...tabProps} />}
@@ -59,6 +63,9 @@ export function StatsPage() {
         </TabsContent>
         <TabsContent value="retention">
           {eventsError || <RetentionTab {...tabProps} />}
+        </TabsContent>
+        <TabsContent value="operations">
+          {eventsError || <OperationsTab {...tabProps} />}
         </TabsContent>
       </Tabs>
     </div>

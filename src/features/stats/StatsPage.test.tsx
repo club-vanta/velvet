@@ -79,7 +79,8 @@ function renderPage(
     path === "/organizations/{org_id}/stats/attendance" ||
     path === "/organizations/{org_id}/stats/arrivals" ||
     path === "/organizations/{org_id}/stats/demographics" ||
-    path === "/organizations/{org_id}/stats/retention"
+    path === "/organizations/{org_id}/stats/retention" ||
+    path === "/organizations/{org_id}/stats/operations"
       ? new Promise(() => {})
       : meetupsResult(),
   );
@@ -353,6 +354,18 @@ describe("StatsPage", () => {
         "true",
       );
       expect(statsPaths()).toEqual(["/organizations/{org_id}/stats/retention"]);
+    });
+
+    it("requests only the operations of tab=operations", async () => {
+      renderPage("/stats?tab=operations");
+      await screen.findByTestId("operations-skeleton");
+      expect(screen.getByRole("tab", { name: "Operación" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(statsPaths()).toEqual([
+        "/organizations/{org_id}/stats/operations",
+      ]);
     });
 
     it("does not request the attendance of a hidden tab", async () => {

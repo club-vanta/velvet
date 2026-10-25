@@ -9,11 +9,14 @@ import { formatCount, isSmallSample } from "./statsFormat";
 export function HeadlineStat({
   label,
   value,
+  subline,
   comparison,
   n,
 }: {
   label: string;
   value: string;
+  /** Context for the number, such as where it happened. */
+  subline?: string;
   comparison?: string;
   n?: number;
 }) {
@@ -40,6 +43,14 @@ export function HeadlineStat({
       >
         {value}
       </p>
+      {subline && (
+        <p
+          data-slot="subline"
+          className="text-xs text-muted-foreground break-words"
+        >
+          {subline}
+        </p>
+      )}
       {comparison && (
         <p
           data-slot="comparison"

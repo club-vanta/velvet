@@ -48,6 +48,9 @@ export const statsDemographicsKey = (
 export const statsRetentionKey = (orgId: string, filters: StatsQuery | null) =>
   [...statsOrgKey(orgId), "retention", filters] as const;
 
+export const statsOperationsKey = (orgId: string, filters: StatsQuery | null) =>
+  [...statsOrgKey(orgId), "operations", filters] as const;
+
 /**
  * Anything that changes an RSVP (check-in, payment, guest type, walk-in,
  * sync) also changes the meetup stats, the attendance shown on guest

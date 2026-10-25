@@ -15,7 +15,13 @@ import {
   type RangePreset,
 } from "./statsPeriod";
 
-const TABS = ["attendance", "arrivals", "demographics", "retention"] as const;
+const TABS = [
+  "attendance",
+  "arrivals",
+  "demographics",
+  "retention",
+  "operations",
+] as const;
 
 export type StatsTab = (typeof TABS)[number];
 
