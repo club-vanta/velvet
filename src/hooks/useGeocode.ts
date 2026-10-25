@@ -1,4 +1,4 @@
-import { skipToken, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, skipToken, useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
@@ -9,7 +9,9 @@ const STALE_TIME_MS = 5 * 60 * 1000;
 
 /**
  * Address matches in Argentina for the text typed so far. Debouncing the
- * input is the caller's job; shorter queries make no request.
+ * input is the caller's job; shorter queries make no request. The previous
+ * results stay in `data` while the next search loads (`isPlaceholderData` is
+ * true then), so the result list does not blank between keystrokes.
  */
 export function useGeocode(orgId: string, q: string) {
   const { t } = useLanguage();
@@ -29,5 +31,6 @@ export function useGeocode(orgId: string, q: string) {
           }
         : skipToken,
     staleTime: STALE_TIME_MS,
+    placeholderData: keepPreviousData,
   });
 }

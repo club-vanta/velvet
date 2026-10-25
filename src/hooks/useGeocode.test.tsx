@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -92,5 +92,38 @@ describe("useGeocode", () => {
     expect(result.current.error?.message).toBe(
       "No se pudo buscar la dirección.",
     );
+  });
+
+  it("keeps the previous results, flagged as placeholder, while the next search loads", async () => {
+    const next = { ...RESULT, label: "Av. Santa Fe 100, Buenos Aires" };
+    let resolveNext: (value: unknown) => void = () => undefined;
+    const client = newClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <LanguageProvider>{children}</LanguageProvider>
+      </QueryClientProvider>
+    );
+    const { result, rerender } = renderHook(({ q }) => useGeocode("org-1", q), {
+      wrapper,
+      initialProps: { q: "abc" },
+    });
+    await waitFor(() => expect(result.current.data).toEqual([RESULT]));
+    expect(result.current.isPlaceholderData).toBe(false);
+
+    mockApiGet.mockReturnValue(
+      new Promise((resolve) => {
+        resolveNext = resolve;
+      }),
+    );
+    rerender({ q: "abcd" });
+
+    await waitFor(() => expect(result.current.isFetching).toBe(true));
+    expect(result.current.data).toEqual([RESULT]);
+    expect(result.current.isPlaceholderData).toBe(true);
+
+    await act(async () => resolveNext({ data: [next], error: undefined }));
+
+    await waitFor(() => expect(result.current.data).toEqual([next]));
+    expect(result.current.isPlaceholderData).toBe(false);
   });
 });
