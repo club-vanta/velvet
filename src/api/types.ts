@@ -1052,6 +1052,13 @@ export interface paths {
      *     Allowed on finalized meetups: the venue is descriptive metadata and does
      *     not affect check-ins or payments. Returns 422 if the fields are not set
      *     or cleared together, or are out of range.
+     *
+     *     Weather: when the coordinates change or are cleared, the stored weather
+     *     is deleted in the same commit (it described the old place). If the meetup
+     *     is then ready for weather (see GET .../weather), it is fetched inline.
+     *     A provider failure is logged and ignored: this route still returns 200
+     *     and the weather worker retries later. A label-only change keeps the
+     *     stored weather.
      */
     patch: operations["update_meetup_location_organizations__org_id__meetups__meetup_id__location_patch"];
     trace?: never;
@@ -1124,6 +1131,57 @@ export interface paths {
      *     Returns 409 if the meetup is not finalized.
      */
     patch: operations["unfinalize_meetup_organizations__org_id__meetups__meetup_id__unfinalize_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/weather": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Weather of a meetup (org member)
+     * @description Weather during the first 6 hours of a meetup, plus where it stands.
+     *
+     *     status is NO_LOCATION without coordinates, OK when a row exists, PENDING
+     *     while the window is not over plus 2 hours, otherwise NOT_FETCHED (an org
+     *     admin can fetch it via POST .../weather/refresh). weather is null unless
+     *     status is OK; ready is true once the meetup has coordinates and its
+     *     window ended at least 2 hours ago.
+     */
+    get: operations["get_meetup_weather_organizations__org_id__meetups__meetup_id__weather_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/weather/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Fetch the weather of a meetup again (org admin only)
+     * @description Fetch the weather from Open-Meteo and overwrite the stored snapshot.
+     *
+     *     Returns 409 when the meetup has no location, or when its window ended
+     *     less than 2 hours ago (the provider has not published the hours yet).
+     *     Returns 502 when the provider has no data for that place and time, or is
+     *     unavailable; the stored snapshot, if any, is left untouched.
+     */
+    post: operations["refresh_meetup_weather_organizations__org_id__meetups__meetup_id__weather_refresh_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/organizations/{org_id}/events/": {
@@ -2388,6 +2446,57 @@ export interface components {
       payment: components["schemas"]["PaymentStats"];
     };
     /**
+     * MeetupWeatherPublic
+     * @description Weather during the first 6 hours of a meetup, from Open-Meteo.
+     *
+     *     Each float summarizes the hours of the window [date, date + 6h). A null
+     *     means the provider had no value for that series anywhere in the window
+     *     (shown as "no data"), never zero:
+     *     - avg_temperature, avg_apparent_temperature: degrees Celsius, mean.
+     *     - total_precipitation_mm: millimetres, sum. Null when unknown.
+     *     - max_wind_kmh: km/h, highest hour.
+     *     - rained: total_precipitation_mm >= 0.2. Null exactly when
+     *       total_precipitation_mm is null: unknown is not the same as dry.
+     *
+     *     fetched_at is when the snapshot was taken; source names the provider
+     *     dataset. The raw hourly arrays are stored but not returned.
+     */
+    MeetupWeatherPublic: {
+      /** Avg Temperature */
+      avg_temperature: number | null;
+      /** Avg Apparent Temperature */
+      avg_apparent_temperature: number | null;
+      /** Total Precipitation Mm */
+      total_precipitation_mm: number | null;
+      /** Max Wind Kmh */
+      max_wind_kmh: number | null;
+      /** Rained */
+      rained: boolean | null;
+      /**
+       * Fetched At
+       * Format: date-time
+       */
+      fetched_at: string;
+      /** Source */
+      source: string;
+    };
+    /**
+     * MeetupWeatherStatusPublic
+     * @description Weather of a meetup plus where it stands.
+     *
+     *     status is OK (weather is set), NO_LOCATION (no coordinates), PENDING
+     *     (located, but the window is not over plus 2 hours) or NOT_FETCHED (ready,
+     *     no row yet). weather is null unless status is OK. ready is true when the
+     *     meetup has coordinates and its window ended at least 2 hours ago, whether
+     *     or not a row exists.
+     */
+    MeetupWeatherStatusPublic: {
+      status: components["schemas"]["WeatherStatus"];
+      weather: components["schemas"]["MeetupWeatherPublic"] | null;
+      /** Ready */
+      ready: boolean;
+    };
+    /**
      * OperationsPaymentStatsPublic
      * @description Attended RSVPs of the meetups that require payment. Only NORMAL guests pay; every other
      *     type is exempt. paid_share is paid / (paid + pending), null when nobody owes entry.
@@ -2895,6 +3004,19 @@ export interface components {
       /** Code */
       code: string;
     };
+    /**
+     * WeatherStatus
+     * @description Where the weather of a meetup stands.
+     *
+     *     OK:           a weather row exists.
+     *     NO_LOCATION:  the meetup has no coordinates, so there is nothing to look up.
+     *     PENDING:      it has a location but its window is not over yet, plus the
+     *                   provider delay (see is_weather_ready).
+     *     NOT_FETCHED:  ready, but no row yet (the worker has not got to it, or the
+     *                   provider failed); an org admin can refresh.
+     * @enum {string}
+     */
+    WeatherStatus: "OK" | "NO_LOCATION" | "PENDING" | "NOT_FETCHED";
   };
   responses: never;
   parameters: never;
@@ -6061,6 +6183,142 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_meetup_weather_organizations__org_id__meetups__meetup_id__weather_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weather of the meetup and where it stands */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupWeatherStatusPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  refresh_meetup_weather_organizations__org_id__meetups__meetup_id__weather_refresh_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weather fetched again and stored over the previous snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupWeatherPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Weather cannot be refreshed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Weather provider error */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };
