@@ -313,6 +313,14 @@ describe("DemographicsTab", () => {
     ).toBeInTheDocument();
   });
 
+  it("names the known-age card in English", async () => {
+    localStorage.setItem("lang", "en");
+    respond(ok(stats()));
+    renderTab();
+    await waitFor(() => headline("Known age"));
+    expect(slot("Known age", "value")).toBe("90%");
+  });
+
   it("shows n under the known-age share when few people attended", async () => {
     respond(ok(stats({ summary: { ...SUMMARY, attended: 5 } })));
     renderTab();

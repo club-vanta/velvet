@@ -356,10 +356,10 @@ export const translations = {
     statsSeriesSignedUp: "Signed up",
     statsNoSignups: "No sign-ups",
     statsNoteExcludedArrivals:
-      "{0} check-ins more than 2 hours before or 12 hours after the start were left out, since they are likely late entries.",
+      "Check-ins left out: {0}. They were recorded more than 2 hours before or 12 hours after the start (usually late entries or mistakes).",
     statsTabDemographics: "Demographics",
     statsMedianAge: "Median age",
-    statsKnownAge: "Age known",
+    statsKnownAge: "Known age",
     statsAttendances: "Attendances",
     statsGender: "Gender",
     statsAge: "Age",
@@ -938,7 +938,7 @@ export const translations = {
     statsSeriesSignedUp: "Anotados",
     statsNoSignups: "No hubo inscripciones",
     statsNoteExcludedArrivals:
-      "Se dejaron afuera {0} ingresos de más de 2 horas antes o 12 horas después del inicio, porque probablemente se cargaron tarde.",
+      "Ingresos dejados afuera: {0}. Se registraron más de 2 horas antes o 12 horas después del inicio (suelen ser cargas tardías o errores).",
     statsTabDemographics: "Demografía",
     statsMedianAge: "Edad mediana",
     statsKnownAge: "Con edad conocida",

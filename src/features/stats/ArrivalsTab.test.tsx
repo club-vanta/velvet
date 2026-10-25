@@ -388,10 +388,20 @@ describe("ArrivalsTab", () => {
     respond(ok(stats({ summary: { ...SUMMARY, excluded_arrivals: 12000 } })));
     renderTab();
     await headlinesReady();
-    const note = screen.getByText(/^Se dejaron afuera/);
+    const note = screen.getByText(/^Ingresos dejados afuera/);
     expect(note.tagName).toBe("BLOCKQUOTE");
     expect(note).toHaveTextContent(
-      "Se dejaron afuera 12.000 ingresos de más de 2 horas antes o 12 horas después del inicio, porque probablemente se cargaron tarde.",
+      "Ingresos dejados afuera: 12.000. Se registraron más de 2 horas antes o 12 horas después del inicio (suelen ser cargas tardías o errores).",
+    );
+  });
+
+  it("reads right in English for a single left-out check-in", async () => {
+    localStorage.setItem("lang", "en");
+    respond(ok(stats({ summary: { ...SUMMARY, excluded_arrivals: 1 } })));
+    renderTab();
+    await waitFor(() => screen.getByText(/^Check-ins left out/));
+    expect(screen.getByText(/^Check-ins left out/)).toHaveTextContent(
+      "Check-ins left out: 1. They were recorded more than 2 hours before or 12 hours after the start (usually late entries or mistakes).",
     );
   });
 
@@ -399,7 +409,9 @@ describe("ArrivalsTab", () => {
     respond(ok(stats()));
     renderTab();
     await headlinesReady();
-    expect(screen.queryByText(/^Se dejaron afuera/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/^Ingresos dejados afuera/),
+    ).not.toBeInTheDocument();
   });
 
   it("sends from, to and meetup_id to the API", async () => {
