@@ -17,8 +17,9 @@ type Summary = components["schemas"]["DemographicSummaryPublic"];
 type GenderGroup = components["schemas"]["GenderGroupPublic"];
 type AgeGroup = components["schemas"]["AgeGroupPublic"];
 
+/** Matches GENDER and AGE: 120 attended, 12 of them with no known age. */
 const SUMMARY: Summary = {
-  attended: 200,
+  attended: 120,
   median_age: 32.7,
   known_age_share: 0.9,
 };
@@ -29,41 +30,60 @@ const NOBODY: Summary = {
   known_age_share: null,
 };
 
-/** A group whose figures agree: no-shows come from the rate, the rest attended. */
+const share = (part: number, total: number) =>
+  total === 0 ? null : Math.round((part / total) * 10000) / 10000;
+
+/**
+ * A group as the API counts it: of `expected` people, `noShow` did not come
+ * and the rest attended. `withShares` fills in its shares of the totals.
+ */
 function group<K extends GenderGroup["key"] | AgeGroup["key"]>(
   key: K,
   expected: number,
-  rate: number | null,
+  noShow: number,
 ) {
-  const noShow = rate === null ? 0 : Math.round(expected * rate);
-  const attended = expected - noShow;
   const g: Omit<GenderGroup, "key"> & { key: K } = {
     key,
-    attended,
+    attended: expected - noShow,
     expected,
     no_show: noShow,
-    no_show_rate: rate,
-    attended_share: attended > 0 ? 0.25 : null,
-    expected_share: expected > 0 ? 0.25 : null,
+    no_show_rate: share(noShow, expected),
+    attended_share: null,
+    expected_share: null,
   };
   return g;
 }
 
-const GENDER: GenderGroup[] = [
-  group("MALE", 100, 0.1),
-  group("NEW_CODE", 4, 0.5),
-  group(null, 30, null),
-];
+/** Each group's share of the attended and expected totals, null on a zero total. */
+function withShares<G extends GenderGroup | AgeGroup>(groups: G[]): G[] {
+  const attended = groups.reduce((sum, g) => sum + g.attended, 0);
+  const expected = groups.reduce((sum, g) => sum + g.expected, 0);
+  return groups.map((g) => ({
+    ...g,
+    attended_share: share(g.attended, attended),
+    expected_share: share(g.expected, expected),
+  }));
+}
 
-const AGE: AgeGroup[] = [
-  group("AGE_18_24", 50, 0.2),
-  group("AGE_25_29", 60, 0.1),
-  group("AGE_30_34", 40, 0.05),
-  group("AGE_35_39", 20, 0.1),
-  group("AGE_40_49", 10, 0.3),
-  group("AGE_50_PLUS", 5, 0.4),
-  group("UNKNOWN", 15, 0.1),
-];
+// Gender and age split the same RSVPs, so their totals agree.
+const GENDER: GenderGroup[] = withShares([
+  group("MALE", 100, 10),
+  group("NEW_CODE", 4, 2),
+  group(null, 32, 4),
+]);
+
+const AGE: AgeGroup[] = withShares([
+  group("AGE_18_24", 40, 6),
+  group("AGE_25_29", 35, 3),
+  group("AGE_30_34", 22, 1),
+  group("AGE_35_39", 12, 2),
+  group("AGE_40_49", 8, 1),
+  group("AGE_50_PLUS", 5, 1),
+  group("UNKNOWN", 14, 2),
+]);
+
+/** Every age bucket with nothing in it: the API always sends all seven. */
+const NO_AGES: AgeGroup[] = AGE.map((g) => group(g.key, 0, 0));
 
 function stats(overrides: Partial<Demographics> = {}): Demographics {
   return {
@@ -162,16 +182,10 @@ describe("DemographicsTab", () => {
     await waitFor(() => expect(statsCalls()).toHaveLength(2));
   });
 
-  it("shows the empty state when nobody attended and nobody was expected", async () => {
-    respond(
-      ok(
-        stats({
-          gender: [group(null, 0, null)],
-          age: AGE.map((g) => group(g.key, 0, null)),
-          summary: NOBODY,
-        }),
-      ),
-    );
+  // What the API sends for a period with no finalized events, and for one
+  // where only staff came, since staff RSVPs are not counted.
+  it("shows the empty state when there are no audience RSVPs", async () => {
+    respond(ok(stats({ gender: [], age: NO_AGES, summary: NOBODY })));
     renderTab();
     expect(
       await screen.findByText("No hay eventos finalizados en este período"),
@@ -187,7 +201,7 @@ describe("DemographicsTab", () => {
           comparison_kind: "PREVIOUS_PERIOD",
           comparison: {
             ...SUMMARY,
-            attended: 160,
+            attended: 96,
             median_age: 31.2,
             known_age_share: 0.8,
           },
@@ -205,7 +219,7 @@ describe("DemographicsTab", () => {
       "+10 pts vs. período anterior",
     );
     expect(slot("Con edad conocida", "sample")).toBeNull();
-    expect(slot("Asistencias", "value")).toBe("200");
+    expect(slot("Asistencias", "value")).toBe("120");
     expect(slot("Asistencias", "comparison")).toBe("+25% vs. período anterior");
   });
 
@@ -230,11 +244,14 @@ describe("DemographicsTab", () => {
     expect(slot("Asistencias", "comparison")).toBeNull();
   });
 
-  it("shows dashes when only staff attended", async () => {
+  it("shows dashes when everyone expected was a no-show", async () => {
     respond(
       ok(
         stats({
-          gender: [group(null, 3, 1)],
+          gender: withShares([group(null, 3, 3)]),
+          age: withShares(
+            NO_AGES.map((g) => (g.key === "UNKNOWN" ? group(g.key, 3, 3) : g)),
+          ),
           summary: NOBODY,
         }),
       ),
@@ -254,8 +271,8 @@ describe("DemographicsTab", () => {
     await headlinesReady();
     expect(part(groupRow("Hombre"), "expected")).toBe("100");
     expect(part(groupRow("NEW_CODE"), "expected")).toBe("4");
-    expect(part(groupRow("Sin dato"), "expected")).toBe("30");
-    expect(part(groupRow("18-24"), "expected")).toBe("50");
+    expect(part(groupRow("Sin dato"), "expected")).toBe("32");
+    expect(part(groupRow("18-24"), "expected")).toBe("40");
     expect(part(groupRow("50+"), "expected")).toBe("5");
   });
 
@@ -282,9 +299,9 @@ describe("DemographicsTab", () => {
       "text-muted-foreground",
     );
 
-    const none = groupRow("Sin dato");
-    expect(part(none, "rate-value")).toBe("–");
-    expect(part(none, "sample")).toBeNull();
+    const unknown = groupRow("Sin dato");
+    expect(part(unknown, "rate-value")).toBe("13%");
+    expect(part(unknown, "sample")).toBeNull();
   });
 
   it("names the no-show table after its card", async () => {
@@ -303,8 +320,10 @@ describe("DemographicsTab", () => {
     expect(slot("Con edad conocida", "sample")).toBe("n = 5");
   });
 
-  it("shows no n for a group with nobody expected", async () => {
-    respond(ok(stats({ gender: [...GENDER, group("FEMALE", 0, null)] })));
+  it("shows no n for a group whose RSVPs were all cancelled", async () => {
+    respond(
+      ok(stats({ gender: withShares([...GENDER, group("FEMALE", 0, 0)]) })),
+    );
     renderTab();
     await headlinesReady();
     const row = groupRow("Mujer");
@@ -337,7 +356,7 @@ describe("DemographicsTab", () => {
   });
 
   it("formats the expected counts for the locale", async () => {
-    respond(ok(stats({ gender: [group("FEMALE", 12000, 0.1)] })));
+    respond(ok(stats({ gender: withShares([group("FEMALE", 12000, 1200)]) })));
     renderTab();
     await headlinesReady();
     expect(part(groupRow("Mujer"), "expected")).toBe("12.000");
