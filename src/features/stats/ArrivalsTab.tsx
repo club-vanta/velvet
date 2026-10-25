@@ -11,6 +11,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
+import { RateCell } from "./RateCell";
 import { StatsNote } from "./StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
@@ -22,7 +23,6 @@ import {
   formatOffset,
   formatPointChange,
   formatRate,
-  isSmallSample,
   NO_VALUE,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -144,40 +144,21 @@ function LeadTimeTable({
         </tr>
       </thead>
       <tbody className="divide-y">
-        {rows.map((r) => {
-          const n = r.signed_up - r.cancelled;
-          const small = r.no_show_rate !== null && isSmallSample(n);
-          return (
-            <tr key={r.bucket} data-slot="lead-row">
-              <th
-                scope="row"
-                data-slot="bucket"
-                className="py-1.5 text-left font-normal"
-              >
-                {t(LEAD_LABELS[r.bucket])}
-              </th>
-              <td data-slot="signed-up" className="py-1.5 text-right">
-                {formatCount(r.signed_up, lang)}
-              </td>
-              <td
-                data-slot="rate"
-                className={cn(
-                  "py-1.5 text-right",
-                  small && "text-muted-foreground",
-                )}
-              >
-                <span data-slot="rate-value">
-                  {formatRate(r.no_show_rate, lang)}
-                </span>
-                {small && (
-                  <span data-slot="sample" className="ml-2 text-xs">
-                    {t("statsSample").replace("{0}", String(n))}
-                  </span>
-                )}
-              </td>
-            </tr>
-          );
-        })}
+        {rows.map((r) => (
+          <tr key={r.bucket} data-slot="lead-row">
+            <th
+              scope="row"
+              data-slot="bucket"
+              className="py-1.5 text-left font-normal"
+            >
+              {t(LEAD_LABELS[r.bucket])}
+            </th>
+            <td data-slot="signed-up" className="py-1.5 text-right">
+              {formatCount(r.signed_up, lang)}
+            </td>
+            <RateCell rate={r.no_show_rate} n={r.signed_up - r.cancelled} />
+          </tr>
+        ))}
       </tbody>
     </table>
   );

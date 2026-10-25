@@ -14,6 +14,7 @@ import { MAZMO_GENDER_LABEL, mazmoLabel } from "@/lib/mazmoProfile";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
+import { RateCell } from "./RateCell";
 import { StatsNote } from "./StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
@@ -24,7 +25,6 @@ import {
   formatPointChange,
   formatRate,
   formatYearsChange,
-  isSmallSample,
   shareTicks,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -166,7 +166,7 @@ function NoShowGroupRows({
   groups: Group[];
   label: (key: string | null) => string;
 }) {
-  const { t, lang } = useLanguage();
+  const { lang } = useLanguage();
 
   return (
     <tbody className="divide-y">
@@ -179,40 +179,21 @@ function NoShowGroupRows({
           {title}
         </th>
       </tr>
-      {groups.map((group) => {
-        const small =
-          group.no_show_rate !== null && isSmallSample(group.expected);
-        return (
-          <tr key={group.key ?? ""} data-slot="group-row">
-            <th
-              scope="row"
-              data-slot="group"
-              className="py-1.5 text-left font-normal"
-            >
-              {label(group.key)}
-            </th>
-            <td data-slot="expected" className="py-1.5 text-right">
-              {formatCount(group.expected, lang)}
-            </td>
-            <td
-              data-slot="rate"
-              className={cn(
-                "py-1.5 text-right",
-                small && "text-muted-foreground",
-              )}
-            >
-              <span data-slot="rate-value">
-                {formatRate(group.no_show_rate, lang)}
-              </span>
-              {small && (
-                <span data-slot="sample" className="ml-2 text-xs">
-                  {t("statsSample").replace("{0}", String(group.expected))}
-                </span>
-              )}
-            </td>
-          </tr>
-        );
-      })}
+      {groups.map((group) => (
+        <tr key={group.key ?? ""} data-slot="group-row">
+          <th
+            scope="row"
+            data-slot="group"
+            className="py-1.5 text-left font-normal"
+          >
+            {label(group.key)}
+          </th>
+          <td data-slot="expected" className="py-1.5 text-right">
+            {formatCount(group.expected, lang)}
+          </td>
+          <RateCell rate={group.no_show_rate} n={group.expected} />
+        </tr>
+      ))}
     </tbody>
   );
 }
