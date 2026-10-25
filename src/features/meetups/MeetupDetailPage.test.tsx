@@ -1147,3 +1147,48 @@ describe("MeetupDetailPage walk-in picker", () => {
     expect(within(dialog).getByText("Juan Pérez")).toBeInTheDocument();
   });
 });
+
+describe("MeetupDetailPage location", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const LOCATED = makeMeetup({
+    name: "Alter Test",
+    location_label: "Teatro Vanta, Buenos Aires",
+    latitude: -34.6,
+    longitude: -58.4,
+  });
+
+  it("lets an org admin search and remove the location", async () => {
+    renderPage(LOCATED, []);
+    expect(
+      await screen.findByRole("combobox", { name: "Search an address" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove location" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows staff the address and map link but no edit control", async () => {
+    mockRole = "STAFF";
+    renderPage(LOCATED, []);
+    expect(
+      await screen.findByRole("link", {
+        name: "Open in map: Teatro Vanta, Buenos Aires",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Remove location" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says there is no location to staff when none is set", async () => {
+    mockRole = "STAFF";
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(await screen.findByText("No location yet")).toBeInTheDocument();
+  });
+});

@@ -83,6 +83,7 @@ import { GuestRowActions } from "./GuestRowActions";
 import { GuestListToolbar } from "./GuestListToolbar";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
+import { MeetupLocation } from "./MeetupLocation";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -1032,6 +1033,13 @@ export function MeetupDetailPage() {
                 </span>
                 <MeetupBadges meetup={meetup} timing={timing} />
               </div>
+              {/* Keyed so a half-typed search never carries over to another meetup. */}
+              <MeetupLocation
+                key={meetup.id}
+                orgId={orgId}
+                meetup={meetup}
+                canEdit={isOrgAdmin}
+              />
               <MazmoUrlLink
                 url={meetup.mazmo_meetup_url}
                 className="max-w-full text-xs text-muted-foreground"
