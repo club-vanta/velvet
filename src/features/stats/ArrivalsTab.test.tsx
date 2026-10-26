@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { ArrivalsTab } from "./ArrivalsTab";
 import type { StatsTabProps } from "./statsTab";
@@ -19,7 +20,7 @@ type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 const SUMMARY: Summary = {
   arrivals: 200,
   excluded_arrivals: 0,
-  peak: { start_minute: 30, local_time: null, arrivals: 40 },
+  peak: { start_minute: 30, arrivals: 40 },
   peak_local_time: "22:30",
   mean_minutes: 45,
   p90_minutes: 90,
@@ -88,8 +89,12 @@ const LEAD: LeadRow[] = [
 function stats(overrides: Partial<Arrivals> = {}): Arrivals {
   return {
     curve: [
-      { start_minute: 15, local_time: null, arrivals: 20 },
-      { start_minute: 30, local_time: null, arrivals: 40 },
+      { start_minute: 15, arrivals: 20 },
+      { start_minute: 30, arrivals: 40 },
+    ],
+    clock_curve: [
+      { start_minute: 1335, local_time: "22:15", arrivals: 20 },
+      { start_minute: 1350, local_time: "22:30", arrivals: 40 },
     ],
     summary: SUMMARY,
     lead_time: LEAD,
@@ -101,7 +106,7 @@ function stats(overrides: Partial<Arrivals> = {}): Arrivals {
 
 const PERIOD = { from: "2026-01-15", to: "2026-04-16" };
 
-function renderTab(props: Partial<StatsTabProps> = {}) {
+function renderTab(props: Partial<StatsTabProps> = {}, url = "/stats") {
   const onShowAll = vi.fn();
   render(
     <QueryClientProvider
@@ -110,12 +115,14 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
       }
     >
       <LanguageProvider>
-        <ArrivalsTab
-          orgId="org-1"
-          query={PERIOD}
-          onShowAll={onShowAll}
-          {...props}
-        />
+        <MemoryRouter initialEntries={[url]}>
+          <ArrivalsTab
+            orgId="org-1"
+            query={PERIOD}
+            onShowAll={onShowAll}
+            {...props}
+          />
+        </MemoryRouter>
       </LanguageProvider>
     </QueryClientProvider>,
   );
@@ -271,7 +278,7 @@ describe("ArrivalsTab", () => {
         stats({
           summary: {
             ...SUMMARY,
-            peak: { start_minute: 0, local_time: null, arrivals: 40 },
+            peak: { start_minute: 0, arrivals: 40 },
             mean_minutes: -20,
           },
         }),
@@ -287,10 +294,10 @@ describe("ArrivalsTab", () => {
     respond(
       ok(
         stats({
-          curve: [{ start_minute: 30, local_time: "23:30", arrivals: 40 }],
+          curve: [{ start_minute: 30, arrivals: 40 }],
           summary: {
             ...SUMMARY,
-            peak: { start_minute: 30, local_time: "23:30", arrivals: 40 },
+            peak: { start_minute: 30, arrivals: 40 },
             peak_local_time: "23:30",
             mean_local_time: "23:45",
             p90_local_time: "00:30",
@@ -316,9 +323,13 @@ describe("ArrivalsTab", () => {
   });
 
   it("shows dashes and says nobody checked in when there are no arrivals", async () => {
-    respond(ok(stats({ curve: [], summary: NOBODY })));
+    respond(ok(stats({ curve: [], clock_curve: [], summary: NOBODY })));
     renderTab();
     await headlinesReady();
+    // Nothing to switch between without arrivals.
+    expect(
+      screen.queryByRole("group", { name: "Mostrar" }),
+    ).not.toBeInTheDocument();
     for (const label of [MEAN, BUSIEST, NINETY, FIRST_HOUR]) {
       expect(slot(label, "value")).toBe("–");
     }
@@ -430,9 +441,9 @@ describe("ArrivalsTab", () => {
       "Los horarios salen del ingreso en la puerta. Cada tarjeta muestra la hora a la que llegó la gente y, debajo, cuánto después del inicio fue.",
     );
     expect(
-      screen.getByText(/^Con varios eventos, la hora del día/),
-    ).toHaveTextContent(
-      "Con varios eventos, la hora del día y el tiempo desde el inicio se calculan por separado. Si los eventos empiezan a distintas horas, pueden no coincidir del todo. El gráfico alinea los eventos por su hora de inicio.",
+      screen.getByText(/^Con varios eventos, la hora del día/).textContent,
+    ).toBe(
+      "Con varios eventos, la hora del día y el tiempo desde el inicio se calculan por separado. Si los eventos empiezan a distintas horas, pueden no coincidir del todo.",
     );
     expect(
       screen.getByText("Los discretos no se cuentan porque nunca se anotaron.")
@@ -494,27 +505,75 @@ describe("ArrivalsTab", () => {
     expect(mockApiGet).not.toHaveBeenCalled();
   });
 
-  it("lists the arrival curve in a text table", async () => {
+  it("lists the arrival curve by clock time by default", async () => {
     respond(ok(stats()));
     renderTab();
     await screen.findByText("Llegadas cada 15 minutos");
+    expect(screen.getByRole("button", { name: "Hora" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(tableText("Llegadas cada 15 minutos")).toEqual({
       header: ["Hora", "Llegadas"],
       body: [
-        ["0:15", "20"],
-        ["0:30", "40"],
+        ["22:15", "20"],
+        ["22:30", "40"],
       ],
     });
+    expect(screen.getByText("Hora de llegada")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Horas desde el inicio del evento"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("switches the curve to the time from the start", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await screen.findByText("Llegadas cada 15 minutos");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Desde el inicio" }),
+    );
+    expect(tableText("Llegadas cada 15 minutos").body).toEqual([
+      ["0:15", "20"],
+      ["0:30", "40"],
+    ]);
     expect(
       screen.getByText("Horas desde el inicio del evento"),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hora" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("keeps the curve view in the URL", async () => {
+    respond(ok(stats()));
+    renderTab({}, "/stats?arrivals_view=offset");
+    await screen.findByText("Llegadas cada 15 minutos");
+    expect(tableText("Llegadas cada 15 minutos").body[0]).toEqual([
+      "0:15",
+      "20",
+    ]);
+  });
+
+  it("falls back to clock time for an unknown curve view", async () => {
+    respond(ok(stats()));
+    renderTab({}, "/stats?arrivals_view=bogus");
+    await screen.findByText("Llegadas cada 15 minutos");
+    expect(tableText("Llegadas cada 15 minutos").body[0]).toEqual([
+      "22:15",
+      "20",
+    ]);
   });
 
   it("labels one event's curve by clock time, without the several-events note", async () => {
     respond(
       ok(
         stats({
-          curve: [{ start_minute: 30, local_time: "23:30", arrivals: 40 }],
+          curve: [{ start_minute: 30, arrivals: 40 }],
+          clock_curve: [
+            { start_minute: 1410, local_time: "23:30", arrivals: 40 },
+          ],
         }),
       ),
     );
@@ -523,9 +582,21 @@ describe("ArrivalsTab", () => {
     expect(tableText("Llegadas cada 15 minutos").body).toEqual([
       ["23:30", "40"],
     ]);
-    expect(
-      screen.queryByText("Horas desde el inicio del evento"),
-    ).not.toBeInTheDocument();
     expect(screen.queryByText(/^Con varios eventos/)).not.toBeInTheDocument();
+  });
+
+  it("shows one event's curve from the start in that view", async () => {
+    respond(
+      ok(
+        stats({
+          curve: [{ start_minute: 30, arrivals: 40 }],
+        }),
+      ),
+    );
+    renderTab({ query: { meetupId: "m1" } }, "/stats?arrivals_view=offset");
+    await screen.findByText("Llegadas cada 15 minutos");
+    expect(tableText("Llegadas cada 15 minutos").body).toEqual([
+      ["0:30", "40"],
+    ]);
   });
 });

@@ -5,9 +5,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { useSearchParams } from "react-router-dom";
 import type { components } from "@/api/types";
-import { Button } from "@/components/ui/button";
 import { StatsNote } from "@/components/StatsNote";
 import { useNoShowStats } from "@/hooks/useNoShowStats";
 import { useLanguage } from "@/lib/i18n";
@@ -20,6 +18,8 @@ import { useGroupLabels } from "./groupLabels";
 import { HeadlineStat } from "./HeadlineStat";
 import { headlineGrid } from "./headlineGrid";
 import { noShowShares } from "./noShowShare";
+import { useUrlView } from "./useUrlView";
+import { ViewToggle } from "./ViewToggle";
 import { RateBars, type RateRow } from "./RateBars";
 import { StatsLink } from "./StatsLink";
 import { StatsListMore } from "./StatsListMore";
@@ -124,62 +124,11 @@ function EventRateChart({
 
 /**
  * What the breakdown cards show: each group's no-show rate, or its share of
- * all the no-shows. Kept in the URL so a shared link opens the same view.
+ * all the no-shows.
  */
 type NoShowView = "rate" | "share";
 
-const VIEW_PARAM = "noshow_view";
-
-function useNoShowView() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const view: NoShowView =
-    searchParams.get(VIEW_PARAM) === "share" ? "share" : "rate";
-
-  function setView(next: NoShowView) {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (next === "share") params.set(VIEW_PARAM, "share");
-      else params.delete(VIEW_PARAM);
-      return params;
-    });
-  }
-
-  return [view, setView] as const;
-}
-
-/** One switch for every breakdown card, so they never disagree. */
-function NoShowViewToggle({
-  view,
-  onChange,
-}: {
-  view: NoShowView;
-  onChange: (view: NoShowView) => void;
-}) {
-  const { t } = useLanguage();
-  const options = [
-    { value: "rate", label: t("statsViewRate") },
-    { value: "share", label: t("statsViewShare") },
-  ] as const;
-  return (
-    <div
-      role="group"
-      aria-label={t("statsNoShowView")}
-      className="inline-flex gap-1 rounded-lg border p-1"
-    >
-      {options.map((o) => (
-        <Button
-          key={o.value}
-          size="sm"
-          variant={view === o.value ? "secondary" : "ghost"}
-          aria-pressed={view === o.value}
-          onClick={() => onChange(o.value)}
-        >
-          {o.label}
-        </Button>
-      ))}
-    </div>
-  );
-}
+const NO_SHOW_VIEWS = ["rate", "share"] as const;
 
 /** A card of rate bars, one per group. */
 function RateCard({
@@ -299,7 +248,7 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
   const labels = useGroupLabels();
   const { summary, comparison, comparison_kind } = data;
   const line = useComparisonLine(comparison_kind);
-  const [view, setView] = useNoShowView();
+  const [view, setView] = useUrlView("noshow_view", NO_SHOW_VIEWS, "rate");
 
   if (summary.expected === 0) return <StatsEmptyState />;
 
@@ -376,7 +325,15 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
           )}
         </ChartCard>
       )}
-      <NoShowViewToggle view={view} onChange={setView} />
+      <ViewToggle
+        label={t("statsViewLabel")}
+        options={[
+          { value: "rate", label: t("statsViewRate") },
+          { value: "share", label: t("statsViewShare") },
+        ]}
+        value={view}
+        onChange={setView}
+      />
       <div className="grid gap-3 lg:grid-cols-2">
         <RateCard
           title={t("statsNoShowByGender")}

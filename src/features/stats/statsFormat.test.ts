@@ -4,7 +4,6 @@ import {
   percentChange,
   formatEventDay,
   minuteChange,
-  formatCurveLabel,
   formatDuration,
   formatOffset,
   pointChange,
@@ -164,29 +163,6 @@ describe("minuteChange", () => {
 
   it("never returns -0", () => {
     expect(Object.is(minuteChange(29.6, 30), 0)).toBe(true);
-  });
-});
-
-describe("formatCurveLabel", () => {
-  it("labels aggregate buckets by offset, including before the start", () => {
-    expect(
-      formatCurveLabel({ start_minute: -15, local_time: null }, false),
-    ).toBe("-0:15");
-    expect(
-      formatCurveLabel({ start_minute: 45, local_time: "23:45" }, false),
-    ).toBe("0:45");
-  });
-
-  it("labels one-event buckets by clock time", () => {
-    expect(
-      formatCurveLabel({ start_minute: -15, local_time: "22:45" }, true),
-    ).toBe("22:45");
-  });
-
-  it("falls back to the offset when a clock time is missing", () => {
-    expect(
-      formatCurveLabel({ start_minute: -15, local_time: null }, true),
-    ).toBe("-0:15");
   });
 });
 

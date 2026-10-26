@@ -21,8 +21,8 @@ import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   formatClockWindow,
   formatCount,
-  formatCurveLabel,
   formatDuration,
+  formatOffset,
   minuteChange,
   pointChange,
   formatRate,
@@ -30,6 +30,8 @@ import {
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
+import { useUrlView } from "./useUrlView";
+import { ViewToggle } from "./ViewToggle";
 
 type Arrivals = components["schemas"]["ArrivalStatsPublic"];
 type LeadRow = components["schemas"]["LeadTimeRowPublic"];
@@ -37,23 +39,35 @@ type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 4;
 
+/**
+ * The arrival curve by the local clock, summed over the meetups, or by the
+ * time from each meetup's start, which lines up meetups that start at
+ * different hours.
+ */
+type CurveView = "clock" | "offset";
+
+const CURVE_VIEWS = ["clock", "offset"] as const;
+
 function ArrivalCurve({
-  curve,
-  single,
+  data: { curve, clock_curve },
+  view,
   labelledBy,
 }: {
-  curve: Arrivals["curve"];
-  single: boolean;
+  data: Arrivals;
+  view: CurveView;
   labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
   const config: ChartConfig = {
     arrivals: { label: t("statsArrivalsSeries"), color: "var(--chart-1)" },
   };
-  const data = curve.map((b) => ({
-    label: formatCurveLabel(b, single),
-    arrivals: b.arrivals,
-  }));
+  const data =
+    view === "clock"
+      ? clock_curve.map((b) => ({ label: b.local_time, arrivals: b.arrivals }))
+      : curve.map((b) => ({
+          label: formatOffset(b.start_minute),
+          arrivals: b.arrivals,
+        }));
 
   return (
     <>
@@ -82,11 +96,13 @@ function ArrivalCurve({
           />
         </BarChart>
       </ChartContainer>
-      {!single && (
-        <p className="text-center text-xs text-muted-foreground">
-          {t("statsArrivalAxisFromStart")}
-        </p>
-      )}
+      <p className="text-center text-xs text-muted-foreground">
+        {t(
+          view === "clock"
+            ? "statsArrivalAxisClock"
+            : "statsArrivalAxisFromStart",
+        )}
+      </p>
       <ChartTextTable
         labelledBy={labelledBy}
         headers={[t("statsArrivalTimeHeader"), t("statsArrivalsSeries")]}
@@ -198,8 +214,13 @@ function ArrivalsContent({
   single: boolean;
 }) {
   const { t, lang } = useLanguage();
-  const { curve, summary, lead_time, comparison, comparison_kind } = data;
+  const { summary, lead_time, comparison, comparison_kind } = data;
   const line = useComparisonLine(comparison_kind);
+  const [curveView, setCurveView] = useUrlView(
+    "arrivals_view",
+    CURVE_VIEWS,
+    "clock",
+  );
 
   if (summary.arrivals === 0 && lead_time.every((r) => r.signed_up === 0)) {
     return <StatsEmptyState />;
@@ -277,6 +298,17 @@ function ArrivalsContent({
           n={summary.first_hour_share === null ? undefined : summary.arrivals}
         />
       </div>
+      {summary.arrivals > 0 && (
+        <ViewToggle
+          label={t("statsViewLabel")}
+          options={[
+            { value: "clock", label: t("statsViewClock") },
+            { value: "offset", label: t("statsViewFromStart") },
+          ]}
+          value={curveView}
+          onChange={setCurveView}
+        />
+      )}
       <ChartCard title={t("statsArrivalCurve")}>
         {(headingId) =>
           summary.arrivals === 0 ? (
@@ -284,11 +316,7 @@ function ArrivalsContent({
               {t("statsNoArrivals")}
             </p>
           ) : (
-            <ArrivalCurve
-              curve={curve}
-              single={single}
-              labelledBy={headingId}
-            />
+            <ArrivalCurve data={data} view={curveView} labelledBy={headingId} />
           )
         }
       </ChartCard>

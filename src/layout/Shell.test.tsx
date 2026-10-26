@@ -57,4 +57,19 @@ describe("Shell nav", () => {
       "/stats",
     );
   });
+
+  it("keeps each bottom-nav label inside its own slot on narrow phones", () => {
+    role = "ADMIN";
+    renderShell();
+    const navs = document.querySelectorAll("nav");
+    const bottom = navs[navs.length - 1]!;
+    const links = Array.from(bottom.querySelectorAll("a"));
+    expect(links.length).toBeGreaterThan(0);
+    // jsdom has no layout, so pin what keeps the labels apart: a slot that
+    // may shrink below its label and a label that is clipped, not spilled.
+    for (const link of links) {
+      expect(link).toHaveClass("min-w-0");
+      expect(link.querySelector("span:last-child")).toHaveClass("truncate");
+    }
+  });
 });
