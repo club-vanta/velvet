@@ -48,6 +48,14 @@ export function hourRows(hours: Hour[], curve: Bucket[] | null): HourRow[] {
   }));
 }
 
+/**
+ * The offset of the hour that contains the meetup start, where the during
+ * window begins: 0 for a start on the hour, -30 for one at half past.
+ */
+export function startHourOffset(hours: Hour[]): number {
+  return hours.find((h) => h.offset_minutes > -HOUR)?.offset_minutes ?? 0;
+}
+
 /** Where a quarter hour bucket sits on the x axis: its middle. */
 export const bucketCenter = (b: Bucket) => b.start_minute + QUARTER / 2;
 

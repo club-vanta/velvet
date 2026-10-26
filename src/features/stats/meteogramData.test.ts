@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { components } from "@/api/types";
-import { arrivalsInDomain, hourRows, meteogramDomain } from "./meteogramData";
+import {
+  arrivalsInDomain,
+  hourRows,
+  meteogramDomain,
+  startHourOffset,
+} from "./meteogramData";
 
 type Hour = components["schemas"]["WeatherHourPublic"];
 type Bucket = components["schemas"]["ArrivalBucketPublic"];
@@ -36,6 +41,13 @@ describe("meteogramDomain", () => {
       hour(o),
     );
     expect(meteogramDomain(hours)).toEqual([-210, 390]);
+  });
+});
+
+describe("startHourOffset", () => {
+  it("is the hour that contains the start", () => {
+    expect(startHourOffset([-120, -60, 0, 60].map((o) => hour(o)))).toBe(0);
+    expect(startHourOffset([-90, -30, 30].map((o) => hour(o)))).toBe(-30);
   });
 });
 

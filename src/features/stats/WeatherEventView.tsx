@@ -10,6 +10,7 @@ import type { StatsQuery } from "@/lib/statsQuery";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
 import { headlineGrid } from "./headlineGrid";
+import { startHourOffset } from "./meteogramData";
 import { WeatherMeteogram } from "./WeatherMeteogram";
 
 type Event = components["schemas"]["WeatherEventPublic"];
@@ -27,7 +28,9 @@ type WindowSummary = Pick<
 /** Headline cards of the loaded event; the skeleton shows the same count. */
 export const EVENT_CARDS = 2;
 
-const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
+/** The during window ends 6 hours after the start, as the backend summarizes it. */
+const DURING_MINUTES = 6 * 60;
 
 /** One window's rain as the big value and its temperatures under it. */
 function WindowStat({
@@ -63,15 +66,9 @@ function WindowStat({
   return <HeadlineStat label={label} value={value} subline={subline} />;
 }
 
-/** "Antes del inicio · 19:00 a 22:00": a window's name with the hours it covers. */
-function windowLabel(title: string, hours: Hour[], template: string): string {
-  if (hours.length === 0) return title;
-  const end = new Date(new Date(hours.at(-1)!.time).getTime() + HOUR_MS);
-  return template
-    .replace("{0}", title)
-    .replace("{1}", formatTime(hours[0]!.time))
-    .replace("{2}", formatTime(end.toISOString()));
-}
+/** An hour's start moved by some minutes, as an ISO string. */
+const shifted = (hour: Hour, minutes: number) =>
+  new Date(new Date(hour.time).getTime() + minutes * MINUTE_MS).toISOString();
 
 /**
  * The weather of one event: before and during its start, then hour by hour
@@ -102,20 +99,29 @@ export function WeatherEventView({
     );
   }
 
-  // The hour that contains the start opens the during window.
-  const before = event.hours.filter((h) => h.offset_minutes <= -60);
-  const during = event.hours.filter((h) => h.offset_minutes > -60);
-  const range = t("statsWeatherRange");
+  // The hour that contains the start opens the during window, which ends 6
+  // hours after the start: 22:00 to 04:30 for a 22:30 start.
+  const first = event.hours[0]!;
+  const startHour = shifted(
+    first,
+    startHourOffset(event.hours) - first.offset_minutes,
+  );
+  const end = shifted(first, DURING_MINUTES - first.offset_minutes);
+  const label = (title: string, from: string, to: string) =>
+    t("statsWeatherRange")
+      .replace("{0}", title)
+      .replace("{1}", formatTime(from))
+      .replace("{2}", formatTime(to));
 
   return (
     <div className="space-y-3">
       <div className={headlineGrid(EVENT_CARDS)}>
         <WindowStat
-          label={windowLabel(t("statsWeatherBefore"), before, range)}
+          label={label(t("statsWeatherBefore"), first.time, startHour)}
           summary={event.before}
         />
         <WindowStat
-          label={windowLabel(t("statsWeatherDuring"), during, range)}
+          label={label(t("statsWeatherDuring"), startHour, end)}
           summary={event.weather}
         />
       </div>

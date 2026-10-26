@@ -521,21 +521,35 @@ describe("WeatherTab", () => {
       ]);
     });
 
-    it("names each hour's icon for screen readers", async () => {
+    it("leaves the icons to the text table for screen readers", async () => {
       respond(ok(oneEvent(event())));
       renderTab({ query: single });
       await eventReady();
-      const icons = within(region("Hora por hora")).getAllByRole("img");
-      expect(icons.map((i) => i.getAttribute("alt"))).toEqual([
-        "Lluvia",
-        "Lluvia",
-        "Llovizna",
-        "Nublado",
-        "Parcialmente nublado",
-        "Despejado",
-        "Despejado",
-        "Despejado",
-      ]);
+      const card = region("Hora por hora");
+      // The table already names each hour's weather; the icons would repeat it.
+      expect(within(card).queryAllByRole("img")).toEqual([]);
+      expect(card.querySelectorAll('img[alt=""]')).toHaveLength(8);
+    });
+
+    it("splits the windows at the start hour for a start at half past", async () => {
+      // 22:30 in Buenos Aires: 19:00 through 04:00 local, offsets -210 to 330.
+      const halfPast = Array.from({ length: 10 }, (_, i) => ({
+        ...HOURS[0]!,
+        time: new Date(Date.UTC(2026, 3, 5, 22 + i)).toISOString(),
+        offset_minutes: -210 + i * 60,
+      }));
+      respond(ok(oneEvent(event({ hours: halfPast }))));
+      renderTab({ query: single });
+      await waitFor(() => headline("Antes del inicio · 19:00 a 22:00"));
+      expect(headline("Durante · 22:00 a 04:30")).toBeInTheDocument();
+    });
+
+    it("lets the keyboard reach the scrolling chart", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      const scroller = screen.getByRole("group", { name: "Hora por hora" });
+      expect(scroller).toHaveAttribute("tabindex", "0");
     });
 
     it("asks the arrivals for the same event", async () => {
@@ -589,12 +603,17 @@ describe("WeatherTab", () => {
       const zoomOut = screen.getByRole("button", { name: "Alejar" });
       // 9 hours at 48 px plus the 32 px axis.
       expect(content).toHaveStyle({ minWidth: "464px" });
-      expect(zoomOut).toBeDisabled();
+      // aria-disabled keeps focus on the button at the limit.
+      expect(zoomOut).toHaveAttribute("aria-disabled", "true");
+      zoomOut.focus();
+      await user.click(zoomOut);
+      expect(content).toHaveStyle({ minWidth: "464px" });
+      expect(zoomOut).toHaveFocus();
       await user.click(zoomIn);
       expect(content).toHaveStyle({ minWidth: "680px" });
       await user.click(zoomIn);
       expect(content).toHaveStyle({ minWidth: "1040px" });
-      expect(zoomIn).toBeDisabled();
+      expect(zoomIn).toHaveAttribute("aria-disabled", "true");
       await user.click(zoomOut);
       expect(content).toHaveStyle({ minWidth: "680px" });
     });

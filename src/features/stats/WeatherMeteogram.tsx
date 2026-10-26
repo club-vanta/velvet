@@ -26,6 +26,7 @@ import {
   hourCenter,
   hourRows,
   meteogramDomain,
+  startHourOffset,
   type Domain,
 } from "./meteogramData";
 import { WEATHER_ICON_SRC, weatherIcon } from "./weatherIcon";
@@ -78,13 +79,24 @@ function TimeAxis({
   );
 }
 
-/** The before part shaded and the start marked, on every strip. */
-function StartMarks({ domain, label }: { domain: Domain; label?: string }) {
+/**
+ * The before window shaded and the start marked, on every strip. The shade
+ * ends where the during window begins, the hour that contains the start.
+ */
+function StartMarks({
+  domain,
+  startHour,
+  label,
+}: {
+  domain: Domain;
+  startHour: number;
+  label?: string;
+}) {
   return (
     <>
       <ReferenceArea
         x1={domain[0]}
-        x2={0}
+        x2={startHour}
         fill="var(--muted-foreground)"
         fillOpacity={0.08}
         ifOverflow="hidden"
@@ -108,9 +120,11 @@ function StartMarks({ domain, label }: { domain: Domain; label?: string }) {
   );
 }
 
-/** One icon per hour over the plot area, still for viewers who ask for less motion. */
+/**
+ * One icon per hour over the plot area, still for viewers who ask for less
+ * motion. Decorative: the text table names each hour's weather.
+ */
 function IconRow({ hours }: { hours: Hour[] }) {
-  const { t } = useLanguage();
   return (
     <div className="flex" style={{ paddingLeft: Y_AXIS_WIDTH }}>
       {hours.map((h) => {
@@ -124,11 +138,7 @@ function IconRow({ hours }: { hours: Hour[] }) {
                   media="(prefers-reduced-motion: reduce)"
                   srcSet={src.still}
                 />
-                <img
-                  src={src.animated}
-                  alt={t(icon.label)}
-                  className="size-7 sm:size-9"
-                />
+                <img src={src.animated} alt="" className="size-7 sm:size-9" />
               </picture>
             ) : (
               <span className="size-7 sm:size-9" />
@@ -156,7 +166,9 @@ export function WeatherMeteogram({
 }) {
   const { t, lang } = useLanguage();
   const [zoom, setZoom] = useState(0);
+  const hourWidth = HOUR_WIDTHS[zoom];
   const domain = meteogramDomain(hours);
+  const startHour = startHourOffset(hours);
   const temperature = hours.map((h) => ({
     x: hourCenter(h),
     temperature: h.temperature,
@@ -202,8 +214,9 @@ export function WeatherMeteogram({
             variant="ghost"
             size="icon-sm"
             aria-label={t("statsWeatherZoomOut")}
-            disabled={zoom === 0}
-            onClick={() => setZoom(zoom - 1)}
+            // aria-disabled, not disabled, so focus stays on the button at the limit.
+            aria-disabled={zoom === 0}
+            onClick={() => setZoom(Math.max(zoom - 1, 0))}
           >
             <ZoomOut aria-hidden />
           </Button>
@@ -211,18 +224,26 @@ export function WeatherMeteogram({
             variant="ghost"
             size="icon-sm"
             aria-label={t("statsWeatherZoomIn")}
-            disabled={zoom === HOUR_WIDTHS.length - 1}
-            onClick={() => setZoom(zoom + 1)}
+            aria-disabled={zoom === HOUR_WIDTHS.length - 1}
+            onClick={() => setZoom(Math.min(zoom + 1, HOUR_WIDTHS.length - 1))}
           >
             <ZoomIn aria-hidden />
           </Button>
         </span>
       </div>
-      <div className="overflow-x-auto">
+      <div
+        role="group"
+        aria-labelledby={labelledBy}
+        // A scroll container must be focusable so the keyboard can scroll it
+        // when the chart is wider than the card (WCAG 2.1.1).
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        tabIndex={0}
+        className="overflow-x-auto rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      >
         <div
           data-testid="meteogram-content"
           className="space-y-1"
-          style={{ minWidth: Y_AXIS_WIDTH + hours.length * HOUR_WIDTHS[zoom] }}
+          style={{ minWidth: Y_AXIS_WIDTH + hours.length * hourWidth }}
         >
           <IconRow hours={hours} />
           <ChartContainer config={config} className="aspect-auto h-28 w-full">
@@ -236,7 +257,11 @@ export function WeatherMeteogram({
                 allowDecimals={false}
                 unit="°"
               />
-              <StartMarks domain={domain} label={t("statsWeatherStart")} />
+              <StartMarks
+                domain={domain}
+                startHour={startHour}
+                label={t("statsWeatherStart")}
+              />
               <Area
                 dataKey="gap"
                 fill="var(--color-temperature)"
@@ -269,11 +294,14 @@ export function WeatherMeteogram({
                 labelled={!arrivalsCharted}
               />
               <YAxis width={Y_AXIS_WIDTH} tick={false} axisLine={false} />
-              <StartMarks domain={domain} />
+              <StartMarks domain={domain} startHour={startHour} />
               <Bar
                 dataKey="rain"
                 fill="var(--color-rain)"
                 radius={2}
+                // Explicit widths: on a numeric axis Recharts sizes bars from the gap
+                // between points, so a lone point would get no width at all.
+                barSize={hourWidth - 8}
                 isAnimationActive={false}
               >
                 <LabelList
@@ -306,11 +334,12 @@ export function WeatherMeteogram({
                   axisLine={false}
                   allowDecimals={false}
                 />
-                <StartMarks domain={domain} />
+                <StartMarks domain={domain} startHour={startHour} />
                 <Bar
                   dataKey="arrivals"
                   fill="var(--color-arrivals)"
                   radius={1}
+                  barSize={hourWidth / 4 - 2}
                   isAnimationActive={false}
                 />
               </BarChart>

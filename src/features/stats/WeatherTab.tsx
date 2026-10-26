@@ -60,10 +60,10 @@ type Point = {
 };
 
 /** One point per meetup with a temperature in the window, in date order. */
-function scatterPoints(meetups: Row[], window: WeatherWindow): Point[] {
+function scatterPoints(meetups: Row[], weatherWindow: WeatherWindow): Point[] {
   return sortByDate(meetups).flatMap((m) => {
     const temperature =
-      window === "before" ? m.before_avg_temperature : m.avg_temperature;
+      weatherWindow === "before" ? m.before_avg_temperature : m.avg_temperature;
     return temperature === null
       ? []
       : [
@@ -254,15 +254,19 @@ function TemperatureScatter({ points }: { points: Point[] }) {
 
 function WeatherAggregate({ data }: { data: Weather }) {
   const { t, lang } = useLanguage();
-  const [window, setWindow] = useUrlView("weather_window", WINDOWS, "during");
+  const [weatherWindow, setWeatherWindow] = useUrlView(
+    "weather_window",
+    WINDOWS,
+    "during",
+  );
   const { meetups } = data;
   if (meetups.length === 0) {
     return <StatsEmptyState />;
   }
 
-  const points = scatterPoints(meetups, window);
+  const points = scatterPoints(meetups, weatherWindow);
   const bands =
-    window === "before"
+    weatherWindow === "before"
       ? data.temperature_bands_before
       : data.temperature_bands;
 
@@ -274,8 +278,8 @@ function WeatherAggregate({ data }: { data: Weather }) {
           { value: "during", label: t("statsWeatherDuring") },
           { value: "before", label: t("statsWeatherBefore") },
         ]}
-        value={window}
-        onChange={setWindow}
+        value={weatherWindow}
+        onChange={setWeatherWindow}
       />
       <StatsNote>{t("statsNoteWeather")}</StatsNote>
       <StatsNote>{t("statsNoteWeatherSample")}</StatsNote>
