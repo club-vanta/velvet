@@ -16,11 +16,10 @@ import {
 } from "@/components/ui/chart";
 import { StatCard } from "@/components/StatCard";
 import { StatsNote } from "@/components/StatsNote";
-import { useAuth } from "@/auth/AuthContext";
 import { useWeatherStats } from "@/hooks/useWeatherStats";
 import { formatApiDate, formatDecimal } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { useOrg } from "@/lib/org";
+import { useIsOrgAdmin } from "@/lib/org";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
@@ -389,11 +388,8 @@ function WeatherAggregate({ data }: { data: Weather }) {
 
 function WeatherEvent({ event }: { event: Event }) {
   const { t, lang } = useLanguage();
-  const { user } = useAuth();
-  const { activeOrg } = useOrg();
   // As on the meetup page: site admins and org admins can set the location.
-  const canSetLocation =
-    user?.role.name === "SITE_ADMIN" || activeOrg?.role === "ADMIN";
+  const canSetLocation = useIsOrgAdmin();
 
   return (
     <div className="space-y-3">

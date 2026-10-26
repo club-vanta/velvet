@@ -48,9 +48,8 @@ import {
   PronounPill,
 } from "@/components/GuestBadges";
 import { GuestProfile } from "@/features/guests/GuestProfile";
-import { useAuth } from "@/auth/AuthContext";
 import { api } from "@/api/client";
-import { useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
 import { meetupTiming } from "@/lib/meetupTiming";
 import {
@@ -683,9 +682,7 @@ export function MeetupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { activeOrg } = useOrg();
   const orgId = activeOrg?.org_id ?? "";
-  const { user } = useAuth();
-  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
-  const isOrgAdmin = isSiteAdmin || activeOrg?.role === "ADMIN";
+  const isOrgAdmin = useIsOrgAdmin();
   const queryClient = useQueryClient();
   // The table needs about 1000px; below xl (with the sidebar open) it would
   // need sideways scrolling to reach "Check in", so cards are used instead.

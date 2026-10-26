@@ -19,6 +19,7 @@ vi.mock("@/lib/org", () => ({
   useOrg: () => ({
     activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: mockOrgRole },
   }),
+  useIsOrgAdmin: () => mockSiteRole === "SITE_ADMIN" || mockOrgRole === "ADMIN",
 }));
 vi.mock("@/auth/AuthContext", () => ({
   useAuth: () => ({
