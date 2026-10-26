@@ -319,7 +319,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors relative",
+                  // min-w-0 lets a slot shrink below its label, so seven
+                  // items share a 375px screen without labels spilling.
+                  "flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 text-[11px] tracking-tight transition-colors relative",
                   active ? "text-foreground" : "text-muted-foreground",
                 )}
               >
@@ -336,7 +338,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                       </Badge>
                     )}
                 </div>
-                <span>{item.shortLabel ?? item.label}</span>
+                <span className="max-w-full truncate">
+                  {item.shortLabel ?? item.label}
+                </span>
               </Link>
             );
           })}
