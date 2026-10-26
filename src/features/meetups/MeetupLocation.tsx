@@ -90,17 +90,19 @@ export function MeetupLocation({
   };
 
   return (
+    // Below @md the meetup header stacks on a centered axis, so the pin sits
+    // above the address and the links center with it.
     <div className="space-y-2 text-sm">
-      <div className="flex items-start gap-2">
+      <div className="flex flex-col items-center gap-1 @md:flex-row @md:items-start @md:gap-2">
         <MapPin
-          className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+          className="size-4 shrink-0 text-muted-foreground @md:mt-0.5"
           aria-hidden="true"
         />
         <span className="sr-only">{t("meetupLocation")}</span>
         {hasLocation ? (
           <div className="min-w-0 space-y-1">
             <p className="break-words">{label}</p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 @md:justify-start">
               <a
                 href={mapUrl(latitude, longitude)}
                 target="_blank"
@@ -245,7 +247,7 @@ function AddressSearch({
   };
 
   return (
-    <div className="max-w-md animate-in duration-200 fade-in slide-in-from-top-1 motion-reduce:animate-none">
+    <div className="mx-auto max-w-md text-left @md:mx-0 animate-in duration-200 fade-in slide-in-from-top-1 motion-reduce:animate-none">
       <label
         htmlFor={inputId}
         className="mb-1 block text-xs text-muted-foreground"
