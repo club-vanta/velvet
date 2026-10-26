@@ -20,9 +20,9 @@ import {
   formatClockWindow,
   formatCount,
   formatCurveLabel,
-  formatMinuteChange,
+  minuteChange,
   formatOffset,
-  formatPointChange,
+  pointChange,
   formatRate,
   NO_VALUE,
 } from "./statsFormat";
@@ -216,7 +216,7 @@ function ArrivalsContent({
     }
     return line({
       unit: "minutes",
-      change: formatMinuteChange(current, baseline ?? null),
+      change: minuteChange(current, baseline ?? null),
     });
   }
 
@@ -224,7 +224,7 @@ function ArrivalsContent({
     if (!comparison) return undefined;
     return line({
       unit: "points",
-      change: formatPointChange(
+      change: pointChange(
         summary.first_hour_share,
         comparison.first_hour_share,
       ),

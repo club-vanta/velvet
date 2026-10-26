@@ -21,11 +21,11 @@ import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   formatAge,
-  formatChange,
+  percentChange,
   formatCount,
-  formatPointChange,
+  pointChange,
   formatRate,
-  formatYearsChange,
+  yearsChange,
   shareTicks,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -275,7 +275,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
     if (!comparison) return undefined;
     return line({
       unit: "years",
-      change: formatYearsChange(summary.median_age, comparison.median_age),
+      change: yearsChange(summary.median_age, comparison.median_age),
       average:
         comparison.median_age === null
           ? undefined
@@ -287,10 +287,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
     if (!comparison) return undefined;
     return line({
       unit: "points",
-      change: formatPointChange(
-        summary.known_age_share,
-        comparison.known_age_share,
-      ),
+      change: pointChange(summary.known_age_share, comparison.known_age_share),
       average: formatRate(comparison.known_age_share, lang),
     });
   }
@@ -301,7 +298,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
     if (!comparison) return undefined;
     return line({
       unit: "percent",
-      change: formatChange(summary.attended, comparison.attended),
+      change: percentChange(summary.attended, comparison.attended),
     });
   }
 

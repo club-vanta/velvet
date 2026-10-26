@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  formatChange,
+  percentChange,
   formatEventDay,
-  formatMinuteChange,
+  minuteChange,
   formatCurveLabel,
   formatOffset,
-  formatPointChange,
+  pointChange,
   formatRate,
   isSmallSample,
   SMALL_SAMPLE,
   spansYears,
-  formatYearsChange,
+  yearsChange,
   formatAge,
   shareTicks,
   formatClockWindow,
@@ -32,38 +32,38 @@ describe("formatRate", () => {
   });
 });
 
-describe("formatChange", () => {
+describe("percentChange", () => {
   it("returns the whole percent change", () => {
-    expect(formatChange(412, 381)).toBe(8);
-    expect(formatChange(50, 100)).toBe(-50);
+    expect(percentChange(412, 381)).toBe(8);
+    expect(percentChange(50, 100)).toBe(-50);
   });
 
   it("returns null when either side is missing or the baseline is 0", () => {
-    expect(formatChange(5, 0)).toBeNull();
-    expect(formatChange(null, 3)).toBeNull();
-    expect(formatChange(3, null)).toBeNull();
+    expect(percentChange(5, 0)).toBeNull();
+    expect(percentChange(null, 3)).toBeNull();
+    expect(percentChange(3, null)).toBeNull();
   });
 });
 
-describe("formatChange zero", () => {
+describe("percentChange zero", () => {
   it("never returns -0", () => {
-    expect(Object.is(formatChange(99.9, 100), 0)).toBe(true);
+    expect(Object.is(percentChange(99.9, 100), 0)).toBe(true);
   });
 });
 
-describe("formatPointChange", () => {
+describe("pointChange", () => {
   it("returns the whole percentage-point change", () => {
-    expect(formatPointChange(0.18, 0.15)).toBe(3);
-    expect(formatPointChange(0.1, 0.25)).toBe(-15);
+    expect(pointChange(0.18, 0.15)).toBe(3);
+    expect(pointChange(0.1, 0.25)).toBe(-15);
   });
 
   it("returns null when either rate is missing", () => {
-    expect(formatPointChange(null, 0.1)).toBeNull();
-    expect(formatPointChange(0.1, null)).toBeNull();
+    expect(pointChange(null, 0.1)).toBeNull();
+    expect(pointChange(0.1, null)).toBeNull();
   });
 
   it("never returns -0", () => {
-    expect(Object.is(formatPointChange(0.1, 0.104), 0)).toBe(true);
+    expect(Object.is(pointChange(0.1, 0.104), 0)).toBe(true);
   });
 });
 
@@ -134,20 +134,20 @@ describe("formatOffset", () => {
   });
 });
 
-describe("formatMinuteChange", () => {
+describe("minuteChange", () => {
   it("returns the whole-minute difference", () => {
-    expect(formatMinuteChange(45, 40)).toBe(5);
-    expect(formatMinuteChange(30, 45)).toBe(-15);
-    expect(formatMinuteChange(30.4, 30)).toBe(0);
+    expect(minuteChange(45, 40)).toBe(5);
+    expect(minuteChange(30, 45)).toBe(-15);
+    expect(minuteChange(30.4, 30)).toBe(0);
   });
 
   it("returns null when either side is missing", () => {
-    expect(formatMinuteChange(null, 10)).toBeNull();
-    expect(formatMinuteChange(10, null)).toBeNull();
+    expect(minuteChange(null, 10)).toBeNull();
+    expect(minuteChange(10, null)).toBeNull();
   });
 
   it("never returns -0", () => {
-    expect(Object.is(formatMinuteChange(29.6, 30), 0)).toBe(true);
+    expect(Object.is(minuteChange(29.6, 30), 0)).toBe(true);
   });
 });
 
@@ -174,20 +174,20 @@ describe("formatCurveLabel", () => {
   });
 });
 
-describe("formatYearsChange", () => {
+describe("yearsChange", () => {
   it("returns the difference rounded to one decimal", () => {
-    expect(formatYearsChange(32.7, 31.2)).toBe(1.5);
-    expect(formatYearsChange(30, 31.2)).toBe(-1.2);
+    expect(yearsChange(32.7, 31.2)).toBe(1.5);
+    expect(yearsChange(30, 31.2)).toBe(-1.2);
   });
 
   it("never returns -0", () => {
-    expect(Object.is(formatYearsChange(31.16, 31.2), 0)).toBe(true);
-    expect(formatYearsChange(31.24, 31.2)).toBe(0);
+    expect(Object.is(yearsChange(31.16, 31.2), 0)).toBe(true);
+    expect(yearsChange(31.24, 31.2)).toBe(0);
   });
 
   it("returns null when either side is missing", () => {
-    expect(formatYearsChange(null, 31)).toBeNull();
-    expect(formatYearsChange(31, null)).toBeNull();
+    expect(yearsChange(null, 31)).toBeNull();
+    expect(yearsChange(31, null)).toBeNull();
   });
 });
 

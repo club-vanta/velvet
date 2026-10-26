@@ -21,10 +21,10 @@ import { StatsLink } from "./StatsLink";
 import { StatsListMore } from "./StatsListMore";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
-  formatChange,
+  percentChange,
   formatCount,
   formatEventDay,
-  formatPointChange,
+  pointChange,
   formatRate,
   sortByDate,
   spansYears,
@@ -238,7 +238,7 @@ function RetentionContent({
     if (!comparison) return undefined;
     return line({
       unit: "percent",
-      change: formatChange(summary.attendees, comparison.attendees),
+      change: percentChange(summary.attendees, comparison.attendees),
     });
   }
 
@@ -246,7 +246,7 @@ function RetentionContent({
     if (!comparison) return undefined;
     return line({
       unit: "points",
-      change: formatPointChange(
+      change: pointChange(
         summary.first_timer_return_rate,
         comparison.first_timer_return_rate,
       ),

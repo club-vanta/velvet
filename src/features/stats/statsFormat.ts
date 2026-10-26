@@ -13,7 +13,7 @@ export function formatRate(rate: number | null, locale: string): string {
 }
 
 /** Whole percent change from `baseline` to `current`, or null when undefined. */
-export function formatChange(
+export function percentChange(
   current: number | null,
   baseline: number | null,
 ): number | null {
@@ -22,7 +22,7 @@ export function formatChange(
 }
 
 /** Whole percentage-point change between two rates, or null when either is missing. */
-export function formatPointChange(
+export function pointChange(
   current: number | null,
   baseline: number | null,
 ): number | null {
@@ -74,7 +74,7 @@ export function formatOffset(minutes: number): string {
 }
 
 /** Whole-minute difference between two offsets, or null when either is missing. */
-export function formatMinuteChange(
+export function minuteChange(
   current: number | null,
   baseline: number | null,
 ): number | null {
@@ -93,7 +93,7 @@ export function formatCurveLabel(
 }
 
 /** Difference in years rounded to one decimal, or null when either side is missing. */
-export function formatYearsChange(
+export function yearsChange(
   current: number | null,
   baseline: number | null,
 ): number | null {

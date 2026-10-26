@@ -12,9 +12,9 @@ import { StatsListMore } from "./StatsListMore";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   NO_VALUE,
-  formatChange,
+  percentChange,
   formatCount,
-  formatPointChange,
+  pointChange,
   formatRate,
 } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -218,14 +218,14 @@ function OperationsContent({ data }: { data: Operations }) {
     baseline: number | undefined,
   ): string | undefined {
     if (isOneEvent || baseline === undefined) return undefined;
-    return line({ unit: "percent", change: formatChange(current, baseline) });
+    return line({ unit: "percent", change: percentChange(current, baseline) });
   }
 
   function comparePaidShare(): string | undefined {
     if (!comparison) return undefined;
     return line({
       unit: "points",
-      change: formatPointChange(summary.paid_share, comparison.paid_share),
+      change: pointChange(summary.paid_share, comparison.paid_share),
       average: formatRate(comparison.paid_share, lang),
     });
   }

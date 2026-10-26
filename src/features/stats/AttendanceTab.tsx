@@ -19,10 +19,10 @@ import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
-  formatChange,
+  percentChange,
   formatCount,
   formatEventDay,
-  formatPointChange,
+  pointChange,
   formatRate,
   sortByDate,
   spansYears,
@@ -159,8 +159,8 @@ function AttendanceContent({
       average,
       change:
         unit === "points"
-          ? formatPointChange(current, baseline ?? null)
-          : formatChange(current, baseline ?? null),
+          ? pointChange(current, baseline ?? null)
+          : percentChange(current, baseline ?? null),
     });
   }
 
