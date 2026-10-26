@@ -214,6 +214,7 @@ describe("GuestProfile", () => {
           banned_at: "2026-08-22T03:00:00Z",
           banned_reason: "Aggressive at Alter #40",
           banned_by_id: 1,
+          banned_by: { id: 1, username: "admin" },
         },
       ],
     });
