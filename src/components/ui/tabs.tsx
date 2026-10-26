@@ -67,6 +67,20 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   );
 }
 
+/** A shape that follows the active tab, moving between tabs as they change. */
+function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
+  return (
+    <TabsPrimitive.Indicator
+      data-slot="tabs-indicator"
+      className={cn(
+        "absolute top-(--active-tab-top) left-(--active-tab-left) h-(--active-tab-height) w-(--active-tab-width) transition-[left,width] duration-300 ease-out motion-reduce:transition-none",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
@@ -77,4 +91,11 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   );
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants };
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsIndicator,
+  TabsContent,
+  tabsListVariants,
+};

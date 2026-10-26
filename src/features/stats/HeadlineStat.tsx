@@ -33,13 +33,13 @@ export function HeadlineStat({
     >
       <p
         data-slot="label"
-        className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+        className="text-xs font-medium text-muted-foreground sm:text-sm"
       >
         {label}
       </p>
       <p
         data-slot="value"
-        className="text-2xl font-semibold tabular-nums sm:text-3xl"
+        className="mt-1 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl"
       >
         {value}
       </p>

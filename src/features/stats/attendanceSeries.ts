@@ -2,12 +2,12 @@ import type { TranslationKey } from "@/lib/i18n";
 
 /** Stack order, bottom to top. The legend follows it. */
 export const SERIES = [
-  { key: "attended", label: "statsSeriesAttended", color: "var(--chart-2)" },
-  { key: "no_show", label: "statsSeriesNoShow", color: "var(--destructive)" },
+  { key: "attended", label: "statsSeriesAttended", color: "var(--chart-1)" },
+  { key: "no_show", label: "statsSeriesNoShow", color: "var(--chart-2)" },
   {
     key: "cancelled",
     label: "statsSeriesCancelled",
-    color: "var(--chart-4)",
+    color: "var(--chart-3)",
   },
 ] as const satisfies readonly {
   key: string;

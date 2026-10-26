@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsIndicator,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
 import { StatsErrorState } from "./StatsErrorState";
@@ -50,16 +56,27 @@ export function StatsPage() {
       >
         <TabsList
           ref={tabListRef}
-          className="max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="relative max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
+          {/* The selected tab's card slides to the next one, so the switch
+              reads as one motion; the triggers sit above it. */}
+          <TabsIndicator className="rounded-md bg-background shadow-sm ring-1 ring-foreground/10 after:absolute after:inset-x-2 after:bottom-0.5 after:h-0.5 after:rounded-full after:bg-chart-1 dark:bg-input/40" />
           {STATS_TABS.map(({ value, label }) => (
-            <TabsTrigger key={value} value={value}>
+            <TabsTrigger
+              key={value}
+              value={value}
+              className="z-10 data-active:bg-transparent data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-transparent"
+            >
               {t(label)}
             </TabsTrigger>
           ))}
         </TabsList>
         {STATS_TABS.map(({ value, Tab }) => (
-          <TabsContent key={value} value={value}>
+          <TabsContent
+            key={value}
+            value={value}
+            className="animate-in duration-300 fade-in motion-reduce:animate-none"
+          >
             {eventsError || <Tab {...tabProps} />}
           </TabsContent>
         ))}

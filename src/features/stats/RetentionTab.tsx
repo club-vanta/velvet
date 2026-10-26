@@ -12,6 +12,7 @@ import { useRetentionStats } from "@/hooks/useRetentionStats";
 import { formatApiDate } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
+import { BAR_END_UP, BAR_GAP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { CohortTable } from "./CohortTable";
 import { HeadlineStat } from "./HeadlineStat";
@@ -91,11 +92,18 @@ function NewReturningChart({
             }
           />
           <ChartLegend content={<ChartLegendContent />} />
-          <Bar dataKey="new" stackId="people" fill="var(--color-new)" />
+          <Bar
+            dataKey="new"
+            stackId="people"
+            fill="var(--color-new)"
+            {...BAR_GAP}
+          />
           <Bar
             dataKey="returning"
             stackId="people"
             fill="var(--color-returning)"
+            radius={BAR_END_UP}
+            {...BAR_GAP}
           />
         </BarChart>
       </ChartContainer>
@@ -156,7 +164,11 @@ function FrequencyChart({
             allowDecimals={false}
           />
           <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar dataKey="guests" fill="var(--color-guests)" />
+          <Bar
+            dataKey="guests"
+            fill="var(--color-guests)"
+            radius={BAR_END_UP}
+          />
         </BarChart>
       </ChartContainer>
       <ChartTextTable

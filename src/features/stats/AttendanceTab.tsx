@@ -13,6 +13,7 @@ import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
+import { BAR_GAP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { StatsNote } from "@/components/StatsNote";
@@ -62,6 +63,7 @@ function AttendanceChart({
       dataKey={key}
       stackId="attendance"
       fill={`var(--color-${key})`}
+      {...BAR_GAP}
     />
   ));
   const tooltip = (

@@ -22,6 +22,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { useIsOrgAdmin } from "@/lib/org";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
+import { BAR_END_UP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { headlineGrid } from "./headlineGrid";
@@ -152,7 +153,11 @@ function BandsChart({ rows }: { rows: Band[] }) {
             );
           }}
         />
-        <Bar dataKey="avg_attended" fill="var(--color-avg_attended)" />
+        <Bar
+          dataKey="avg_attended"
+          fill="var(--color-avg_attended)"
+          radius={BAR_END_UP}
+        />
       </BarChart>
     </ChartContainer>
   );

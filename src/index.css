@@ -48,6 +48,17 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* A rate bar growing from its baseline (the left edge) when it appears. */
+@theme {
+  --animate-bar-grow: bar-grow 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  @keyframes bar-grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -67,11 +78,15 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* "Velvet" chart palette, in fixed slot order: rose, cobalt, amber,
+     amethyst, teal. Validated as a set (lightness band, chroma, colorblind
+     separation of neighbours, 3:1 on the card) for each mode's card surface;
+     change a step only by re-running that check. */
+  --chart-1: #c2366a;
+  --chart-2: #2f6fd8;
+  --chart-3: #b07604;
+  --chart-4: #7c4cd6;
+  --chart-5: #0a9488;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -102,11 +117,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: #d9497c;
+  --chart-2: #4683e8;
+  --chart-3: #b67c12;
+  --chart-4: #9068e6;
+  --chart-5: #13a093;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
