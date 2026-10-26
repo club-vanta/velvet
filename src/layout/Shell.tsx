@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
-import { useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/lib/org";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -101,8 +101,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
-  const isOrgAdmin = activeOrg?.role === "ADMIN";
-  const canSeeAdminNav = isSiteAdmin || isOrgAdmin;
+  const canSeeAdminNav = useIsOrgAdmin();
 
   function toggleSidebar() {
     setSidebarOpen((prev) => {
