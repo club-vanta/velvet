@@ -1045,15 +1045,17 @@ export function MeetupDetailPage() {
               />
               <MazmoUrlLink
                 url={meetup.mazmo_meetup_url}
+                text={t("goToMazmoEvent")}
                 className="max-w-full text-xs text-muted-foreground"
               />
             </div>
           </div>
           {/* The meetup's tools, in a band of their own like the footer of
-              the guest profile card. Settings (payment, finalize) sit apart
-              on the right. Once finalized the door tools are gone and the
-              band says so, rather than showing a row of dead buttons. */}
-          <div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:px-6">
+              the guest profile card. On phones the buttons stack centered at
+              one width; on wider cards they sit in a row from the left. Once
+              finalized the door tools are gone and the band says so, rather
+              than showing a row of dead buttons. */}
+          <div className="flex flex-col items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:flex-row @md:flex-wrap @md:px-6 [&>button]:w-full [&>button]:max-w-72 @md:[&>button]:w-auto @md:[&>button]:max-w-none">
             {isFinalized ? (
               <div className="flex min-w-0 flex-1 basis-full items-start gap-2 text-sm @md:basis-0">
                 <Lock
@@ -1102,10 +1104,10 @@ export function MeetupDetailPage() {
               </>
             )}
             {isOrgAdmin && (
-              <div className="flex flex-wrap gap-2 @md:ml-auto">
+              <>
                 {!isFinalized && (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => setPaymentToggleOpen(true)}
                     className="gap-2"
                   >
@@ -1125,7 +1127,7 @@ export function MeetupDetailPage() {
                   )}
                   {isFinalized ? t("reopenMeetup") : t("finalizeMeetup")}
                 </Button>
-              </div>
+              </>
             )}
           </div>
         </section>

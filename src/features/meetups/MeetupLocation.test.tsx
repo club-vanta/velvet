@@ -33,18 +33,23 @@ const LOCATED = makeMeetup({
   longitude: -58.4,
 });
 
+/**
+ * Renders the block; `showSaved` re-renders it with the meetup as the refetch
+ * after a save would return it.
+ */
 function renderLocation(meetup = makeMeetup(), canEdit = true) {
-  return render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const tree = (m: typeof meetup) => (
+    <QueryClientProvider client={client}>
       <LanguageProvider>
-        <MeetupLocation orgId="org-1" meetup={meetup} canEdit={canEdit} />
+        <MeetupLocation orgId="org-1" meetup={m} canEdit={canEdit} />
       </LanguageProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+  const { rerender } = render(tree(meetup));
+  return { showSaved: (saved: typeof meetup) => rerender(tree(saved)) };
 }
 
 const searchBox = () =>
@@ -330,8 +335,72 @@ describe("MeetupLocation", () => {
   });
 
   it("returns focus to the search after removing the location", async () => {
-    renderLocation(LOCATED);
+    const { showSaved } = renderLocation(LOCATED);
     await user.click(screen.getByRole("button", { name: "Remove location" }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    showSaved(makeMeetup());
     await waitFor(() => expect(searchBox()).toHaveFocus());
+  });
+
+  it("hides the search while a location is set and offers to change it", () => {
+    renderLocation(LOCATED);
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Change location" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the search focused on Change location and closes it on Cancel", async () => {
+    renderLocation(LOCATED);
+    await user.click(screen.getByRole("button", { name: "Change location" }));
+    expect(searchBox()).toHaveFocus();
+    expect(
+      screen.queryByRole("button", { name: "Change location" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Change location" }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it("cancels the change with Escape once the list is closed", async () => {
+    renderLocation(LOCATED);
+    await user.click(screen.getByRole("button", { name: "Change location" }));
+    await type("Callao");
+    await user.keyboard("{Escape}");
+    expect(searchBox()).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
+  it("saves a new location and moves focus to Change location", async () => {
+    const { showSaved } = renderLocation(LOCATED);
+    await user.click(screen.getByRole("button", { name: "Change location" }));
+    await type("Callao");
+    await user.click(await screen.findByRole("option", { name: CALLAO.label }));
+    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    showSaved(
+      makeMeetup({
+        location_label: CALLAO.label,
+        latitude: CALLAO.latitude,
+        longitude: CALLAO.longitude,
+      }),
+    );
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Change location" }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it("offers no change action to a member", () => {
+    renderLocation(LOCATED, false);
+    expect(
+      screen.queryByRole("button", { name: "Change location" }),
+    ).not.toBeInTheDocument();
   });
 });

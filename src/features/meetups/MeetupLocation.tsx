@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ExternalLink, MapPin, X } from "lucide-react";
+import { ExternalLink, MapPin, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -22,9 +22,11 @@ function mapUrl(latitude: number, longitude: number) {
 }
 
 /**
- * Where the meetup happens: the address with a map link for every member, and
- * for org admins an address search (an ARIA combobox) plus a remove action.
- * Not a FactStrip: this block is editable and has to grow for the search list.
+ * Where the meetup happens: the address with a map link for every member.
+ * Org admins get the address search (an ARIA combobox) while there is no
+ * location, and change and remove actions once there is one; changing opens
+ * the same search. Not a FactStrip: this block is editable and has to grow
+ * for the search list.
  */
 export function MeetupLocation({
   orgId,
@@ -37,20 +39,48 @@ export function MeetupLocation({
 }) {
   const { t } = useLanguage();
   const { location_label: label, latitude, longitude } = meetup;
+  const hasLocation = label !== null && latitude !== null && longitude !== null;
   const setLocation = useSetMeetupLocation(orgId, meetup.id);
+  const [changing, setChanging] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const changeRef = useRef<HTMLButtonElement>(null);
+  // Set when a save starts: once the saved location renders, focus moves to
+  // the control that replaced the one just used.
+  const focusAfterSave = useRef(false);
+
+  useEffect(() => {
+    if (!focusAfterSave.current) return;
+    focusAfterSave.current = false;
+    (hasLocation ? changeRef : searchRef).current?.focus();
+  }, [hasLocation, label]);
 
   const save = (
     location: components["schemas"]["MeetupLocationUpdate"],
     successMessage: string,
-  ) =>
+  ) => {
+    focusAfterSave.current = true;
     setLocation.mutate(location, {
       onSuccess: () => {
+        setChanging(false);
         toast.success(successMessage);
-        searchRef.current?.focus();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => {
+        focusAfterSave.current = false;
+        toast.error(err.message);
+      },
     });
+  };
+
+  // The control to focus next appears on the next render.
+  const startChange = () => {
+    setChanging(true);
+    requestAnimationFrame(() => searchRef.current?.focus());
+  };
+
+  const cancelChange = () => {
+    setChanging(false);
+    requestAnimationFrame(() => changeRef.current?.focus());
+  };
 
   return (
     <div className="space-y-2 text-sm">
@@ -60,7 +90,7 @@ export function MeetupLocation({
           aria-hidden="true"
         />
         <span className="sr-only">{t("meetupLocation")}</span>
-        {label !== null && latitude !== null && longitude !== null ? (
+        {hasLocation ? (
           <div className="min-w-0 space-y-1">
             <p className="break-words">{label}</p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -74,6 +104,18 @@ export function MeetupLocation({
                 {t("meetupLocationOpenMap")}
                 <ExternalLink className="size-3" aria-hidden="true" />
               </a>
+              {canEdit && !changing && (
+                <Button
+                  ref={changeRef}
+                  variant="ghost"
+                  size="sm"
+                  onClick={startChange}
+                  className="h-auto gap-1 px-0 py-0 text-xs text-muted-foreground hover:bg-transparent"
+                >
+                  <Pencil className="size-3" aria-hidden="true" />
+                  {t("meetupLocationChange")}
+                </Button>
+              )}
               {canEdit && (
                 <Button
                   variant="ghost"
@@ -99,11 +141,12 @@ export function MeetupLocation({
           </span>
         )}
       </div>
-      {canEdit && (
+      {canEdit && (!hasLocation || changing) && (
         <AddressSearch
           ref={searchRef}
           orgId={orgId}
           saving={setLocation.isPending}
+          onCancel={changing ? cancelChange : undefined}
           onPick={(result) =>
             save(
               {
@@ -124,12 +167,15 @@ function AddressSearch({
   ref,
   orgId,
   saving,
+  onCancel,
   onPick,
 }: {
   ref: React.Ref<HTMLInputElement>;
   orgId: string;
   // The input stays enabled (read-only) while saving so it keeps focus.
   saving: boolean;
+  /** Offered while changing an existing location; Escape on a closed list also cancels. */
+  onCancel?: () => void;
   onPick: (result: GeocodeResult) => void;
 }) {
   const { t } = useLanguage();
@@ -175,6 +221,7 @@ function AddressSearch({
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       if (expanded) e.preventDefault();
+      else onCancel?.();
       setOpen(false);
       setActiveIndex(-1);
     } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -191,7 +238,7 @@ function AddressSearch({
   };
 
   return (
-    <div className="max-w-md">
+    <div className="max-w-md animate-in duration-200 fade-in slide-in-from-top-1 motion-reduce:animate-none">
       <label
         htmlFor={inputId}
         className="mb-1 block text-xs text-muted-foreground"
@@ -260,9 +307,21 @@ function AddressSearch({
           {t("meetupLocationNoResults")}
         </p>
       )}
-      <p id={hintId} className="mt-1 text-xs text-muted-foreground">
-        {t("meetupLocationHint")}
-      </p>
+      <div className="mt-1 flex items-start justify-between gap-3">
+        <p id={hintId} className="text-xs text-muted-foreground">
+          {t("meetupLocationHint")}
+        </p>
+        {onCancel && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            className="h-auto shrink-0 px-0 py-0 text-xs text-muted-foreground hover:bg-transparent"
+          >
+            {t("cancel")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

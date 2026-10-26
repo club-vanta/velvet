@@ -1172,13 +1172,21 @@ describe("MeetupDetailPage location", () => {
     longitude: -58.4,
   });
 
-  it("lets an org admin search and remove the location", async () => {
+  it("lets an org admin change and remove the location, with the search closed", async () => {
     renderPage(LOCATED, []);
     expect(
-      await screen.findByRole("combobox", { name: "Search an address" }),
+      await screen.findByRole("button", { name: "Change location" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Remove location" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
+  it("offers the address search to an org admin when no location is set", async () => {
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(
+      await screen.findByRole("combobox", { name: "Search an address" }),
     ).toBeInTheDocument();
   });
 
@@ -1272,9 +1280,10 @@ describe("MeetupDetailPage location", () => {
   it("clears a half-typed address search when the route moves to another meetup", async () => {
     renderTwoMeetups();
     const user = userEvent.setup();
-    const box = await screen.findByRole("combobox", {
-      name: "Search an address",
-    });
+    await user.click(
+      await screen.findByRole("button", { name: "Change location" }),
+    );
+    const box = screen.getByRole("combobox", { name: "Search an address" });
     await user.type(box, "Callao");
     await screen.findByRole("listbox");
 
