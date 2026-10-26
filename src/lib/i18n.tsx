@@ -502,6 +502,8 @@ export const translations = {
     statsWeatherNoArrivals: "Nobody arrived in these hours.",
     statsWeatherNoRain: "It did not rain in these hours.",
     statsWeatherQuarter: "{0} to {1}",
+    statsWeatherRainAxis: "Rain (mm)",
+    statsWeatherArrivalsAxis: "Arrivals every 15 min",
     statsNoteWeatherEvent:
       "Weather from Open-Meteo at the event's address, from 3 hours before the start through 6 hours after. Arrivals are every 15 minutes.",
     statsTempBands: "Attendance by temperature",
@@ -1235,6 +1237,8 @@ export const translations = {
     statsWeatherNoArrivals: "Nadie llegó en estas horas.",
     statsWeatherNoRain: "No llovió en estas horas.",
     statsWeatherQuarter: "{0} a {1}",
+    statsWeatherRainAxis: "Lluvia (mm)",
+    statsWeatherArrivalsAxis: "Llegadas cada 15 min",
     statsNoteWeatherEvent:
       "Clima de Open-Meteo en la dirección del evento, desde 3 horas antes del inicio hasta 6 horas después. Las llegadas van cada 15 minutos.",
     statsTempBands: "Asistencia según temperatura",

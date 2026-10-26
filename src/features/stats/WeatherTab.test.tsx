@@ -584,6 +584,16 @@ describe("WeatherTab", () => {
       ]);
     });
 
+    it("titles each strip with what its numbers measure", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      const card = region("Hora por hora");
+      await within(card).findByText("Llegadas cada 15 min");
+      expect(within(card).getByText("Temperatura (°C)")).toBeInTheDocument();
+      expect(within(card).getByText("Lluvia (mm)")).toBeInTheDocument();
+    });
+
     it("names the shaded hours before the start in the legend", async () => {
       respond(ok(oneEvent(event())));
       renderTab({ query: single });

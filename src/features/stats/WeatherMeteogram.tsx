@@ -128,6 +128,18 @@ function StartMarks({
 }
 
 /**
+ * What a strip's y axis measures, over its top left. Sticky, so it stays in
+ * view while the chart scrolls sideways.
+ */
+function StripTitle({ children }: { children: string }) {
+  return (
+    <p className="sticky left-0 w-fit pt-1 text-xs text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+/**
  * One icon per hour over the plot area, still for viewers who ask for less
  * motion. Decorative: the text table names each hour's weather.
  */
@@ -230,7 +242,7 @@ export function WeatherMeteogram({
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm bg-chart-2" />
-          {t("weatherRain")} (mm)
+          {t("weatherRain")}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm bg-chart-1" />
@@ -273,6 +285,7 @@ export function WeatherMeteogram({
           style={{ minWidth: Y_AXIS_WIDTH + hours.length * hourWidth }}
         >
           <IconRow hours={hours} />
+          <StripTitle>{t("statsTemperatureAxis")}</StripTitle>
           <ChartContainer config={config} className="aspect-auto h-28 w-full">
             <ComposedChart data={temperature} margin={MARGIN}>
               <TimeAxis
@@ -321,6 +334,7 @@ export function WeatherMeteogram({
               />
             </ComposedChart>
           </ChartContainer>
+          {rained && <StripTitle>{t("statsWeatherRainAxis")}</StripTitle>}
           {rained && (
             <ChartContainer config={config} className="aspect-auto h-16 w-full">
               <BarChart data={rain} margin={{ ...MARGIN, top: 14 }}>
@@ -363,6 +377,9 @@ export function WeatherMeteogram({
                 </Bar>
               </BarChart>
             </ChartContainer>
+          )}
+          {arrivalsCharted && (
+            <StripTitle>{t("statsWeatherArrivalsAxis")}</StripTitle>
           )}
           {arrivalsCharted && (
             <ChartContainer config={config} className="aspect-auto h-24 w-full">
