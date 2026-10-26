@@ -1,20 +1,13 @@
 import type { StatsQuery } from "@/lib/statsQuery";
 
-export type RangePreset = "30d" | "3m" | "12m" | "ytd" | "all" | "custom";
+export const PRESETS = ["30d", "3m", "12m", "ytd", "all", "custom"] as const;
+
+export type RangePreset = (typeof PRESETS)[number];
 
 export const DEFAULT_RANGE: RangePreset = "3m";
 
-const PRESETS: readonly string[] = [
-  "30d",
-  "3m",
-  "12m",
-  "ytd",
-  "all",
-  "custom",
-] satisfies RangePreset[];
-
 export function isRangePreset(value: string | null): value is RangePreset {
-  return value !== null && PRESETS.includes(value);
+  return PRESETS.some((preset) => preset === value);
 }
 
 /** True for a real calendar day written as YYYY-MM-DD. */

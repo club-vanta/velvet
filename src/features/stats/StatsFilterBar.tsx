@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { formatEventDay } from "./statsFormat";
-import type { RangePreset } from "./statsPeriod";
+import { PRESETS, type RangePreset } from "./statsPeriod";
 import type { useStatsFilters } from "./useStatsFilters";
 
 type Filters = ReturnType<typeof useStatsFilters>;
@@ -21,8 +21,6 @@ const PRESET_LABELS: Record<RangePreset, TranslationKey> = {
   all: "statsRangeAll",
   custom: "statsRangeCustom",
 };
-
-const PRESET_ORDER = Object.keys(PRESET_LABELS) as RangePreset[];
 
 const ALL_EVENTS = "all";
 
@@ -86,7 +84,7 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
           <SelectValue>{presetName}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {PRESET_ORDER.map((p) => (
+          {PRESETS.map((p) => (
             <SelectItem key={p} value={p}>
               {t(PRESET_LABELS[p])}
             </SelectItem>
