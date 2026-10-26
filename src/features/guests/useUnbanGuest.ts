@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
-import { guestKey } from "@/lib/queryKeys";
+import { invalidateGuestBan } from "@/lib/queryKeys";
 
 /**
  * Unban has no confirmation dialog (same as the Vanted tab), so it is a
@@ -27,11 +27,7 @@ export function useUnbanGuest(orgId: string) {
       return guest;
     },
     onSuccess: (guest) => {
-      void queryClient.invalidateQueries({
-        queryKey: ["guests-banned", orgId],
-      });
-      void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
-      void queryClient.invalidateQueries({ queryKey: guestKey(guest.id) });
+      invalidateGuestBan(queryClient, orgId, guest.id);
       toast.success(t("guestUnvanted").replace("{0}", guest.displayname));
     },
     onError: (err: Error) => toast.error(err.message),

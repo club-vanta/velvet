@@ -144,3 +144,19 @@ export function invalidateMeetupLocation(
   void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
   invalidateMeetupWeather(queryClient, orgId, meetupId);
 }
+
+/**
+ * Banning or unbanning a guest changes the banned list, the is_banned flag
+ * the meetup guest lists derive server-side, the guest's own profile and the
+ * ban numbers of the org stats, so all four are refreshed together.
+ */
+export function invalidateGuestBan(
+  queryClient: QueryClient,
+  orgId: string,
+  guestId: string,
+): void {
+  void queryClient.invalidateQueries({ queryKey: ["guests-banned", orgId] });
+  void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
+  void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });
+  void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
+}

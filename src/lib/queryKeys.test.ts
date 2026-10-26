@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
 import {
+  guestKey,
   guestMeetupsKey,
   guestMeetupsOrgKey,
   invalidateAllGuestIdentities,
+  invalidateGuestBan,
   invalidateGuestIdentity,
   invalidateMeetupGuests,
   invalidateMeetupLocation,
@@ -103,6 +105,21 @@ describe("invalidateMeetupWeather", () => {
     expect(spy).toHaveBeenCalledWith({
       queryKey: meetupWeatherKey("org-1", "meetup-1"),
     });
+    expect(spy).toHaveBeenCalledWith({ queryKey: statsOrgKey("org-1") });
+  });
+});
+
+describe("invalidateGuestBan", () => {
+  it("refreshes the banned list, meetup guest lists, the guest and the org stats", () => {
+    const queryClient = new QueryClient();
+    const spy = vi.spyOn(queryClient, "invalidateQueries");
+
+    invalidateGuestBan(queryClient, "org-1", "g-1");
+
+    expect(spy).toHaveBeenCalledTimes(4);
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["guests-banned", "org-1"] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ["meetup-guests"] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: guestKey("g-1") });
     expect(spy).toHaveBeenCalledWith({ queryKey: statsOrgKey("org-1") });
   });
 });

@@ -15,7 +15,7 @@ import { InputWithPrefix } from "@/components/ui/input-with-prefix";
 import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
-import { invalidateGuestIdentity } from "@/lib/queryKeys";
+import { invalidateGuestBan, invalidateGuestIdentity } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 // Only the identity fields are needed, so both GuestPublic and the
@@ -274,11 +274,7 @@ export function BanDialog({
       if (error) throw new Error(extractApiError(error, t("banFailed")));
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["guests-banned", orgId],
-      });
-      // The meetup lists derive is_banned server-side.
-      void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
+      invalidateGuestBan(queryClient, orgId, guest.id);
       toast.success(t("guestVanted").replace("{0}", guest.displayname));
       onClose();
     },
