@@ -14,21 +14,7 @@ import {
   resolveRange,
   type RangePreset,
 } from "./statsPeriod";
-
-const TABS = [
-  "attendance",
-  "arrivals",
-  "demographics",
-  "retention",
-  "operations",
-  "weather",
-] as const;
-
-export type StatsTab = (typeof TABS)[number];
-
-function isStatsTab(value: string | null): value is StatsTab {
-  return TABS.some((t) => t === value);
-}
+import { isStatsTab, type StatsTab } from "./statsTabs";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 

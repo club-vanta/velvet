@@ -2,16 +2,11 @@ import { useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
-import { ArrivalsTab } from "./ArrivalsTab";
-import { AttendanceTab } from "./AttendanceTab";
-import { DemographicsTab } from "./DemographicsTab";
-import { OperationsTab } from "./OperationsTab";
-import { RetentionTab } from "./RetentionTab";
 import { StatsErrorState } from "./StatsErrorState";
 import { StatsFilterBar } from "./StatsFilterBar";
-import { WeatherTab } from "./WeatherTab";
 import type { StatsTabProps } from "./statsTab";
-import { useStatsFilters, type StatsTab } from "./useStatsFilters";
+import { STATS_TABS, type StatsTab } from "./statsTabs";
+import { useStatsFilters } from "./useStatsFilters";
 
 export function StatsPage() {
   const { t } = useLanguage();
@@ -57,37 +52,17 @@ export function StatsPage() {
           ref={tabListRef}
           className="max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <TabsTrigger value="attendance">
-            {t("statsTabAttendance")}
-          </TabsTrigger>
-          <TabsTrigger value="arrivals">{t("statsTabArrivals")}</TabsTrigger>
-          <TabsTrigger value="demographics">
-            {t("statsTabDemographics")}
-          </TabsTrigger>
-          <TabsTrigger value="retention">{t("statsTabRetention")}</TabsTrigger>
-          <TabsTrigger value="operations">
-            {t("statsTabOperations")}
-          </TabsTrigger>
-          <TabsTrigger value="weather">{t("statsTabWeather")}</TabsTrigger>
+          {STATS_TABS.map(({ value, label }) => (
+            <TabsTrigger key={value} value={value}>
+              {t(label)}
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="attendance">
-          {eventsError || <AttendanceTab {...tabProps} />}
-        </TabsContent>
-        <TabsContent value="arrivals">
-          {eventsError || <ArrivalsTab {...tabProps} />}
-        </TabsContent>
-        <TabsContent value="demographics">
-          {eventsError || <DemographicsTab {...tabProps} />}
-        </TabsContent>
-        <TabsContent value="retention">
-          {eventsError || <RetentionTab {...tabProps} />}
-        </TabsContent>
-        <TabsContent value="operations">
-          {eventsError || <OperationsTab {...tabProps} />}
-        </TabsContent>
-        <TabsContent value="weather">
-          {eventsError || <WeatherTab {...tabProps} />}
-        </TabsContent>
+        {STATS_TABS.map(({ value, Tab }) => (
+          <TabsContent key={value} value={value}>
+            {eventsError || <Tab {...tabProps} />}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
