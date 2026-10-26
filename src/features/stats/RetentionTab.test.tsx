@@ -20,6 +20,7 @@ type Lapsed = components["schemas"]["LapsedRegularPublic"];
 const SUMMARY: Summary = {
   attendees: 120,
   new_guests: 49,
+  came_back: 17,
   returning: 71,
   new_share: 0.4083,
   first_timer_return_rate: 0.35,
@@ -28,6 +29,7 @@ const SUMMARY: Summary = {
 const NOBODY: Summary = {
   attendees: 0,
   new_guests: 0,
+  came_back: 0,
   returning: 0,
   new_share: null,
   first_timer_return_rate: null,
@@ -436,6 +438,51 @@ describe("RetentionTab", () => {
     expect(
       screen.queryByText(/^Personas que vinieron 3 veces o más/),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows who came only once instead of first times over all time", async () => {
+    respond(
+      ok(
+        stats({
+          summary: {
+            attendees: 155,
+            new_guests: 155,
+            came_back: 50,
+            returning: 0,
+            new_share: 1,
+            first_timer_return_rate: 0.3226,
+          },
+        }),
+      ),
+    );
+    renderTab({ query: {} });
+    await headlinesReady();
+    expect(slot("Vinieron una sola vez", "value")).toBe("105");
+    expect(slot("Vinieron una sola vez", "subline")).toBe("68% del total");
+    expect(() => headline("Primera vez")).toThrow();
+    expect(
+      Array.from(document.querySelectorAll("blockquote")).map(
+        (el) => el.textContent,
+      ),
+    ).not.toContain(
+      "Primera vez es el primer evento de esta organización al que la persona vino, desde siempre. Venir como staff no cuenta.",
+    );
+  });
+
+  it("keeps first times for one event over all time", async () => {
+    respond(ok(stats()));
+    renderTab({ query: { meetupId: "m-1" } });
+    await headlinesReady();
+    expect(slot("Primera vez", "value")).toBe("49");
+    expect(() => headline("Vinieron una sola vez")).toThrow();
+  });
+
+  it("keeps first times for a period with bounds", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    expect(slot("Primera vez", "value")).toBe("49");
+    expect(() => headline("Vinieron una sola vez")).toThrow();
   });
 
   it("explains first times, the return rate, cohorts and lapsed regulars", async () => {

@@ -2882,13 +2882,16 @@ export interface components {
     /**
      * RetentionSummaryPublic
      * @description Unique guests in scope. new_share and first_timer_return_rate are null with nothing to
-     *     divide by; the return rate counts later attendances even after the period ends.
+     *     divide by. came_back is how many new guests attended again later and, like the return
+     *     rate, counts attendances even after the period ends.
      */
     RetentionSummaryPublic: {
       /** Attendees */
       attendees: number;
       /** New Guests */
       new_guests: number;
+      /** Came Back */
+      came_back: number;
       /** Returning */
       returning: number;
       /** New Share */

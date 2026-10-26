@@ -226,9 +226,15 @@ function LapsedList({
 function RetentionContent({
   data,
   single,
+  allTime,
 }: {
   data: Retention;
   single: boolean;
+  /**
+   * Every guest's first time falls inside "all time", so "First time" would
+   * always read 100%; the card shows who came only once instead.
+   */
+  allTime: boolean;
 }) {
   const { t, lang } = useLanguage();
   const {
@@ -270,6 +276,7 @@ function RetentionContent({
   }
 
   const returnRate = summary.first_timer_return_rate;
+  const cameOnce = summary.attendees - summary.came_back;
 
   return (
     <div className="space-y-3">
@@ -279,18 +286,29 @@ function RetentionContent({
           value={formatCount(summary.attendees, lang)}
           comparison={compareAttendees()}
         />
-        <HeadlineStat
-          label={t("statsFirstTime")}
-          value={formatCount(summary.new_guests, lang)}
-          subline={
-            summary.new_share === null
-              ? undefined
-              : t("statsShareOfTotal").replace(
-                  "{0}",
-                  formatRate(summary.new_share, lang),
-                )
-          }
-        />
+        {allTime ? (
+          <HeadlineStat
+            label={t("statsCameOnce")}
+            value={formatCount(cameOnce, lang)}
+            subline={t("statsShareOfTotal").replace(
+              "{0}",
+              formatRate(cameOnce / summary.attendees, lang),
+            )}
+          />
+        ) : (
+          <HeadlineStat
+            label={t("statsFirstTime")}
+            value={formatCount(summary.new_guests, lang)}
+            subline={
+              summary.new_share === null
+                ? undefined
+                : t("statsShareOfTotal").replace(
+                    "{0}",
+                    formatRate(summary.new_share, lang),
+                  )
+            }
+          />
+        )}
         <HeadlineStat
           label={t("statsCameBack")}
           value={formatRate(returnRate, lang)}
@@ -303,7 +321,7 @@ function RetentionContent({
           n={returnRate === null ? undefined : summary.new_guests}
         />
       </div>
-      <StatsNote>{t("statsNoteRetention")}</StatsNote>
+      {!allTime && <StatsNote>{t("statsNoteRetention")}</StatsNote>}
       <StatsNote>{t("statsNoteReturnRate")}</StatsNote>
       {!single && (
         <>
@@ -359,7 +377,13 @@ export function RetentionTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="retention-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <RetentionContent data={data} single={single} />}
+      {(data) => (
+        <RetentionContent
+          data={data}
+          single={single}
+          allTime={!single && !query?.from && !query?.to}
+        />
+      )}
     </StatsTabGate>
   );
 }
