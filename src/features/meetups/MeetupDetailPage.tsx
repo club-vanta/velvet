@@ -1134,7 +1134,13 @@ export function MeetupDetailPage() {
       )}
 
       {meetupQ.isSuccess && (
-        <MeetupWeather orgId={orgId} meetupId={id!} canRefresh={isOrgAdmin} />
+        // Keyed by meetup so a pending refresh does not carry over to the next one.
+        <MeetupWeather
+          key={id}
+          orgId={orgId}
+          meetupId={id!}
+          canRefresh={isOrgAdmin}
+        />
       )}
 
       {/* Stats */}

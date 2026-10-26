@@ -1220,14 +1220,21 @@ describe("MeetupDetailPage location", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("clears a half-typed address search when the route moves to another meetup", async () => {
-    const OTHER = makeMeetup({ id: "meetup-2", name: "Other Night" });
+  const OTHER = makeMeetup({ id: "meetup-2", name: "Other Night" });
+
+  /** Two meetups behind one route, with a link that moves from the first to the second. */
+  function renderTwoMeetups() {
     mockApiGet.mockImplementation(
       (path: string, opts?: { params?: { path?: { meetup_id?: string } } }) => {
         if (path === "/organizations/{org_id}/meetups/{meetup_id}")
           return Promise.resolve({
             data:
               opts?.params?.path?.meetup_id === "meetup-2" ? OTHER : LOCATED,
+            error: undefined,
+          });
+        if (path === "/organizations/{org_id}/meetups/{meetup_id}/weather")
+          return Promise.resolve({
+            data: { status: "NOT_FETCHED", weather: null, ready: true },
             error: undefined,
           });
         if (path === "/organizations/{org_id}/geocode")
@@ -1243,7 +1250,6 @@ describe("MeetupDetailPage location", () => {
         return Promise.resolve({ data: undefined, error: undefined });
       },
     );
-    const user = userEvent.setup();
     render(
       <QueryClientProvider
         client={
@@ -1260,6 +1266,11 @@ describe("MeetupDetailPage location", () => {
         </LanguageProvider>
       </QueryClientProvider>,
     );
+  }
+
+  it("clears a half-typed address search when the route moves to another meetup", async () => {
+    renderTwoMeetups();
+    const user = userEvent.setup();
     const box = await screen.findByRole("combobox", {
       name: "Search an address",
     });
