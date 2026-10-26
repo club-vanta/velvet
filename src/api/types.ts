@@ -1512,13 +1512,11 @@ export interface components {
     /**
      * ArrivalBucketPublic
      * @description Arrivals in one 15 minute bucket starting start_minute minutes from the
-     *     meetup start (negative = before). local_time is "HH:MM" for one meetup, null otherwise.
+     *     meetup start (negative = before). clock_curve has the same arrivals by the local clock.
      */
     ArrivalBucketPublic: {
       /** Start Minute */
       start_minute: number;
-      /** Local Time */
-      local_time: string | null;
       /** Arrivals */
       arrivals: number;
     };

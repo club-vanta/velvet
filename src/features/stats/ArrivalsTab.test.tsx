@@ -20,7 +20,7 @@ type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 const SUMMARY: Summary = {
   arrivals: 200,
   excluded_arrivals: 0,
-  peak: { start_minute: 30, local_time: null, arrivals: 40 },
+  peak: { start_minute: 30, arrivals: 40 },
   peak_local_time: "22:30",
   mean_minutes: 45,
   p90_minutes: 90,
@@ -89,8 +89,8 @@ const LEAD: LeadRow[] = [
 function stats(overrides: Partial<Arrivals> = {}): Arrivals {
   return {
     curve: [
-      { start_minute: 15, local_time: null, arrivals: 20 },
-      { start_minute: 30, local_time: null, arrivals: 40 },
+      { start_minute: 15, arrivals: 20 },
+      { start_minute: 30, arrivals: 40 },
     ],
     clock_curve: [
       { start_minute: 1335, local_time: "22:15", arrivals: 20 },
@@ -278,7 +278,7 @@ describe("ArrivalsTab", () => {
         stats({
           summary: {
             ...SUMMARY,
-            peak: { start_minute: 0, local_time: null, arrivals: 40 },
+            peak: { start_minute: 0, arrivals: 40 },
             mean_minutes: -20,
           },
         }),
@@ -294,10 +294,10 @@ describe("ArrivalsTab", () => {
     respond(
       ok(
         stats({
-          curve: [{ start_minute: 30, local_time: "23:30", arrivals: 40 }],
+          curve: [{ start_minute: 30, arrivals: 40 }],
           summary: {
             ...SUMMARY,
-            peak: { start_minute: 30, local_time: "23:30", arrivals: 40 },
+            peak: { start_minute: 30, arrivals: 40 },
             peak_local_time: "23:30",
             mean_local_time: "23:45",
             p90_local_time: "00:30",
@@ -570,7 +570,7 @@ describe("ArrivalsTab", () => {
     respond(
       ok(
         stats({
-          curve: [{ start_minute: 30, local_time: "23:30", arrivals: 40 }],
+          curve: [{ start_minute: 30, arrivals: 40 }],
           clock_curve: [
             { start_minute: 1410, local_time: "23:30", arrivals: 40 },
           ],
@@ -589,7 +589,7 @@ describe("ArrivalsTab", () => {
     respond(
       ok(
         stats({
-          curve: [{ start_minute: 30, local_time: "23:30", arrivals: 40 }],
+          curve: [{ start_minute: 30, arrivals: 40 }],
         }),
       ),
     );
