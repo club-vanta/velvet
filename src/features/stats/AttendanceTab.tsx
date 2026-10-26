@@ -28,6 +28,7 @@ import {
   sortByDate,
   spansYears,
 } from "./statsFormat";
+import type { StatsPeriodChoice } from "./statsPeriod";
 import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
 
@@ -141,13 +142,15 @@ function AttendanceChart({
 function AttendanceContent({
   data,
   single,
+  period,
 }: {
   data: Attendance;
   single: boolean;
+  period: StatsPeriodChoice;
 }) {
   const { t, lang } = useLanguage();
   const { meetups, totals, comparison, comparison_kind } = data;
-  const line = useComparisonLine(comparison_kind);
+  const line = useComparisonLine(comparison_kind, period);
   if (meetups.length === 0) {
     return <StatsEmptyState />;
   }
@@ -244,7 +247,12 @@ function AttendanceContent({
   );
 }
 
-export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
+export function AttendanceTab({
+  orgId,
+  query,
+  period,
+  onShowAll,
+}: StatsTabProps) {
   const statsQ = useAttendanceStats(orgId, query);
   const single = !!query?.meetupId;
 
@@ -256,7 +264,9 @@ export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="attendance-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <AttendanceContent data={data} single={single} />}
+      {(data) => (
+        <AttendanceContent data={data} single={single} period={period} />
+      )}
     </StatsTabGate>
   );
 }

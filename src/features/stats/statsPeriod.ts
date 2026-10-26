@@ -4,10 +4,41 @@ export const PRESETS = ["30d", "3m", "12m", "ytd", "all", "custom"] as const;
 
 export type RangePreset = (typeof PRESETS)[number];
 
-export const DEFAULT_RANGE: RangePreset = "3m";
+/** A preset whose days follow from today, unlike "custom". */
+export type NamedPreset = Exclude<RangePreset, "custom">;
+
+export const DEFAULT_RANGE: NamedPreset = "3m";
+
+/** The inclusive first and last day of a custom period (YYYY-MM-DD). */
+export type CustomRange = { from: string; to: string };
+
+/** The period the user picked, as the filters name it rather than as dates. */
+export type StatsPeriodChoice =
+  | { preset: NamedPreset }
+  | { preset: "custom"; custom: CustomRange };
 
 export function isRangePreset(value: string | null): value is RangePreset {
   return PRESETS.some((preset) => preset === value);
+}
+
+/**
+ * The period in the `range`, `from` and `to` URL params. A missing, unknown,
+ * or malformed range, or a custom one without two ordered days, is the
+ * default.
+ */
+export function parsePeriod(
+  range: string | null,
+  from: string | null,
+  to: string | null,
+): StatsPeriodChoice {
+  if (range === "custom") {
+    return isValidDay(from) && isValidDay(to) && from <= to
+      ? { preset: "custom", custom: { from, to } }
+      : { preset: DEFAULT_RANGE };
+  }
+  return {
+    preset: isRangePreset(range) && range !== "custom" ? range : DEFAULT_RANGE,
+  };
 }
 
 /** True for a real calendar day written as YYYY-MM-DD. */
@@ -54,7 +85,7 @@ function subtractMonths(day: string, months: number): string {
 export function resolveRange(
   preset: RangePreset,
   today: string,
-  custom?: { from: string; to: string },
+  custom?: CustomRange,
 ): Pick<StatsQuery, "from" | "to"> {
   switch (preset) {
     case "all":

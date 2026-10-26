@@ -119,6 +119,7 @@ function renderTab(props: Partial<StatsTabProps> = {}, url = "/stats") {
           <ArrivalsTab
             orgId="org-1"
             query={PERIOD}
+            period={{ preset: "3m" }}
             onShowAll={onShowAll}
             {...props}
           />
@@ -323,14 +324,14 @@ describe("ArrivalsTab", () => {
     expect(slot(MEAN, "value")).toBe("23:45");
     expect(slot(MEAN, "subline")).toBe("45 min después del inicio");
     expect(slot(MEAN, "comparison")).toBe(
-      "Todos los eventos del período: 00:05",
+      "En todos los eventos de los últimos 3 meses: 00:05",
     );
     expect(slot(NINETY, "value")).toBe("00:30");
     expect(slot(NINETY, "comparison")).toBe(
-      "Todos los eventos del período: 00:35",
+      "En todos los eventos de los últimos 3 meses: 00:35",
     );
     expect(slot(FIRST_HOUR, "comparison")).toBe(
-      "Todos los eventos del período: 86%",
+      "En todos los eventos de los últimos 3 meses: 86%",
     );
   });
 

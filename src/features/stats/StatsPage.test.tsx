@@ -72,18 +72,17 @@ const meetupsOk = (meetups: Meetup[]) =>
 function renderPage(
   url = "/stats",
   meetupsResult: () => unknown = () => meetupsOk(MEETUPS),
+  attendanceResult?: () => unknown,
 ) {
-  // The attendance tab has its own tests, so its request just stays pending.
-  mockApiGet.mockImplementation((path: string) =>
-    path === "/organizations/{org_id}/stats/attendance" ||
-    path === "/organizations/{org_id}/stats/arrivals" ||
-    path === "/organizations/{org_id}/stats/demographics" ||
-    path === "/organizations/{org_id}/stats/retention" ||
-    path === "/organizations/{org_id}/stats/operations" ||
-    path === "/organizations/{org_id}/stats/weather"
+  // Each tab has its own tests, so its request just stays pending unless a
+  // test needs the attendance tab to show something.
+  mockApiGet.mockImplementation((path: string) => {
+    if (path === "/organizations/{org_id}/stats/attendance" && attendanceResult)
+      return attendanceResult();
+    return path.startsWith("/organizations/{org_id}/stats/")
       ? new Promise(() => {})
-      : meetupsResult(),
-  );
+      : meetupsResult();
+  });
   return render(
     <QueryClientProvider
       client={
@@ -279,6 +278,48 @@ describe("StatsPage", () => {
     const from = screen.getByLabelText("Desde");
     fireEvent.change(from, { target: { value: "2026-03-05" } });
     expect(search()).toBe("?range=custom&from=2026-03-05&to=2026-03-31&keep=1");
+  });
+
+  it("names the custom period in the line comparing one event", async () => {
+    const totals: components["schemas"]["AttendanceTotalsPublic"] = {
+      events: 1,
+      signed_up: 100,
+      cancelled: 10,
+      attended: 80,
+      walkin: 2,
+      no_show: 10,
+      cancellation_rate: 0.1,
+      no_show_rate: 0.1,
+      avg_signed_up_per_event: 100,
+      avg_attended_per_event: 80,
+    };
+    const attendance: components["schemas"]["AttendanceStatsPublic"] = {
+      meetups: [
+        {
+          meetup_id: "in-range",
+          name: "Alter Marzo",
+          date: "2026-03-11T01:00:00Z",
+          signed_up: 100,
+          cancelled: 10,
+          attended: 80,
+          walkin: 2,
+          no_show: 10,
+        },
+      ],
+      totals,
+      comparison_kind: "PERIOD_AVERAGE",
+      comparison: { ...totals, events: 4, avg_attended_per_event: 82.4 },
+    };
+    renderPage(
+      "/stats?range=custom&from=2026-03-01&to=2026-03-31&meetup=in-range",
+      () => meetupsOk(MEETUPS),
+      () => Promise.resolve({ data: attendance, error: undefined }),
+    );
+    expect(
+      await screen.findByText(
+        "En todos los eventos del 01/03/2026 al 31/03/2026: 82,4",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("removes a meetup param that is not an offered event", async () => {

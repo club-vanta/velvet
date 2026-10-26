@@ -30,6 +30,7 @@ import {
   sortByDate,
   spansYears,
 } from "./statsFormat";
+import type { StatsPeriodChoice } from "./statsPeriod";
 import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
 
@@ -227,9 +228,11 @@ function RetentionContent({
   data,
   single,
   allTime,
+  period,
 }: {
   data: Retention;
   single: boolean;
+  period: StatsPeriodChoice;
   /**
    * Every guest's first time falls inside "all time", so "First time" would
    * always read 100%; the card shows who came only once instead.
@@ -247,7 +250,7 @@ function RetentionContent({
     comparison,
     comparison_kind,
   } = data;
-  const line = useComparisonLine(comparison_kind);
+  const line = useComparisonLine(comparison_kind, period);
 
   if (summary.attendees === 0) {
     return <StatsEmptyState />;
@@ -365,7 +368,12 @@ function RetentionContent({
   );
 }
 
-export function RetentionTab({ orgId, query, onShowAll }: StatsTabProps) {
+export function RetentionTab({
+  orgId,
+  query,
+  period,
+  onShowAll,
+}: StatsTabProps) {
   const statsQ = useRetentionStats(orgId, query);
   const single = !!query?.meetupId;
 
@@ -382,6 +390,7 @@ export function RetentionTab({ orgId, query, onShowAll }: StatsTabProps) {
           data={data}
           single={single}
           allTime={!single && !query?.from && !query?.to}
+          period={period}
         />
       )}
     </StatsTabGate>

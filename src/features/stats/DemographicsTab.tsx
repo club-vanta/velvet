@@ -26,6 +26,7 @@ import {
   yearsChange,
   shareTicks,
 } from "./statsFormat";
+import type { StatsPeriodChoice } from "./statsPeriod";
 import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
 
@@ -141,11 +142,17 @@ function ShareChart<G extends Group>({
   );
 }
 
-function DemographicsContent({ data }: { data: Demographics }) {
+function DemographicsContent({
+  data,
+  period,
+}: {
+  data: Demographics;
+  period: StatsPeriodChoice;
+}) {
   const { t, lang } = useLanguage();
   const labels = useGroupLabels();
   const { gender, age, summary, comparison, comparison_kind } = data;
-  const line = useComparisonLine(comparison_kind);
+  const line = useComparisonLine(comparison_kind, period);
 
   if (summary.attended === 0) {
     return <StatsEmptyState />;
@@ -229,7 +236,12 @@ function DemographicsContent({ data }: { data: Demographics }) {
   );
 }
 
-export function DemographicsTab({ orgId, query, onShowAll }: StatsTabProps) {
+export function DemographicsTab({
+  orgId,
+  query,
+  period,
+  onShowAll,
+}: StatsTabProps) {
   const statsQ = useDemographicsStats(orgId, query);
   const single = !!query?.meetupId;
 
@@ -241,7 +253,7 @@ export function DemographicsTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="demographics-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <DemographicsContent data={data} />}
+      {(data) => <DemographicsContent data={data} period={period} />}
     </StatsTabGate>
   );
 }

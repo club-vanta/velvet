@@ -200,6 +200,7 @@ function renderTab(props: Partial<StatsTabProps> = {}, url = "/stats") {
           <WeatherTab
             orgId="org-1"
             query={PERIOD}
+            period={{ preset: "3m" }}
             onShowAll={onShowAll}
             {...props}
           />

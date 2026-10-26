@@ -115,6 +115,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
           <RetentionTab
             orgId="org-1"
             query={PERIOD}
+            period={{ preset: "3m" }}
             onShowAll={onShowAll}
             {...props}
           />
@@ -363,7 +364,7 @@ describe("RetentionTab", () => {
       "De quienes vinieron por primera vez",
     );
     expect(slot("Volvieron", "comparison")).toBe(
-      "Todos los eventos del período: 30%",
+      "En todos los eventos de los últimos 3 meses: 30%",
     );
     for (const heading of AGGREGATE_HEADINGS) {
       expect(screen.queryByText(heading)).not.toBeInTheDocument();

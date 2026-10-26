@@ -133,6 +133,7 @@ function renderTab(props: Partial<StatsTabProps> = {}, url = "/stats") {
           <NoShowsTab
             orgId="org-1"
             query={PERIOD}
+            period={{ preset: "3m" }}
             onShowAll={onShowAll}
             {...props}
           />
@@ -290,7 +291,9 @@ describe("NoShowsTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot(RATE, "comparison")).toBe("Todos los eventos del período: 10%");
+    expect(slot(RATE, "comparison")).toBe(
+      "En todos los eventos de los últimos 3 meses: 10%",
+    );
     expect(slot(COUNT, "comparison")).toBeNull();
     expect(slot(REPEAT, "comparison")).toBeNull();
     expect(slot(REPEAT, "subline")).toBe(

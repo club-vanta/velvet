@@ -67,6 +67,7 @@ function renderTab(
         <AttendanceTab
           orgId="org-1"
           query={PERIOD}
+          period={{ preset: "3m" }}
           onShowAll={onShowAll}
           {...props}
         />
@@ -225,10 +226,10 @@ describe("AttendanceTab", () => {
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Vinieron", "comparison")).toBe(
-      "Todos los eventos del período: 82,4",
+      "En todos los eventos de los últimos 3 meses: 82,4",
     );
     expect(slot("No vinieron", "comparison")).toBe(
-      "Todos los eventos del período: 20%",
+      "En todos los eventos de los últimos 3 meses: 20%",
     );
     expect(slot("Discretos", "comparison")).toBeNull();
     expect(() => headline("Eventos")).toThrow();

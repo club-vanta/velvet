@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_RANGE, isRangePreset, resolveRange } from "./statsPeriod";
+import {
+  DEFAULT_RANGE,
+  isRangePreset,
+  parsePeriod,
+  resolveRange,
+} from "./statsPeriod";
 
 const TODAY = "2026-10-24";
 
@@ -50,5 +55,28 @@ describe("isRangePreset", () => {
 
   it("defaults to the last 3 months", () => {
     expect(DEFAULT_RANGE).toBe("3m");
+  });
+});
+
+describe("parsePeriod", () => {
+  it("reads a preset", () => {
+    expect(parsePeriod("ytd", null, null)).toEqual({ preset: "ytd" });
+  });
+
+  it("reads a custom period with its days", () => {
+    expect(parsePeriod("custom", "2026-03-01", "2026-03-31")).toEqual({
+      preset: "custom",
+      custom: { from: "2026-03-01", to: "2026-03-31" },
+    });
+  });
+
+  it.each([
+    [null, null, null],
+    ["garbage", null, null],
+    ["custom", "2026-03-01", null],
+    ["custom", "2026-02-30", "2026-03-31"],
+    ["custom", "2026-03-31", "2026-03-01"],
+  ])("falls back to the default for range=%s from=%s to=%s", (r, f, t) => {
+    expect(parsePeriod(r, f, t)).toEqual({ preset: DEFAULT_RANGE });
   });
 });

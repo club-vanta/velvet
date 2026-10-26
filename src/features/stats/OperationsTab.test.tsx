@@ -102,6 +102,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
           <OperationsTab
             orgId="org-1"
             query={PERIOD}
+            period={{ preset: "3m" }}
             onShowAll={onShowAll}
             {...props}
           />
@@ -313,10 +314,10 @@ describe("OperationsTab", () => {
     expect(slot("Ingresaron", "comparison")).toBeNull();
     expect(slot("Baneos", "comparison")).toBeNull();
     expect(slot("Pagaron", "comparison")).toBe(
-      "Todos los eventos del período: 80%",
+      "En todos los eventos de los últimos 3 meses: 80%",
     );
     expect(slot("Pico en la puerta", "comparison")).toBe(
-      "Todos los eventos del período: 35,5",
+      "En todos los eventos de los últimos 3 meses: 35,5",
     );
     expect(slot("Pico en la puerta", "subline")).toBe("23:15");
   });
@@ -338,7 +339,7 @@ describe("OperationsTab", () => {
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Pico en la puerta", "comparison")).toBe(
-      "Todos los eventos del período: 32,0",
+      "En todos los eventos de los últimos 3 meses: 32,0",
     );
   });
 

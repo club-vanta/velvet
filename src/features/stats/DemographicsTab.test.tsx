@@ -100,6 +100,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
         <DemographicsTab
           orgId="org-1"
           query={PERIOD}
+          period={{ preset: "3m" }}
           onShowAll={onShowAll}
           {...props}
         />
@@ -231,10 +232,10 @@ describe("DemographicsTab", () => {
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Edad mediana", "comparison")).toBe(
-      "Todos los eventos del período: 31,2",
+      "En todos los eventos de los últimos 3 meses: 31,2",
     );
     expect(slot("Con edad conocida", "comparison")).toBe(
-      "Todos los eventos del período: 80%",
+      "En todos los eventos de los últimos 3 meses: 80%",
     );
     expect(slot("Asistencias", "comparison")).toBeNull();
   });

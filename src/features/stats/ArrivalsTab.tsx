@@ -28,6 +28,7 @@ import {
   formatRate,
   NO_VALUE,
 } from "./statsFormat";
+import type { StatsPeriodChoice } from "./statsPeriod";
 import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
 import { useUrlView } from "./useUrlView";
@@ -209,13 +210,15 @@ function LeadTimeTable({
 function ArrivalsContent({
   data,
   single,
+  period,
 }: {
   data: Arrivals;
   single: boolean;
+  period: StatsPeriodChoice;
 }) {
   const { t, lang } = useLanguage();
   const { summary, lead_time, comparison, comparison_kind } = data;
-  const line = useComparisonLine(comparison_kind);
+  const line = useComparisonLine(comparison_kind, period);
   const [curveView, setCurveView] = useUrlView(
     "arrivals_view",
     CURVE_VIEWS,
@@ -349,7 +352,12 @@ function ArrivalsContent({
   );
 }
 
-export function ArrivalsTab({ orgId, query, onShowAll }: StatsTabProps) {
+export function ArrivalsTab({
+  orgId,
+  query,
+  period,
+  onShowAll,
+}: StatsTabProps) {
   const statsQ = useArrivalsStats(orgId, query);
   const single = !!query?.meetupId;
 
@@ -361,7 +369,9 @@ export function ArrivalsTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="arrivals-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <ArrivalsContent data={data} single={single} />}
+      {(data) => (
+        <ArrivalsContent data={data} single={single} period={period} />
+      )}
     </StatsTabGate>
   );
 }
