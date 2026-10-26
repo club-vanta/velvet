@@ -5,7 +5,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { useSearchParams } from "react-router-dom";
 import type { components } from "@/api/types";
+import { Button } from "@/components/ui/button";
 import { StatsNote } from "@/components/StatsNote";
 import { useNoShowStats } from "@/hooks/useNoShowStats";
 import { useLanguage } from "@/lib/i18n";
@@ -17,6 +19,7 @@ import { ChartTextTable } from "./ChartTextTable";
 import { useGroupLabels } from "./groupLabels";
 import { HeadlineStat } from "./HeadlineStat";
 import { headlineGrid } from "./headlineGrid";
+import { noShowShares } from "./noShowShare";
 import { RateBars, type RateRow } from "./RateBars";
 import { StatsLink } from "./StatsLink";
 import { StatsListMore } from "./StatsListMore";
@@ -119,8 +122,75 @@ function EventRateChart({
   );
 }
 
+/**
+ * What the breakdown cards show: each group's no-show rate, or its share of
+ * all the no-shows. Kept in the URL so a shared link opens the same view.
+ */
+type NoShowView = "rate" | "share";
+
+const VIEW_PARAM = "noshow_view";
+
+function useNoShowView() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view: NoShowView =
+    searchParams.get(VIEW_PARAM) === "share" ? "share" : "rate";
+
+  function setView(next: NoShowView) {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (next === "share") params.set(VIEW_PARAM, "share");
+      else params.delete(VIEW_PARAM);
+      return params;
+    });
+  }
+
+  return [view, setView] as const;
+}
+
+/** One switch for every breakdown card, so they never disagree. */
+function NoShowViewToggle({
+  view,
+  onChange,
+}: {
+  view: NoShowView;
+  onChange: (view: NoShowView) => void;
+}) {
+  const { t } = useLanguage();
+  const options = [
+    { value: "rate", label: t("statsViewRate") },
+    { value: "share", label: t("statsViewShare") },
+  ] as const;
+  return (
+    <div
+      role="group"
+      aria-label={t("statsNoShowView")}
+      className="inline-flex gap-1 rounded-lg border p-1"
+    >
+      {options.map((o) => (
+        <Button
+          key={o.value}
+          size="sm"
+          variant={view === o.value ? "secondary" : "ghost"}
+          aria-pressed={view === o.value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 /** A card of rate bars, one per group. */
-function RateCard({ title, rows }: { title: string; rows: RateRow[] }) {
+function RateCard({
+  title,
+  rows,
+  view,
+}: {
+  title: string;
+  rows: RateRow[];
+  view: NoShowView;
+}) {
   const { t } = useLanguage();
   return (
     <ChartCard title={title}>
@@ -128,8 +198,12 @@ function RateCard({ title, rows }: { title: string; rows: RateRow[] }) {
         <RateBars
           rows={rows}
           groupHeader={t("statsGroupHeader")}
-          rateHeader={t("statsNoShowRate")}
+          rateHeader={t(
+            view === "share" ? "statsShareOfNoShows" : "statsNoShowRate",
+          )}
           labelledBy={headingId}
+          // A share is an exact count of who missed, not a shaky rate.
+          dimSmallSamples={view === "rate"}
         />
       )}
     </ChartCard>
@@ -225,6 +299,7 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
   const labels = useGroupLabels();
   const { summary, comparison, comparison_kind } = data;
   const line = useComparisonLine(comparison_kind);
+  const [view, setView] = useNoShowView();
 
   if (summary.expected === 0) return <StatsEmptyState />;
 
@@ -246,15 +321,22 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
       : line({ unit: "percent", change: percentChange(current, previous) });
 
   const rateRows = <K extends string | null>(
-    groups: { key: K; expected: number; no_show_rate: number | null }[],
+    groups: {
+      key: K;
+      expected: number;
+      no_show: number;
+      no_show_rate: number | null;
+    }[],
     label: (key: K) => string,
-  ): RateRow[] =>
-    groups.map((g) => ({
+  ): RateRow[] => {
+    const shares = noShowShares(groups);
+    return groups.map((g, i) => ({
       key: String(g.key),
       label: label(g.key),
-      rate: g.no_show_rate,
+      rate: view === "share" ? shares[i]! : g.no_show_rate,
       n: g.expected,
     }));
+  };
 
   return (
     <div className="space-y-3">
@@ -294,27 +376,35 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
           )}
         </ChartCard>
       )}
+      <NoShowViewToggle view={view} onChange={setView} />
       <div className="grid gap-3 lg:grid-cols-2">
         <RateCard
           title={t("statsNoShowByGender")}
           rows={rateRows(data.gender, labels.gender)}
+          view={view}
         />
         <RateCard
           title={t("statsNoShowByAge")}
           rows={rateRows(data.age, labels.age)}
+          view={view}
         />
         <RateCard
           title={t("statsNoShowByHistory")}
           rows={rateRows(data.history, labels.history)}
+          view={view}
         />
         <RateCard
           title={t("statsNoShowByLeadTime")}
-          rows={data.lead_time.map((r) => ({
-            key: r.bucket,
-            label: labels.leadTime(r.bucket),
-            rate: r.no_show_rate,
-            n: r.signed_up - r.cancelled,
-          }))}
+          rows={rateRows(
+            data.lead_time.map((r) => ({
+              key: r.bucket,
+              expected: r.signed_up - r.cancelled,
+              no_show: r.no_show,
+              no_show_rate: r.no_show_rate,
+            })),
+            labels.leadTime,
+          )}
+          view={view}
         />
       </div>
       <StatsNote>{t("statsNoteNoShowHistory")}</StatsNote>

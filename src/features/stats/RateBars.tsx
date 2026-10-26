@@ -24,11 +24,14 @@ export function RateBars({
   groupHeader,
   rateHeader,
   labelledBy,
+  dimSmallSamples = true,
 }: {
   rows: RateRow[];
   groupHeader: string;
   rateHeader: string;
   labelledBy: string;
+  /** Off for values that are exact counts rather than rates of few people. */
+  dimSmallSamples?: boolean;
 }) {
   const { t, lang } = useLanguage();
   const head = "pb-1.5 text-xs font-medium text-muted-foreground";
@@ -47,7 +50,8 @@ export function RateBars({
       </thead>
       <tbody>
         {rows.map((row, i) => {
-          const small = row.rate !== null && isSmallSample(row.n);
+          const small =
+            dimSmallSamples && row.rate !== null && isSmallSample(row.n);
           return (
             <tr
               key={row.key}
