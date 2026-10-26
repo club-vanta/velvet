@@ -4,7 +4,7 @@ import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
 import { geocodeKey } from "@/lib/queryKeys";
 
-const MIN_QUERY_LENGTH = 3;
+export const MIN_QUERY_LENGTH = 3;
 const STALE_TIME_MS = 5 * 60 * 1000;
 
 /**

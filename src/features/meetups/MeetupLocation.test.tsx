@@ -237,8 +237,8 @@ describe("MeetupLocation", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the search error and keeps the field usable", async () => {
-    mockApiGet.mockResolvedValue({ data: undefined, error: { detail: "x" } });
+  it("falls back to the generic message and keeps the field usable", async () => {
+    mockApiGet.mockResolvedValue({ data: undefined, error: {} });
     renderLocation();
     await type("Av.");
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -269,6 +269,19 @@ describe("MeetupLocation", () => {
     expect(toast.error).toHaveBeenCalledTimes(1);
     expect(toast.success).not.toHaveBeenCalled();
   });
+
+  it.each([
+    [502, "Address search unavailable"],
+    [504, "Address search timed out"],
+  ])(
+    "shows the backend message when the address search fails with %i",
+    async (_status, detail) => {
+      mockApiGet.mockResolvedValue({ data: undefined, error: { detail } });
+      renderLocation();
+      await type("Corr");
+      expect(await screen.findByRole("alert")).toHaveTextContent(detail);
+    },
+  );
 
   it("marks the list busy while the next search loads", async () => {
     renderLocation();

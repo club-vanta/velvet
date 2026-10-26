@@ -4,7 +4,7 @@ import { ExternalLink, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { useGeocode } from "@/hooks/useGeocode";
+import { MIN_QUERY_LENGTH, useGeocode } from "@/hooks/useGeocode";
 import { useSetMeetupLocation } from "@/hooks/useSetMeetupLocation";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,8 @@ type Meetup = components["schemas"]["MeetupPublic"];
 type GeocodeResult = components["schemas"]["GeocodeResult"];
 
 const SEARCH_DEBOUNCE_MS = 300;
-const MIN_QUERY_LENGTH = 3;
+
+const optionId = (baseId: string, index: number) => `${baseId}-option-${index}`;
 
 function mapUrl(latitude: number, longitude: number) {
   return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
@@ -148,7 +149,6 @@ function AddressSearch({
   const options = searchable ? (search.data ?? []) : [];
   const expanded = open && options.length > 0;
   const settled = searchable && !search.isPlaceholderData;
-  const optionId = (index: number) => `${baseId}-option-${index}`;
 
   // A new result list invalidates the highlighted row.
   const [seenData, setSeenData] = useState(search.data);
@@ -160,8 +160,8 @@ function AddressSearch({
   useEffect(() => {
     if (expanded && activeIndex >= 0)
       document
-        .getElementById(`${baseId}-option-${activeIndex}`)
-        ?.scrollIntoView?.({ block: "nearest" });
+        .getElementById(optionId(baseId, activeIndex))
+        ?.scrollIntoView({ block: "nearest" });
   }, [expanded, activeIndex, baseId]);
 
   const pick = (result: GeocodeResult) => {
@@ -206,7 +206,9 @@ function AddressSearch({
         aria-expanded={expanded}
         aria-controls={listId}
         aria-activedescendant={
-          expanded && activeIndex >= 0 ? optionId(activeIndex) : undefined
+          expanded && activeIndex >= 0
+            ? optionId(baseId, activeIndex)
+            : undefined
         }
         aria-describedby={hintId}
         autoComplete="off"
@@ -231,7 +233,7 @@ function AddressSearch({
         {options.map((option, index) => (
           <li
             key={`${option.latitude},${option.longitude},${option.label}`}
-            id={optionId(index)}
+            id={optionId(baseId, index)}
             role="option"
             aria-selected={index === activeIndex}
             // mousedown, not click: the input blur would close the list first.
@@ -250,7 +252,7 @@ function AddressSearch({
       </ul>
       {settled && search.isError && (
         <p role="alert" className="mt-1 text-xs text-destructive">
-          {t("meetupLocationSearchFailed")}
+          {search.error.message}
         </p>
       )}
       {settled && search.data?.length === 0 && (
