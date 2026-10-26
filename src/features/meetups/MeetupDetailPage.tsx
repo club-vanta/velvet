@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Banknote,
+  Check,
   Lock,
   LockOpen,
   RefreshCw,
@@ -81,6 +82,7 @@ import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
 import { GuestListToolbar } from "./GuestListToolbar";
 import { GuestCard } from "./GuestCard";
+import { GuestStatusLine } from "./GuestStatusLine";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
 import { MeetupLocation } from "./MeetupLocation";
@@ -927,8 +929,10 @@ export function MeetupDetailPage() {
     );
   }
 
-  // Null once the guest is in.
-  function renderCheckIn(mg: MeetupGuest) {
+  // Null once the guest is in. `blockedHintId` names a visible line that
+  // already says why a blocked check-in is blocked; without one the button
+  // carries its own hidden explanation.
+  function renderCheckIn(mg: MeetupGuest, blockedHintId?: string) {
     if (mg.rsvp.has_arrived) return null;
     const { isBlockedByPayment, isCheckingIn } = rowState(mg);
     return isBlockedByPayment ? (
@@ -937,13 +941,15 @@ export function MeetupDetailPage() {
           size="sm"
           variant="secondary"
           disabled
-          aria-describedby={`checkin-blocked-${mg.guest.id}`}
+          aria-describedby={blockedHintId ?? `checkin-blocked-${mg.guest.id}`}
         >
           {t("checkIn")}
         </Button>
-        <span id={`checkin-blocked-${mg.guest.id}`} className="sr-only">
-          {t("checkInBlockedUnpaid")}
-        </span>
+        {!blockedHintId && (
+          <span id={`checkin-blocked-${mg.guest.id}`} className="sr-only">
+            {t("checkInBlockedUnpaid")}
+          </span>
+        )}
       </span>
     ) : (
       <>
@@ -987,11 +993,95 @@ export function MeetupDetailPage() {
     );
   }
 
+  // The id of the card's unpaid line, or undefined when the card has none.
+  function unpaidLineId(mg: MeetupGuest) {
+    const { has_paid } = mg.rsvp;
+    return requiresPayment &&
+      paymentStateKnown &&
+      !rowState(mg).isExempt &&
+      !has_paid
+      ? `unpaid-${mg.guest.id}`
+      : undefined;
+  }
+
+  // One tinted line per state the card shows: in, then paid, exempt or
+  // owing. A guest who is not in gets no check-in line, since the "Check in"
+  // step already says so.
+  function renderCardStatuses(mg: MeetupGuest) {
+    const { has_arrived, arrival_time, arrival_order, has_paid, paid_at } =
+      mg.rsvp;
+    const unpaidId = unpaidLineId(mg);
+    return (
+      <>
+        {has_arrived && (
+          <GuestStatusLine
+            tone="done"
+            icon={Check}
+            action={
+              <InlineUndo onClick={() => setUndoTarget(mg)}>
+                {t("undo")}
+              </InlineUndo>
+            }
+          >
+            {arrival_order != null && (
+              <span className="mr-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold">
+                {ordinal(arrival_order)}
+              </span>
+            )}
+            <span className="font-medium">{t("statusCheckedIn")}</span>
+            {arrival_time && (
+              <>
+                {" "}
+                <span className="whitespace-nowrap">
+                  {formatDateTime(arrival_time)}
+                </span>
+              </>
+            )}
+          </GuestStatusLine>
+        )}
+        {requiresPayment &&
+          (has_paid ? (
+            <GuestStatusLine
+              tone="paid"
+              icon={Banknote}
+              action={
+                isOrgAdmin && (
+                  <InlineUndo onClick={() => setUndoPaymentTarget(mg)}>
+                    {t("undoPayment")}
+                  </InlineUndo>
+                )
+              }
+            >
+              <span className="font-medium">{t("statusPaid")}</span>
+              {paid_at && (
+                <>
+                  {" "}
+                  <span className="whitespace-nowrap">
+                    {formatDateTime(paid_at)}
+                  </span>
+                </>
+              )}
+            </GuestStatusLine>
+          ) : rowState(mg).isExempt ? (
+            <GuestStatusLine tone="neutral">
+              {t("paymentExempt")}
+            </GuestStatusLine>
+          ) : (
+            unpaidId && (
+              <GuestStatusLine tone="missing" icon={Banknote} id={unpaidId}>
+                <span className="font-medium">{t("statusUnpaid")}</span>
+              </GuestStatusLine>
+            )
+          ))}
+      </>
+    );
+  }
+
   function renderCard(mg: MeetupGuest) {
     const markPaid = renderMarkPaid(mg);
     // Once finalized the header says the door is closed, so the cards drop
     // their steps band instead of showing dead buttons.
-    const checkIn = isFinalized ? null : renderCheckIn(mg);
+    const checkIn = isFinalized ? null : renderCheckIn(mg, unpaidLineId(mg));
     return (
       <GuestCard
         key={mg.guest.id}
@@ -1002,10 +1092,8 @@ export function MeetupDetailPage() {
             {formatDateTime(mg.rsvp.rsvp_time)}
           </p>,
         )}
-        order={mg.rsvp.arrival_order != null ? renderArrivalOrder(mg) : null}
         menu={renderRowMenu(mg)}
-        checkIn={<CheckInStatus guest={mg} onUndo={() => setUndoTarget(mg)} />}
-        payment={requiresPayment ? renderPaymentStatus(mg) : undefined}
+        statuses={renderCardStatuses(mg)}
         actions={
           markPaid || checkIn ? (
             <>

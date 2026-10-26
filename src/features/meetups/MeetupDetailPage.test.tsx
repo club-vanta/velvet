@@ -29,6 +29,8 @@ vi.mock("sonner", () => ({
 }));
 
 let mockRole = "ADMIN";
+// Holds the meetup request open, for the states shown while it loads.
+let meetupPending = false;
 vi.mock("@/lib/org", () => ({
   useOrg: () => ({
     activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: mockRole },
@@ -113,7 +115,9 @@ function renderPage(
   mockApiGet.mockImplementation(
     (path: string, opts?: { params?: { path?: { guest_id?: string } } }) => {
       if (path === "/organizations/{org_id}/meetups/{meetup_id}")
-        return Promise.resolve({ data: meetup, error: undefined });
+        return meetupPending
+          ? new Promise(() => {})
+          : Promise.resolve({ data: meetup, error: undefined });
       if (path === "/organizations/{org_id}/meetups/{meetup_id}/guests")
         return Promise.resolve({
           data: { total: guests.length, guests },
@@ -877,6 +881,7 @@ describe("MeetupDetailPage on phones", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    meetupPending = false;
   });
 
   it("renders one card per guest instead of the table", async () => {
@@ -918,7 +923,7 @@ describe("MeetupDetailPage on phones", () => {
     ).toBeInTheDocument();
   });
 
-  it("puts both states in labelled columns, with their undos under them", async () => {
+  it("shows check-in and payment as one line each, with their undos", async () => {
     const done = guest({
       mazmo_user_id: 62,
       displayname: "Done",
@@ -937,14 +942,15 @@ describe("MeetupDetailPage on phones", () => {
     ]);
 
     const card = (await screen.findByText("Done")).closest("li")!;
-    const terms = within(card).getAllByRole("term");
-    expect(terms.map((dt) => dt.textContent)).toEqual(["Check-in", "Payment"]);
-    const [checkIn, payment] = within(card).getAllByRole("definition");
+    expect(within(card).queryAllByRole("term")).toHaveLength(0);
+    const checkIn = within(card).getByText("Checked in").closest("div")!;
+    expect(within(checkIn).getByText("#1")).toBeInTheDocument();
     expect(
-      within(checkIn!).getByRole("button", { name: "Undo" }),
+      within(checkIn).getByRole("button", { name: "Undo" }),
     ).toBeInTheDocument();
+    const payment = within(card).getByText("Paid").closest("div")!;
     expect(
-      within(payment!).getByRole("button", { name: "Undo payment" }),
+      within(payment).getByRole("button", { name: "Undo payment" }),
     ).toBeInTheDocument();
     // Nothing left to do, so there is no steps band.
     expect(
@@ -955,7 +961,7 @@ describe("MeetupDetailPage on phones", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens the undo dialog from the card's check-in column", async () => {
+  it("opens the undo dialog from the check-in line", async () => {
     const user = userEvent.setup();
     const arrived = guest({
       mazmo_user_id: 64,
@@ -966,42 +972,134 @@ describe("MeetupDetailPage on phones", () => {
     renderPage(MEETUP, [arrived]);
 
     const card = (await screen.findByText("Arrived")).closest("li")!;
-    const [checkIn] = within(card).getAllByRole("definition");
-    await user.click(within(checkIn!).getByRole("button", { name: "Undo" }));
+    const checkIn = within(card).getByText("Checked in").closest("div")!;
+    await user.click(within(checkIn).getByRole("button", { name: "Undo" }));
     expect(
       screen.getByRole("dialog", { name: "Undo check-in for Arrived?" }),
     ).toBeInTheDocument();
   });
 
-  it("drops the steps band once the meetup is finalized", async () => {
-    renderPage({ ...MEETUP, is_finalized: true }, [
-      guest({ mazmo_user_id: 65, displayname: "Late", has_paid: false }),
-    ]);
-
-    const card = (await screen.findByText("Late")).closest("li")!;
-    expect(within(card).getByText("Payment pending")).toBeInTheDocument();
-    expect(
-      within(card).queryByRole("button", { name: "Check in" }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(card).queryByRole("button", { name: "Mark paid" }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("leaves out the payment column when the meetup is free", async () => {
+  it("shows no check-in line for a guest who has not arrived", async () => {
     renderPage({ ...MEETUP, requires_payment: false }, [
       guest({ mazmo_user_id: 63, displayname: "Free", has_paid: false }),
     ]);
 
     const card = (await screen.findByText("Free")).closest("li")!;
+    expect(within(card).queryByText("Checked in")).not.toBeInTheDocument();
+    expect(within(card).queryByText("Pending")).not.toBeInTheDocument();
     expect(
-      within(card)
-        .getAllByRole("term")
-        .map((dt) => dt.textContent),
-    ).toEqual(["Check-in"]);
+      within(card).queryByText("Entrance fee not paid"),
+    ).not.toBeInTheDocument();
     expect(
       within(card).getByRole("button", { name: "Check in" }),
     ).toBeEnabled();
+    expect(
+      within(card).queryByRole("button", { name: "Mark paid" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("moves the arrival order out of the header", async () => {
+    const arrived = guest({
+      mazmo_user_id: 66,
+      displayname: "Fourth",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    arrived.rsvp.arrival_order = 4;
+    renderPage(MEETUP, [arrived]);
+
+    const card = (await screen.findByText("Fourth")).closest("li")!;
+    expect(within(card).getAllByText("#4")).toHaveLength(1);
+    expect(
+      within(card).getByText("Checked in").closest("div"),
+    ).toContainElement(within(card).getByText("#4"));
+  });
+
+  it("leaves the order pill out when the arrival order is unknown", async () => {
+    const arrived = guest({
+      mazmo_user_id: 67,
+      displayname: "Unordered",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    renderPage(MEETUP, [arrived]);
+
+    const card = (await screen.findByText("Unordered")).closest("li")!;
+    expect(within(card).getByText("Checked in")).toBeInTheDocument();
+    expect(within(card).queryByText(/^#/)).not.toBeInTheDocument();
+  });
+
+  it("explains a blocked check-in with the unpaid line", async () => {
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 68, displayname: "Owes", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Owes")).closest("li")!;
+    const checkIn = within(card).getByRole("button", { name: "Check in" });
+    expect(checkIn).toBeDisabled();
+    const hint = document.getElementById(
+      checkIn.getAttribute("aria-describedby")!,
+    );
+    expect(hint?.textContent).toBe("Entrance fee not paid");
+    expect(card).toContainElement(hint);
+  });
+
+  it("shows no unpaid line while the meetup is loading", async () => {
+    meetupPending = true;
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 69, displayname: "Waiting", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Waiting")).closest("li")!;
+    expect(
+      within(card).queryByText("Entrance fee not paid"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+  });
+
+  it("keeps the paid line for a guest paid before becoming exempt", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 70,
+        displayname: "Was Normal",
+        has_paid: true,
+        guest_type: "INVITED",
+      }),
+    ]);
+
+    const card = (await screen.findByText("Was Normal")).closest("li")!;
+    const payment = within(card).getByText("Paid").closest("div")!;
+    expect(
+      within(payment).getByRole("button", { name: "Undo payment" }),
+    ).toBeInTheDocument();
+    expect(within(card).queryByText("Exempt")).not.toBeInTheDocument();
+  });
+
+  it("hides undo payment from non-admins", async () => {
+    mockRole = "STAFF";
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 71, displayname: "Staff View", has_paid: true }),
+    ]);
+
+    const card = (await screen.findByText("Staff View")).closest("li")!;
+    expect(within(card).getByText("Paid")).toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Undo payment" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the unpaid line and drops the steps band once finalized", async () => {
+    renderPage({ ...MEETUP, is_finalized: true }, [
+      guest({ mazmo_user_id: 65, displayname: "Late", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Late")).closest("li")!;
+    expect(within(card).getByText("Entrance fee not paid")).toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Check in" }),
+    ).not.toBeInTheDocument();
     expect(
       within(card).queryByRole("button", { name: "Mark paid" }),
     ).not.toBeInTheDocument();
