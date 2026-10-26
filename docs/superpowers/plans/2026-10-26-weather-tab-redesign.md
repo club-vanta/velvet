@@ -37,10 +37,12 @@ Verification for every backend task: `pytest -q` and `ruff check . && ruff forma
 ### Task B1: Window and summaries in the weather service
 
 **Files:**
+
 - Modify: `app/services/weather.py` (module docstring Request/Window/Summary, `_HOURLY_VARIABLES`, `WeatherSummary`, `summarize_weather`, `fetch_hourly`, `_parse`)
 - Test: `tests/test_weather.py`
 
 **Interfaces:**
+
 - Produces:
   - `_HOURLY_VARIABLES = ("temperature_2m", "apparent_temperature", "precipitation", "wind_speed_10m", "weather_code", "is_day")`; `_BEFORE = timedelta(hours=3)`.
   - `@dataclass(frozen=True) class WindowSummary: avg_temperature, avg_apparent_temperature, total_precipitation_mm: float | None; rained: bool | None`
@@ -63,11 +65,13 @@ Verification for every backend task: `pytest -q` and `ruff check . && ruff forma
 ### Task B2: Store the before summary and refetch every row
 
 **Files:**
+
 - Create: `alembic/versions/0025_meetup_weather_before.py`
 - Modify: `app/models/models.py` (`MeetupWeather` columns and docstring), `app/services/weather.py` (`fetch_and_store_weather`)
 - Test: `tests/test_weather.py`, `tests/test_weather_worker.py` if a fixture builds rows
 
 **Interfaces:**
+
 - Consumes: `WeatherSummary.before` from B1.
 - Produces: `MeetupWeather.before_avg_temperature`, `before_avg_apparent_temperature`, `before_total_precipitation_mm: float | None`, `before_rained: bool | None`.
 
@@ -80,10 +84,12 @@ Verification for every backend task: `pytest -q` and `ruff check . && ruff forma
 ### Task B3: Stats API for the new tab
 
 **Files:**
+
 - Modify: `app/services/stats/weather.py`, `app/schemas/stats.py` (and `app/schemas/__init__.py` exports), `app/openapi_examples/stats_examples.py`, `openapi.json`
 - Test: `tests/test_stats_weather.py`, `tests/test_stats_examples.py`
 
 **Interfaces:**
+
 - Produces (service dataclasses mirror the schemas):
   - `WeatherWindowPublic`: `avg_temperature`, `avg_apparent_temperature`, `total_precipitation_mm: float | None`, `rained: bool | None`.
   - `WeatherHourPublic`: `time: datetime`, `offset_minutes: int`, `temperature`, `apparent_temperature`, `precipitation_mm: float | None`, `weather_code: int | None`, `is_day: bool | None`.
@@ -119,11 +125,13 @@ Verification for every velvet task: `npm run check`, `npm run test:run`, and `np
 ### Task V1: Types, icon dependency, icon map
 
 **Files:**
+
 - Modify: `package.json`, `package-lock.json`, `src/api/types.ts` (generated)
 - Create: `src/features/stats/weatherIcon.ts`, `src/features/stats/weatherIcon.test.ts`
 - Modify: `src/lib/i18n.tsx` (condition labels)
 
 **Interfaces:**
+
 - Produces: `weatherIcon(code: number | null, isDay: boolean | null): { src: string; label: TranslationKey } | null`. `src` is the Vite asset URL of `@bybas/weather-icons/production/line/all/<name>.svg`. Null code returns null. Night uses the `-night` variant where one exists, day the `-day` one, otherwise the plain name.
 
 - [ ] **Step 1:** `npm install @bybas/weather-icons@2` and `npm run generate:api`. Commit the spec doc in this branch too.
@@ -135,10 +143,12 @@ Verification for every velvet task: `npm run check`, `npm run test:run`, and `np
 ### Task V2: All events view keeps two charts with a before/during toggle
 
 **Files:**
+
 - Modify: `src/features/stats/WeatherTab.tsx` (`WeatherAggregate`, `scatterPoints`, remove `GroupStat`, `WithoutWeatherList`, cards), `src/lib/i18n.tsx`
 - Test: `src/features/stats/WeatherTab.test.tsx`
 
 **Interfaces:**
+
 - Produces: `type WeatherWindow = "before" | "during"`, `useUrlView("weather_window", ["before", "during"], "during")`.
 
 - [ ] **Step 1: Failing tests:** no "Con lluvia", "Sin lluvia" or without-weather texts render; the toggle group "Antes / Durante" exists with "Durante" pressed; clicking "Antes" makes the bands table show `temperature_bands_before` rows and the scatter text table show `before_avg_temperature` values (exact cells); `?weather_window=before` in the initial URL starts on "Antes".
@@ -150,11 +160,13 @@ Verification for every velvet task: `npm run check`, `npm run test:run`, and `np
 ### Task V3: One event summary cards
 
 **Files:**
+
 - Create: `src/features/stats/WeatherWindowCard.tsx`
 - Modify: `src/features/stats/WeatherTab.tsx` (`WeatherEvent`), `src/lib/i18n.tsx`
 - Test: `src/features/stats/WeatherTab.test.tsx`
 
 **Interfaces:**
+
 - Produces: `WeatherWindowCard({ title, range, summary }: { title: string; range: string; summary: WeatherWindowSummary | null })` where `WeatherWindowSummary` is the shared shape of `WeatherWindowPublic` and the during fields of `MeetupWeatherPublic`.
 
 - [ ] **Step 1: Failing tests:** event mode shows no attended or no-show cards; "Antes del inicio · 19:00 a 22:00" card shows `4,1 mm de lluvia`, `13,5°`, `(se sentía 10°)`; "Durante · 22:00 a 04:00" card from `weather` shows `Sin lluvia`; a null before summary shows a dash with an `aria-describedby` explanation; status `PENDING`/`NO_LOCATION` keeps today's messages from `WeatherDetails` instead of the meteogram.
@@ -166,11 +178,13 @@ Verification for every velvet task: `npm run check`, `npm run test:run`, and `np
 ### Task V4: Meteogram
 
 **Files:**
+
 - Create: `src/features/stats/WeatherMeteogram.tsx`, `src/features/stats/meteogramData.ts`, `src/features/stats/meteogramData.test.ts`
 - Modify: `src/features/stats/WeatherTab.tsx` (`WeatherEvent` calls `useArrivalsStats(orgId, query)`), `src/lib/i18n.tsx`
 - Test: `src/features/stats/WeatherTab.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `weatherIcon` (V1), `WeatherHourPublic[]`, `ArrivalBucketPublic[]`.
 - Produces:
   - `meteogramDomain(hours): [number, number]` = `[hours[0].offset_minutes, last.offset_minutes + 60]`.

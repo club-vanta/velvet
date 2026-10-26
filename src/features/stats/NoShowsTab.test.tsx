@@ -570,7 +570,7 @@ describe("NoShowsTab", () => {
     );
     expect(
       screen.getByText(
-        "Cómo influye la lluvia en los que no vienen está en la pestaña Clima.",
+        "Cómo influye el clima en la asistencia está en la pestaña Clima.",
       ),
     ).toBeInTheDocument();
   });

@@ -485,9 +485,20 @@ export const translations = {
     statsNotePayments:
       "Only events that charge entry. Pending means someone who came in without a recorded payment.",
     statsTabWeather: "Weather",
-    statsRainy: "Rainy",
-    statsDryEvents: "Dry",
-    statsWithoutWeather: "Without weather",
+    statsWeatherBefore: "Before the start",
+    statsWeatherDuring: "During",
+    statsWeatherWindow: "When the temperature was taken",
+    statsWeatherRange: "{0} · {1} to {2}",
+    statsWeatherRainMm: "{0} mm of rain",
+    statsWeatherFeltLike: "{0}, felt like {1}",
+    statsWeatherByHour: "Hour by hour",
+    statsWeatherHourHeader: "Time",
+    statsWeatherConditionHeader: "Weather",
+    statsWeatherArrivals: "Arrivals",
+    statsWeatherArrivalsFailed: "Could not load the arrivals.",
+    statsWeatherStart: "start",
+    statsNoteWeatherEvent:
+      "Weather from Open-Meteo at the event's address, from 3 hours before the start through 6 hours after. Arrivals are every 15 minutes.",
     statsTempBands: "Attendance by temperature",
     statsTempVsAttendance: "Attendance and temperature",
     statsBandBelow10: "< 10°",
@@ -497,7 +508,6 @@ export const translations = {
     statsBandFrom25: "25°+",
     statsBandHeader: "Temperature",
     statsAvgAttended: "Average attended",
-    statsNoShowLine: "{0} no-show",
     statsHadComeBefore: "Had come before",
     statsNoShowCount: "Signed up and didn't come",
     statsNoShowOfExpected: "of {0} signed up",
@@ -524,7 +534,7 @@ export const translations = {
     statsNoteNoShowGuestsEvent:
       "Each person's counts cover their whole history in the organization, not only this event.",
     statsNoteNoShowWeather:
-      "How rain relates to no-shows is in the Weather tab.",
+      "How the weather relates to attendance is in the Weather tab.",
     statsNoteNoShowHistory:
       "Had come before means they had attended an earlier event of the organization, on any date.",
     statsTemperatureAxis: "Temperature (°C)",
@@ -532,9 +542,8 @@ export const translations = {
     statsDateHeader: "Date",
     statsArrivalTimeHeader: "Time",
     statsNoTempPoints: "Not enough events with temperature to chart",
-    statsWithoutWeatherList: "Events without weather",
     statsNoteWeather:
-      "Weather from Open-Meteo for the 6 hours after each event's start, at the event's address. Events without a location or without weather yet are left out of the comparisons.",
+      "Weather from Open-Meteo at each event's address: During is the 6 hours from the start and Before the start, the 3 hours before it. Events without a location or without weather yet are left out.",
     statsNoteWeatherSample:
       "With few events per group, differences can be chance.",
     organizations: "Organizations",
@@ -1204,9 +1213,20 @@ export const translations = {
     statsNotePayments:
       "Solo los eventos que cobran entrada. Pendiente es alguien que entró sin un pago registrado.",
     statsTabWeather: "Clima",
-    statsRainy: "Con lluvia",
-    statsDryEvents: "Sin lluvia",
-    statsWithoutWeather: "Sin clima",
+    statsWeatherBefore: "Antes del inicio",
+    statsWeatherDuring: "Durante",
+    statsWeatherWindow: "Momento de la temperatura",
+    statsWeatherRange: "{0} · {1} a {2}",
+    statsWeatherRainMm: "{0} mm de lluvia",
+    statsWeatherFeltLike: "{0}, se sintió {1}",
+    statsWeatherByHour: "Hora por hora",
+    statsWeatherHourHeader: "Hora",
+    statsWeatherConditionHeader: "Clima",
+    statsWeatherArrivals: "Llegadas",
+    statsWeatherArrivalsFailed: "No se pudieron cargar las llegadas.",
+    statsWeatherStart: "inicio",
+    statsNoteWeatherEvent:
+      "Clima de Open-Meteo en la dirección del evento, desde 3 horas antes del inicio hasta 6 horas después. Las llegadas van cada 15 minutos.",
     statsTempBands: "Asistencia según temperatura",
     statsTempVsAttendance: "Asistencia y temperatura",
     statsBandBelow10: "< 10°",
@@ -1216,7 +1236,6 @@ export const translations = {
     statsBandFrom25: "25°+",
     statsBandHeader: "Temperatura",
     statsAvgAttended: "Promedio de asistentes",
-    statsNoShowLine: "{0} no vinieron",
     statsHadComeBefore: "Ya habían venido",
     statsNoShowCount: "Se anotaron y no vinieron",
     statsNoShowOfExpected: "de {0} anotados",
@@ -1243,7 +1262,7 @@ export const translations = {
     statsNoteNoShowGuestsEvent:
       "Los números de cada persona cubren toda su historia en la organización, no solo este evento.",
     statsNoteNoShowWeather:
-      "Cómo influye la lluvia en los que no vienen está en la pestaña Clima.",
+      "Cómo influye el clima en la asistencia está en la pestaña Clima.",
     statsNoteNoShowHistory:
       "Ya habían venido quiere decir que habían asistido antes a otro evento de la organización, en cualquier fecha.",
     statsTemperatureAxis: "Temperatura (°C)",
@@ -1251,9 +1270,8 @@ export const translations = {
     statsDateHeader: "Fecha",
     statsArrivalTimeHeader: "Hora",
     statsNoTempPoints: "Hay pocos eventos con temperatura para graficar",
-    statsWithoutWeatherList: "Eventos sin clima",
     statsNoteWeather:
-      "Clima de Open-Meteo para las 6 horas desde el inicio de cada evento, en su dirección. Los eventos sin ubicación o sin clima todavía quedan fuera de las comparaciones.",
+      "Clima de Open-Meteo en la dirección de cada evento: Durante son las 6 horas desde el inicio y Antes del inicio, las 3 horas previas. Los eventos sin ubicación o sin clima todavía quedan fuera.",
     statsNoteWeatherSample:
       "Con pocos eventos por grupo, las diferencias pueden ser casualidad.",
     organizations: "Organizaciones",

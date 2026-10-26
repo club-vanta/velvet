@@ -28,6 +28,8 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-AR", {
     hour: "2-digit",
     minute: "2-digit",
+    // Some runtimes default es-AR to a 12 hour clock ("07:00 p. m.").
+    hourCycle: "h23",
   });
 }
 

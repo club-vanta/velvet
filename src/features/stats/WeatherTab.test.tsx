@@ -30,9 +30,10 @@ vi.mock("@/auth/AuthContext", () => ({
 type Weather = components["schemas"]["WeatherStatsPublic"];
 type Row = components["schemas"]["WeatherMeetupRowPublic"];
 type Band = components["schemas"]["TemperatureBandRowPublic"];
-type Group = components["schemas"]["WeatherGroupPublic"];
 type Event = components["schemas"]["WeatherEventPublic"];
+type Hour = components["schemas"]["WeatherHourPublic"];
 type MeetupWeather = components["schemas"]["MeetupWeatherPublic"];
+type Arrivals = components["schemas"]["ArrivalStatsPublic"];
 
 function row(overrides: Partial<Row> = {}): Row {
   return {
@@ -43,6 +44,7 @@ function row(overrides: Partial<Row> = {}): Row {
     attended: 100,
     no_show_rate: 0.2,
     avg_temperature: 18.2,
+    before_avg_temperature: 21.6,
     rained: false,
     total_precipitation_mm: 0,
     ...overrides,
@@ -52,22 +54,17 @@ function row(overrides: Partial<Row> = {}): Row {
 const NO_WEATHER = {
   has_weather: false,
   avg_temperature: null,
+  before_avg_temperature: null,
   rained: null,
   total_precipitation_mm: null,
 } as const;
 
-const RAINY: Group = { events: 12, avg_attended: 80.4, no_show_rate: 0.31 };
-const DRY: Group = { events: 3, avg_attended: 120, no_show_rate: 0.18 };
+const EMPTY_BAND = { events: 0, avg_attended: null, no_show_rate: null };
 
 function bands(overrides: Partial<Record<Band["band"], Partial<Band>>> = {}) {
   const base: Band[] = [
     { band: "BELOW_10", events: 2, avg_attended: 70, no_show_rate: 0.4 },
-    {
-      band: "FROM_10_TO_15",
-      events: 0,
-      avg_attended: null,
-      no_show_rate: null,
-    },
+    { band: "FROM_10_TO_15", ...EMPTY_BAND },
     {
       band: "FROM_15_TO_20",
       events: 5,
@@ -80,6 +77,11 @@ function bands(overrides: Partial<Record<Band["band"], Partial<Band>>> = {}) {
   return base.map((b) => ({ ...b, ...overrides[b.band] }));
 }
 
+const BANDS_BEFORE = bands({
+  BELOW_10: EMPTY_BAND,
+  FROM_10_TO_15: { events: 3, avg_attended: 84, no_show_rate: 0.3 },
+});
+
 function stats(overrides: Partial<Weather> = {}): Weather {
   return {
     event: null,
@@ -91,6 +93,7 @@ function stats(overrides: Partial<Weather> = {}): Weather {
         date: "2026-02-10T01:00:00Z",
         attended: 90,
         avg_temperature: 25.4,
+        before_avg_temperature: 27.1,
       }),
       row({
         meetup_id: "m2",
@@ -99,10 +102,8 @@ function stats(overrides: Partial<Weather> = {}): Weather {
         ...NO_WEATHER,
       }),
     ],
-    rainy: RAINY,
-    dry: DRY,
     temperature_bands: bands(),
-    without_weather: 1,
+    temperature_bands_before: BANDS_BEFORE,
     comparison_kind: null,
     comparison: null,
     ...overrides,
@@ -110,29 +111,83 @@ function stats(overrides: Partial<Weather> = {}): Weather {
 }
 
 const MEETUP_WEATHER: MeetupWeather = {
-  avg_temperature: 21.5,
-  avg_apparent_temperature: 20,
+  avg_temperature: 12,
+  avg_apparent_temperature: 9,
   total_precipitation_mm: 0,
   max_wind_kmh: 12,
   rained: false,
-  fetched_at: "2026-03-10T10:00:00Z",
+  fetched_at: "2026-04-06T10:00:00Z",
   source: "open-meteo-historical-forecast",
 };
+
+// A 22:00 event in Buenos Aires (01:00 UTC): 19:00 through 03:00 local.
+const TEMPS = [14, 13, 12, 12.5, 12, 11.5, 11, 10.5, 10];
+const FEELS = [11, 10, 9.5, 9.5, 9, 8.5, 8, 8, 7.5];
+const RAIN = [1.5, 2, 0.6, 0, 0, 0, 0, 0, 0];
+const CODES = [63, 63, 51, 3, 2, 0, 0, 0, null];
+
+const HOURS: Hour[] = TEMPS.map((temperature, i) => ({
+  time: new Date(Date.UTC(2026, 3, 5, 22 + i)).toISOString(),
+  offset_minutes: (i - 3) * 60,
+  temperature,
+  apparent_temperature: FEELS[i]!,
+  precipitation_mm: RAIN[i]!,
+  weather_code: CODES[i]!,
+  is_day: false,
+}));
 
 function event(overrides: Partial<Event> = {}): Event {
   return {
     status: "OK",
     ready: true,
-    attended: 140,
-    no_show_rate: 0.15,
     weather: MEETUP_WEATHER,
+    before: {
+      avg_temperature: 13,
+      avg_apparent_temperature: 10,
+      total_precipitation_mm: 4.1,
+      rained: true,
+    },
+    hours: HOURS,
     ...overrides,
+  };
+}
+
+function arrivals(): Arrivals {
+  const curve = [
+    [-240, 3],
+    [-150, 1],
+    [-30, 2],
+    [-15, 4],
+    [0, 9],
+    [15, 12],
+    [30, 10],
+    [45, 7],
+    [60, 5],
+    [400, 2],
+  ].map(([start_minute, n]) => ({ start_minute: start_minute!, arrivals: n! }));
+  return {
+    curve,
+    clock_curve: [],
+    summary: {
+      arrivals: 55,
+      excluded_arrivals: 0,
+      peak: { start_minute: 15, arrivals: 12 },
+      peak_local_time: "22:15",
+      mean_minutes: 20,
+      p90_minutes: 50,
+      mean_local_time: "22:20",
+      p90_local_time: "22:50",
+      first_hour_share: 0.7,
+    },
+    lead_time: [],
+    comparison_kind: null,
+    comparison: null,
   };
 }
 
 const PERIOD = { from: "2026-01-15", to: "2026-04-16" };
 
-function renderTab(props: Partial<StatsTabProps> = {}) {
+function renderTab(props: Partial<StatsTabProps> = {}, url = "/stats") {
   const onShowAll = vi.fn();
   render(
     <QueryClientProvider
@@ -141,7 +196,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
       }
     >
       <LanguageProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[url]}>
           <WeatherTab
             orgId="org-1"
             query={PERIOD}
@@ -155,40 +210,52 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
   return { onShowAll };
 }
 
-const ok = (data: Weather) => Promise.resolve({ data, error: undefined });
-const respond = (result: unknown) =>
-  mockApiGet.mockImplementation(() => result);
+const ok = (data: unknown) => Promise.resolve({ data, error: undefined });
+const failed = () =>
+  Promise.resolve({ data: undefined, error: { detail: "nope" } });
+const WEATHER_PATH = "/organizations/{org_id}/stats/weather";
+const ARRIVALS_PATH = "/organizations/{org_id}/stats/arrivals";
 
-function headline(label: string): HTMLElement {
-  const card = Array.from(
-    document.querySelectorAll<HTMLElement>("[data-headline]"),
-  ).find(
-    (el) => el.querySelector('[data-slot="label"]')?.textContent === label,
-  );
-  if (!card) throw new Error(`No headline ${label}`);
-  return card;
-}
-
-function slot(label: string, name: string): string | null {
-  return (
-    headline(label).querySelector(`[data-slot="${name}"]`)?.textContent ?? null
+/** Answers the weather endpoint with `weather` and the arrivals endpoint with `arrivalsResult`. */
+function respond(weather: unknown, arrivalsResult: unknown = ok(arrivals())) {
+  mockApiGet.mockImplementation((path: string) =>
+    path === ARRIVALS_PATH ? arrivalsResult : weather,
   );
 }
 
 const part = (el: Element, name: string) =>
   el.querySelector(`[data-slot="${name}"]`)?.textContent ?? null;
 
-const statsCalls = () =>
-  mockApiGet.mock.calls.filter(
-    ([path]) => path === "/organizations/{org_id}/stats/weather",
-  );
+function headline(label: string): HTMLElement {
+  const card = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-headline]"),
+  ).find((el) => part(el, "label") === label);
+  if (!card) throw new Error(`No headline ${label}`);
+  return card;
+}
 
-const ready = () => waitFor(() => headline("Con lluvia"));
+const statsCalls = () =>
+  mockApiGet.mock.calls.filter(([path]) => path === WEATHER_PATH);
+
+const region = (name: string) => screen.getByRole("region", { name });
+
+const ready = () => waitFor(() => region("Asistencia según temperatura"));
 
 const notes = () =>
   Array.from(document.querySelectorAll("blockquote")).map(
     (el) => el.textContent,
   );
+
+const texts = (r: HTMLElement) =>
+  Array.from(r.children).map((c) => c.textContent);
+
+function tableRows(card: HTMLElement) {
+  const table = within(card).getByRole("table", { hidden: true });
+  const [header, ...body] = within(table).getAllByRole("row", {
+    hidden: true,
+  });
+  return { header: texts(header!), body: body.map(texts) };
+}
 
 describe("WeatherTab", () => {
   beforeEach(() => {
@@ -210,7 +277,7 @@ describe("WeatherTab", () => {
 
   it("announces the error and retries the request", async () => {
     const user = userEvent.setup();
-    respond(Promise.resolve({ data: undefined, error: { detail: "nope" } }));
+    respond(failed());
     renderTab();
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "No se pudieron cargar las estadísticas.",
@@ -220,77 +287,32 @@ describe("WeatherTab", () => {
   });
 
   it("shows the empty state when the period has no finalized events", async () => {
-    respond(
-      ok(
-        stats({
-          meetups: [],
-          rainy: { events: 0, avg_attended: null, no_show_rate: null },
-          dry: { events: 0, avg_attended: null, no_show_rate: null },
-          temperature_bands: bands({
-            BELOW_10: { events: 0, avg_attended: null, no_show_rate: null },
-            FROM_15_TO_20: {
-              events: 0,
-              avg_attended: null,
-              no_show_rate: null,
-            },
-            FROM_20_TO_25: {
-              events: 0,
-              avg_attended: null,
-              no_show_rate: null,
-            },
-            FROM_25: { events: 0, avg_attended: null, no_show_rate: null },
-          }),
-          without_weather: 0,
-        }),
-      ),
-    );
+    respond(ok(stats({ meetups: [] })));
     renderTab();
     expect(
       await screen.findByText("No hay eventos finalizados en este período"),
     ).toBeInTheDocument();
-    expect(document.querySelector("[data-headline]")).toBeNull();
   });
 
-  it("shows exact headline values for rainy, dry and without weather", async () => {
+  it("shows only the two temperature charts, without headline cards", async () => {
     respond(ok(stats()));
     renderTab();
     await ready();
-    expect(slot("Con lluvia", "value")).toBe("80");
-    expect(slot("Con lluvia", "subline")).toBe("31% no vinieron");
-    // The rainy group has 12 events, at or above the small-sample threshold.
-    expect(slot("Con lluvia", "sample")).toBeNull();
-    expect(slot("Sin lluvia", "value")).toBe("120");
-    expect(slot("Sin lluvia", "subline")).toBe("18% no vinieron");
-    // 12 events is not a small sample, so no n; 3 events is.
-    expect(slot("Sin lluvia", "sample")).toBe("n = 3");
-    expect(slot("Sin clima", "value")).toBe("1");
-    expect(slot("Sin clima", "comparison")).toBeNull();
-    expect(document.querySelectorAll("[data-headline]")).toHaveLength(3);
-  });
-
-  it("shows a dash and no n for a group with no events", async () => {
-    respond(
-      ok(
-        stats({
-          dry: { events: 0, avg_attended: null, no_show_rate: null },
-        }),
-      ),
-    );
-    renderTab();
-    await ready();
-    expect(slot("Sin lluvia", "value")).toBe("–");
-    expect(slot("Sin lluvia", "subline")).toBeNull();
-    expect(slot("Sin lluvia", "sample")).toBeNull();
+    expect(document.querySelector("[data-headline]")).toBeNull();
+    expect(screen.getAllByRole("region")).toHaveLength(2);
+    expect(region("Asistencia y temperatura")).toBeInTheDocument();
+    expect(screen.queryByText("Con lluvia")).toBeNull();
+    expect(screen.queryByText("Sin lluvia")).toBeNull();
+    expect(screen.queryByText("Sin clima")).toBeNull();
   });
 
   it("lists the five bands in order with events, average and no-show", async () => {
     respond(ok(stats()));
     renderTab();
     await ready();
-    const card = screen.getByRole("region", {
-      name: "Asistencia según temperatura",
-    });
-    const rows = within(card).getAllByRole("row").slice(1);
+    const rows = within(region("Asistencia según temperatura"))
+      .getAllByRole("row")
+      .slice(1);
     expect(rows.map((r) => part(r, "band"))).toEqual([
       "< 10°",
       "10-15°",
@@ -323,19 +345,14 @@ describe("WeatherTab", () => {
 
   it("explains the scatter is too thin with fewer than two points", async () => {
     respond(
-      ok(
-        stats({
-          meetups: [row(), row({ meetup_id: "m2", ...NO_WEATHER })],
-        }),
-      ),
+      ok(stats({ meetups: [row(), row({ meetup_id: "m2", ...NO_WEATHER })] })),
     );
     renderTab();
     await ready();
-    const card = screen.getByRole("region", {
-      name: "Asistencia y temperatura",
-    });
     expect(
-      within(card).getByText("Hay pocos eventos con temperatura para graficar"),
+      within(region("Asistencia y temperatura")).getByText(
+        "Hay pocos eventos con temperatura para graficar",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -343,29 +360,64 @@ describe("WeatherTab", () => {
     respond(ok(stats()));
     renderTab();
     await ready();
-    const card = screen.getByRole("region", {
-      name: "Asistencia y temperatura",
-    });
+    const card = region("Asistencia y temperatura");
     expect(card).not.toHaveTextContent("para graficar");
     const table = within(card).getByRole("table", { hidden: true });
     // A table ignores a width limit, so the sr-only class sits on its wrapper.
     expect(table).not.toHaveClass("sr-only");
     expect(table.parentElement).toHaveClass("sr-only");
-    const [header, ...body] = within(table).getAllByRole("row", {
-      hidden: true,
-    });
-    const texts = (row: HTMLElement) =>
-      Array.from(row.children).map((c) => c.textContent);
-    expect(texts(header!)).toEqual([
-      "Evento",
-      "Fecha",
-      "Temperatura (°C)",
-      "Vinieron",
-    ]);
-    expect(body.map(texts)).toEqual([
+    const { header, body } = tableRows(card);
+    expect(header).toEqual(["Evento", "Fecha", "Temperatura (°C)", "Vinieron"]);
+    expect(body).toEqual([
       ["Alter Febrero", "9 de feb de 2026", "25,4", "90"],
       ["Alter Marzo", "9 de mar de 2026", "18,2", "100"],
     ]);
+  });
+
+  it("starts on the temperature during the event", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await ready();
+    const toggle = screen.getByRole("group", {
+      name: "Momento de la temperatura",
+    });
+    expect(
+      within(toggle).getByRole("button", { name: "Durante" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(toggle).getByRole("button", { name: "Antes del inicio" }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("switches both charts to the temperature before the start", async () => {
+    const user = userEvent.setup();
+    respond(ok(stats()));
+    renderTab();
+    await ready();
+    await user.click(screen.getByRole("button", { name: "Antes del inicio" }));
+    const rows = within(region("Asistencia según temperatura"))
+      .getAllByRole("row")
+      .slice(1);
+    expect(rows.map((r) => part(r, "events"))).toEqual([
+      "0",
+      "3",
+      "5",
+      "6",
+      "2",
+    ]);
+    expect(tableRows(region("Asistencia y temperatura")).body).toEqual([
+      ["Alter Febrero", "9 de feb de 2026", "27,1", "90"],
+      ["Alter Marzo", "9 de mar de 2026", "21,6", "100"],
+    ]);
+  });
+
+  it("opens on the before temperature from the URL", async () => {
+    respond(ok(stats()));
+    renderTab({}, "/stats?weather_window=before");
+    await ready();
+    expect(
+      screen.getByRole("button", { name: "Antes del inicio" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("defines a color for every series the charts paint", async () => {
@@ -380,83 +432,12 @@ describe("WeatherTab", () => {
     expect(css).toContain("--color-attended: var(--chart-1);");
   });
 
-  it("lists the events without weather in date order, linked to the event", async () => {
-    respond(
-      ok(
-        stats({
-          meetups: [
-            row({ meetup_id: "late", name: "Alter Tarde", ...NO_WEATHER }),
-            row({
-              meetup_id: "early",
-              name: "Alter Temprano",
-              date: "2026-01-20T01:00:00Z",
-              ...NO_WEATHER,
-            }),
-            row(),
-          ],
-          without_weather: 2,
-        }),
-      ),
-    );
-    renderTab();
-    await ready();
-    const items = within(
-      screen.getByRole("region", { name: "Eventos sin clima" }),
-    ).getAllByRole("listitem");
-    expect(items.map((li) => part(li, "name"))).toEqual([
-      "Alter Temprano",
-      "Alter Tarde",
-    ]);
-    expect(items.map((li) => part(li, "date"))).toEqual([
-      "19 de ene de 2026",
-      "9 de mar de 2026",
-    ]);
-    expect(screen.getByRole("link", { name: "Alter Tarde" })).toHaveAttribute(
-      "href",
-      "/meetups/late",
-    );
-  });
-
-  it("lists only events with no weather row, not events whose values are null", async () => {
-    respond(
-      ok(
-        stats({
-          meetups: [
-            row({
-              meetup_id: "partial",
-              name: "Alter Parcial",
-              avg_temperature: null,
-              rained: null,
-            }),
-            row({ meetup_id: "none", name: "Alter Sin Clima", ...NO_WEATHER }),
-          ],
-          without_weather: 1,
-        }),
-      ),
-    );
-    renderTab();
-    await ready();
-    const items = within(
-      screen.getByRole("region", { name: "Eventos sin clima" }),
-    ).getAllByRole("listitem");
-    expect(items.map((li) => part(li, "name"))).toEqual(["Alter Sin Clima"]);
-  });
-
-  it("hides the without-weather list when every event has weather", async () => {
-    respond(ok(stats({ meetups: [row()], without_weather: 0 })));
-    renderTab();
-    await ready();
-    expect(
-      screen.queryByRole("region", { name: "Eventos sin clima" }),
-    ).toBeNull();
-  });
-
-  it("always shows both notes in the aggregate", async () => {
+  it("explains the windows and the sample in the aggregate", async () => {
     respond(ok(stats()));
     renderTab();
     await ready();
     expect(notes()).toEqual([
-      "Clima de Open-Meteo para las 6 horas desde el inicio de cada evento, en su dirección. Los eventos sin ubicación o sin clima todavía quedan fuera de las comparaciones.",
+      "Clima de Open-Meteo en la dirección de cada evento: Durante son las 6 horas desde el inicio y Antes del inicio, las 3 horas previas. Los eventos sin ubicación o sin clima todavía quedan fuera.",
       "Con pocos eventos por grupo, las diferencias pueden ser casualidad.",
     ]);
   });
@@ -468,26 +449,135 @@ describe("WeatherTab", () => {
       return stats({
         event: e,
         meetups: [],
-        rainy: null,
-        dry: null,
         temperature_bands: [],
-        without_weather: 0,
+        temperature_bands_before: [],
       });
     }
 
-    it("shows the weather card with the attended and no-show headlines", async () => {
+    const eventReady = () =>
+      waitFor(() => headline("Antes del inicio · 19:00 a 22:00"));
+
+    it("shows the weather before and during the event, not its attendance", async () => {
       respond(ok(oneEvent(event())));
       renderTab({ query: single });
-      await waitFor(() => headline("Vinieron"));
-      expect(slot("Vinieron", "value")).toBe("140");
-      expect(slot("No vinieron", "value")).toBe("15%");
-      const card = screen.getByRole("region", { name: "Clima" });
-      expect(part(card, "weather-temperature")).toBe("21,5 °C");
-      expect(part(card, "weather-rain")).toBe("No llovió, 0,0 mm");
-      expect(screen.queryByRole("button")).toBeNull();
-      expect(notes()).toEqual([
-        "Datos: Open-Meteo, las 6 horas desde el inicio",
+      await eventReady();
+      const before = headline("Antes del inicio · 19:00 a 22:00");
+      expect(part(before, "value")).toBe("4,1 mm de lluvia");
+      expect(part(before, "subline")).toBe("13,0 °C, se sintió 10,0 °C");
+      const during = headline("Durante · 22:00 a 04:00");
+      expect(part(during, "value")).toBe("No llovió");
+      expect(part(during, "subline")).toBe("12,0 °C, se sintió 9,0 °C");
+      expect(document.querySelectorAll("[data-headline]")).toHaveLength(2);
+      expect(screen.queryByText("Vinieron")).toBeNull();
+    });
+
+    it("says there is no data for a window the provider left empty", async () => {
+      respond(
+        ok(
+          oneEvent(
+            event({
+              before: {
+                avg_temperature: null,
+                avg_apparent_temperature: null,
+                total_precipitation_mm: null,
+                rained: null,
+              },
+            }),
+          ),
+        ),
+      );
+      renderTab({ query: single });
+      await eventReady();
+      const before = headline("Antes del inicio · 19:00 a 22:00");
+      expect(part(before, "value")).toBe("Sin dato");
+      expect(part(before, "subline")).toBeNull();
+    });
+
+    it("lists every hour with its weather and the arrivals in it", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      const card = region("Hora por hora");
+      await waitFor(() => expect(tableRows(card).body[3]![5]).toBe("38"));
+      const { header, body } = tableRows(card);
+      expect(header).toEqual([
+        "Hora",
+        "Clima",
+        "Temperatura",
+        "Sensación térmica",
+        "Lluvia",
+        "Llegadas",
       ]);
+      expect(body).toEqual([
+        ["19:00", "Lluvia", "14,0 °C", "11,0 °C", "1,5 mm", "1"],
+        ["20:00", "Lluvia", "13,0 °C", "10,0 °C", "2,0 mm", "0"],
+        ["21:00", "Llovizna", "12,0 °C", "9,5 °C", "0,6 mm", "6"],
+        ["22:00", "Nublado", "12,5 °C", "9,5 °C", "0,0 mm", "38"],
+        ["23:00", "Parcialmente nublado", "12,0 °C", "9,0 °C", "0,0 mm", "5"],
+        ["00:00", "Despejado", "11,5 °C", "8,5 °C", "0,0 mm", "0"],
+        ["01:00", "Despejado", "11,0 °C", "8,0 °C", "0,0 mm", "0"],
+        ["02:00", "Despejado", "10,5 °C", "8,0 °C", "0,0 mm", "0"],
+        ["03:00", "–", "10,0 °C", "7,5 °C", "0,0 mm", "0"],
+      ]);
+    });
+
+    it("names each hour's icon for screen readers", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      const icons = within(region("Hora por hora")).getAllByRole("img");
+      expect(icons.map((i) => i.getAttribute("alt"))).toEqual([
+        "Lluvia",
+        "Lluvia",
+        "Llovizna",
+        "Nublado",
+        "Parcialmente nublado",
+        "Despejado",
+        "Despejado",
+        "Despejado",
+      ]);
+    });
+
+    it("asks the arrivals for the same event", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      await waitFor(() =>
+        expect(mockApiGet).toHaveBeenCalledWith(ARRIVALS_PATH, {
+          params: {
+            path: { org_id: "org-1" },
+            query: expect.objectContaining({ meetup_id: "m1" }),
+          },
+        }),
+      );
+    });
+
+    it("keeps the weather when the arrivals fail", async () => {
+      respond(ok(oneEvent(event())), failed());
+      renderTab({ query: single });
+      await eventReady();
+      const card = region("Hora por hora");
+      expect(
+        await within(card).findByText("No se pudieron cargar las llegadas."),
+      ).toBeInTheDocument();
+      expect(tableRows(card).body[0]).toEqual([
+        "19:00",
+        "Lluvia",
+        "14,0 °C",
+        "11,0 °C",
+        "1,5 mm",
+        "–",
+      ]);
+    });
+
+    it("shows a placeholder for the arrivals while they load", async () => {
+      respond(ok(oneEvent(event())), new Promise(() => {}));
+      renderTab({ query: single });
+      await eventReady();
+      expect(
+        screen.getByTestId("meteogram-arrivals-skeleton"),
+      ).toBeInTheDocument();
+      expect(tableRows(region("Hora por hora")).body[3]![5]).toBe("–");
     });
 
     it.each([
@@ -495,13 +585,15 @@ describe("WeatherTab", () => {
       ["PENDING", "El clima se carga 2 horas después de que termina el evento"],
       ["NOT_FETCHED", "Todavía no se cargó el clima"],
     ] as const)("says why %s has no weather", async (status, text) => {
-      respond(ok(oneEvent(event({ status, weather: null }))));
+      respond(
+        ok(oneEvent(event({ status, weather: null, before: null, hours: [] }))),
+      );
       renderTab({ query: single });
-      await waitFor(() => headline("Vinieron"));
-      const card = screen.getByRole("region", { name: "Clima" });
+      const card = await screen.findByRole("region", { name: "Clima" });
       expect(within(card).getByText(text)).toBeInTheDocument();
+      expect(document.querySelector("[data-headline]")).toBeNull();
       expect(
-        document.querySelector('[data-slot="weather-temperature"]'),
+        screen.queryByRole("region", { name: "Hora por hora" }),
       ).toBeNull();
     });
 
@@ -511,21 +603,33 @@ describe("WeatherTab", () => {
     ])("tells %s to set the location", async (_who, orgRole, siteRole) => {
       mockOrgRole = orgRole;
       mockSiteRole = siteRole;
-      respond(ok(oneEvent(event({ status: "NO_LOCATION", weather: null }))));
+      respond(
+        ok(
+          oneEvent(
+            event({
+              status: "NO_LOCATION",
+              weather: null,
+              before: null,
+              hours: [],
+            }),
+          ),
+        ),
+      );
       renderTab({ query: single });
-      await waitFor(() => headline("Vinieron"));
       expect(
-        within(screen.getByRole("region", { name: "Clima" })).getByText(
+        within(await screen.findByRole("region", { name: "Clima" })).getByText(
           "Cargá la ubicación para ver el clima",
         ),
       ).toBeInTheDocument();
     });
 
-    it("shows a dash when the event has no no-show rate", async () => {
-      respond(ok(oneEvent(event({ no_show_rate: null }))));
+    it("cites the source and the hours it covers", async () => {
+      respond(ok(oneEvent(event())));
       renderTab({ query: single });
-      await waitFor(() => headline("Vinieron"));
-      expect(slot("No vinieron", "value")).toBe("–");
+      await eventReady();
+      expect(notes()).toEqual([
+        "Clima de Open-Meteo en la dirección del evento, desde 3 horas antes del inicio hasta 6 horas después. Las llegadas van cada 15 minutos.",
+      ]);
     });
   });
 
@@ -535,15 +639,12 @@ describe("WeatherTab", () => {
       query: { from: "2026-03-01", to: "2026-04-01", meetupId: "m1" },
     });
     await waitFor(() => expect(statsCalls()).toHaveLength(1));
-    expect(mockApiGet).toHaveBeenCalledWith(
-      "/organizations/{org_id}/stats/weather",
-      {
-        params: {
-          path: { org_id: "org-1" },
-          query: { from: "2026-03-01", to: "2026-04-01", meetup_id: "m1" },
-        },
+    expect(mockApiGet).toHaveBeenCalledWith(WEATHER_PATH, {
+      params: {
+        path: { org_id: "org-1" },
+        query: { from: "2026-03-01", to: "2026-04-01", meetup_id: "m1" },
       },
-    );
+    });
   });
 
   it("waits without fetching while the query is null", () => {
