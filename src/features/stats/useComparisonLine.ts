@@ -5,7 +5,7 @@ import { signed } from "./statsFormat";
 type ComparisonKind = components["schemas"]["StatsComparisonKind"];
 
 /** The unit a change against the previous period is shown in. */
-export type ChangeUnit = "percent" | "points" | "minutes" | "years";
+type ChangeUnit = "percent" | "points" | "minutes" | "years";
 
 const VS_PREVIOUS: Record<ChangeUnit, TranslationKey> = {
   percent: "statsVsPrevious",

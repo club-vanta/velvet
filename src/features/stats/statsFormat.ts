@@ -3,7 +3,7 @@ import { formatDecimal } from "@/lib/format";
 import { localDay } from "./statsPeriod";
 
 /** Rates built from fewer people than this are shown dimmed with `n`. */
-export const SMALL_SAMPLE = 10;
+const SMALL_SAMPLE = 10;
 
 export const NO_VALUE = "–";
 
@@ -101,15 +101,12 @@ export function yearsChange(
   return Math.round((current - baseline) * 10) / 10 || 0;
 }
 
-/** A change with its sign, such as `+8`, `-3` or `0`; with `locale`, one decimal at most (`+1,5`). */
-export function signed(n: number, locale?: string): string {
+/** A change with its sign, such as `+8`, `-3` or `0`, and one decimal at most (`+1,5`). */
+export function signed(n: number, locale: string): string {
   const value = n || 0;
-  const text =
-    locale === undefined
-      ? String(value)
-      : new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
-          value,
-        );
+  const text = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: 1,
+  }).format(value);
   return value > 0 ? `+${text}` : text;
 }
 

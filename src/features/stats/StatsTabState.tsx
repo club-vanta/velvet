@@ -6,7 +6,7 @@ import { headlineGrid } from "./headlineGrid";
 import { StatsErrorState } from "./StatsErrorState";
 
 /** The loading state of a stats tab: headline cards and one chart. */
-export function StatsTabSkeleton({
+function StatsTabSkeleton({
   cards,
   testId,
 }: {

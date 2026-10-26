@@ -8,7 +8,6 @@ import {
   pointChange,
   formatRate,
   isSmallSample,
-  SMALL_SAMPLE,
   spansYears,
   yearsChange,
   formatAge,
@@ -69,7 +68,6 @@ describe("pointChange", () => {
 
 describe("isSmallSample", () => {
   it("flags samples below the threshold", () => {
-    expect(SMALL_SAMPLE).toBe(10);
     expect(isSmallSample(9)).toBe(true);
     expect(isSmallSample(10)).toBe(false);
   });
@@ -193,13 +191,13 @@ describe("yearsChange", () => {
 
 describe("signed", () => {
   it("puts a plus on gains and keeps the minus on losses", () => {
-    expect(signed(8)).toBe("+8");
-    expect(signed(-3)).toBe("-3");
-    expect(signed(0)).toBe("0");
+    expect(signed(8, "es")).toBe("+8");
+    expect(signed(-3, "es")).toBe("-3");
+    expect(signed(0, "es")).toBe("0");
   });
 
   it("never shows -0", () => {
-    expect(signed(-0)).toBe("0");
+    expect(signed(-0, "en")).toBe("0");
     expect(signed(-0, "es")).toBe("0");
   });
 
