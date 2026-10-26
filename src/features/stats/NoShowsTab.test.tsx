@@ -258,13 +258,19 @@ describe("NoShowsTab", () => {
     renderTab();
     await headlinesReady();
     expect(slot(RATE, "value")).toBe("15%");
-    expect(slot(RATE, "comparison")).toBe("+5 pts vs. período anterior");
+    expect(slot(RATE, "comparison")).toBe(
+      "+5 puntos respecto al período anterior",
+    );
     expect(slot(COUNT, "value")).toBe("12");
     expect(slot(COUNT, "subline")).toBe("de 80 anotados");
-    expect(slot(COUNT, "comparison")).toBe("+100% vs. período anterior");
+    expect(slot(COUNT, "comparison")).toBe(
+      "+100% respecto al período anterior",
+    );
     expect(slot(REPEAT, "value")).toBe("3");
     expect(slot(REPEAT, "subline")).toBe("personas, en el período");
-    expect(slot(REPEAT, "comparison")).toBe("+50% vs. período anterior");
+    expect(slot(REPEAT, "comparison")).toBe(
+      "+50% respecto al período anterior",
+    );
   });
 
   it("compares one event with the period rate only", async () => {
@@ -284,7 +290,7 @@ describe("NoShowsTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot(RATE, "comparison")).toBe("promedio: 10%");
+    expect(slot(RATE, "comparison")).toBe("Todos los eventos del período: 10%");
     expect(slot(COUNT, "comparison")).toBeNull();
     expect(slot(REPEAT, "comparison")).toBeNull();
     expect(slot(REPEAT, "subline")).toBe(

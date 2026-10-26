@@ -211,15 +211,21 @@ describe("OperationsTab", () => {
     renderTab();
     await headlinesReady();
     expect(slot("Ingresaron", "value")).toBe("300");
-    expect(slot("Ingresaron", "comparison")).toBe("+20% vs. período anterior");
+    expect(slot("Ingresaron", "comparison")).toBe(
+      "+20% respecto al período anterior",
+    );
     expect(slot("Pagaron", "value")).toBe("90%");
-    expect(slot("Pagaron", "comparison")).toBe("+5 pts vs. período anterior");
+    expect(slot("Pagaron", "comparison")).toBe(
+      "+5 puntos respecto al período anterior",
+    );
     expect(slot("Pagaron", "sample")).toBeNull();
     expect(slot("Pico en la puerta", "value")).toBe("62");
     expect(slot("Pico en la puerta", "subline")).toBe("Alter Marzo · 23:15");
     expect(slot("Pico en la puerta", "comparison")).toBeNull();
     expect(slot("Baneos", "value")).toBe("3");
-    expect(slot("Baneos", "comparison")).toBe("+200% vs. período anterior");
+    expect(slot("Baneos", "comparison")).toBe(
+      "+200% respecto al período anterior",
+    );
   });
 
   it("formats the counts for the locale", async () => {
@@ -306,8 +312,12 @@ describe("OperationsTab", () => {
     await headlinesReady();
     expect(slot("Ingresaron", "comparison")).toBeNull();
     expect(slot("Baneos", "comparison")).toBeNull();
-    expect(slot("Pagaron", "comparison")).toBe("promedio: 80%");
-    expect(slot("Pico en la puerta", "comparison")).toBe("promedio: 35,5");
+    expect(slot("Pagaron", "comparison")).toBe(
+      "Todos los eventos del período: 80%",
+    );
+    expect(slot("Pico en la puerta", "comparison")).toBe(
+      "Todos los eventos del período: 35,5",
+    );
     expect(slot("Pico en la puerta", "subline")).toBe("23:15");
   });
 
@@ -327,7 +337,9 @@ describe("OperationsTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot("Pico en la puerta", "comparison")).toBe("promedio: 32,0");
+    expect(slot("Pico en la puerta", "comparison")).toBe(
+      "Todos los eventos del período: 32,0",
+    );
   });
 
   it("lists every guest type in order with its count and share", async () => {

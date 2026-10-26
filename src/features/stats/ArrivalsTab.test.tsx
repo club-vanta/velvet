@@ -259,16 +259,22 @@ describe("ArrivalsTab", () => {
     ).toBeInTheDocument();
     expect(slot(MEAN, "value")).toBe("22:45");
     expect(slot(MEAN, "subline")).toBe("45 min después del inicio");
-    expect(slot(MEAN, "comparison")).toBe("+5 min vs. período anterior");
+    expect(slot(MEAN, "comparison")).toBe(
+      "+5 min respecto al período anterior",
+    );
     expect(slot(BUSIEST, "value")).toBe("22:30-22:45");
     expect(slot(BUSIEST, "subline")).toBe("30 min después del inicio");
     expect(slot(BUSIEST, "comparison")).toBeNull();
     expect(slot(NINETY, "value")).toBe("23:30");
     expect(slot(NINETY, "subline")).toBe("1 h 30 min después del inicio");
-    expect(slot(NINETY, "comparison")).toBe("0 min vs. período anterior");
+    expect(slot(NINETY, "comparison")).toBe(
+      "0 min respecto al período anterior",
+    );
     expect(slot(FIRST_HOUR, "value")).toBe("86%");
     expect(slot(FIRST_HOUR, "subline")).toBeNull();
-    expect(slot(FIRST_HOUR, "comparison")).toBe("+6 pts vs. período anterior");
+    expect(slot(FIRST_HOUR, "comparison")).toBe(
+      "+6 puntos respecto al período anterior",
+    );
     expect(slot(FIRST_HOUR, "sample")).toBeNull();
   });
 
@@ -316,10 +322,16 @@ describe("ArrivalsTab", () => {
     expect(slot(BUSIEST, "value")).toBe("23:30-23:45");
     expect(slot(MEAN, "value")).toBe("23:45");
     expect(slot(MEAN, "subline")).toBe("45 min después del inicio");
-    expect(slot(MEAN, "comparison")).toBe("promedio: 00:05");
+    expect(slot(MEAN, "comparison")).toBe(
+      "Todos los eventos del período: 00:05",
+    );
     expect(slot(NINETY, "value")).toBe("00:30");
-    expect(slot(NINETY, "comparison")).toBe("promedio: 00:35");
-    expect(slot(FIRST_HOUR, "comparison")).toBe("promedio: 86%");
+    expect(slot(NINETY, "comparison")).toBe(
+      "Todos los eventos del período: 00:35",
+    );
+    expect(slot(FIRST_HOUR, "comparison")).toBe(
+      "Todos los eventos del período: 86%",
+    );
   });
 
   it("shows dashes and says nobody checked in when there are no arrivals", async () => {
