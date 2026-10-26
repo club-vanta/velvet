@@ -80,6 +80,7 @@ import {
 import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
 import { GuestListToolbar } from "./GuestListToolbar";
+import { GuestCard } from "./GuestCard";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
 import { MeetupLocation } from "./MeetupLocation";
@@ -145,19 +146,66 @@ function SortableHead({
   );
 }
 
-function PaymentCell({
+/** A low-key undo under a state, so it never competes with the next step. */
+function InlineUndo({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      variant="link"
+      size="xs"
+      className="h-auto px-0 text-xs text-muted-foreground hover:text-foreground"
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+}
+
+/** Whether the guest is in: the badge, the arrival time and, if given, the undo. */
+function CheckInStatus({
+  guest,
+  onUndo,
+}: {
+  guest: MeetupGuest;
+  onUndo?: () => void;
+}) {
+  const { t } = useLanguage();
+  const { has_arrived, arrival_time } = guest.rsvp;
+
+  if (!has_arrived) return <Badge variant="secondary">{t("pending")}</Badge>;
+
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <Badge>{t("checkedIn")}</Badge>
+      {arrival_time && (
+        <p className="text-xs text-muted-foreground">
+          {formatDateTime(arrival_time)}
+        </p>
+      )}
+      {onUndo && <InlineUndo onClick={onUndo}>{t("undo")}</InlineUndo>}
+    </div>
+  );
+}
+
+/**
+ * Where the guest stands with the entrance fee: the badge, when it was paid
+ * and, for admins, the undo. "Mark paid" is the next step, so callers place
+ * it with the other actions.
+ */
+function PaymentStatus({
   guest,
   isExempt,
   isOrgAdmin,
-  onMarkPaid,
   onUndoPayment,
-  isFinalized,
 }: {
   guest: MeetupGuest;
   isExempt: boolean;
   isOrgAdmin: boolean;
-  isFinalized: boolean;
-  onMarkPaid: () => void;
   onUndoPayment: () => void;
 }) {
   const { t } = useLanguage();
@@ -167,62 +215,40 @@ function PaymentCell({
   // reclassified keeps "Undo payment" so a refund can be recorded.
   if (isExempt) {
     return (
-      <div className="space-y-0.5">
+      <div className="flex flex-col items-start gap-0.5">
         <Badge variant="outline" title={t("paymentExemptHint")}>
           {t("paymentExempt")}
         </Badge>
         {has_paid && (
-          <div className="flex items-center gap-1 flex-wrap text-xs text-muted-foreground">
-            <span>
+          <>
+            <p className="text-xs text-muted-foreground">
               {t("paidBeforeExempt")}
               {paid_at ? ` · ${formatDateTime(paid_at)}` : ""}
-            </span>
+            </p>
             {isOrgAdmin && (
-              <Button
-                variant="link"
-                size="xs"
-                className="h-auto px-0 text-xs"
-                onClick={onUndoPayment}
-              >
+              <InlineUndo onClick={onUndoPayment}>
                 {t("undoPayment")}
-              </Button>
+              </InlineUndo>
             )}
-          </div>
+          </>
         )}
       </div>
     );
   }
 
-  if (has_paid) {
-    return (
-      <div className="space-y-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge>{t("paid")}</Badge>
-          {isOrgAdmin && (
-            <Button variant="ghost" size="sm" onClick={onUndoPayment}>
-              {t("undoPayment")}
-            </Button>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {paid_at ? formatDateTime(paid_at) : ""}
-        </p>
-      </div>
-    );
-  }
+  if (!has_paid)
+    return <Badge variant="secondary">{t("paymentPending")}</Badge>;
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <Badge variant="secondary">{t("paymentPending")}</Badge>
+    <div className="flex flex-col items-start gap-0.5">
+      <Badge>{t("paid")}</Badge>
+      {paid_at && (
+        <p className="text-xs text-muted-foreground">
+          {formatDateTime(paid_at)}
+        </p>
+      )}
       {isOrgAdmin && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onMarkPaid}
-          disabled={isFinalized}
-        >
-          {t("markPaid")}
-        </Button>
+        <InlineUndo onClick={onUndoPayment}>{t("undoPayment")}</InlineUndo>
       )}
     </div>
   );
@@ -826,7 +852,8 @@ export function MeetupDetailPage() {
     };
   }
 
-  function renderIdentity(mg: MeetupGuest) {
+  // `meta` is an extra line under the name, in the same text column.
+  function renderIdentity(mg: MeetupGuest, meta?: React.ReactNode) {
     return (
       <div className="flex items-center gap-3 min-w-0">
         <GuestAvatar
@@ -865,95 +892,130 @@ export function MeetupDetailPage() {
             )}
             <MazmoFlagBadges profile={mg.guest.mazmo_profile} />
           </div>
+          {meta}
         </div>
       </div>
     );
   }
 
-  function renderStatus(mg: MeetupGuest) {
-    return mg.rsvp.has_arrived ? (
-      <div className="space-y-0.5">
-        <Badge>{t("checkedIn")}</Badge>
-        <p className="text-xs text-muted-foreground">
-          {mg.rsvp.arrival_time ? formatDateTime(mg.rsvp.arrival_time) : ""}
-        </p>
-      </div>
-    ) : (
-      <Badge variant="secondary">{t("pending")}</Badge>
-    );
-  }
-
-  function renderPayment(mg: MeetupGuest) {
+  function renderPaymentStatus(mg: MeetupGuest) {
     return (
-      <PaymentCell
+      <PaymentStatus
         guest={mg}
         isExempt={rowState(mg).isExempt}
         isOrgAdmin={isOrgAdmin}
-        onMarkPaid={() => setMarkPaidTarget(mg)}
-        isFinalized={isFinalized}
         onUndoPayment={() => setUndoPaymentTarget(mg)}
       />
     );
   }
 
-  function renderActions(mg: MeetupGuest) {
-    const { isBlockedByPayment, isCheckingIn } = rowState(mg);
+  // Null when there is nothing to collect from this guest, or when the
+  // meetup is finalized and the backend would refuse the payment.
+  function renderMarkPaid(mg: MeetupGuest) {
+    if (
+      !requiresPayment ||
+      !isOrgAdmin ||
+      isFinalized ||
+      rowState(mg).isExempt ||
+      mg.rsvp.has_paid
+    )
+      return null;
     return (
-      <div className="flex items-center gap-1 justify-end">
-        {mg.rsvp.has_arrived ? (
-          <Button variant="ghost" size="sm" onClick={() => setUndoTarget(mg)}>
-            {t("undo")}
-          </Button>
-        ) : isBlockedByPayment ? (
-          <span title={t("checkInBlockedUnpaid")} className="inline-flex">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled
-              aria-describedby={`checkin-blocked-${mg.guest.id}`}
-            >
-              {t("checkIn")}
-            </Button>
-            <span id={`checkin-blocked-${mg.guest.id}`} className="sr-only">
-              {t("checkInBlockedUnpaid")}
-            </span>
+      <Button variant="outline" size="sm" onClick={() => setMarkPaidTarget(mg)}>
+        {t("markPaid")}
+      </Button>
+    );
+  }
+
+  // Null once the guest is in.
+  function renderCheckIn(mg: MeetupGuest) {
+    if (mg.rsvp.has_arrived) return null;
+    const { isBlockedByPayment, isCheckingIn } = rowState(mg);
+    return isBlockedByPayment ? (
+      <span title={t("checkInBlockedUnpaid")} className="inline-flex">
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled
+          aria-describedby={`checkin-blocked-${mg.guest.id}`}
+        >
+          {t("checkIn")}
+        </Button>
+        <span id={`checkin-blocked-${mg.guest.id}`} className="sr-only">
+          {t("checkInBlockedUnpaid")}
+        </span>
+      </span>
+    ) : (
+      <>
+        <Button
+          size="sm"
+          variant={mg.guest.is_banned ? "destructive" : "default"}
+          onClick={() => {
+            if (mg.guest.is_banned) {
+              setBannedTarget(mg);
+            } else {
+              checkInMutation.mutate(mg);
+            }
+          }}
+          disabled={checkInMutation.isPending || isFinalized}
+          title={isFinalized ? t("checkInBlockedFinalized") : undefined}
+          aria-describedby={
+            isFinalized ? `checkin-finalized-${mg.guest.id}` : undefined
+          }
+        >
+          {isCheckingIn ? t("checkingIn") : t("checkIn")}
+        </Button>
+        {isFinalized && (
+          <span id={`checkin-finalized-${mg.guest.id}`} className="sr-only">
+            {t("checkInBlockedFinalized")}
           </span>
-        ) : (
-          <>
-            <Button
-              size="sm"
-              variant={mg.guest.is_banned ? "destructive" : "default"}
-              onClick={() => {
-                if (mg.guest.is_banned) {
-                  setBannedTarget(mg);
-                } else {
-                  checkInMutation.mutate(mg);
-                }
-              }}
-              disabled={checkInMutation.isPending || isFinalized}
-              title={isFinalized ? t("checkInBlockedFinalized") : undefined}
-              aria-describedby={
-                isFinalized ? `checkin-finalized-${mg.guest.id}` : undefined
-              }
-            >
-              {isCheckingIn ? t("checkingIn") : t("checkIn")}
-            </Button>
-            {isFinalized && (
-              <span id={`checkin-finalized-${mg.guest.id}`} className="sr-only">
-                {t("checkInBlockedFinalized")}
-              </span>
-            )}
-          </>
         )}
-        <GuestRowActions
-          guest={mg}
-          orgId={orgId}
-          meetupId={id!}
-          isOrgAdmin={isOrgAdmin}
-          isFinalized={isFinalized}
-          onViewProfile={() => openProfile(mg)}
-        />
-      </div>
+      </>
+    );
+  }
+
+  function renderRowMenu(mg: MeetupGuest) {
+    return (
+      <GuestRowActions
+        guest={mg}
+        orgId={orgId}
+        meetupId={id!}
+        isOrgAdmin={isOrgAdmin}
+        isFinalized={isFinalized}
+        onViewProfile={() => openProfile(mg)}
+      />
+    );
+  }
+
+  function renderCard(mg: MeetupGuest) {
+    const markPaid = renderMarkPaid(mg);
+    // Once finalized the header says the door is closed, so the cards drop
+    // their steps band instead of showing dead buttons.
+    const checkIn = isFinalized ? null : renderCheckIn(mg);
+    return (
+      <GuestCard
+        key={mg.guest.id}
+        identity={renderIdentity(
+          mg,
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">{t("rsvp")}</span>{" "}
+            {formatDateTime(mg.rsvp.rsvp_time)}
+          </p>,
+        )}
+        order={mg.rsvp.arrival_order != null ? renderArrivalOrder(mg) : null}
+        menu={renderRowMenu(mg)}
+        checkIn={<CheckInStatus guest={mg} onUndo={() => setUndoTarget(mg)} />}
+        payment={requiresPayment ? renderPaymentStatus(mg) : undefined}
+        actions={
+          markPaid || checkIn ? (
+            <>
+              {markPaid}
+              {checkIn}
+            </>
+          ) : null
+        }
+        dimmed={mg.rsvp.cancelled_rsvp}
+      />
     );
   }
 
@@ -1009,21 +1071,22 @@ export function MeetupDetailPage() {
                 : "bg-[radial-gradient(ellipse_at_top_left,--theme(--color-foreground/7%),transparent_65%)]",
             )}
           />
-          {/* Below @md the location and Mazmo link span both columns, so the
-              space under the date tile is used. From @md they sit in the text
-              column and the tile is centered against the whole block. */}
-          <div className="grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-2 px-4 pt-5 pb-5 @md:gap-x-6 @md:px-6 @md:pt-6">
+          {/* Below @md everything stacks on one centered axis: the date
+              tile, the title and dates, then the location and Mazmo link set
+              apart by a rule. From @md the tile sits to the left, centered
+              against the text column. */}
+          <div className="flex flex-col items-center gap-3 px-4 py-5 text-center @md:grid @md:grid-cols-[auto_1fr] @md:items-start @md:gap-x-6 @md:gap-y-2 @md:px-6 @md:pt-6 @md:text-left">
             <div className="@md:row-span-2 @md:self-center">
               <DateTile date={meetup.date} timing={timing} size="lg" />
             </div>
-            <div className="min-w-0 space-y-2 @md:col-start-2">
+            <div className="w-full min-w-0 space-y-2 @md:col-start-2">
               <h1
                 id="meetup-title"
                 className="text-2xl leading-tight font-semibold tracking-tight break-words @md:text-3xl"
               >
                 {meetup.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground @md:justify-start">
                 <span>
                   {formatDate(meetup.date)}
                   {/* The "Today" badge already says it for today's meetup. */}
@@ -1037,7 +1100,7 @@ export function MeetupDetailPage() {
                 <MeetupBadges meetup={meetup} timing={timing} />
               </div>
             </div>
-            <div className="col-span-2 min-w-0 space-y-2 empty:hidden @md:col-span-1 @md:col-start-2">
+            <div className="w-full min-w-0 space-y-2 border-t pt-3 empty:hidden @md:col-start-2 @md:border-t-0 @md:pt-0">
               <MeetupLocation
                 orgId={orgId}
                 meetup={meetup}
@@ -1052,10 +1115,18 @@ export function MeetupDetailPage() {
           </div>
           {/* The meetup's tools, in a band of their own like the footer of
               the guest profile card. On phones the buttons stack centered at
-              one width; on wider cards they sit in a row from the left. Once
-              finalized the door tools are gone and the band says so, rather
-              than showing a row of dead buttons. */}
-          <div className="flex flex-col items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:flex-row @md:flex-wrap @md:px-6 [&>button]:w-full [&>button]:max-w-72 @md:[&>button]:w-auto @md:[&>button]:max-w-none">
+              one width. On medium cards they fill an even two-column grid, so
+              four tools never wrap three and one; once all of them fit they
+              sit in one row from the left. Once finalized the door tools are
+              gone and the band says so, rather than showing dead buttons. */}
+          <div
+            className={cn(
+              "flex flex-col items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:px-6 [&>button]:w-full [&>button]:max-w-72 @md:[&>button]:max-w-none",
+              isFinalized
+                ? "@md:flex-row @md:flex-wrap @md:[&>button]:w-auto"
+                : "@md:grid @md:grid-cols-2 @4xl:flex @4xl:flex-row @4xl:[&>button]:w-auto",
+            )}
+          >
             {isFinalized ? (
               <div className="flex min-w-0 flex-1 basis-full items-start gap-2 text-sm @md:basis-0">
                 <Lock
@@ -1283,11 +1354,33 @@ export function MeetupDetailPage() {
                   <TableCell className="text-muted-foreground text-sm">
                     {formatDateTime(mg.rsvp.rsvp_time)}
                   </TableCell>
-                  <TableCell>{renderStatus(mg)}</TableCell>
+                  <TableCell>
+                    <CheckInStatus guest={mg} />
+                  </TableCell>
                   {requiresPayment && (
-                    <TableCell>{renderPayment(mg)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {renderPaymentStatus(mg)}
+                        {renderMarkPaid(mg)}
+                      </div>
+                    </TableCell>
                   )}
-                  <TableCell>{renderActions(mg)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      {mg.rsvp.has_arrived ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUndoTarget(mg)}
+                        >
+                          {t("undo")}
+                        </Button>
+                      ) : (
+                        renderCheckIn(mg)
+                      )}
+                      {renderRowMenu(mg)}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -1298,54 +1391,24 @@ export function MeetupDetailPage() {
           {guestsQ.isLoading &&
             Array.from({ length: 5 }).map((_, i) => (
               <li key={i}>
-                <Skeleton className="h-28 w-full rounded-lg" />
+                <Skeleton className="h-44 w-full rounded-lg" />
               </li>
             ))}
           {!guestsQ.isLoading && rawGuests.length === 0 && (
-            <li className="text-center text-sm text-muted-foreground py-8">
+            <li className="py-8 text-center text-sm text-muted-foreground">
               {t("noGuestsSyncMazmo")}
             </li>
           )}
           {!guestsQ.isLoading &&
             rawGuests.length > 0 &&
             (guests?.length ?? 0) === 0 && (
-              <li className="text-center text-sm text-muted-foreground py-8">
+              <li className="py-8 text-center text-sm text-muted-foreground">
                 {search.trim()
                   ? t("noGuestsMatchSearch")
                   : t("noGuestsMatchFilters")}
               </li>
             )}
-          {(guests ?? []).map((mg) => (
-            <li
-              key={mg.guest.id}
-              className={cn(
-                // Stacked on phones; one row once the list is wide enough,
-                // with fixed-width columns so rows line up like a table.
-                "flex flex-col gap-3 rounded-lg border p-3 @3xl:flex-row @3xl:items-center @3xl:gap-4",
-                mg.rsvp.cancelled_rsvp && "opacity-50",
-              )}
-            >
-              <div className="flex min-w-0 flex-1 items-start justify-between gap-2 @3xl:items-center">
-                {renderIdentity(mg)}
-                {mg.rsvp.arrival_order != null && (
-                  <span className="shrink-0">{renderArrivalOrder(mg)}</span>
-                )}
-              </div>
-              <div className="flex items-end justify-between gap-2 @3xl:contents">
-                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 @3xl:flex-none @3xl:flex-nowrap @3xl:gap-4">
-                  <p className="text-xs text-muted-foreground @3xl:order-first @3xl:w-40 @3xl:whitespace-nowrap">
-                    <span className="font-medium">{t("rsvp")}</span>{" "}
-                    {formatDateTime(mg.rsvp.rsvp_time)}
-                  </p>
-                  <div className="@3xl:w-32">{renderStatus(mg)}</div>
-                  {requiresPayment && (
-                    <div className="@3xl:w-40">{renderPayment(mg)}</div>
-                  )}
-                </div>
-                <div className="shrink-0 @3xl:w-36">{renderActions(mg)}</div>
-              </div>
-            </li>
-          ))}
+          {(guests ?? []).map((mg) => renderCard(mg))}
         </ul>
       )}
 
