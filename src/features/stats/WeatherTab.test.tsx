@@ -570,6 +570,35 @@ describe("WeatherTab", () => {
       ]);
     });
 
+    it("says when nobody arrived in the charted hours", async () => {
+      respond(ok(oneEvent(event())), ok({ ...arrivals(), curve: [] }));
+      renderTab({ query: single });
+      await eventReady();
+      expect(
+        await screen.findByText("Nadie llegó en estas horas."),
+      ).toBeInTheDocument();
+    });
+
+    it("zooms the hourly chart in and out, wider per hour", async () => {
+      const user = userEvent.setup();
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      const content = screen.getByTestId("meteogram-content");
+      const zoomIn = screen.getByRole("button", { name: "Acercar" });
+      const zoomOut = screen.getByRole("button", { name: "Alejar" });
+      // 9 hours at 48 px plus the 32 px axis.
+      expect(content).toHaveStyle({ minWidth: "464px" });
+      expect(zoomOut).toBeDisabled();
+      await user.click(zoomIn);
+      expect(content).toHaveStyle({ minWidth: "680px" });
+      await user.click(zoomIn);
+      expect(content).toHaveStyle({ minWidth: "1040px" });
+      expect(zoomIn).toBeDisabled();
+      await user.click(zoomOut);
+      expect(content).toHaveStyle({ minWidth: "680px" });
+    });
+
     it("shows a placeholder for the arrivals while they load", async () => {
       respond(ok(oneEvent(event())), new Promise(() => {}));
       renderTab({ query: single });

@@ -95,6 +95,9 @@ One backend PR that adds and removes fields together, then velvet. The live Clim
 
 ## Calls made by Claude (user can override)
 
+- The meteogram scrolls sideways with a minimum width per hour and has zoom in / zoom out buttons (48, 72 or 112 px per hour). The user asked for a scrollable, zoomable chart so phones do not squeeze the hours.
+- No synced tooltips across strips: the strips have different data lengths, so values are shown as bar labels and in the text table.
+
 - Before window is exactly the 3 whole hours before the start hour, so a 22:30 start uses 19:00 to 22:00 as before and 22:00 onward as during, matching today's during rule.
 - The toggle default is "Durante", so the charts look the same as today until someone switches.
 - Rainy, dry and without-weather fields leave the API too, not just the UI, so no dead contract stays behind.

@@ -497,6 +497,9 @@ export const translations = {
     statsWeatherArrivals: "Arrivals",
     statsWeatherArrivalsFailed: "Could not load the arrivals.",
     statsWeatherStart: "start",
+    statsWeatherZoomIn: "Zoom in",
+    statsWeatherZoomOut: "Zoom out",
+    statsWeatherNoArrivals: "Nobody arrived in these hours.",
     statsNoteWeatherEvent:
       "Weather from Open-Meteo at the event's address, from 3 hours before the start through 6 hours after. Arrivals are every 15 minutes.",
     statsTempBands: "Attendance by temperature",
@@ -1225,6 +1228,9 @@ export const translations = {
     statsWeatherArrivals: "Llegadas",
     statsWeatherArrivalsFailed: "No se pudieron cargar las llegadas.",
     statsWeatherStart: "inicio",
+    statsWeatherZoomIn: "Acercar",
+    statsWeatherZoomOut: "Alejar",
+    statsWeatherNoArrivals: "Nadie llegó en estas horas.",
     statsNoteWeatherEvent:
       "Clima de Open-Meteo en la dirección del evento, desde 3 horas antes del inicio hasta 6 horas después. Las llegadas van cada 15 minutos.",
     statsTempBands: "Asistencia según temperatura",

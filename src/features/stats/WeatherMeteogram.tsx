@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import {
   Area,
   Bar,
@@ -11,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import type { components } from "@/api/types";
+import { Button } from "@/components/ui/button";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimal, formatTime } from "@/lib/format";
@@ -33,6 +36,12 @@ type Bucket = components["schemas"]["ArrivalBucketPublic"];
 /** The y axis width every strip shares, so their plot areas and the icon row line up. */
 const Y_AXIS_WIDTH = 32;
 const MARGIN = { top: 4, right: 0, bottom: 0, left: 0 };
+/**
+ * Pixels per hour at each zoom step. The chart keeps at least this width and
+ * scrolls sideways when the card is narrower, so a phone shows every hour's
+ * icon, rain label and time without squeezing them.
+ */
+const HOUR_WIDTHS = [48, 72, 112] as const;
 
 const config: ChartConfig = {
   temperature: { color: "var(--chart-3)" },
@@ -64,7 +73,7 @@ function TimeAxis({
       tickLine={false}
       axisLine={labelled}
       hide={!labelled}
-      interval="preserveStartEnd"
+      interval={0}
     />
   );
 }
@@ -115,11 +124,10 @@ function IconRow({ hours }: { hours: Hour[] }) {
                   media="(prefers-reduced-motion: reduce)"
                   srcSet={src.still}
                 />
-                {/* The line icons are drawn light gray; darken them on the light theme. */}
                 <img
                   src={src.animated}
                   alt={t(icon.label)}
-                  className="size-7 brightness-50 sm:size-9 dark:brightness-100"
+                  className="size-7 sm:size-9"
                 />
               </picture>
             ) : (
@@ -147,6 +155,7 @@ export function WeatherMeteogram({
   labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
+  const [zoom, setZoom] = useState(0);
   const domain = meteogramDomain(hours);
   const temperature = hours.map((h) => ({
     x: hourCenter(h),
@@ -165,10 +174,13 @@ export function WeatherMeteogram({
   const measure = (value: number | null, unit: string) =>
     value === null ? "–" : `${formatDecimal(value, lang)} ${unit}`;
   const rows = hourRows(hours, arrivals ?? null);
+  const charted = arrivals ? arrivalsInDomain(arrivals, domain) : [];
+  // The last strip carries the hour labels: arrivals when there are any to chart, else rain.
+  const arrivalsCharted = charted.some((b) => b.arrivals > 0);
 
   return (
     <div className="space-y-1">
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span className="h-0.5 w-3.5 bg-chart-3" />
           {t("weatherTemp")}
@@ -179,109 +191,148 @@ export function WeatherMeteogram({
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm bg-chart-2" />
-          {t("weatherRain")}
+          {t("weatherRain")} (mm)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-2.5 rounded-sm bg-chart-1" />
           {t("statsWeatherArrivals")}
         </span>
-      </div>
-      <IconRow hours={hours} />
-      <ChartContainer config={config} className="aspect-auto h-28 w-full">
-        <ComposedChart data={temperature} margin={MARGIN}>
-          <TimeAxis domain={domain} hours={hours} labelled={false} />
-          <YAxis
-            width={Y_AXIS_WIDTH}
-            tickLine={false}
-            axisLine={false}
-            domain={["dataMin - 1", "dataMax + 1"]}
-            allowDecimals={false}
-            unit="°"
-          />
-          <StartMarks domain={domain} label={t("statsWeatherStart")} />
-          <Area
-            dataKey="gap"
-            fill="var(--color-temperature)"
-            fillOpacity={0.15}
-            stroke="none"
-            isAnimationActive={false}
-          />
-          <Line
-            dataKey="temperature"
-            stroke="var(--color-temperature)"
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={false}
-          />
-          <Line
-            dataKey="apparent"
-            stroke="var(--color-temperature)"
-            strokeWidth={2}
-            strokeDasharray="5 4"
-            dot={false}
-            isAnimationActive={false}
-          />
-        </ComposedChart>
-      </ChartContainer>
-      <ChartContainer config={config} className="aspect-auto h-16 w-full">
-        <BarChart data={rain} margin={{ ...MARGIN, top: 14 }}>
-          <TimeAxis domain={domain} hours={hours} labelled={false} />
-          <YAxis width={Y_AXIS_WIDTH} hide />
-          <StartMarks domain={domain} />
-          <Bar
-            dataKey="rain"
-            fill="var(--color-rain)"
-            radius={2}
-            isAnimationActive={false}
+        <span className="ml-auto flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("statsWeatherZoomOut")}
+            disabled={zoom === 0}
+            onClick={() => setZoom(zoom - 1)}
           >
-            <LabelList
-              dataKey="rain"
-              position="top"
-              fontSize={10}
-              fill="var(--color-rain)"
-              formatter={(value: unknown) =>
-                typeof value === "number" && value > 0
-                  ? `${formatDecimal(value, lang)} mm`
-                  : ""
-              }
-            />
-          </Bar>
-        </BarChart>
-      </ChartContainer>
+            <ZoomOut aria-hidden />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("statsWeatherZoomIn")}
+            disabled={zoom === HOUR_WIDTHS.length - 1}
+            onClick={() => setZoom(zoom + 1)}
+          >
+            <ZoomIn aria-hidden />
+          </Button>
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <div
+          data-testid="meteogram-content"
+          className="space-y-1"
+          style={{ minWidth: Y_AXIS_WIDTH + hours.length * HOUR_WIDTHS[zoom] }}
+        >
+          <IconRow hours={hours} />
+          <ChartContainer config={config} className="aspect-auto h-28 w-full">
+            <ComposedChart data={temperature} margin={MARGIN}>
+              <TimeAxis domain={domain} hours={hours} labelled={false} />
+              <YAxis
+                width={Y_AXIS_WIDTH}
+                tickLine={false}
+                axisLine={false}
+                domain={["dataMin - 1", "dataMax + 1"]}
+                allowDecimals={false}
+                unit="°"
+              />
+              <StartMarks domain={domain} label={t("statsWeatherStart")} />
+              <Area
+                dataKey="gap"
+                fill="var(--color-temperature)"
+                fillOpacity={0.15}
+                stroke="none"
+                isAnimationActive={false}
+              />
+              <Line
+                dataKey="temperature"
+                stroke="var(--color-temperature)"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+              <Line
+                dataKey="apparent"
+                stroke="var(--color-temperature)"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                dot={false}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          </ChartContainer>
+          <ChartContainer config={config} className="aspect-auto h-16 w-full">
+            <BarChart data={rain} margin={{ ...MARGIN, top: 14 }}>
+              <TimeAxis
+                domain={domain}
+                hours={hours}
+                labelled={!arrivalsCharted}
+              />
+              <YAxis width={Y_AXIS_WIDTH} tick={false} axisLine={false} />
+              <StartMarks domain={domain} />
+              <Bar
+                dataKey="rain"
+                fill="var(--color-rain)"
+                radius={2}
+                isAnimationActive={false}
+              >
+                <LabelList
+                  dataKey="rain"
+                  position="top"
+                  fontSize={10}
+                  fill="var(--color-rain)"
+                  formatter={(value: unknown) =>
+                    typeof value === "number" && value > 0
+                      ? formatDecimal(value, lang)
+                      : ""
+                  }
+                />
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+          {arrivalsCharted && (
+            <ChartContainer config={config} className="aspect-auto h-24 w-full">
+              <BarChart
+                data={charted.map((b) => ({
+                  x: bucketCenter(b),
+                  arrivals: b.arrivals,
+                }))}
+                margin={MARGIN}
+              >
+                <TimeAxis domain={domain} hours={hours} labelled />
+                <YAxis
+                  width={Y_AXIS_WIDTH}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <StartMarks domain={domain} />
+                <Bar
+                  dataKey="arrivals"
+                  fill="var(--color-arrivals)"
+                  radius={1}
+                  isAnimationActive={false}
+                />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </div>
+      </div>
       {arrivals === undefined ? (
         <Skeleton
           data-testid="meteogram-arrivals-skeleton"
           className="h-24 w-full"
         />
-      ) : arrivals === null ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          {t("statsWeatherArrivalsFailed")}
-        </p>
       ) : (
-        <ChartContainer config={config} className="aspect-auto h-24 w-full">
-          <BarChart
-            data={arrivalsInDomain(arrivals, domain).map((b) => ({
-              x: bucketCenter(b),
-              arrivals: b.arrivals,
-            }))}
-            margin={MARGIN}
-          >
-            <TimeAxis domain={domain} hours={hours} labelled />
-            <YAxis
-              width={Y_AXIS_WIDTH}
-              tickLine={false}
-              axisLine={false}
-              allowDecimals={false}
-            />
-            <StartMarks domain={domain} />
-            <Bar
-              dataKey="arrivals"
-              fill="var(--color-arrivals)"
-              radius={1}
-              isAnimationActive={false}
-            />
-          </BarChart>
-        </ChartContainer>
+        !arrivalsCharted && (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t(
+              arrivals === null
+                ? "statsWeatherArrivalsFailed"
+                : "statsWeatherNoArrivals",
+            )}
+          </p>
+        )
       )}
       <ChartTextTable
         labelledBy={labelledBy}
