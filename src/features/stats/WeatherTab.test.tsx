@@ -332,9 +332,9 @@ describe("WeatherTab", () => {
     const card = screen.getByRole("region", {
       name: "Asistencia y temperatura",
     });
-    expect(card).toHaveTextContent(
-      "Hay pocos eventos con temperatura para graficar",
-    );
+    expect(
+      within(card).getByText("Hay pocos eventos con temperatura para graficar"),
+    ).toBeInTheDocument();
   });
 
   it("charts the scatter and lists its points in date order", async () => {
@@ -470,7 +470,7 @@ describe("WeatherTab", () => {
       renderTab({ query: single });
       await waitFor(() => headline("Vinieron"));
       const card = screen.getByRole("region", { name: "Clima" });
-      expect(card).toHaveTextContent(text);
+      expect(within(card).getByText(text)).toBeInTheDocument();
       expect(
         document.querySelector('[data-slot="weather-temperature"]'),
       ).toBeNull();
@@ -485,9 +485,11 @@ describe("WeatherTab", () => {
       respond(ok(oneEvent(event({ status: "NO_LOCATION", weather: null }))));
       renderTab({ query: single });
       await waitFor(() => headline("Vinieron"));
-      expect(screen.getByRole("region", { name: "Clima" })).toHaveTextContent(
-        "Cargá la ubicación para ver el clima",
-      );
+      expect(
+        within(screen.getByRole("region", { name: "Clima" })).getByText(
+          "Cargá la ubicación para ver el clima",
+        ),
+      ).toBeInTheDocument();
     });
 
     it("shows a dash when the event has no no-show rate", async () => {
