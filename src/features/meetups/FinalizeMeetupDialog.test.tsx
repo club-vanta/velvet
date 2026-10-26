@@ -1,7 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { meetupGuestsKey } from "@/lib/queryKeys";
 import { LanguageProvider } from "@/lib/i18n";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import type { components } from "@/api/types";
@@ -91,5 +96,48 @@ describe("FinalizeMeetupDialog", () => {
     await waitFor(() => expect(mockApiPatch).toHaveBeenCalledTimes(1));
     expect(onClose).not.toHaveBeenCalled();
     expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  it("refreshes the meetup's guest list, where pending RSVPs become no-shows", async () => {
+    let status = "PENDING";
+    mockApiPatch.mockImplementation(() => {
+      status = "NO_SHOW";
+      return Promise.resolve({ data: { ...meetup(true) }, error: undefined });
+    });
+    function GuestStatus() {
+      const { data } = useQuery({
+        queryKey: meetupGuestsKey("org-1", "meetup-1"),
+        queryFn: () => Promise.resolve(status),
+        // Only an invalidation may refetch it.
+        staleTime: Infinity,
+      });
+      return <p data-testid="guest-status">{data}</p>;
+    }
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <GuestStatus />
+          <FinalizeMeetupDialog
+            orgId="org-1"
+            meetup={meetup(false)}
+            onClose={vi.fn()}
+          />
+        </LanguageProvider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("guest-status")).toHaveTextContent("PENDING"),
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Finalizar evento" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("guest-status")).toHaveTextContent("NO_SHOW"),
+    );
   });
 });
