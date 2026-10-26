@@ -238,12 +238,16 @@ describe("RetentionTab", () => {
     renderTab();
     await headlinesReady();
     expect(slot("Personas", "value")).toBe("120");
-    expect(slot("Personas", "comparison")).toBe("+20% vs. período anterior");
+    expect(slot("Personas", "comparison")).toBe(
+      "+20% respecto al período anterior",
+    );
     expect(slot("Primera vez", "value")).toBe("49");
     expect(slot("Primera vez", "subline")).toBe("41% del total");
     expect(slot("Primera vez", "comparison")).toBeNull();
     expect(slot("Volvieron", "value")).toBe("35%");
-    expect(slot("Volvieron", "comparison")).toBe("+5 pts vs. período anterior");
+    expect(slot("Volvieron", "comparison")).toBe(
+      "+5 puntos respecto al período anterior",
+    );
     expect(slot("Volvieron", "sample")).toBeNull();
   });
 
@@ -358,7 +362,9 @@ describe("RetentionTab", () => {
     expect(slot("Volvieron", "subline")).toBe(
       "De quienes vinieron por primera vez",
     );
-    expect(slot("Volvieron", "comparison")).toBe("promedio: 30%");
+    expect(slot("Volvieron", "comparison")).toBe(
+      "Todos los eventos del período: 30%",
+    );
     for (const heading of AGGREGATE_HEADINGS) {
       expect(screen.queryByText(heading)).not.toBeInTheDocument();
     }
