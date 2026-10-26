@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { components } from "@/api/types";
 import {
   arrivalsInDomain,
+  clockAt,
   hourRows,
   meteogramDomain,
   startHourOffset,
@@ -82,5 +83,14 @@ describe("hourRows", () => {
 
   it("leaves arrivals null when there is no curve", () => {
     expect(hourRows([hour(0)], null).map((r) => r.arrivals)).toEqual([null]);
+  });
+});
+
+describe("clockAt", () => {
+  it("turns minutes from the start into a moment, from any stored hour", () => {
+    // The 19:00 UTC hour is 180 minutes before a 22:00 UTC start.
+    const hours = [hour(-180, { time: "2026-04-05T19:00:00.000Z" })];
+    expect(clockAt(hours, 15)).toBe("2026-04-05T22:15:00.000Z");
+    expect(clockAt(hours, -30)).toBe("2026-04-05T21:30:00.000Z");
   });
 });

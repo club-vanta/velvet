@@ -7,7 +7,8 @@ type Bucket = components["schemas"]["ArrivalBucketPublic"];
 export type Domain = [number, number];
 
 const HOUR = 60;
-const QUARTER = 15;
+export const QUARTER = 15;
+const MS_PER_MINUTE = 60 * 1000;
 
 /**
  * The chart follows the stored hours, from the start of the first to the end
@@ -54,6 +55,14 @@ export function hourRows(hours: Hour[], curve: Bucket[] | null): HourRow[] {
  */
 export function startHourOffset(hours: Hour[]): number {
   return hours.find((h) => h.offset_minutes > -HOUR)?.offset_minutes ?? 0;
+}
+
+/** A moment `minutes` after the meetup start, as ISO; any stored hour anchors the start. */
+export function clockAt(hours: Hour[], minutes: number): string {
+  const anchor = hours[0]!;
+  const start =
+    new Date(anchor.time).getTime() - anchor.offset_minutes * MS_PER_MINUTE;
+  return new Date(start + minutes * MS_PER_MINUTE).toISOString();
 }
 
 /** Where a quarter hour bucket sits on the x axis: its middle. */

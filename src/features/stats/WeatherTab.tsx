@@ -22,6 +22,7 @@ import { ChartCard } from "./ChartCard";
 import { BAR_END_UP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { RateCell } from "./RateCell";
+import { TooltipBox } from "./TooltipBox";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import { formatCount, sortByDate } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -76,16 +77,6 @@ function scatterPoints(meetups: Row[], weatherWindow: WeatherWindow): Point[] {
           },
         ];
   });
-}
-
-// The charts use their own tooltip because ChartTooltipContent shows only the
-// series value, not the events count or the meetup name and date.
-function TooltipBox({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs shadow-xl">
-      {children}
-    </div>
-  );
 }
 
 function BandsChart({ rows }: { rows: Band[] }) {

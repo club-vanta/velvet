@@ -14,7 +14,11 @@ import {
 } from "recharts";
 import type { components } from "@/api/types";
 import { Button } from "@/components/ui/button";
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDecimal, formatTime } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
@@ -23,12 +27,15 @@ import { formatCount } from "./statsFormat";
 import {
   arrivalsInDomain,
   bucketCenter,
+  clockAt,
   hourCenter,
   hourRows,
   meteogramDomain,
+  QUARTER,
   startHourOffset,
   type Domain,
 } from "./meteogramData";
+import { MeteogramTooltip, type MeteogramTip } from "./MeteogramTooltip";
 import { WEATHER_ICON_SRC, weatherIcon } from "./weatherIcon";
 
 type Hour = components["schemas"]["WeatherHourPublic"];
@@ -169,8 +176,18 @@ export function WeatherMeteogram({
   const hourWidth = HOUR_WIDTHS[zoom];
   const domain = meteogramDomain(hours);
   const startHour = startHourOffset(hours);
+  const measure = (value: number | null, unit: string) =>
+    value === null ? "–" : `${formatDecimal(value, lang)} ${unit}`;
+  const hourTip = (h: Hour, lines: [string, string][]): MeteogramTip => ({
+    title: formatTime(h.time),
+    lines,
+  });
   const temperature = hours.map((h) => ({
     x: hourCenter(h),
+    tip: hourTip(h, [
+      [t("weatherTemp"), measure(h.temperature, "°C")],
+      [t("weatherFeelsLike"), measure(h.apparent_temperature, "°C")],
+    ]),
     temperature: h.temperature,
     apparent: h.apparent_temperature,
     // The shaded gap between the two lines, only where both are known.
@@ -182,9 +199,8 @@ export function WeatherMeteogram({
   const rain = hours.map((h) => ({
     x: hourCenter(h),
     rain: h.precipitation_mm,
+    tip: hourTip(h, [[t("weatherRain"), measure(h.precipitation_mm, "mm")]]),
   }));
-  const measure = (value: number | null, unit: string) =>
-    value === null ? "–" : `${formatDecimal(value, lang)} ${unit}`;
   const rows = hourRows(hours, arrivals ?? null);
   const charted = arrivals ? arrivalsInDomain(arrivals, domain) : [];
   const arrivalsCharted = charted.some((b) => b.arrivals > 0);
@@ -277,6 +293,10 @@ export function WeatherMeteogram({
                 startHour={startHour}
                 label={t("statsWeatherStart")}
               />
+              <ChartTooltip
+                cursor={{ stroke: "var(--muted-foreground)" }}
+                content={(props) => <MeteogramTooltip {...props} />}
+              />
               <Area
                 dataKey="gap"
                 fill="var(--color-temperature)"
@@ -289,8 +309,6 @@ export function WeatherMeteogram({
                 stroke="var(--color-temperature)"
                 strokeWidth={2}
                 dot={false}
-                // No tooltip reads the hovered point, so no dot marks it either.
-                activeDot={false}
                 isAnimationActive={false}
               />
               <Line
@@ -299,8 +317,6 @@ export function WeatherMeteogram({
                 strokeWidth={2}
                 strokeDasharray="5 4"
                 dot={false}
-                // No tooltip reads the hovered point, so no dot marks it either.
-                activeDot={false}
                 isAnimationActive={false}
               />
             </ComposedChart>
@@ -313,8 +329,17 @@ export function WeatherMeteogram({
                   hours={hours}
                   labelled={labelled === "rain"}
                 />
-                <YAxis width={Y_AXIS_WIDTH} tick={false} axisLine={false} />
+                <YAxis
+                  width={Y_AXIS_WIDTH}
+                  tickLine={false}
+                  axisLine={false}
+                  tickCount={2}
+                />
                 <StartMarks domain={domain} startHour={startHour} />
+                <ChartTooltip
+                  cursor={{ fill: "var(--muted-foreground)", fillOpacity: 0.1 }}
+                  content={(props) => <MeteogramTooltip {...props} />}
+                />
                 <Bar
                   dataKey="rain"
                   fill="var(--color-rain)"
@@ -345,6 +370,23 @@ export function WeatherMeteogram({
                 data={charted.map((b) => ({
                   x: bucketCenter(b),
                   arrivals: b.arrivals,
+                  tip: {
+                    title: t("statsWeatherQuarter")
+                      .replace(
+                        "{0}",
+                        formatTime(clockAt(hours, b.start_minute)),
+                      )
+                      .replace(
+                        "{1}",
+                        formatTime(clockAt(hours, b.start_minute + QUARTER)),
+                      ),
+                    lines: [
+                      [
+                        t("statsWeatherArrivals"),
+                        formatCount(b.arrivals, lang),
+                      ],
+                    ],
+                  },
                 }))}
                 margin={MARGIN}
               >
@@ -356,6 +398,10 @@ export function WeatherMeteogram({
                   allowDecimals={false}
                 />
                 <StartMarks domain={domain} startHour={startHour} />
+                <ChartTooltip
+                  cursor={{ fill: "var(--muted-foreground)", fillOpacity: 0.1 }}
+                  content={(props) => <MeteogramTooltip {...props} />}
+                />
                 <Bar
                   dataKey="arrivals"
                   fill="var(--color-arrivals)"
