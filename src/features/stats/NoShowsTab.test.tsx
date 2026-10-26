@@ -120,7 +120,7 @@ function stats(overrides: Partial<NoShows> = {}): NoShows {
 
 const PERIOD = { from: "2026-04-01", to: "2026-05-01" };
 
-function renderTab(props: Partial<StatsTabProps> = {}) {
+function renderTab(props: Partial<StatsTabProps> = {}, url = "/stats") {
   const onShowAll = vi.fn();
   render(
     <QueryClientProvider
@@ -129,7 +129,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
       }
     >
       <LanguageProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[url]}>
           <NoShowsTab
             orgId="org-1"
             query={PERIOD}
@@ -389,6 +389,99 @@ describe("NoShowsTab", () => {
     expect(bars("Según el género")).toEqual([10, 50, 19]);
     expect(rateRows("Según la edad")[1]).toEqual(["25-29", "–", null]);
     expect(bars("Según la edad").slice(0, 2)).toEqual([15, null]);
+  });
+
+  const CARDS = [
+    "Según el género",
+    "Según la edad",
+    "Primera vez o ya habían venido",
+    "Según cuánto antes se anotaron",
+  ];
+  const valueHeader = (card: string) =>
+    screen.getByRole("table", { name: card }).querySelectorAll("th")[1]!
+      .textContent;
+
+  it("shows each group's rate by default", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    expect(screen.getByRole("button", { name: "Tasa" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(CARDS.map(valueHeader)).toEqual(CARDS.map(() => "No vinieron"));
+  });
+
+  it("switches every breakdown card to the share of no-shows", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    await userEvent.click(screen.getByRole("button", { name: "Composición" }));
+
+    expect(CARDS.map(valueHeader)).toEqual(CARDS.map(() => "De los ausentes"));
+    // 5, 2 and 5 of the 12 no-shows, the unknown group included.
+    expect(rateRows("Según el género")).toEqual([
+      ["Hombre", "42%", null],
+      ["NEW_CODE", "17%", null],
+      ["Sin dato", "42%", null],
+    ]);
+    expect(rateRows("Primera vez o ya habían venido")).toEqual([
+      ["Primera vez", "75%", null],
+      ["Ya habían venido", "25%", null],
+    ]);
+    expect(rateRows("Según cuánto antes se anotaron")[0]).toEqual([
+      "El mismo día",
+      "100%",
+      null,
+    ]);
+    expect(screen.getByRole("button", { name: "Tasa" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("does not dim small groups in share mode", async () => {
+    respond(ok(stats()));
+    renderTab({}, "/stats?noshow_view=share");
+    await headlinesReady();
+    const small = screen
+      .getByRole("table", { name: "Según el género" })
+      .querySelectorAll('[data-slot="rate-row"]')[1];
+    expect(small).not.toHaveClass("text-muted-foreground");
+  });
+
+  it("keeps the view in the URL", async () => {
+    respond(ok(stats()));
+    renderTab({}, "/stats?noshow_view=share");
+    await headlinesReady();
+    expect(screen.getByRole("button", { name: "Composición" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(rateRows("Según el género")[0]).toEqual(["Hombre", "42%", null]);
+  });
+
+  it("falls back to rates for an unknown view", async () => {
+    respond(ok(stats()));
+    renderTab({}, "/stats?noshow_view=bogus");
+    await headlinesReady();
+    expect(rateRows("Según el género")[0]).toEqual(["Hombre", "10%", null]);
+  });
+
+  it("shows no share when nobody missed", async () => {
+    respond(
+      ok(
+        stats({
+          gender: [group("MALE", 50, 0), group(null, 26, 0)],
+        }),
+      ),
+    );
+    renderTab({}, "/stats?noshow_view=share");
+    await headlinesReady();
+    expect(rateRows("Según el género")).toEqual([
+      ["Hombre", "–", null],
+      ["Sin dato", "–", null],
+    ]);
   });
 
   it("rates the lead time over the sign-ups that were not cancelled", async () => {
