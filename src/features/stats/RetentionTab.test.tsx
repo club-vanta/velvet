@@ -238,7 +238,8 @@ describe("RetentionTab", () => {
     expect(slot("Personas", "value")).toBe("120");
     expect(slot("Personas", "comparison")).toBe("+20% vs. período anterior");
     expect(slot("Primera vez", "value")).toBe("49");
-    expect(slot("Primera vez", "comparison")).toBe("41% del total");
+    expect(slot("Primera vez", "subline")).toBe("41% del total");
+    expect(slot("Primera vez", "comparison")).toBeNull();
     expect(slot("Volvieron", "value")).toBe("35%");
     expect(slot("Volvieron", "comparison")).toBe("+5 pts vs. período anterior");
     expect(slot("Volvieron", "sample")).toBeNull();
@@ -293,12 +294,47 @@ describe("RetentionTab", () => {
     renderTab();
     await headlinesReady();
     for (const heading of AGGREGATE_HEADINGS) {
-      expect(screen.getByText(heading)).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: heading }),
+      ).toBeInTheDocument();
     }
-    expect(document.querySelector('[data-slot="event-came-back"]')).toBeNull();
   });
 
-  it("shows only the headlines and the came-back line for one event", async () => {
+  it("gives the charts text alternatives for screen readers", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+
+    const events = screen.getByRole("table", {
+      name: "Nuevas y conocidas por evento",
+    });
+    // sr-only sits on the wrapper: a table ignores a width limit.
+    expect(events).not.toHaveClass("sr-only");
+    expect(events.parentElement).toHaveClass("sr-only");
+    const eventRows = within(events).getAllByRole("row");
+    expect(eventRows).toHaveLength(3);
+    expect(
+      Array.from(eventRows[1]!.children).map((c) => c.textContent),
+    ).toEqual(["Alter Marzo", "9 de mar de 2026", "20", "40"]);
+
+    const frequency = screen.getByRole("table", {
+      name: "Cada cuánto vienen",
+    });
+    expect(frequency.parentElement).toHaveClass("sr-only");
+    expect(
+      within(frequency)
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => Array.from(row.children).map((c) => c.textContent)),
+    ).toEqual([
+      ["1 vez", "70"],
+      ["2 veces", "30"],
+      ["3-5 veces", "15"],
+      ["6+ veces", "5"],
+    ]);
+  });
+
+  it("shows only the headlines for one event", async () => {
     respond(
       ok(
         eventStats({
@@ -314,18 +350,20 @@ describe("RetentionTab", () => {
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Personas", "comparison")).toBeNull();
-    expect(slot("Primera vez", "comparison")).toBe("41% del total");
+    expect(slot("Primera vez", "subline")).toBe("41% del total");
+    expect(slot("Primera vez", "comparison")).toBeNull();
+    expect(slot("Volvieron", "value")).toBe("35%");
+    expect(slot("Volvieron", "subline")).toBe(
+      "De quienes vinieron por primera vez",
+    );
     expect(slot("Volvieron", "comparison")).toBe("promedio: 30%");
-    expect(
-      document.querySelector('[data-slot="event-came-back"]')?.textContent,
-    ).toBe("De quienes vinieron por primera vez, volvieron 35%");
     for (const heading of AGGREGATE_HEADINGS) {
       expect(screen.queryByText(heading)).not.toBeInTheDocument();
     }
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
-  it("leaves out the came-back line when the event had no first-timers", async () => {
+  it("leaves out the first-timers subline when the event had no first-timers", async () => {
     respond(
       ok(
         eventStats({
@@ -340,7 +378,7 @@ describe("RetentionTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(document.querySelector('[data-slot="event-came-back"]')).toBeNull();
+    expect(slot("Volvieron", "subline")).toBeNull();
   });
 
   it("names the cohort table after its card and scrolls only the table", async () => {

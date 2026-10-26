@@ -41,58 +41,130 @@ const FREQUENCY_LABELS: Record<FrequencyRow["bucket"], TranslationKey> = {
   SIX_PLUS: "statsFreqSixPlus",
 };
 
+/** A chart's numbers as text, for screen readers and anyone who cannot hover. */
+function ChartTextTable({
+  labelledBy,
+  headers,
+  rows,
+}: {
+  labelledBy: string;
+  headers: string[];
+  rows: { key: string; cells: string[] }[];
+}) {
+  return (
+    // sr-only on the wrapper: a table sizes to its content and would still
+    // widen the page.
+    <div className="sr-only">
+      <table aria-labelledby={labelledBy}>
+        <thead>
+          <tr>
+            {headers.map((header) => (
+              <th key={header} scope="col">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ key, cells: [first, ...rest] }) => (
+            <tr key={key}>
+              <th scope="row">{first}</th>
+              {rest.map((cell, i) => (
+                <td key={i}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** New and returning people of each event, stacked. An event nobody came to keeps its empty slot. */
-function NewReturningChart({ meetups }: { meetups: Retention["meetups"] }) {
-  const { t } = useLanguage();
+function NewReturningChart({
+  meetups,
+  labelledBy,
+}: {
+  meetups: Retention["meetups"];
+  labelledBy: string;
+}) {
+  const { t, lang } = useLanguage();
   const config: ChartConfig = {
     new: { label: t("statsSeriesNew"), color: "var(--chart-1)" },
     returning: { label: t("statsSeriesReturning"), color: "var(--chart-2)" },
   };
   const withYear = spansYears(meetups.map((m) => m.date));
-  const data = sortByDate(meetups).map((m) => ({
+  const sorted = sortByDate(meetups);
+  const data = sorted.map((m) => ({
     ...m,
     day: formatEventDay(m.date, withYear),
   }));
 
   return (
-    <ChartContainer config={config} className="aspect-auto h-64 w-full">
-      <BarChart data={data}>
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="day"
-          tickLine={false}
-          axisLine={false}
-          interval="preserveStartEnd"
-          minTickGap={16}
-        />
-        <YAxis
-          width={32}
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-        />
-        <ChartTooltip
-          content={
-            <ChartTooltipContent
-              labelFormatter={(_, payload) => payload[0]?.payload?.name}
-            />
-          }
-        />
-        <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey="new" stackId="people" fill="var(--color-new)" />
-        <Bar
-          dataKey="returning"
-          stackId="people"
-          fill="var(--color-returning)"
-        />
-      </BarChart>
-    </ChartContainer>
+    <>
+      <ChartContainer config={config} className="aspect-auto h-64 w-full">
+        <BarChart data={data}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="day"
+            tickLine={false}
+            axisLine={false}
+            interval="preserveStartEnd"
+            minTickGap={16}
+          />
+          <YAxis
+            width={32}
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+          />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                labelFormatter={(_, payload) => payload[0]?.payload?.name}
+              />
+            }
+          />
+          <ChartLegend content={<ChartLegendContent />} />
+          <Bar dataKey="new" stackId="people" fill="var(--color-new)" />
+          <Bar
+            dataKey="returning"
+            stackId="people"
+            fill="var(--color-returning)"
+          />
+        </BarChart>
+      </ChartContainer>
+      <ChartTextTable
+        labelledBy={labelledBy}
+        headers={[
+          t("statsEventHeader"),
+          t("statsDateHeader"),
+          t("statsSeriesNew"),
+          t("statsSeriesReturning"),
+        ]}
+        rows={sorted.map((m) => ({
+          key: m.meetup_id,
+          cells: [
+            m.name,
+            formatApiDate(m.date),
+            formatCount(m.new, lang),
+            formatCount(m.returning, lang),
+          ],
+        }))}
+      />
+    </>
   );
 }
 
 /** How many people came once, twice, and so on in the period. */
-function FrequencyChart({ rows }: { rows: FrequencyRow[] }) {
-  const { t } = useLanguage();
+function FrequencyChart({
+  rows,
+  labelledBy,
+}: {
+  rows: FrequencyRow[];
+  labelledBy: string;
+}) {
+  const { t, lang } = useLanguage();
   const config: ChartConfig = {
     guests: { label: t("statsPeople"), color: "var(--chart-1)" },
   };
@@ -102,20 +174,35 @@ function FrequencyChart({ rows }: { rows: FrequencyRow[] }) {
   }));
 
   return (
-    <ChartContainer config={config} className="aspect-auto h-56 w-full">
-      <BarChart data={data}>
-        <CartesianGrid vertical={false} />
-        <XAxis dataKey="label" tickLine={false} axisLine={false} interval={0} />
-        <YAxis
-          width={32}
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-        />
-        <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="guests" fill="var(--color-guests)" />
-      </BarChart>
-    </ChartContainer>
+    <>
+      <ChartContainer config={config} className="aspect-auto h-56 w-full">
+        <BarChart data={data}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="label"
+            tickLine={false}
+            axisLine={false}
+            interval={0}
+          />
+          <YAxis
+            width={32}
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+          />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar dataKey="guests" fill="var(--color-guests)" />
+        </BarChart>
+      </ChartContainer>
+      <ChartTextTable
+        labelledBy={labelledBy}
+        headers={[t("statsFrequencyHeader"), t("statsPeople")]}
+        rows={data.map((d) => ({
+          key: d.label,
+          cells: [d.label, formatCount(d.guests, lang)],
+        }))}
+      />
+    </>
   );
 }
 
@@ -218,7 +305,7 @@ function RetentionContent({
         <HeadlineStat
           label={t("statsFirstTime")}
           value={formatCount(summary.new_guests, lang)}
-          comparison={
+          subline={
             summary.new_share === null
               ? undefined
               : t("statsShareOfTotal").replace(
@@ -230,24 +317,28 @@ function RetentionContent({
         <HeadlineStat
           label={t("statsCameBack")}
           value={formatRate(returnRate, lang)}
+          subline={
+            single && returnRate !== null
+              ? t("statsCameBackOfFirstTimers")
+              : undefined
+          }
           comparison={compareReturnRate()}
           n={returnRate === null ? undefined : summary.new_guests}
         />
       </div>
-      {single && returnRate !== null && (
-        <p data-slot="event-came-back" className="text-sm">
-          {t("statsEventCameBack").replace("{0}", formatRate(returnRate, lang))}
-        </p>
-      )}
       <StatsNote>{t("statsNoteRetention")}</StatsNote>
       <StatsNote>{t("statsNoteReturnRate")}</StatsNote>
       {!single && (
         <>
           <ChartCard title={t("statsNewReturning")}>
-            <NewReturningChart meetups={meetups} />
+            {(headingId) => (
+              <NewReturningChart meetups={meetups} labelledBy={headingId} />
+            )}
           </ChartCard>
           <ChartCard title={t("statsFrequency")}>
-            <FrequencyChart rows={frequency} />
+            {(headingId) => (
+              <FrequencyChart rows={frequency} labelledBy={headingId} />
+            )}
           </ChartCard>
           {cohorts.length > 0 && (
             <>

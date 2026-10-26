@@ -415,6 +415,7 @@ export const translations = {
     statsSeriesNew: "New",
     statsSeriesReturning: "Returning",
     statsFrequency: "How often people come",
+    statsFrequencyHeader: "Times attended",
     statsFreqOne: "1 time",
     statsFreqTwo: "2 times",
     statsFreqThreeFive: "3-5 times",
@@ -426,7 +427,7 @@ export const translations = {
     statsLapsedCame: "came {0} times",
     statsListMore: "and {0} more",
     statsLapsedNone: "Nobody stopped coming",
-    statsEventCameBack: "Of the first-timers, {0} came back",
+    statsCameBackOfFirstTimers: "Of the first-timers",
     statsNoteRetention:
       "First time means the first event of this organization a person attended, ever. Coming as staff does not count.",
     statsNoteReturnRate:
@@ -1068,6 +1069,7 @@ export const translations = {
     statsSeriesNew: "Nuevas",
     statsSeriesReturning: "Conocidas",
     statsFrequency: "Cada cuánto vienen",
+    statsFrequencyHeader: "Veces que vinieron",
     statsFreqOne: "1 vez",
     statsFreqTwo: "2 veces",
     statsFreqThreeFive: "3-5 veces",
@@ -1079,7 +1081,7 @@ export const translations = {
     statsLapsedCame: "vino {0} veces",
     statsListMore: "y {0} más",
     statsLapsedNone: "Nadie dejó de venir",
-    statsEventCameBack: "De quienes vinieron por primera vez, volvieron {0}",
+    statsCameBackOfFirstTimers: "De quienes vinieron por primera vez",
     statsNoteRetention:
       "Primera vez es el primer evento de esta organización al que la persona vino, desde siempre. Venir como staff no cuenta.",
     statsNoteReturnRate:
