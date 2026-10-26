@@ -327,13 +327,18 @@ describe("MeetupWeather", () => {
     it.each([
       [
         "409",
-        "The event ended less than 2 hours ago",
-        "The event ended less than 2 hours ago",
+        "Cannot refresh weather: it is available 8 hours after the event starts (from 2026-03-07T07:00:00Z). Try again then.",
+        "Cannot refresh weather: it is available 8 hours after the event starts (from 2026-03-07T07:00:00Z). Try again then.",
       ],
       [
         "502",
         "Open-Meteo has no data for that place",
         "Open-Meteo has no data for that place",
+      ],
+      [
+        "504",
+        "Cannot refresh weather: the weather provider did not respond in time. Try again in a moment.",
+        "Cannot refresh weather: the weather provider did not respond in time. Try again in a moment.",
       ],
     ])("shows the backend message on a %s", async (_code, detail, expected) => {
       const user = userEvent.setup();

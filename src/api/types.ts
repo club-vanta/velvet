@@ -307,8 +307,9 @@ export interface paths {
      *     check, so 3 to 200 characters of real text are required.
      *
      *     Photon is called at most once per second per process; concurrent
-     *     searches wait their turn. Returns 502 if Photon times out or fails;
-     *     setting a location by hand is unaffected.
+     *     searches wait their turn. Returns 504 if Photon does not respond in
+     *     time and 502 if it fails or answers with something unreadable; setting
+     *     a location by hand is unaffected.
      */
     get: operations["geocode_address_organizations__org_id__geocode_get"];
     put?: never;
@@ -1172,10 +1173,11 @@ export interface paths {
      * Fetch the weather of a meetup again (org admin only)
      * @description Fetch the weather from Open-Meteo and overwrite the stored snapshot.
      *
-     *     Returns 409 when the meetup has no location, or when its window ended
-     *     less than 2 hours ago (the provider has not published the hours yet).
-     *     Returns 502 when the provider has no data for that place and time, or is
-     *     unavailable; the stored snapshot, if any, is left untouched.
+     *     Returns 409 when the meetup has no location, or before the weather is
+     *     available (8 hours after the event starts; the message gives the time).
+     *     Returns 504 when the provider does not respond in time, and 502 when it
+     *     has no data for that place and time or is otherwise unavailable; the
+     *     stored snapshot, if any, is left untouched.
      */
     post: operations["refresh_meetup_weather_organizations__org_id__meetups__meetup_id__weather_refresh_post"];
     delete?: never;
@@ -2466,7 +2468,7 @@ export interface components {
      * MeetupWeatherPublic
      * @description Weather during the first 6 hours of a meetup, from Open-Meteo.
      *
-     *     Each float summarizes the hours of the window [date, date + 6h). A null
+     *     Each float summarizes the hours of the window [floor_hour(date), date + 6h). A null
      *     means the provider had no value for that series anywhere in the window
      *     (shown as "no data"), never zero:
      *     - avg_temperature, avg_apparent_temperature: degrees Celsius, mean.
@@ -4152,6 +4154,15 @@ export interface operations {
       };
       /** @description Address search unavailable */
       502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Address search timed out */
+      504: {
         headers: {
           [name: string]: unknown;
         };
@@ -6446,6 +6457,15 @@ export interface operations {
       };
       /** @description Weather provider error */
       502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Weather provider timed out */
+      504: {
         headers: {
           [name: string]: unknown;
         };
