@@ -187,12 +187,23 @@ export function WeatherMeteogram({
     value === null ? "–" : `${formatDecimal(value, lang)} ${unit}`;
   const rows = hourRows(hours, arrivals ?? null);
   const charted = arrivals ? arrivalsInDomain(arrivals, domain) : [];
-  // The last strip carries the hour labels: arrivals when there are any to chart, else rain.
   const arrivalsCharted = charted.some((b) => b.arrivals > 0);
+  // A dry night says so in words instead of drawing an empty strip.
+  const rained = hours.some((h) => (h.precipitation_mm ?? 0) > 0);
+  // The last strip drawn carries the hour labels.
+  const labelled = arrivalsCharted
+    ? "arrivals"
+    : rained
+      ? "rain"
+      : "temperature";
 
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-sm bg-muted-foreground/20" />
+          {t("statsWeatherBefore")}
+        </span>
         <span className="flex items-center gap-1.5">
           <span className="h-0.5 w-3.5 bg-chart-3" />
           {t("weatherTemp")}
@@ -248,7 +259,11 @@ export function WeatherMeteogram({
           <IconRow hours={hours} />
           <ChartContainer config={config} className="aspect-auto h-28 w-full">
             <ComposedChart data={temperature} margin={MARGIN}>
-              <TimeAxis domain={domain} hours={hours} labelled={false} />
+              <TimeAxis
+                domain={domain}
+                hours={hours}
+                labelled={labelled === "temperature"}
+              />
               <YAxis
                 width={Y_AXIS_WIDTH}
                 tickLine={false}
@@ -274,6 +289,8 @@ export function WeatherMeteogram({
                 stroke="var(--color-temperature)"
                 strokeWidth={2}
                 dot={false}
+                // No tooltip reads the hovered point, so no dot marks it either.
+                activeDot={false}
                 isAnimationActive={false}
               />
               <Line
@@ -282,42 +299,46 @@ export function WeatherMeteogram({
                 strokeWidth={2}
                 strokeDasharray="5 4"
                 dot={false}
+                // No tooltip reads the hovered point, so no dot marks it either.
+                activeDot={false}
                 isAnimationActive={false}
               />
             </ComposedChart>
           </ChartContainer>
-          <ChartContainer config={config} className="aspect-auto h-16 w-full">
-            <BarChart data={rain} margin={{ ...MARGIN, top: 14 }}>
-              <TimeAxis
-                domain={domain}
-                hours={hours}
-                labelled={!arrivalsCharted}
-              />
-              <YAxis width={Y_AXIS_WIDTH} tick={false} axisLine={false} />
-              <StartMarks domain={domain} startHour={startHour} />
-              <Bar
-                dataKey="rain"
-                fill="var(--color-rain)"
-                radius={2}
-                // Explicit widths: on a numeric axis Recharts sizes bars from the gap
-                // between points, so a lone point would get no width at all.
-                barSize={hourWidth - 8}
-                isAnimationActive={false}
-              >
-                <LabelList
-                  dataKey="rain"
-                  position="top"
-                  fontSize={10}
-                  fill="var(--color-rain)"
-                  formatter={(value: unknown) =>
-                    typeof value === "number" && value > 0
-                      ? formatDecimal(value, lang)
-                      : ""
-                  }
+          {rained && (
+            <ChartContainer config={config} className="aspect-auto h-16 w-full">
+              <BarChart data={rain} margin={{ ...MARGIN, top: 14 }}>
+                <TimeAxis
+                  domain={domain}
+                  hours={hours}
+                  labelled={labelled === "rain"}
                 />
-              </Bar>
-            </BarChart>
-          </ChartContainer>
+                <YAxis width={Y_AXIS_WIDTH} tick={false} axisLine={false} />
+                <StartMarks domain={domain} startHour={startHour} />
+                <Bar
+                  dataKey="rain"
+                  fill="var(--color-rain)"
+                  radius={2}
+                  // Explicit widths: on a numeric axis Recharts sizes bars from the gap
+                  // between points, so a lone point would get no width at all.
+                  barSize={hourWidth - 8}
+                  isAnimationActive={false}
+                >
+                  <LabelList
+                    dataKey="rain"
+                    position="top"
+                    fontSize={10}
+                    fill="var(--color-rain)"
+                    formatter={(value: unknown) =>
+                      typeof value === "number" && value > 0
+                        ? formatDecimal(value, lang)
+                        : ""
+                    }
+                  />
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          )}
           {arrivalsCharted && (
             <ChartContainer config={config} className="aspect-auto h-24 w-full">
               <BarChart
@@ -347,6 +368,11 @@ export function WeatherMeteogram({
           )}
         </div>
       </div>
+      {!rained && (
+        <p className="py-2 text-center text-sm text-muted-foreground">
+          {t("statsWeatherNoRain")}
+        </p>
+      )}
       {arrivals === undefined ? (
         <Skeleton
           data-testid="meteogram-arrivals-skeleton"

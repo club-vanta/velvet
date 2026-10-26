@@ -584,6 +584,32 @@ describe("WeatherTab", () => {
       ]);
     });
 
+    it("names the shaded hours before the start in the legend", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      expect(
+        within(region("Hora por hora")).getByText("Antes del inicio"),
+      ).toBeInTheDocument();
+    });
+
+    it("says it did not rain instead of drawing an empty rain strip", async () => {
+      const dry = HOURS.map((h) => ({ ...h, precipitation_mm: 0 }));
+      respond(ok(oneEvent(event({ hours: dry }))));
+      renderTab({ query: single });
+      await eventReady();
+      expect(
+        within(region("Hora por hora")).getByText("No llovió en estas horas."),
+      ).toBeInTheDocument();
+    });
+
+    it("draws the rain strip when it rained", async () => {
+      respond(ok(oneEvent(event())));
+      renderTab({ query: single });
+      await eventReady();
+      expect(screen.queryByText("No llovió en estas horas.")).toBeNull();
+    });
+
     it("says when nobody arrived in the charted hours", async () => {
       respond(ok(oneEvent(event())), ok({ ...arrivals(), curve: [] }));
       renderTab({ query: single });
