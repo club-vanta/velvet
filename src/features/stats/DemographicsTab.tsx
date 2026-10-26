@@ -9,6 +9,7 @@ import type { components } from "@/api/types";
 import { useDemographicsStats } from "@/hooks/useDemographicsStats";
 import { useLanguage } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
+import { percentFormatter } from "./percentTooltip";
 import { useGroupLabels } from "./groupLabels";
 import { BAR_END_RIGHT, BAR_END_UP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
@@ -36,9 +37,9 @@ type Group = GenderGroup | AgeGroup;
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 3;
 
-/** Bar height per row of a horizontal chart, plus room for the axis and legend. */
-const ROW_HEIGHT = 56;
-const CHART_CHROME = 72;
+/** Bar height per row of a horizontal chart, plus room for the axis. */
+const ROW_HEIGHT = 40;
+const CHART_CHROME = 40;
 
 /** Each group's share of the attendances. */
 function ShareChart<G extends Group>({
@@ -117,16 +118,7 @@ function ShareChart<G extends Group>({
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(value, name) => (
-                  <span className="flex w-full justify-between gap-4">
-                    <span className="text-muted-foreground">
-                      {config[String(name)]?.label}
-                    </span>
-                    <span className="font-mono font-medium tabular-nums">
-                      {percent(Number(value))}
-                    </span>
-                  </span>
-                )}
+                formatter={percentFormatter(config, percent)}
               />
             }
           />

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { translations, type TranslationKey } from "@/lib/i18n";
 import {
   percentChange,
   formatEventDay,
@@ -134,16 +135,18 @@ describe("formatOffset", () => {
 });
 
 describe("formatDuration", () => {
+  const t = (key: TranslationKey) => translations.es[key];
+
   it("names hours and minutes, leaving out an empty part", () => {
-    expect(formatDuration(82)).toBe("1 h 22 min");
-    expect(formatDuration(120)).toBe("2 h");
-    expect(formatDuration(45)).toBe("45 min");
-    expect(formatDuration(0)).toBe("0 min");
+    expect(formatDuration(82, t)).toBe("1 h 22 min");
+    expect(formatDuration(120, t)).toBe("2 h");
+    expect(formatDuration(45, t)).toBe("45 min");
+    expect(formatDuration(0, t)).toBe("0 min");
   });
 
   it("drops the sign and rounds to whole minutes", () => {
-    expect(formatDuration(-20)).toBe("20 min");
-    expect(formatDuration(59.6)).toBe("1 h");
+    expect(formatDuration(-20, t)).toBe("20 min");
+    expect(formatDuration(59.6, t)).toBe("1 h");
   });
 });
 

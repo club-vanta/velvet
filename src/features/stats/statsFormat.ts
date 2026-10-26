@@ -1,5 +1,6 @@
 import { parseApiDateTime } from "@/lib/apiDateTime";
 import { formatDecimal } from "@/lib/format";
+import type { TranslationKey } from "@/lib/i18n";
 import { localDay } from "./statsPeriod";
 
 /** Rates built from fewer people than this are shown dimmed with `n`. */
@@ -74,12 +75,18 @@ export function formatOffset(minutes: number): string {
 }
 
 /** A length of time in whole minutes, sign dropped: `1 h 22 min`, `2 h`, `45 min`. */
-export function formatDuration(minutes: number): string {
+export function formatDuration(
+  minutes: number,
+  t: (key: TranslationKey) => string,
+): string {
   const abs = Math.abs(Math.round(minutes));
-  const hours = Math.floor(abs / 60);
-  const rest = abs % 60;
-  if (hours === 0) return `${rest} min`;
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+  const hours = String(Math.floor(abs / 60));
+  const rest = String(abs % 60);
+  if (hours === "0") return t("statsDurationMinutes").replace("{0}", rest);
+  if (rest === "0") return t("statsDurationHours").replace("{0}", hours);
+  return t("statsDurationHoursMinutes")
+    .replace("{0}", hours)
+    .replace("{1}", rest);
 }
 
 /** Whole-minute difference between two offsets, or null when either is missing. */

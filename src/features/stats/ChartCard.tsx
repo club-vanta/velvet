@@ -1,9 +1,9 @@
 import { useId, type ReactNode } from "react";
+import { StatCard } from "@/components/StatCard";
 
 /**
- * A titled card for a chart, with a sentence-case heading that reads as a
- * caption. Children may be a function of the heading id, to label a table by
- * its card.
+ * A titled card for a chart: a stat card with a caption heading. Children
+ * may be a function of the heading id, to label a table by its card.
  */
 export function ChartCard({
   title,
@@ -14,14 +14,8 @@ export function ChartCard({
 }) {
   const headingId = useId();
   return (
-    <section
-      aria-labelledby={headingId}
-      className="min-w-0 space-y-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4"
-    >
-      <h2 id={headingId} className="text-sm font-medium">
-        {title}
-      </h2>
+    <StatCard title={title} headingId={headingId} heading="caption">
       {typeof children === "function" ? children(headingId) : children}
-    </section>
+    </StatCard>
   );
 }

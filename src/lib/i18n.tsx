@@ -371,6 +371,9 @@ export const translations = {
     statsAfterStart: "{0} after the start",
     statsBeforeStart: "{0} before the start",
     statsAtStart: "right at the start",
+    statsDurationMinutes: "{0} min",
+    statsDurationHours: "{0} h",
+    statsDurationHoursMinutes: "{0} h {1} min",
     statsArrivalAxisFromStart: "Hours from the start of the event",
     statsArrivalCurve: "Arrivals every 15 minutes",
     statsLeadTime: "How early people sign up",
@@ -496,7 +499,7 @@ export const translations = {
     statsNoteNoShowGuests:
       "Each dot is a sign-up that wasn't cancelled: filled when they didn't come, hollow when they did. Most misses first.",
     statsNoteNoShowGuestsEvent:
-      "The counts cover each person's whole history in the organization, not only this period.",
+      "Each person's counts cover their whole history in the organization, not only this event.",
     statsNoteNoShowWeather:
       "How rain relates to no-shows is in the Weather tab.",
     statsNoteNoShowHistory:
@@ -1061,6 +1064,9 @@ export const translations = {
     statsAfterStart: "{0} después del inicio",
     statsBeforeStart: "{0} antes del inicio",
     statsAtStart: "justo al inicio",
+    statsDurationMinutes: "{0} min",
+    statsDurationHours: "{0} h",
+    statsDurationHoursMinutes: "{0} h {1} min",
     statsArrivalAxisFromStart: "Horas desde el inicio del evento",
     statsArrivalCurve: "Llegadas cada 15 minutos",
     statsLeadTime: "Con cuánta anticipación se anotan",
@@ -1186,7 +1192,7 @@ export const translations = {
     statsNoteNoShowGuests:
       "Cada punto es una inscripción que no se canceló: lleno si no vino, vacío si vino. Primero los que más faltaron.",
     statsNoteNoShowGuestsEvent:
-      "Los números cubren toda la historia de cada persona en la organización, no solo el período.",
+      "Los números de cada persona cubren toda su historia en la organización, no solo este evento.",
     statsNoteNoShowWeather:
       "Cómo influye la lluvia en los que no vienen está en la pestaña Clima.",
     statsNoteNoShowHistory:

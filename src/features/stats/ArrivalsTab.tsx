@@ -210,7 +210,7 @@ function ArrivalsContent({
     if (minutes === null) return undefined;
     if (minutes === 0) return t("statsAtStart");
     const key = minutes > 0 ? "statsAfterStart" : "statsBeforeStart";
-    return t(key).replace("{0}", formatDuration(minutes));
+    return t(key).replace("{0}", formatDuration(minutes, t));
   }
 
   /** One event: the period's clock time; aggregate: the change in minutes from the start. */
