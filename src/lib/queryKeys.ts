@@ -22,11 +22,15 @@ export const guestKey = (guestId: string) => ["guest", guestId] as const;
 export const guestHistoryKey = (guestId: string) =>
   ["guest", guestId, "displayname-history"] as const;
 
+// The org's vanted list. Guest identity changes refresh every org's copy
+// through the root, ban changes only their own org's.
+export const bannedGuestsRootKey = ["guests-banned"] as const;
+
+export const bannedGuestsKey = (orgId: string) =>
+  [...bannedGuestsRootKey, orgId] as const;
+
 // Prefixed by org, not by guest: RSVP changes on a meetup page touch many
 // guests at once, so they invalidate the whole org prefix.
-export const bannedGuestsKey = (orgId: string) =>
-  ["guests-banned", orgId] as const;
-
 export const guestMeetupsOrgKey = (orgId: string) =>
   ["guest-meetups", orgId] as const;
 
@@ -99,7 +103,7 @@ export function invalidateMeetupGuests(
 export function invalidateAllGuestIdentities(queryClient: QueryClient): void {
   void queryClient.invalidateQueries({ queryKey: ["guests"] });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
-  void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
+  void queryClient.invalidateQueries({ queryKey: bannedGuestsRootKey });
   void queryClient.invalidateQueries({ queryKey: ["guest"] });
   void queryClient.invalidateQueries({ queryKey: statsRootKey });
 }
@@ -115,7 +119,7 @@ export function invalidateGuestIdentity(
   guestId: string,
 ): void {
   void queryClient.invalidateQueries({ queryKey: ["guests"] });
-  void queryClient.invalidateQueries({ queryKey: ["guests-banned"] });
+  void queryClient.invalidateQueries({ queryKey: bannedGuestsRootKey });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });
   void queryClient.invalidateQueries({ queryKey: statsRootKey });

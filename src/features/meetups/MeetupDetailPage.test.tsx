@@ -1548,6 +1548,17 @@ describe("MeetupDetailPage vanted check-in dialog", () => {
     has_paid: true,
     is_banned: true,
   });
+  const ban: components["schemas"]["BannedGuestPublic"] = {
+    id: vanted.guest.id,
+    mazmo_user_id: vanted.guest.mazmo_user_id,
+    mazmo_handle: vanted.guest.mazmo_handle,
+    displayname: vanted.guest.displayname,
+    instagram_username: null,
+    mazmo_profile: null,
+    banned_at: "2026-08-10T12:00:00Z",
+    banned_reason: "Fight at Alter #40",
+    banned_by_id: 1,
+  };
 
   async function openDialog(bannedResponse: () => Promise<unknown>) {
     renderPage({ ...MEETUP, requires_payment: false }, [vanted]);
@@ -1566,17 +1577,7 @@ describe("MeetupDetailPage vanted check-in dialog", () => {
   it("shows why the guest was vanted", async () => {
     const dialog = await openDialog(() =>
       Promise.resolve({
-        data: {
-          total: 1,
-          guests: [
-            {
-              ...vanted.guest,
-              banned_at: "2026-08-10T12:00:00Z",
-              banned_reason: "Fight at Alter #40",
-              banned_by_id: 1,
-            },
-          ],
-        },
+        data: { total: 1, guests: [ban] },
         error: undefined,
       }),
     );
@@ -1587,6 +1588,19 @@ describe("MeetupDetailPage vanted check-in dialog", () => {
     expect(
       within(dialog).getByRole("button", { name: "Check in anyway" }),
     ).toBeEnabled();
+  });
+
+  it("says no reason is recorded when the guest is not on the list", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({ data: { total: 0, guests: [] }, error: undefined }),
+    );
+
+    expect(
+      await within(dialog).findByText("No reason recorded."),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText("Couldn't load the vant reason."),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the choice open while the reason loads", async () => {

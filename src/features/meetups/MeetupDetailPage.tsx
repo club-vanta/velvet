@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -466,6 +466,29 @@ function CheckInBannedDialog({
   const queryClient = useQueryClient();
   const bannedQ = useBannedGuests(orgId);
   const ban = bannedQ.data?.guests.find((g) => g.id === guest.guest.id);
+  const reasonHeadingId = useId();
+
+  // A cached list can predate a vant made on another device, so a missing
+  // guest only counts as "no reason" once the refetch has settled.
+  function renderBanReason() {
+    if (ban)
+      return (
+        <p className="break-words text-muted-foreground">{ban.banned_reason}</p>
+      );
+    if (bannedQ.isFetching)
+      return (
+        <Skeleton
+          role="status"
+          aria-label={t("banReasonLoading")}
+          className="h-4 w-48"
+        />
+      );
+    return (
+      <p className="text-muted-foreground">
+        {t(bannedQ.isError ? "banReasonUnavailable" : "banReasonMissing")}
+      </p>
+    );
+  }
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -511,25 +534,15 @@ function CheckInBannedDialog({
         {/* The reason is what staff weigh before letting the guest in, so it
             gets its own section. Loading or failing never blocks the choice. */}
         <section
-          aria-labelledby="ban-reason-label"
+          aria-labelledby={reasonHeadingId}
           className="space-y-1 border-t pt-3 text-sm"
         >
-          <h3 id="ban-reason-label" className="font-medium">
+          <h3 id={reasonHeadingId} className="font-medium">
             {t("banReasonLabel")}
           </h3>
-          {bannedQ.isPending ? (
-            <Skeleton
-              role="status"
-              aria-label={t("banReasonLoading")}
-              className="h-4 w-48"
-            />
-          ) : ban ? (
-            <p className="break-words text-muted-foreground">
-              {ban.banned_reason}
-            </p>
-          ) : (
-            <p className="text-muted-foreground">{t("banReasonUnavailable")}</p>
-          )}
+          {/* Polite, so the reason is read out when it arrives after the
+              dialog has opened. */}
+          <div aria-live="polite">{renderBanReason()}</div>
         </section>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
