@@ -351,7 +351,10 @@ describe("GuestsPage: search", () => {
       ),
     );
     await screen.findByText("Guest 0");
-    const rows = () => within(guestsList()).getAllByRole("listitem");
+    // A DOM query: getAllByRole("listitem") over 150 rows is slow and is
+    // polled by waitFor below.
+    const list = guestsList();
+    const rows = () => list.querySelectorAll("li");
     expect(rows()).toHaveLength(100);
 
     await user.click(screen.getByRole("button", { name: "Show 50 more" }));
@@ -361,7 +364,9 @@ describe("GuestsPage: search", () => {
       screen.queryByRole("button", { name: /^Show \d+ more$/ }),
     ).not.toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText("Search guest list…"), "guest");
+    // Pasting re-renders the 150 rows once; typing would do it per keystroke.
+    await user.click(screen.getByPlaceholderText("Search guest list…"));
+    await user.paste("guest");
 
     await waitFor(() => expect(rows()).toHaveLength(100));
     expect(screen.getByText("Showing 150 of 150")).toBeInTheDocument();
