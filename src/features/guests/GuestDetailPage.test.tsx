@@ -138,6 +138,7 @@ describe("GuestDetailPage", () => {
         banned_at: "2026-08-22T03:00:00Z",
         banned_reason: "Reason here",
         banned_by_id: 1,
+        banned_by: { id: 1, username: "admin" },
       },
     ]);
 

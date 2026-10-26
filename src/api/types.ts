@@ -1690,6 +1690,7 @@ export interface components {
       banned_reason: string;
       /** Banned By Id */
       banned_by_id: number | null;
+      banned_by: components["schemas"]["CheckedInByPublic"] | null;
     };
     /** Body_login_auth_token_post */
     Body_login_auth_token_post: {

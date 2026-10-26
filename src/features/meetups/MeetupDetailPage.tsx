@@ -473,7 +473,18 @@ function CheckInBannedDialog({
   function renderBanReason() {
     if (ban)
       return (
-        <p className="break-words text-muted-foreground">{ban.banned_reason}</p>
+        <figure className="space-y-1 border-l-2 pl-3">
+          <blockquote className="break-words text-muted-foreground">
+            <p>{ban.banned_reason}</p>
+          </blockquote>
+          {ban.banned_by && (
+            <figcaption className="italic text-muted-foreground">
+              <span aria-hidden="true">– </span>
+              <span className="sr-only">{t("banReasonBy")} </span>
+              {ban.banned_by.username}
+            </figcaption>
+          )}
+        </figure>
       );
     if (bannedQ.isFetching)
       return (

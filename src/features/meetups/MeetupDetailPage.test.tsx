@@ -1558,6 +1558,7 @@ describe("MeetupDetailPage vanted check-in dialog", () => {
     banned_at: "2026-08-10T12:00:00Z",
     banned_reason: "Fight at Alter #40",
     banned_by_id: 1,
+    banned_by: { id: 1, username: "krapp" },
   };
 
   async function openDialog(bannedResponse: () => Promise<unknown>) {
@@ -1585,9 +1586,28 @@ describe("MeetupDetailPage vanted check-in dialog", () => {
     expect(
       await within(dialog).findByText("Fight at Alter #40"),
     ).toBeInTheDocument();
+    expect(within(dialog).getByRole("figure")).toHaveTextContent(
+      /^Fight at Alter #40– Vanted by krapp$/,
+    );
     expect(
       within(dialog).getByRole("button", { name: "Check in anyway" }),
     ).toBeEnabled();
+  });
+
+  it("leaves out the author when the ban has none", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({
+        data: {
+          total: 1,
+          guests: [{ ...ban, banned_by_id: null, banned_by: null }],
+        },
+        error: undefined,
+      }),
+    );
+    expect(
+      await within(dialog).findByText("Fight at Alter #40"),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Vanted by/)).not.toBeInTheDocument();
   });
 
   it("says no reason is recorded when the guest is not on the list", async () => {

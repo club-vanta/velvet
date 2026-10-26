@@ -63,6 +63,7 @@ function renderPage(guests: Guest[], bannedIds: string[] = []) {
           banned_at: "2026-08-22T03:00:00Z",
           banned_reason: "Reason here",
           banned_by_id: 1,
+          banned_by: { id: 1, username: "admin" },
         }));
       return Promise.resolve({
         data: { total: banned.length, guests: banned },
