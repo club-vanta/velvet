@@ -24,6 +24,9 @@ export const guestHistoryKey = (guestId: string) =>
 
 // Prefixed by org, not by guest: RSVP changes on a meetup page touch many
 // guests at once, so they invalidate the whole org prefix.
+export const bannedGuestsKey = (orgId: string) =>
+  ["guests-banned", orgId] as const;
+
 export const guestMeetupsOrgKey = (orgId: string) =>
   ["guest-meetups", orgId] as const;
 
@@ -158,7 +161,7 @@ export function invalidateGuestBan(
   orgId: string,
   guestId: string,
 ): void {
-  void queryClient.invalidateQueries({ queryKey: ["guests-banned", orgId] });
+  void queryClient.invalidateQueries({ queryKey: bannedGuestsKey(orgId) });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });
   void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
