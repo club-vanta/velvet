@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -223,9 +223,11 @@ describe("MeetupWeather", () => {
     });
     renderWeather();
 
+    const alert = await screen.findByRole("alert");
     expect(
-      await screen.findByText("Failed to load the weather."),
+      within(alert).getByText("Failed to load the weather."),
     ).toBeInTheDocument();
+    expect(within(alert).getByRole("button", { name: "Retry" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Update weather" })).toBeNull();
 
     respondWith(OK);

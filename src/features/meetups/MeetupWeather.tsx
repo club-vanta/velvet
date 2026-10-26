@@ -86,7 +86,10 @@ export function MeetupWeather({
   // A failed background refetch keeps showing the data it already has.
   if (!weatherQ.data) {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10">
+      <div
+        role="alert"
+        className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
+      >
         {t("failedLoadWeather")}
         <Button variant="ghost" size="sm" onClick={() => weatherQ.refetch()}>
           {t("retry")}
