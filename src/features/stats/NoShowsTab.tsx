@@ -11,6 +11,7 @@ import { useNoShowStats } from "@/hooks/useNoShowStats";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
+import { percentFormatter } from "./percentTooltip";
 import { BAR_END_UP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { useGroupLabels } from "./groupLabels";
@@ -58,11 +59,12 @@ function EventRateChart({
   const data = sortByDate(meetups).map((m) => ({
     name: m.name,
     day: formatEventDay(m.date, withYear),
-    rate: m.no_show_rate ?? 0,
+    // No bar, rather than a 0%, for an event where nobody was expected.
+    rate: m.no_show_rate,
     m,
   }));
   const percent = (value: number) => formatRate(value, lang);
-  const ticks = shareTicks(Math.max(0, ...data.map((d) => d.rate)));
+  const ticks = shareTicks(Math.max(0, ...data.map((d) => d.rate ?? 0)));
 
   return (
     <>
@@ -88,16 +90,7 @@ function EventRateChart({
             content={
               <ChartTooltipContent
                 labelFormatter={(_, payload) => payload[0]?.payload?.name}
-                formatter={(value, name) => (
-                  <span className="flex w-full justify-between gap-4">
-                    <span className="text-muted-foreground">
-                      {config[String(name)]?.label}
-                    </span>
-                    <span className="font-mono font-medium tabular-nums">
-                      {percent(Number(value))}
-                    </span>
-                  </span>
-                )}
+                formatter={percentFormatter(config, percent)}
               />
             }
           />
@@ -241,7 +234,10 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
     ? line({
         unit: "points",
         change: pointChange(summary.no_show_rate, comparison.no_show_rate),
-        average: formatRate(comparison.no_show_rate, lang),
+        average:
+          comparison.no_show_rate === null
+            ? undefined
+            : formatRate(comparison.no_show_rate, lang),
       })
     : undefined;
   const compareCount = (current: number, previous: number | undefined) =>

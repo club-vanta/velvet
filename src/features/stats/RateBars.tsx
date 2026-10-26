@@ -14,10 +14,10 @@ export type RateRow = {
 const STAGGER_MS = 40;
 
 /**
- * Rates of several groups as a table whose rate cells carry a bar. Bars are
- * drawn against the largest rate shown, so the groups compare at a glance,
- * and the number sits beside each one. A rate from few people is dimmed and
- * shows its n, like RateCell; a missing rate shows a dash and no bar.
+ * Rates of several groups as a table whose rate cells carry a bar on a 0 to
+ * 100% track, so a bar's length is the rate itself, and the number sits
+ * beside it. A rate from few people is dimmed and shows its n, like
+ * RateCell; a missing rate shows a dash and no bar.
  */
 export function RateBars({
   rows,
@@ -31,7 +31,6 @@ export function RateBars({
   labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
-  const max = Math.max(0, ...rows.map((r) => r.rate ?? 0));
   const head = "pb-1.5 text-xs font-medium text-muted-foreground";
 
   return (
@@ -68,7 +67,7 @@ export function RateBars({
                     aria-hidden="true"
                     className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted"
                   >
-                    {row.rate !== null && max > 0 && (
+                    {row.rate !== null && (
                       <div
                         data-slot="bar"
                         className={cn(
@@ -76,7 +75,7 @@ export function RateBars({
                           small && "opacity-50",
                         )}
                         style={{
-                          width: `${(row.rate / max) * 100}%`,
+                          width: `${row.rate * 100}%`,
                           animationDelay: `${i * STAGGER_MS}ms`,
                         }}
                       />

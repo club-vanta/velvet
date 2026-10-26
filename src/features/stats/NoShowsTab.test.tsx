@@ -302,10 +302,30 @@ describe("NoShowsTab", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Los números cubren toda la historia de cada persona en la organización, no solo el período.",
+        "Los números de cada persona cubren toda su historia en la organización, no solo este evento.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/pestaña Clima/)).not.toBeInTheDocument();
+  });
+
+  it("leaves out the period average when the period has no rate", async () => {
+    respond(
+      ok(
+        stats({
+          meetups: [],
+          comparison_kind: "PERIOD_AVERAGE",
+          comparison: {
+            expected: 0,
+            no_show: 0,
+            no_show_rate: null,
+            repeat_guests: 0,
+          },
+        }),
+      ),
+    );
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(slot(RATE, "comparison")).toBeNull();
   });
 
   it("shows n under the rate when few people were expected", async () => {
@@ -352,7 +372,7 @@ describe("NoShowsTab", () => {
     ]);
   });
 
-  it("sizes the bars against the largest rate and draws none for a missing rate", async () => {
+  it("draws each bar as long as its rate and none for a missing rate", async () => {
     respond(ok(stats()));
     renderTab();
     await headlinesReady();
@@ -365,10 +385,10 @@ describe("NoShowsTab", () => {
           const bar = row.querySelector<HTMLElement>('[data-slot="bar"]');
           return bar ? Math.round(parseFloat(bar.style.width)) : null;
         });
-    // 10%, 50% and 5/26 (19%) against the largest, 50%.
-    expect(bars("Según el género")).toEqual([20, 100, 38]);
+    // 10%, 50% and 5/26 (19%) on a 0 to 100% track.
+    expect(bars("Según el género")).toEqual([10, 50, 19]);
     expect(rateRows("Según la edad")[1]).toEqual(["25-29", "–", null]);
-    expect(bars("Según la edad").slice(0, 2)).toEqual([100, null]);
+    expect(bars("Según la edad").slice(0, 2)).toEqual([15, null]);
   });
 
   it("rates the lead time over the sign-ups that were not cancelled", async () => {
