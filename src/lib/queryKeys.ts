@@ -46,6 +46,9 @@ export const statsAttendanceKey = (orgId: string, filters: StatsQuery | null) =>
 export const statsArrivalsKey = (orgId: string, filters: StatsQuery | null) =>
   [...statsOrgKey(orgId), "arrivals", filters] as const;
 
+export const statsNoShowsKey = (orgId: string, filters: StatsQuery | null) =>
+  [...statsOrgKey(orgId), "no-shows", filters] as const;
+
 export const statsDemographicsKey = (
   orgId: string,
   filters: StatsQuery | null,

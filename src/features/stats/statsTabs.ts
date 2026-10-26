@@ -3,6 +3,7 @@ import type { TranslationKey } from "@/lib/i18n";
 import { ArrivalsTab } from "./ArrivalsTab";
 import { AttendanceTab } from "./AttendanceTab";
 import { DemographicsTab } from "./DemographicsTab";
+import { NoShowsTab } from "./NoShowsTab";
 import { OperationsTab } from "./OperationsTab";
 import { RetentionTab } from "./RetentionTab";
 import type { StatsTabProps } from "./statsTab";
@@ -11,6 +12,7 @@ import { WeatherTab } from "./WeatherTab";
 /** The stats tabs in display order: the one list the URL, triggers and panels follow. */
 export const STATS_TABS = [
   { value: "attendance", label: "statsTabAttendance", Tab: AttendanceTab },
+  { value: "no-shows", label: "statsTabNoShows", Tab: NoShowsTab },
   { value: "arrivals", label: "statsTabArrivals", Tab: ArrivalsTab },
   {
     value: "demographics",
