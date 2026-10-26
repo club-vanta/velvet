@@ -961,6 +961,47 @@ describe("MeetupDetailPage on phones", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("tints the undos with their line so they stay readable", async () => {
+    const done = guest({
+      mazmo_user_id: 72,
+      displayname: "Tinted",
+      has_paid: true,
+    });
+    done.rsvp.has_arrived = true;
+    renderPage(MEETUP, [done]);
+
+    const card = (await screen.findByText("Tinted")).closest("li")!;
+    // Muted grey on a 10% tint falls under 4.5:1 in the light theme.
+    for (const name of ["Undo", "Undo payment"]) {
+      const undo = within(card).getByRole("button", { name });
+      expect(undo).toHaveClass("text-current");
+      expect(undo).not.toHaveClass("text-muted-foreground");
+    }
+  });
+
+  it("shows an exempt guest as one neutral line with no fee to collect", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 73,
+        displayname: "Guest Of Honor",
+        has_paid: false,
+        guest_type: "INVITED",
+      }),
+    ]);
+
+    const card = (await screen.findByText("Guest Of Honor")).closest("li")!;
+    expect(within(card).getByText("Exempt").tagName).toBe("P");
+    expect(
+      within(card).queryByText("Entrance fee not paid"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Mark paid" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Check in" }),
+    ).toBeEnabled();
+  });
+
   it("opens the undo dialog from the check-in line", async () => {
     const user = userEvent.setup();
     const arrived = guest({

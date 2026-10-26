@@ -148,19 +148,28 @@ function SortableHead({
   );
 }
 
-/** A low-key undo under a state, so it never competes with the next step. */
+/**
+ * A low-key undo under a state, so it never competes with the next step.
+ * On a tinted line it takes the line's color through `className`, since
+ * muted grey on the tint falls under 4.5:1 in the light theme.
+ */
 function InlineUndo({
   onClick,
+  className,
   children,
 }: {
   onClick: () => void;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
     <Button
       variant="link"
       size="xs"
-      className="h-auto px-0 text-xs text-muted-foreground hover:text-foreground"
+      className={cn(
+        "h-auto px-0 text-xs text-muted-foreground hover:text-foreground",
+        className,
+      )}
       onClick={onClick}
     >
       {children}
@@ -1018,7 +1027,10 @@ export function MeetupDetailPage() {
             tone="done"
             icon={Check}
             action={
-              <InlineUndo onClick={() => setUndoTarget(mg)}>
+              <InlineUndo
+                onClick={() => setUndoTarget(mg)}
+                className="text-current hover:text-current"
+              >
                 {t("undo")}
               </InlineUndo>
             }
@@ -1046,7 +1058,10 @@ export function MeetupDetailPage() {
               icon={Banknote}
               action={
                 isOrgAdmin && (
-                  <InlineUndo onClick={() => setUndoPaymentTarget(mg)}>
+                  <InlineUndo
+                    onClick={() => setUndoPaymentTarget(mg)}
+                    className="text-current hover:text-current"
+                  >
                     {t("undoPayment")}
                   </InlineUndo>
                 )
