@@ -3080,6 +3080,8 @@ export interface components {
      * @description One finalized meetup with its attendance and weather. The weather fields are
      *     null without a value: all three when the meetup has no weather row, and
      *     rained and total_precipitation_mm when the provider had no precipitation data.
+     *     has_weather is true when the meetup has a weather row, so false exactly for
+     *     the meetups counted in without_weather.
      */
     WeatherMeetupRowPublic: {
       /**
@@ -3104,6 +3106,8 @@ export interface components {
       rained: boolean | null;
       /** Total Precipitation Mm */
       total_precipitation_mm: number | null;
+      /** Has Weather */
+      has_weather: boolean;
     };
     /**
      * WeatherStatsPublic
