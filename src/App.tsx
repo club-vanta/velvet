@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
@@ -12,7 +12,7 @@ import { ResetPasswordPage } from "./auth/ResetPasswordPage";
 import { Shell } from "./layout/Shell";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { MeetupsPage } from "./features/meetups/MeetupsPage";
-import { MeetupDetailPage } from "./features/meetups/MeetupDetailPage";
+import { MeetupDetailRoute } from "./features/meetups/MeetupDetailRoute";
 import { GuestsPage } from "./features/guests/GuestsPage";
 import { GuestDetailPage } from "./features/guests/GuestDetailPage";
 import { StaffPage } from "./features/staff/StaffPage";
@@ -33,14 +33,6 @@ function StatsPageFallback() {
       <Skeleton className="h-64 rounded-xl" />
     </div>
   );
-}
-
-// Keyed by id so following a link from one meetup to another (from a guest's
-// profile sheet) starts the page fresh, instead of carrying over the open
-// sheet, search, filters, and dialogs of the previous meetup.
-function MeetupDetailRoute() {
-  const { id } = useParams();
-  return <MeetupDetailPage key={id} />;
 }
 
 function AuthenticatedRoutes() {

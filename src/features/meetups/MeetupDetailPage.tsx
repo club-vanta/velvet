@@ -1038,9 +1038,7 @@ export function MeetupDetailPage() {
               </div>
             </div>
             <div className="col-span-2 min-w-0 space-y-2 empty:hidden @md:col-span-1 @md:col-start-2">
-              {/* Keyed by meetup so the search state resets when the route param changes. */}
               <MeetupLocation
-                key={meetup.id}
                 orgId={orgId}
                 meetup={meetup}
                 canEdit={isOrgAdmin}
@@ -1134,13 +1132,7 @@ export function MeetupDetailPage() {
       )}
 
       {meetupQ.isSuccess && (
-        // Keyed by meetup so a pending refresh does not carry over to the next one.
-        <MeetupWeather
-          key={id}
-          orgId={orgId}
-          meetupId={id!}
-          canRefresh={isOrgAdmin}
-        />
+        <MeetupWeather orgId={orgId} meetupId={id!} canRefresh={isOrgAdmin} />
       )}
 
       {/* Stats */}

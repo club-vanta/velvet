@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Link, MemoryRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupDetailPage } from "./MeetupDetailPage";
+import { MeetupDetailRoute } from "./MeetupDetailRoute";
 import type { components } from "@/api/types";
 import { makeMeetup } from "@/tests/fixtures";
 
@@ -1260,7 +1261,7 @@ describe("MeetupDetailPage location", () => {
           <MemoryRouter initialEntries={["/meetups/meetup-1"]}>
             <Link to="/meetups/meetup-2">next</Link>
             <Routes>
-              <Route path="/meetups/:id" element={<MeetupDetailPage />} />
+              <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
             </Routes>
           </MemoryRouter>
         </LanguageProvider>
