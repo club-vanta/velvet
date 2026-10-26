@@ -76,11 +76,6 @@ function scatterPoints(meetups: Row[]): Point[] {
   );
 }
 
-const hasNoWeather = (m: Row) =>
-  m.avg_temperature === null &&
-  m.rained === null &&
-  m.total_precipitation_mm === null;
-
 /** A rainy or dry group: its average turnout, with its no-show rate under it. */
 function GroupStat({ label, group }: { label: string; group: Group }) {
   const { t, lang } = useLanguage();
@@ -300,7 +295,7 @@ function WeatherAggregate({ data }: { data: Weather }) {
   }
 
   const points = scatterPoints(meetups);
-  const missing = sortByDate(meetups.filter(hasNoWeather));
+  const missing = sortByDate(meetups.filter((m) => !m.has_weather));
 
   return (
     <div className="space-y-3">

@@ -39,6 +39,7 @@ function row(overrides: Partial<Row> = {}): Row {
     meetup_id: "m1",
     name: "Alter Marzo",
     date: "2026-03-10T01:00:00Z",
+    has_weather: true,
     attended: 100,
     no_show_rate: 0.2,
     avg_temperature: 18.2,
@@ -49,6 +50,7 @@ function row(overrides: Partial<Row> = {}): Row {
 }
 
 const NO_WEATHER = {
+  has_weather: false,
   avg_temperature: null,
   rained: null,
   total_precipitation_mm: null,
@@ -413,6 +415,31 @@ describe("WeatherTab", () => {
       "href",
       "/meetups/late",
     );
+  });
+
+  it("lists only events with no weather row, not events whose values are null", async () => {
+    respond(
+      ok(
+        stats({
+          meetups: [
+            row({
+              meetup_id: "partial",
+              name: "Alter Parcial",
+              avg_temperature: null,
+              rained: null,
+            }),
+            row({ meetup_id: "none", name: "Alter Sin Clima", ...NO_WEATHER }),
+          ],
+          without_weather: 1,
+        }),
+      ),
+    );
+    renderTab();
+    await ready();
+    const items = within(
+      screen.getByRole("region", { name: "Eventos sin clima" }),
+    ).getAllByRole("listitem");
+    expect(items.map((li) => part(li, "name"))).toEqual(["Alter Sin Clima"]);
   });
 
   it("hides the without-weather list when every event has weather", async () => {
