@@ -906,7 +906,9 @@ describe("MeetupDetailPage on phones", () => {
     const cards = within(list).getAllByRole("listitem");
     expect(cards).toHaveLength(2);
     const [exempt, unpaid] = cards;
-    expect(within(exempt!).getByText("Exempt")).toBeInTheDocument();
+    expect(
+      within(exempt!).getByText("Exempt from payment: courtesy guest"),
+    ).toBeInTheDocument();
     expect(
       within(exempt!).getByRole("button", { name: "Check in" }),
     ).toBeEnabled();
@@ -979,28 +981,35 @@ describe("MeetupDetailPage on phones", () => {
     }
   });
 
-  it("shows an exempt guest as one neutral line with no fee to collect", async () => {
-    renderPage(MEETUP, [
-      guest({
-        mazmo_user_id: 73,
-        displayname: "Guest Of Honor",
-        has_paid: false,
-        guest_type: "INVITED",
-      }),
-    ]);
+  it.each([
+    ["INVITED", "Exempt from payment: courtesy guest"],
+    ["VENDOR", "Exempt from payment: runs a stand"],
+    ["STAFF", "Exempt from payment: event staff"],
+  ])(
+    "says why a %s guest pays no fee, with no fee to collect",
+    async (guestType, reason) => {
+      renderPage(MEETUP, [
+        guest({
+          mazmo_user_id: 73,
+          displayname: "Guest Of Honor",
+          has_paid: false,
+          guest_type: guestType,
+        }),
+      ]);
 
-    const card = (await screen.findByText("Guest Of Honor")).closest("li")!;
-    expect(within(card).getByText("Exempt").tagName).toBe("P");
-    expect(
-      within(card).queryByText("Entrance fee not paid"),
-    ).not.toBeInTheDocument();
-    expect(
-      within(card).queryByRole("button", { name: "Mark paid" }),
-    ).not.toBeInTheDocument();
-    expect(
-      within(card).getByRole("button", { name: "Check in" }),
-    ).toBeEnabled();
-  });
+      const card = (await screen.findByText("Guest Of Honor")).closest("li")!;
+      expect(within(card).getByText(reason).tagName).toBe("P");
+      expect(
+        within(card).queryByText("Entrance fee not paid"),
+      ).not.toBeInTheDocument();
+      expect(
+        within(card).queryByRole("button", { name: "Mark paid" }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(card).getByRole("button", { name: "Check in" }),
+      ).toBeEnabled();
+    },
+  );
 
   it("opens the undo dialog from the check-in line", async () => {
     const user = userEvent.setup();
@@ -1115,7 +1124,7 @@ describe("MeetupDetailPage on phones", () => {
     expect(
       within(payment).getByRole("button", { name: "Undo payment" }),
     ).toBeInTheDocument();
-    expect(within(card).queryByText("Exempt")).not.toBeInTheDocument();
+    expect(within(card).queryByText(/^Exempt/)).not.toBeInTheDocument();
   });
 
   it("hides undo payment from non-admins", async () => {
@@ -1523,5 +1532,83 @@ describe("MeetupDetailPage location", () => {
       screen.getByRole("combobox", { name: "Search an address" }),
     ).toHaveValue("");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage vanted check-in dialog", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const vanted = guest({
+    mazmo_user_id: 90,
+    displayname: "Yennefer",
+    has_paid: true,
+    is_banned: true,
+  });
+
+  async function openDialog(bannedResponse: () => Promise<unknown>) {
+    renderPage({ ...MEETUP, requires_payment: false }, [vanted]);
+    const base = mockApiGet.getMockImplementation()!;
+    mockApiGet.mockImplementation((path: string, ...rest: unknown[]) =>
+      path === "/organizations/{org_id}/guests/banned"
+        ? bannedResponse()
+        : base(path, ...rest),
+    );
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: "Check in" }));
+    return screen.findByRole("dialog", { name: "Check in vanted guest?" });
+  }
+
+  it("shows why the guest was vanted", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({
+        data: {
+          total: 1,
+          guests: [
+            {
+              ...vanted.guest,
+              banned_at: "2026-08-10T12:00:00Z",
+              banned_reason: "Fight at Alter #40",
+              banned_by_id: 1,
+            },
+          ],
+        },
+        error: undefined,
+      }),
+    );
+    expect(within(dialog).getByText("Vant reason")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Fight at Alter #40"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Check in anyway" }),
+    ).toBeEnabled();
+  });
+
+  it("keeps the choice open while the reason loads", async () => {
+    const dialog = await openDialog(() => new Promise(() => {}));
+    expect(within(dialog).getByText("Vant reason")).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("status", { name: "Loading the vant reason" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Check in anyway" }),
+    ).toBeEnabled();
+  });
+
+  it("says so when the reason can't be loaded", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({ data: undefined, error: { detail: "boom" } }),
+    );
+    expect(
+      await within(dialog).findByText("Couldn't load the vant reason."),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Check in anyway" }),
+    ).toBeEnabled();
   });
 });

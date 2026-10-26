@@ -63,14 +63,19 @@ import {
   type SortDir,
 } from "@/lib/guestListView";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { useAllGuests } from "@/hooks/useAllGuests";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { ShowMoreButton } from "@/components/ListToolbar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRelativeDay } from "@/hooks/useRelativeDay";
-import { isPaymentExempt } from "@/lib/guestType";
+import {
+  isGuestType,
+  isPaymentExempt,
+  PAYMENT_EXEMPT_REASON,
+} from "@/lib/guestType";
+import { useBannedGuests } from "@/hooks/useBannedGuests";
 import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
@@ -146,6 +151,14 @@ function SortableHead({
       </button>
     </TableHead>
   );
+}
+
+// Why the guest pays no fee, falling back to a bare "Exempt" for a type the
+// API sends that this build does not know yet.
+function exemptReason(guestType: string): TranslationKey {
+  return isGuestType(guestType) && guestType !== "NORMAL"
+    ? PAYMENT_EXEMPT_REASON[guestType]
+    : "paymentExempt";
 }
 
 /**
@@ -451,6 +464,8 @@ function CheckInBannedDialog({
 }) {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const bannedQ = useBannedGuests(orgId);
+  const ban = bannedQ.data?.guests.find((g) => g.id === guest.guest.id);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -493,6 +508,29 @@ function CheckInBannedDialog({
           </span>{" "}
           {t("bannedGuestDialogBody")}
         </p>
+        {/* The reason is what staff weigh before letting the guest in, so it
+            gets its own section. Loading or failing never blocks the choice. */}
+        <section
+          aria-labelledby="ban-reason-label"
+          className="space-y-1 border-t pt-3 text-sm"
+        >
+          <h3 id="ban-reason-label" className="font-medium">
+            {t("banReasonLabel")}
+          </h3>
+          {bannedQ.isPending ? (
+            <Skeleton
+              role="status"
+              aria-label={t("banReasonLoading")}
+              className="h-4 w-48"
+            />
+          ) : ban ? (
+            <p className="break-words text-muted-foreground">
+              {ban.banned_reason}
+            </p>
+          ) : (
+            <p className="text-muted-foreground">{t("banReasonUnavailable")}</p>
+          )}
+        </section>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             {t("cancel")}
@@ -1079,7 +1117,7 @@ export function MeetupDetailPage() {
             </GuestStatusLine>
           ) : rowState(mg).isExempt ? (
             <GuestStatusLine tone="neutral">
-              {t("paymentExempt")}
+              {t(exemptReason(mg.rsvp.guest_type))}
             </GuestStatusLine>
           ) : (
             unpaidId && (

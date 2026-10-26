@@ -190,6 +190,9 @@ export const translations = {
     bannedGuestDialogBody:
       "is on the vant list. Do you want to check them in anyway?",
     checkInAnyway: "Check in anyway",
+    banReasonLabel: "Vant reason",
+    banReasonLoading: "Loading the vant reason",
+    banReasonUnavailable: "Couldn't load the vant reason.",
     walkinLabel: "Walk-in",
     walkinDialogTitle: "Add walk-in guest",
     searchGuest: "Search by name or @username…",
@@ -594,6 +597,9 @@ export const translations = {
     guestTypeLockedFinalized:
       "This meetup is finalized, so guest types can't change.",
     paymentExempt: "Exempt",
+    paymentExemptInvited: "Exempt from payment: courtesy guest",
+    paymentExemptVendor: "Exempt from payment: runs a stand",
+    paymentExemptStaff: "Exempt from payment: event staff",
     paymentExemptHint: "Invited, vendor, and staff guests don't pay entry",
     viewProfile: "View profile",
     openFullProfile: "Open full profile",
@@ -884,6 +890,9 @@ export const translations = {
     bannedGuestDialogBody:
       "está en la lista de vanteados. ¿Querés ingresarlo de todas formas?",
     checkInAnyway: "Ingresar igual",
+    banReasonLabel: "Motivo del vanteo",
+    banReasonLoading: "Cargando el motivo del vanteo",
+    banReasonUnavailable: "No se pudo cargar el motivo del vanteo.",
     walkinLabel: "Discreto",
     walkinDialogTitle: "Agregar discreto",
     searchGuest: "Buscar por nombre o @usuario…",
@@ -1293,6 +1302,9 @@ export const translations = {
     guestTypeLockedFinalized:
       "Este evento está finalizado, no se puede cambiar el tipo de invitado.",
     paymentExempt: "Exento",
+    paymentExemptInvited: "Exento de pago por ser invitado de cortesía",
+    paymentExemptVendor: "Exento de pago por tener un stand",
+    paymentExemptStaff: "Exento de pago por ser staff",
     paymentExemptHint: "Cortesía, stand y staff no pagan entrada",
     viewProfile: "Ver perfil",
     openFullProfile: "Abrir perfil completo",
