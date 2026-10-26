@@ -1,14 +1,14 @@
-import { Link } from "react-router-dom";
 import type { components } from "@/api/types";
 import { useOperationsStats } from "@/hooks/useOperationsStats";
-import { parseApiDateTime } from "@/lib/apiDateTime";
-import { formatDate } from "@/lib/format";
+import { formatApiDate } from "@/lib/format";
 import { GUEST_TYPE_LABEL } from "@/lib/guestType";
 import { useLanguage } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
 import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
+import { StatsLink } from "./StatsLink";
+import { StatsListMore } from "./StatsListMore";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   NO_VALUE,
@@ -31,9 +31,6 @@ const TYPE_COLORS: Record<GuestTypeRow["guest_type"], string> = {
   STAFF: "var(--chart-3)",
   VENDOR: "var(--chart-4)",
 };
-
-const LINK_CLASS =
-  "min-w-0 rounded-sm font-medium break-words underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 /** Everyone who came in by guest type: a bar sized by its share of all. */
 function GuestTypeBars({ rows }: { rows: GuestTypeRow[] }) {
@@ -160,7 +157,6 @@ function BanList({
   bans: Operations["ban_list"];
   total: number;
 }) {
-  const { t, lang } = useLanguage();
   const more = total - bans.length;
 
   return (
@@ -172,14 +168,14 @@ function BanList({
             className="space-y-0.5 py-1.5"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-              <Link to={`/guests/${ban.guest_id}`} className={LINK_CLASS}>
+              <StatsLink to={`/guests/${ban.guest_id}`}>
                 {ban.displayname}
-              </Link>
+              </StatsLink>
               <span
                 data-slot="date"
                 className="text-muted-foreground tabular-nums"
               >
-                {formatDate(parseApiDateTime(ban.timestamp).toISOString())}
+                {formatApiDate(ban.timestamp)}
               </span>
             </div>
             <p className="text-muted-foreground break-words">
@@ -190,11 +186,7 @@ function BanList({
           </li>
         ))}
       </ul>
-      {more > 0 && (
-        <p data-slot="bans-more" className="pt-2 text-sm text-muted-foreground">
-          {t("statsLapsedMore").replace("{0}", formatCount(more, lang))}
-        </p>
-      )}
+      <StatsListMore count={more} slot="bans-more" />
     </>
   );
 }

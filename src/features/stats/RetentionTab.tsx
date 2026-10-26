@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -10,14 +9,15 @@ import {
 } from "@/components/ui/chart";
 import type { components } from "@/api/types";
 import { useRetentionStats } from "@/hooks/useRetentionStats";
-import { parseApiDateTime } from "@/lib/apiDateTime";
-import { formatDate } from "@/lib/format";
+import { formatApiDate } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
 import { CohortTable } from "./CohortTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
+import { StatsLink } from "./StatsLink";
+import { StatsListMore } from "./StatsListMore";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import {
   formatChange,
@@ -138,12 +138,9 @@ function LapsedList({
             key={guest.guest_id}
             className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5"
           >
-            <Link
-              to={`/guests/${guest.guest_id}`}
-              className="min-w-0 rounded-sm font-medium break-words underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
+            <StatsLink to={`/guests/${guest.guest_id}`}>
               {guest.displayname}
-            </Link>
+            </StatsLink>
             <span className="text-muted-foreground tabular-nums">
               <span data-slot="times">
                 {t("statsLapsedCame").replace(
@@ -152,23 +149,12 @@ function LapsedList({
                 )}
               </span>
               {" · "}
-              <span data-slot="last">
-                {formatDate(
-                  parseApiDateTime(guest.last_attended).toISOString(),
-                )}
-              </span>
+              <span data-slot="last">{formatApiDate(guest.last_attended)}</span>
             </span>
           </li>
         ))}
       </ul>
-      {more > 0 && (
-        <p
-          data-slot="lapsed-more"
-          className="pt-2 text-sm text-muted-foreground"
-        >
-          {t("statsLapsedMore").replace("{0}", formatCount(more, lang))}
-        </p>
-      )}
+      <StatsListMore count={more} slot="lapsed-more" />
     </>
   );
 }

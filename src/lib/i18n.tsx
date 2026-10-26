@@ -424,7 +424,7 @@ export const translations = {
     statsCohortSize: "People",
     statsLapsed: "Stopped coming",
     statsLapsedCame: "came {0} times",
-    statsLapsedMore: "and {0} more",
+    statsListMore: "and {0} more",
     statsLapsedNone: "Nobody stopped coming",
     statsEventCameBack: "Of the first-timers, {0} came back",
     statsNoteRetention:
@@ -1077,7 +1077,7 @@ export const translations = {
     statsCohortSize: "Personas",
     statsLapsed: "Dejaron de venir",
     statsLapsedCame: "vino {0} veces",
-    statsLapsedMore: "y {0} más",
+    statsListMore: "y {0} más",
     statsLapsedNone: "Nadie dejó de venir",
     statsEventCameBack: "De quienes vinieron por primera vez, volvieron {0}",
     statsNoteRetention:

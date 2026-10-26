@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -19,8 +18,7 @@ import { StatCard } from "@/components/StatCard";
 import { StatsNote } from "@/components/StatsNote";
 import { useAuth } from "@/auth/AuthContext";
 import { useWeatherStats } from "@/hooks/useWeatherStats";
-import { parseApiDateTime } from "@/lib/apiDateTime";
-import { formatDate, formatDecimal } from "@/lib/format";
+import { formatApiDate, formatDecimal } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { useOrg } from "@/lib/org";
 import { cn } from "@/lib/utils";
@@ -28,6 +26,7 @@ import { ChartCard } from "./ChartCard";
 import { HeadlineStat } from "./HeadlineStat";
 import { headlineGrid } from "./headlineGrid";
 import { RateCell } from "./RateCell";
+import { StatsLink } from "./StatsLink";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import { formatCount, formatRate, sortByDate } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
@@ -45,9 +44,6 @@ const BAND_LABEL: Record<Band["band"], TranslationKey> = {
   FROM_20_TO_25: "statsBandFrom20",
   FROM_25: "statsBandFrom25",
 };
-
-const LINK_CLASS =
-  "min-w-0 rounded-sm font-medium break-words underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 /** Fewer points than this and a scatter says nothing. */
 const MIN_POINTS = 2;
@@ -256,7 +252,7 @@ function TemperatureScatter({ points }: { points: Point[] }) {
               <TooltipBox>
                 <p className="font-medium">{point.name}</p>
                 <p className="text-muted-foreground">
-                  {formatDate(parseApiDateTime(point.date).toISOString())}
+                  {formatApiDate(point.date)}
                 </p>
                 <p className="tabular-nums">
                   {t("statsTemperatureAxis")}:{" "}
@@ -304,9 +300,7 @@ function ScatterTable({
               <th scope="row" data-slot="name">
                 {p.name}
               </th>
-              <td data-slot="date">
-                {formatDate(parseApiDateTime(p.date).toISOString())}
-              </td>
+              <td data-slot="date">{formatApiDate(p.date)}</td>
               <td data-slot="temperature">
                 {formatDecimal(p.temperature, lang)}
               </td>
@@ -328,15 +322,11 @@ function WithoutWeatherList({ meetups }: { meetups: Row[] }) {
           key={m.meetup_id}
           className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5"
         >
-          <Link
-            to={`/meetups/${m.meetup_id}`}
-            data-slot="name"
-            className={LINK_CLASS}
-          >
+          <StatsLink to={`/meetups/${m.meetup_id}`} data-slot="name">
             {m.name}
-          </Link>
+          </StatsLink>
           <span data-slot="date" className="text-muted-foreground tabular-nums">
-            {formatDate(parseApiDateTime(m.date).toISOString())}
+            {formatApiDate(m.date)}
           </span>
         </li>
       ))}

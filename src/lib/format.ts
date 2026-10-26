@@ -1,9 +1,16 @@
+import { parseApiDateTime } from "./apiDateTime";
+
 export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-AR", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+}
+
+/** Formats a date the API sent (a string without a zone is UTC). */
+export function formatApiDate(value: string): string {
+  return formatDate(parseApiDateTime(value).toISOString());
 }
 
 export function formatDateTime(iso: string): string {
