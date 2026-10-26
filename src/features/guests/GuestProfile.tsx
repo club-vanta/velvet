@@ -19,6 +19,7 @@ import {
   mazmoLabel,
 } from "@/lib/mazmoProfile";
 import { guestHistoryKey, guestKey } from "@/lib/queryKeys";
+import { useBannedGuests } from "@/hooks/useBannedGuests";
 import type { components } from "@/api/types";
 import { GuestMeetups } from "./GuestMeetups";
 import {
@@ -368,18 +369,7 @@ export function GuestProfile({
   });
 
   // Same key as the Vanted tab, so the list is shared from cache.
-  const bannedQ = useQuery({
-    queryKey: ["guests-banned", orgId],
-    queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/guests/banned",
-        { params: { path: { org_id: orgId } } },
-      );
-      if (error) throw new Error("Failed to load banned guests");
-      return data;
-    },
-    enabled: !!orgId,
-  });
+  const bannedQ = useBannedGuests(orgId);
 
   if (guestQ.isLoading) {
     return (

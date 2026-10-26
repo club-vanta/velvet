@@ -94,3 +94,11 @@ export function useOrg(): OrgContextValue {
   if (!ctx) throw new Error("useOrg must be used within <OrgProvider>");
   return ctx;
 }
+
+/** Whether the viewer is a site admin or an admin of the active org. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useIsOrgAdmin(): boolean {
+  const { user } = useAuth();
+  const { activeOrg } = useOrg();
+  return user?.role.name === "SITE_ADMIN" || activeOrg?.role === "ADMIN";
+}

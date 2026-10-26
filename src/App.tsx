@@ -1,8 +1,10 @@
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { LanguageProvider } from "./lib/i18n";
-import { OrgProvider, useOrg } from "./lib/org";
+import { OrgProvider, useIsOrgAdmin } from "./lib/org";
 import { LoginPage } from "./auth/LoginPage";
 import { SignupPage } from "./auth/SignupPage";
 import { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
@@ -10,7 +12,7 @@ import { ResetPasswordPage } from "./auth/ResetPasswordPage";
 import { Shell } from "./layout/Shell";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { MeetupsPage } from "./features/meetups/MeetupsPage";
-import { MeetupDetailPage } from "./features/meetups/MeetupDetailPage";
+import { MeetupDetailRoute } from "./features/meetups/MeetupDetailRoute";
 import { GuestsPage } from "./features/guests/GuestsPage";
 import { GuestDetailPage } from "./features/guests/GuestDetailPage";
 import { StaffPage } from "./features/staff/StaffPage";
@@ -18,20 +20,25 @@ import { EventsPage } from "./features/events/EventsPage";
 import { OrganizationsPage } from "./features/organizations/OrganizationsPage";
 import { OrganizationDetailPage } from "./features/organizations/OrganizationDetailPage";
 
-// Keyed by id so following a link from one meetup to another (from a guest's
-// profile sheet) starts the page fresh, instead of carrying over the open
-// sheet, search, filters, and dialogs of the previous meetup.
-function MeetupDetailRoute() {
-  const { id } = useParams();
-  return <MeetupDetailPage key={id} />;
+// Charts are only for admins, so recharts loads with this page instead of
+// weighing down every cold start.
+const StatsPage = lazy(() =>
+  import("./features/stats/StatsPage").then((m) => ({ default: m.StatsPage })),
+);
+
+function StatsPageFallback() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-64 rounded-xl" />
+    </div>
+  );
 }
 
 function AuthenticatedRoutes() {
   const { user } = useAuth();
-  const { activeOrg } = useOrg();
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
-  const isOrgAdmin = activeOrg?.role === "ADMIN";
-  const canSeeOrgs = isSiteAdmin || isOrgAdmin;
+  const canSeeOrgs = useIsOrgAdmin();
 
   return (
     <Shell>
@@ -41,6 +48,16 @@ function AuthenticatedRoutes() {
         <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
         <Route path="/guests" element={<GuestsPage />} />
         <Route path="/guests/:guestId" element={<GuestDetailPage />} />
+        {canSeeOrgs && (
+          <Route
+            path="/stats"
+            element={
+              <Suspense fallback={<StatsPageFallback />}>
+                <StatsPage />
+              </Suspense>
+            }
+          />
+        )}
         {isSiteAdmin && <Route path="/staff" element={<StaffPage />} />}
         {canSeeOrgs && <Route path="/events" element={<EventsPage />} />}
         {canSeeOrgs && (

@@ -24,6 +24,16 @@ export const GUEST_TYPE_DESCRIPTION: Record<GuestType, TranslationKey> = {
   STAFF: "guestTypeStaffDescription",
 };
 
+/** Why a guest of each exempt type pays no entrance fee. */
+export const PAYMENT_EXEMPT_REASON: Record<
+  Exclude<GuestType, "NORMAL">,
+  TranslationKey
+> = {
+  INVITED: "paymentExemptInvited",
+  VENDOR: "paymentExemptVendor",
+  STAFF: "paymentExemptStaff",
+};
+
 // RsvpPublic.guest_type is typed as a plain string by the API (the backend
 // stores it as VARCHAR), so narrow it before indexing the label maps.
 export function isGuestType(value: string): value is GuestType {

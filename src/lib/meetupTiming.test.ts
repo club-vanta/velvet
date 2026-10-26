@@ -6,6 +6,7 @@ import {
   meetupTiming,
 } from "./meetupTiming";
 import type { components } from "@/api/types";
+import { makeMeetup } from "@/tests/fixtures";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 
@@ -16,15 +17,12 @@ function at(day: number, hour = 22): string {
 }
 
 function meetup(id: string, date: string): Meetup {
-  return {
+  return makeMeetup({
     id,
     name: id,
     mazmo_meetup_url: `https://mazmo.net/x/${id}`,
     date,
-    is_finalized: false,
-    finalized_at: null,
-    requires_payment: false,
-  };
+  });
 }
 
 describe("meetupTiming", () => {

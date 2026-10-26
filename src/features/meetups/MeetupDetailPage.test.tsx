@@ -2,10 +2,12 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { Link, MemoryRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupDetailPage } from "./MeetupDetailPage";
+import { MeetupDetailRoute } from "./MeetupDetailRoute";
 import type { components } from "@/api/types";
+import { makeMeetup } from "@/tests/fixtures";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -27,10 +29,13 @@ vi.mock("sonner", () => ({
 }));
 
 let mockRole = "ADMIN";
+// Holds the meetup request open, for the states shown while it loads.
+let meetupPending = false;
 vi.mock("@/lib/org", () => ({
   useOrg: () => ({
     activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: mockRole },
   }),
+  useIsOrgAdmin: () => mockRole === "ADMIN",
 }));
 
 vi.mock("@/auth/AuthContext", () => ({
@@ -39,15 +44,12 @@ vi.mock("@/auth/AuthContext", () => ({
   }),
 }));
 
-const MEETUP: Meetup = {
-  id: "meetup-1",
+const MEETUP: Meetup = makeMeetup({
   name: "Alter Test",
   mazmo_meetup_url: "https://mazmo.net/eventos/alter-test",
   date: "2026-09-01T22:00:00Z",
-  is_finalized: false,
-  finalized_at: null,
   requires_payment: true,
-};
+});
 
 function guest(overrides: {
   mazmo_user_id: number;
@@ -99,6 +101,12 @@ const STATS: MeetupStats = {
   payment: { paid_count: 0, unpaid_count: 0, exempt_from_payment_count: 0 },
 };
 
+const WEATHER_STATUS: components["schemas"]["MeetupWeatherStatusPublic"] = {
+  status: "NOT_FETCHED",
+  weather: null,
+  ready: true,
+};
+
 function renderPage(
   meetup: Meetup,
   guests: MeetupGuest[],
@@ -107,7 +115,9 @@ function renderPage(
   mockApiGet.mockImplementation(
     (path: string, opts?: { params?: { path?: { guest_id?: string } } }) => {
       if (path === "/organizations/{org_id}/meetups/{meetup_id}")
-        return Promise.resolve({ data: meetup, error: undefined });
+        return meetupPending
+          ? new Promise(() => {})
+          : Promise.resolve({ data: meetup, error: undefined });
       if (path === "/organizations/{org_id}/meetups/{meetup_id}/guests")
         return Promise.resolve({
           data: { total: guests.length, guests },
@@ -115,6 +125,8 @@ function renderPage(
         });
       if (path === "/organizations/{org_id}/meetups/{meetup_id}/stats")
         return Promise.resolve({ data: stats, error: undefined });
+      if (path === "/organizations/{org_id}/meetups/{meetup_id}/weather")
+        return Promise.resolve({ data: WEATHER_STATUS, error: undefined });
       if (path === "/organizations/{org_id}/guests/banned")
         return Promise.resolve({
           data: { total: 0, guests: [] },
@@ -869,6 +881,7 @@ describe("MeetupDetailPage on phones", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    meetupPending = false;
   });
 
   it("renders one card per guest instead of the table", async () => {
@@ -893,7 +906,9 @@ describe("MeetupDetailPage on phones", () => {
     const cards = within(list).getAllByRole("listitem");
     expect(cards).toHaveLength(2);
     const [exempt, unpaid] = cards;
-    expect(within(exempt!).getByText("Exempt")).toBeInTheDocument();
+    expect(
+      within(exempt!).getByText("Exempt from payment: courtesy guest"),
+    ).toBeInTheDocument();
     expect(
       within(exempt!).getByRole("button", { name: "Check in" }),
     ).toBeEnabled();
@@ -908,6 +923,236 @@ describe("MeetupDetailPage on phones", () => {
     expect(
       within(unpaid!).getByRole("button", { name: "Mark paid" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows check-in and payment as one line each, with their undos", async () => {
+    const done = guest({
+      mazmo_user_id: 62,
+      displayname: "Done",
+      has_paid: true,
+    });
+    renderPage(MEETUP, [
+      {
+        ...done,
+        rsvp: {
+          ...done.rsvp,
+          has_arrived: true,
+          arrival_time: "2026-09-01T23:00:00Z",
+          arrival_order: 1,
+        },
+      },
+    ]);
+
+    const card = (await screen.findByText("Done")).closest("li")!;
+    expect(within(card).queryAllByRole("term")).toHaveLength(0);
+    const checkIn = within(card).getByText("Checked in").closest("div")!;
+    expect(within(checkIn).getByText("#1")).toBeInTheDocument();
+    expect(
+      within(checkIn).getByRole("button", { name: "Undo" }),
+    ).toBeInTheDocument();
+    const payment = within(card).getByText("Paid").closest("div")!;
+    expect(
+      within(payment).getByRole("button", { name: "Undo payment" }),
+    ).toBeInTheDocument();
+    // Nothing left to do, so there is no steps band.
+    expect(
+      within(card).queryByRole("button", { name: "Check in" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Mark paid" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("tints the undos with their line so they stay readable", async () => {
+    const done = guest({
+      mazmo_user_id: 72,
+      displayname: "Tinted",
+      has_paid: true,
+    });
+    done.rsvp.has_arrived = true;
+    renderPage(MEETUP, [done]);
+
+    const card = (await screen.findByText("Tinted")).closest("li")!;
+    // Muted grey on a 10% tint falls under 4.5:1 in the light theme.
+    for (const name of ["Undo", "Undo payment"]) {
+      const undo = within(card).getByRole("button", { name });
+      expect(undo).toHaveClass("text-current");
+      expect(undo).not.toHaveClass("text-muted-foreground");
+    }
+  });
+
+  it.each([
+    ["INVITED", "Exempt from payment: courtesy guest"],
+    ["VENDOR", "Exempt from payment: runs a stand"],
+    ["STAFF", "Exempt from payment: event staff"],
+  ])(
+    "says why a %s guest pays no fee, with no fee to collect",
+    async (guestType, reason) => {
+      renderPage(MEETUP, [
+        guest({
+          mazmo_user_id: 73,
+          displayname: "Guest Of Honor",
+          has_paid: false,
+          guest_type: guestType,
+        }),
+      ]);
+
+      const card = (await screen.findByText("Guest Of Honor")).closest("li")!;
+      expect(within(card).getByText(reason).tagName).toBe("P");
+      expect(
+        within(card).queryByText("Entrance fee not paid"),
+      ).not.toBeInTheDocument();
+      expect(
+        within(card).queryByRole("button", { name: "Mark paid" }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(card).getByRole("button", { name: "Check in" }),
+      ).toBeEnabled();
+    },
+  );
+
+  it("opens the undo dialog from the check-in line", async () => {
+    const user = userEvent.setup();
+    const arrived = guest({
+      mazmo_user_id: 64,
+      displayname: "Arrived",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    renderPage(MEETUP, [arrived]);
+
+    const card = (await screen.findByText("Arrived")).closest("li")!;
+    const checkIn = within(card).getByText("Checked in").closest("div")!;
+    await user.click(within(checkIn).getByRole("button", { name: "Undo" }));
+    expect(
+      screen.getByRole("dialog", { name: "Undo check-in for Arrived?" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no check-in line for a guest who has not arrived", async () => {
+    renderPage({ ...MEETUP, requires_payment: false }, [
+      guest({ mazmo_user_id: 63, displayname: "Free", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Free")).closest("li")!;
+    expect(within(card).queryByText("Checked in")).not.toBeInTheDocument();
+    expect(within(card).queryByText("Pending")).not.toBeInTheDocument();
+    expect(
+      within(card).queryByText("Entrance fee not paid"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Check in" }),
+    ).toBeEnabled();
+    expect(
+      within(card).queryByRole("button", { name: "Mark paid" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("moves the arrival order out of the header", async () => {
+    const arrived = guest({
+      mazmo_user_id: 66,
+      displayname: "Fourth",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    arrived.rsvp.arrival_order = 4;
+    renderPage(MEETUP, [arrived]);
+
+    const card = (await screen.findByText("Fourth")).closest("li")!;
+    expect(within(card).getAllByText("#4")).toHaveLength(1);
+    expect(
+      within(card).getByText("Checked in").closest("div"),
+    ).toContainElement(within(card).getByText("#4"));
+  });
+
+  it("leaves the order pill out when the arrival order is unknown", async () => {
+    const arrived = guest({
+      mazmo_user_id: 67,
+      displayname: "Unordered",
+      has_paid: true,
+    });
+    arrived.rsvp.has_arrived = true;
+    renderPage(MEETUP, [arrived]);
+
+    const card = (await screen.findByText("Unordered")).closest("li")!;
+    expect(within(card).getByText("Checked in")).toBeInTheDocument();
+    expect(within(card).queryByText(/^#/)).not.toBeInTheDocument();
+  });
+
+  it("explains a blocked check-in with the unpaid line", async () => {
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 68, displayname: "Owes", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Owes")).closest("li")!;
+    const checkIn = within(card).getByRole("button", { name: "Check in" });
+    expect(checkIn).toBeDisabled();
+    const hint = document.getElementById(
+      checkIn.getAttribute("aria-describedby")!,
+    );
+    expect(hint?.textContent).toBe("Entrance fee not paid");
+    expect(card).toContainElement(hint);
+  });
+
+  it("shows no unpaid line while the meetup is loading", async () => {
+    meetupPending = true;
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 69, displayname: "Waiting", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Waiting")).closest("li")!;
+    expect(
+      within(card).queryByText("Entrance fee not paid"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Check in" }),
+    ).toBeDisabled();
+  });
+
+  it("keeps the paid line for a guest paid before becoming exempt", async () => {
+    renderPage(MEETUP, [
+      guest({
+        mazmo_user_id: 70,
+        displayname: "Was Normal",
+        has_paid: true,
+        guest_type: "INVITED",
+      }),
+    ]);
+
+    const card = (await screen.findByText("Was Normal")).closest("li")!;
+    const payment = within(card).getByText("Paid").closest("div")!;
+    expect(
+      within(payment).getByRole("button", { name: "Undo payment" }),
+    ).toBeInTheDocument();
+    expect(within(card).queryByText(/^Exempt/)).not.toBeInTheDocument();
+  });
+
+  it("hides undo payment from non-admins", async () => {
+    mockRole = "STAFF";
+    renderPage(MEETUP, [
+      guest({ mazmo_user_id: 71, displayname: "Staff View", has_paid: true }),
+    ]);
+
+    const card = (await screen.findByText("Staff View")).closest("li")!;
+    expect(within(card).getByText("Paid")).toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Undo payment" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the unpaid line and drops the steps band once finalized", async () => {
+    renderPage({ ...MEETUP, is_finalized: true }, [
+      guest({ mazmo_user_id: 65, displayname: "Late", has_paid: false }),
+    ]);
+
+    const card = (await screen.findByText("Late")).closest("li")!;
+    expect(within(card).getByText("Entrance fee not paid")).toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Check in" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).queryByRole("button", { name: "Mark paid" }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -1042,9 +1287,11 @@ describe("MeetupDetailPage finalized meetup", () => {
       guest({ mazmo_user_id: 73, displayname: "Never Paid", has_paid: false }),
     ]);
 
+    // The backend refuses new payments once finalized, so it is not offered.
+    expect(await screen.findByText("Never Paid")).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Mark paid" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Mark paid" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Undo payment" })).toBeEnabled();
   });
@@ -1147,5 +1394,235 @@ describe("MeetupDetailPage walk-in picker", () => {
     // Already on the list, so not offered again.
     expect(within(dialog).queryByText("Juan Perez Ya")).not.toBeInTheDocument();
     expect(within(dialog).getByText("Juan Pérez")).toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage location", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const LOCATED = makeMeetup({
+    name: "Alter Test",
+    location_label: "Teatro Vanta, Buenos Aires",
+    latitude: -34.6,
+    longitude: -58.4,
+  });
+
+  it("lets an org admin change and remove the location, with the search closed", async () => {
+    renderPage(LOCATED, []);
+    expect(
+      await screen.findByRole("button", { name: "Change location" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove location" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
+  it("offers the address search to an org admin when no location is set", async () => {
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(
+      await screen.findByRole("combobox", { name: "Search an address" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows staff the address and map link but no edit control", async () => {
+    mockRole = "STAFF";
+    renderPage(LOCATED, []);
+    expect(
+      await screen.findByRole("link", {
+        name: "Open in map: Teatro Vanta, Buenos Aires",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Remove location" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says there is no location to staff when none is set", async () => {
+    mockRole = "STAFF";
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(await screen.findByText("No location yet")).toBeInTheDocument();
+  });
+
+  it("shows the weather card with a refresh for an org admin", async () => {
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(
+      await screen.findByRole("button", { name: "Update weather" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("The weather has not loaded yet")).toBeVisible();
+  });
+
+  it("shows staff the weather card without a refresh", async () => {
+    mockRole = "STAFF";
+    renderPage(makeMeetup({ name: "Alter Test" }), []);
+    expect(
+      await screen.findByText("The weather has not loaded yet"),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Update weather" }),
+    ).not.toBeInTheDocument();
+  });
+
+  const OTHER = makeMeetup({ id: "meetup-2", name: "Other Night" });
+
+  /** Two meetups behind one route, with a link that moves from the first to the second. */
+  function renderTwoMeetups() {
+    mockApiGet.mockImplementation(
+      (path: string, opts?: { params?: { path?: { meetup_id?: string } } }) => {
+        if (path === "/organizations/{org_id}/meetups/{meetup_id}")
+          return Promise.resolve({
+            data:
+              opts?.params?.path?.meetup_id === "meetup-2" ? OTHER : LOCATED,
+            error: undefined,
+          });
+        if (path === "/organizations/{org_id}/meetups/{meetup_id}/weather")
+          return Promise.resolve({
+            data: { status: "NOT_FETCHED", weather: null, ready: true },
+            error: undefined,
+          });
+        if (path === "/organizations/{org_id}/geocode")
+          return Promise.resolve({
+            data: [{ label: "Av. Callao 500", latitude: 1, longitude: 2 }],
+            error: undefined,
+          });
+        if (path.endsWith("/guests"))
+          return Promise.resolve({
+            data: { total: 0, guests: [] },
+            error: undefined,
+          });
+        return Promise.resolve({ data: undefined, error: undefined });
+      },
+    );
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <LanguageProvider>
+          <MemoryRouter initialEntries={["/meetups/meetup-1"]}>
+            <Link to="/meetups/meetup-2">next</Link>
+            <Routes>
+              <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
+            </Routes>
+          </MemoryRouter>
+        </LanguageProvider>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("clears a half-typed address search when the route moves to another meetup", async () => {
+    renderTwoMeetups();
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: "Change location" }),
+    );
+    const box = screen.getByRole("combobox", { name: "Search an address" });
+    await user.type(box, "Callao");
+    await screen.findByRole("listbox");
+
+    await user.click(screen.getByRole("link", { name: "next" }));
+    await screen.findByRole("heading", { name: "Other Night" });
+    expect(
+      screen.getByRole("combobox", { name: "Search an address" }),
+    ).toHaveValue("");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("MeetupDetailPage vanted check-in dialog", () => {
+  beforeEach(() => {
+    mockRole = "ADMIN";
+    vi.clearAllMocks();
+    localStorage.setItem("lang", "en");
+  });
+
+  const vanted = guest({
+    mazmo_user_id: 90,
+    displayname: "Yennefer",
+    has_paid: true,
+    is_banned: true,
+  });
+  const ban: components["schemas"]["BannedGuestPublic"] = {
+    id: vanted.guest.id,
+    mazmo_user_id: vanted.guest.mazmo_user_id,
+    mazmo_handle: vanted.guest.mazmo_handle,
+    displayname: vanted.guest.displayname,
+    instagram_username: null,
+    mazmo_profile: null,
+    banned_at: "2026-08-10T12:00:00Z",
+    banned_reason: "Fight at Alter #40",
+    banned_by_id: 1,
+  };
+
+  async function openDialog(bannedResponse: () => Promise<unknown>) {
+    renderPage({ ...MEETUP, requires_payment: false }, [vanted]);
+    const base = mockApiGet.getMockImplementation()!;
+    mockApiGet.mockImplementation((path: string, ...rest: unknown[]) =>
+      path === "/organizations/{org_id}/guests/banned"
+        ? bannedResponse()
+        : base(path, ...rest),
+    );
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: "Check in" }));
+    return screen.findByRole("dialog", { name: "Check in vanted guest?" });
+  }
+
+  it("shows why the guest was vanted", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({
+        data: { total: 1, guests: [ban] },
+        error: undefined,
+      }),
+    );
+    expect(within(dialog).getByText("Vant reason")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Fight at Alter #40"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Check in anyway" }),
+    ).toBeEnabled();
+  });
+
+  it("says no reason is recorded when the guest is not on the list", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({ data: { total: 0, guests: [] }, error: undefined }),
+    );
+
+    expect(
+      await within(dialog).findByText("No reason recorded."),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText("Couldn't load the vant reason."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the choice open while the reason loads", async () => {
+    const dialog = await openDialog(() => new Promise(() => {}));
+    expect(within(dialog).getByText("Vant reason")).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("status", { name: "Loading the vant reason" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Check in anyway" }),
+    ).toBeEnabled();
+  });
+
+  it("says so when the reason can't be loaded", async () => {
+    const dialog = await openDialog(() =>
+      Promise.resolve({ data: undefined, error: { detail: "boom" } }),
+    );
+    expect(
+      await within(dialog).findByText("Couldn't load the vant reason."),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Check in anyway" }),
+    ).toBeEnabled();
   });
 });

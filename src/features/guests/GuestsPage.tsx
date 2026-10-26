@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { MoreHorizontal, RefreshCw } from "lucide-react";
@@ -45,6 +45,7 @@ import {
   UnlinkMazmoDialog,
 } from "./GuestDialogs";
 import { useUnbanGuest } from "./useUnbanGuest";
+import { useBannedGuests } from "@/hooks/useBannedGuests";
 import { useAllGuests } from "@/hooks/useAllGuests";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useIncrementalList } from "@/hooks/useIncrementalList";
@@ -498,18 +499,7 @@ function AllGuestsTab({
 
   // GuestPublic has no org ban state, so vants come from the org's list
   // (same query and cache as the Vanted tab).
-  const bannedQ = useQuery({
-    queryKey: ["guests-banned", orgId],
-    queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/guests/banned",
-        { params: { path: { org_id: orgId } } },
-      );
-      if (error) throw new Error("Failed to load banned guests");
-      return data;
-    },
-    enabled: !!orgId,
-  });
+  const bannedQ = useBannedGuests(orgId);
   // Explicit memos, unlike the rest of this file: `bannedIds` is a Set that
   // the rows read again after the hook calls below, so the React Compiler
   // can't cache it (or `viewed`, built from it) ahead of those calls. Without
@@ -750,18 +740,7 @@ function BannedGuestsTab({
     dir: "asc",
   });
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["guests-banned", orgId],
-    queryFn: async () => {
-      const { data, error } = await api.GET(
-        "/organizations/{org_id}/guests/banned",
-        { params: { path: { org_id: orgId } } },
-      );
-      if (error) throw new Error("Failed to load banned guests");
-      return data;
-    },
-    enabled: !!orgId,
-  });
+  const { data, isLoading, isError, refetch } = useBannedGuests(orgId);
 
   const unbanMutation = useUnbanGuest(orgId);
 

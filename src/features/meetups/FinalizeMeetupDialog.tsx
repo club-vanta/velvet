@@ -13,7 +13,7 @@ import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
-import { guestMeetupsOrgKey, meetupStatsKey } from "@/lib/queryKeys";
+import { invalidateMeetupGuests, meetupKey, meetupsKey } from "@/lib/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
@@ -52,18 +52,14 @@ export function FinalizeMeetupDialog({
     onSuccess: (data) => {
       // Write the answer straight into the cache so the page locks or
       // unlocks at once, then refetch what depends on it.
-      if (data) queryClient.setQueryData(["meetup", orgId, meetup.id], data);
+      if (data) queryClient.setQueryData(meetupKey(orgId, meetup.id), data);
       void queryClient.invalidateQueries({
-        queryKey: ["meetup", orgId, meetup.id],
+        queryKey: meetupKey(orgId, meetup.id),
       });
-      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
-      void queryClient.invalidateQueries({
-        queryKey: meetupStatsKey(orgId, meetup.id),
-      });
-      // Finalizing turns pending RSVPs into no-shows, reopening turns them back.
-      void queryClient.invalidateQueries({
-        queryKey: guestMeetupsOrgKey(orgId),
-      });
+      void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
+      // Finalizing turns pending RSVPs into no-shows, reopening turns them
+      // back, and only finalized meetups count in the org statistics.
+      invalidateMeetupGuests(queryClient, orgId, meetup.id);
       toast.success(
         t(reopening ? "meetupReopenedToast" : "meetupFinalizedToast").replace(
           "{0}",

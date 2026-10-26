@@ -292,6 +292,34 @@ export interface paths {
     patch: operations["unban_guest_organizations__org_id__guests__guest_id__unban_patch"];
     trace?: never;
   };
+  "/organizations/{org_id}/geocode": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search addresses in Argentina to set a meetup's location
+     * @description Proxies the query to Photon (OpenStreetMap data), biased toward Buenos
+     *     Aires, and returns at most 5 matches in Argentina, best first. Results
+     *     in other countries are dropped. The query is trimmed before the length
+     *     check, so 3 to 200 characters of real text are required.
+     *
+     *     Photon is called at most once per second per process; concurrent
+     *     searches wait their turn. Returns 504 if Photon does not respond in
+     *     time and 502 if it fails or answers with something unreadable; setting
+     *     a location by hand is unaffected.
+     */
+    get: operations["geocode_address_organizations__org_id__geocode_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/staff/": {
     parameters: {
       query?: never;
@@ -1004,6 +1032,38 @@ export interface paths {
     patch: operations["enable_payment_requirement_organizations__org_id__meetups__meetup_id__enable_payment_patch"];
     trace?: never;
   };
+  "/organizations/{org_id}/meetups/{meetup_id}/location": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Set or clear the venue of a meetup (org admin only)
+     * @description Set the venue of a meetup (label, latitude and longitude together) or
+     *     clear it by sending all three as null.
+     *
+     *     Allowed on finalized meetups: the venue is descriptive metadata and does
+     *     not affect check-ins or payments. Returns 422 if the fields are not set
+     *     or cleared together, or are out of range.
+     *
+     *     Weather: when the coordinates change or are cleared, the stored weather
+     *     is deleted in the same commit (it described the old place). If the meetup
+     *     is then ready for weather (see GET .../weather), it is fetched inline.
+     *     A provider failure is logged and ignored: this route still returns 200
+     *     and the weather worker retries later. A label-only change keeps the
+     *     stored weather.
+     */
+    patch: operations["update_meetup_location_organizations__org_id__meetups__meetup_id__location_patch"];
+    trace?: never;
+  };
   "/organizations/{org_id}/meetups/{meetup_id}/disable-payment": {
     parameters: {
       query?: never;
@@ -1072,6 +1132,58 @@ export interface paths {
      *     Returns 409 if the meetup is not finalized.
      */
     patch: operations["unfinalize_meetup_organizations__org_id__meetups__meetup_id__unfinalize_patch"];
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/weather": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Weather of a meetup (org member)
+     * @description Weather during the first 6 hours of a meetup, plus where it stands.
+     *
+     *     status is NO_LOCATION without coordinates, OK when a row exists, PENDING
+     *     while the window is not over plus 2 hours, otherwise NOT_FETCHED (an org
+     *     admin can fetch it via POST .../weather/refresh). weather is null unless
+     *     status is OK; ready is true once the meetup has coordinates and its
+     *     window ended at least 2 hours ago.
+     */
+    get: operations["get_meetup_weather_organizations__org_id__meetups__meetup_id__weather_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/meetups/{meetup_id}/weather/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Fetch the weather of a meetup again (org admin only)
+     * @description Fetch the weather from Open-Meteo and overwrite the stored snapshot.
+     *
+     *     Returns 409 when the meetup has no location, or before the weather is
+     *     available (8 hours after the event starts; the message gives the time).
+     *     Returns 504 when the provider does not respond in time, and 502 when it
+     *     has no data for that place and time or is otherwise unavailable; the
+     *     stored snapshot, if any, is left untouched.
+     */
+    post: operations["refresh_meetup_weather_organizations__org_id__meetups__meetup_id__weather_refresh_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/organizations/{org_id}/events/": {
@@ -1170,6 +1282,125 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/attendance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Attendance of finalized meetups in a period */
+    get: operations["get_attendance_stats_organizations__org_id__stats_attendance_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/stats/arrivals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Arrival times and sign-up lead time of finalized meetups */
+    get: operations["get_arrival_stats_organizations__org_id__stats_arrivals_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/stats/no-shows": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Who signs up for finalized meetups and does not come */
+    get: operations["get_no_show_stats_organizations__org_id__stats_no_shows_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/stats/demographics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Gender and age of the people who attend finalized meetups */
+    get: operations["get_demographic_stats_organizations__org_id__stats_demographics_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/stats/retention": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** New and returning guests of finalized meetups */
+    get: operations["get_retention_stats_organizations__org_id__stats_retention_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/stats/operations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Door operations of finalized meetups: guest types, payments, check-ins and bans */
+    get: operations["get_operations_stats_organizations__org_id__stats_operations_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{org_id}/stats/weather": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Rain and temperature against the attendance of finalized meetups */
+    get: operations["get_weather_stats_organizations__org_id__stats_weather_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/": {
     parameters: {
       query?: never;
@@ -1256,6 +1487,18 @@ export interface components {
       role: string;
     };
     /**
+     * AgeGroupPublic
+     * @description One age group of attendances, keyed by a StatsAgeBucket. attended_share
+     *     is null when nobody attended.
+     */
+    AgeGroupPublic: {
+      key: components["schemas"]["StatsAgeBucket"];
+      /** Attended */
+      attended: number;
+      /** Attended Share */
+      attended_share: number | null;
+    };
+    /**
      * ApproveUserRequest
      * @description Request body for approving or revoking a user's access.
      *
@@ -1265,6 +1508,65 @@ export interface components {
     ApproveUserRequest: {
       /** Is Approved */
       is_approved: boolean;
+    };
+    /**
+     * ArrivalBucketPublic
+     * @description Arrivals in one 15 minute bucket starting start_minute minutes from the
+     *     meetup start (negative = before). local_time is "HH:MM" for one meetup, null otherwise.
+     */
+    ArrivalBucketPublic: {
+      /** Start Minute */
+      start_minute: number;
+      /** Local Time */
+      local_time: string | null;
+      /** Arrivals */
+      arrivals: number;
+    };
+    /**
+     * ArrivalStatsPublic
+     * @description When people arrive and how far ahead they signed up, with the figures to compare against.
+     */
+    ArrivalStatsPublic: {
+      /** Curve */
+      curve: components["schemas"]["ArrivalBucketPublic"][];
+      summary: components["schemas"]["ArrivalSummaryPublic"];
+      /** Lead Time */
+      lead_time: components["schemas"]["LeadTimeRowPublic"][];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["ArrivalSummaryPublic"] | null;
+    };
+    /**
+     * ArrivalSummaryPublic
+     * @description *_minutes are offsets from the meetup start (negative = before);
+     *     *_local_time are "HH:MM" of the local clock, counted from midnight starting
+     *     each meetup's night (a start before noon belongs to the night before).
+     *     Over several meetups the offset and clock figures are computed
+     *     separately, so they need not line up when meetups start at different
+     *     hours. peak is the busiest bucket of the curve; peak_local_time
+     *     is the start of the busiest local quarter hour. Means are rounded to the
+     *     minute. arrivals counts the arrivals from 120 minutes before to 720
+     *     minutes after the start; excluded_arrivals counts those outside that
+     *     window, which no other field includes. The optional fields are null when
+     *     nobody arrived inside the window.
+     */
+    ArrivalSummaryPublic: {
+      /** Arrivals */
+      arrivals: number;
+      /** Excluded Arrivals */
+      excluded_arrivals: number;
+      peak: components["schemas"]["ArrivalBucketPublic"] | null;
+      /** Peak Local Time */
+      peak_local_time: string | null;
+      /** Mean Minutes */
+      mean_minutes: number | null;
+      /** P90 Minutes */
+      p90_minutes: number | null;
+      /** Mean Local Time */
+      mean_local_time: string | null;
+      /** P90 Local Time */
+      p90_local_time: string | null;
+      /** First Hour Share */
+      first_hour_share: number | null;
     };
     /**
      * AttendanceStats
@@ -1281,12 +1583,71 @@ export interface components {
       walkin_count: number;
     };
     /**
+     * AttendanceStatsPublic
+     * @description Attendance per meetup and in total, with the figures to compare against.
+     */
+    AttendanceStatsPublic: {
+      /** Meetups */
+      meetups: components["schemas"]["MeetupAttendanceRowPublic"][];
+      totals: components["schemas"]["AttendanceTotalsPublic"];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["AttendanceTotalsPublic"] | null;
+    };
+    /**
+     * AttendanceTotalsPublic
+     * @description Sums over several meetups. A rate or average with nothing to divide by is null.
+     */
+    AttendanceTotalsPublic: {
+      /** Events */
+      events: number;
+      /** Signed Up */
+      signed_up: number;
+      /** Cancelled */
+      cancelled: number;
+      /** Attended */
+      attended: number;
+      /** Walkin */
+      walkin: number;
+      /** No Show */
+      no_show: number;
+      /** Cancellation Rate */
+      cancellation_rate: number | null;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Avg Signed Up Per Event */
+      avg_signed_up_per_event: number | null;
+      /** Avg Attended Per Event */
+      avg_attended_per_event: number | null;
+    };
+    /**
      * BanGuestRequest
      * @description Request body for banning a guest within an organization.
      */
     BanGuestRequest: {
       /** Reason */
       reason: string;
+    };
+    /**
+     * BanRowPublic
+     * @description A ban logged in scope. reason and actor_username are null when not recorded or the actor was deleted.
+     */
+    BanRowPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Reason */
+      reason: string | null;
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string;
+      /** Actor Username */
+      actor_username: string | null;
     };
     /**
      * BannedGuestListResponse
@@ -1355,6 +1716,23 @@ export interface components {
       client_secret?: string | null;
     };
     /**
+     * BusiestSlotPublic
+     * @description The quarter hour with the most check-ins; local_time is its "HH:MM" start in Buenos Aires.
+     */
+    BusiestSlotPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Meetup Name */
+      meetup_name: string;
+      /** Local Time */
+      local_time: string;
+      /** Checkins */
+      checkins: number;
+    };
+    /**
      * CancellationStats
      * @description Counts describing the cancelled RSVP set for a meetup.
      */
@@ -1390,6 +1768,20 @@ export interface components {
       username: string;
     };
     /**
+     * CohortRowPublic
+     * @description Guests whose first time was in month ("YYYY-MM", Buenos Aires). retention[i] is the
+     *     share of them who attended in month i + 1 after it. Months that have not happened
+     *     yet are left out, so the list can be shorter than 12.
+     */
+    CohortRowPublic: {
+      /** Month */
+      month: string;
+      /** Size */
+      size: number;
+      /** Retention */
+      retention: number[];
+    };
+    /**
      * CreateGuestRequest
      * @description Request body for creating a guest by Mazmo username (POST /guests/mazmo).
      */
@@ -1411,6 +1803,31 @@ export interface components {
       displayname: string;
       /** Instagram Username */
       instagram_username?: string | null;
+    };
+    /**
+     * DemographicStatsPublic
+     * @description Gender and age of the people who attend, with the figures to compare against. One RSVP counts once.
+     */
+    DemographicStatsPublic: {
+      /** Gender */
+      gender: components["schemas"]["GenderGroupPublic"][];
+      /** Age */
+      age: components["schemas"]["AgeGroupPublic"][];
+      summary: components["schemas"]["DemographicSummaryPublic"];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["DemographicSummaryPublic"] | null;
+    };
+    /**
+     * DemographicSummaryPublic
+     * @description The figures compared between two scopes. median_age and known_age_share are null when nobody attended.
+     */
+    DemographicSummaryPublic: {
+      /** Attended */
+      attended: number;
+      /** Median Age */
+      median_age: number | null;
+      /** Known Age Share */
+      known_age_share: number | null;
     };
     /**
      * DisableUserRequest
@@ -1507,6 +1924,40 @@ export interface components {
       meetup_id?: string | null;
       /** Reason */
       reason?: string | null;
+    };
+    /**
+     * FrequencyRowPublic
+     * @description Unique guests with a number of attendances in the period, in one StatsFrequencyBucket.
+     */
+    FrequencyRowPublic: {
+      bucket: components["schemas"]["StatsFrequencyBucket"];
+      /** Guests */
+      guests: number;
+    };
+    /**
+     * GenderGroupPublic
+     * @description One gender group of attendances. key is a Mazmo gender code (null:
+     *     unknown). attended_share is null when nobody attended.
+     */
+    GenderGroupPublic: {
+      /** Key */
+      key: string | null;
+      /** Attended */
+      attended: number;
+      /** Attended Share */
+      attended_share: number | null;
+    };
+    /**
+     * GeocodeResult
+     * @description One address match from the geocoding search.
+     */
+    GeocodeResult: {
+      /** Label */
+      label: string;
+      /** Latitude */
+      latitude: number;
+      /** Longitude */
+      longitude: number;
     };
     /**
      * GuestAttendanceStatus
@@ -1728,6 +2179,17 @@ export interface components {
      */
     GuestType: "NORMAL" | "INVITED" | "VENDOR" | "STAFF";
     /**
+     * GuestTypeRowPublic
+     * @description Attended RSVPs of one guest type; share is of all attended, null when nobody attended.
+     */
+    GuestTypeRowPublic: {
+      guest_type: components["schemas"]["GuestType"];
+      /** Attended */
+      attended: number;
+      /** Share */
+      share: number | null;
+    };
+    /**
      * GuestTypeStats
      * @description Per-category guest counts for a meetup, excluding cancelled RSVPs.
      */
@@ -1800,6 +2262,41 @@ export interface components {
       };
     };
     /**
+     * LapsedRegularPublic
+     * @description A guest with several attendances before the period and none in it.
+     */
+    LapsedRegularPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Attended Before */
+      attended_before: number;
+      /**
+       * Last Attended
+       * Format: date-time
+       */
+      last_attended: string;
+    };
+    /**
+     * LeadTimeRowPublic
+     * @description Audience sign-ups made in one lead-time bucket. no_show_rate is null with nobody to divide by.
+     */
+    LeadTimeRowPublic: {
+      bucket: components["schemas"]["StatsLeadTimeBucket"];
+      /** Signed Up */
+      signed_up: number;
+      /** Cancelled */
+      cancelled: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
      * LinkMazmoRequest
      * @description Request body for linking an existing guest to a Mazmo account.
      */
@@ -1809,6 +2306,34 @@ export interface components {
        * @description Mazmo username to link
        */
       username: string;
+    };
+    /**
+     * MeetupAttendanceRowPublic
+     * @description Audience attendance of one finalized meetup. attended includes walkin.
+     */
+    MeetupAttendanceRowPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Signed Up */
+      signed_up: number;
+      /** Cancelled */
+      cancelled: number;
+      /** Attended */
+      attended: number;
+      /** Walkin */
+      walkin: number;
+      /** No Show */
+      no_show: number;
     };
     /**
      * MeetupCreate
@@ -1866,6 +2391,44 @@ export interface components {
       meetups: components["schemas"]["MeetupPublic"][];
     };
     /**
+     * MeetupLocationUpdate
+     * @description Request body for setting or clearing a meetup's location.
+     *
+     *     All three keys are required. Send them all null to clear the location,
+     *     or all set to store it: a label of 1..255 characters (trimmed), a latitude
+     *     in [-90, 90] and a longitude in [-180, 180].
+     */
+    MeetupLocationUpdate: {
+      /** Location Label */
+      location_label: string | null;
+      /** Latitude */
+      latitude: number | null;
+      /** Longitude */
+      longitude: number | null;
+    };
+    /**
+     * MeetupNewReturningPublic
+     * @description Unique attendees of one finalized meetup: new ones had their first time there.
+     */
+    MeetupNewReturningPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** New */
+      new: number;
+      /** Returning */
+      returning: number;
+    };
+    /**
      * MeetupPublic
      * @description Public representation of a meetup.
      *
@@ -1893,6 +2456,12 @@ export interface components {
       finalized_at: string | null;
       /** Requires Payment */
       requires_payment: boolean;
+      /** Location Label */
+      location_label: string | null;
+      /** Latitude */
+      latitude: number | null;
+      /** Longitude */
+      longitude: number | null;
     };
     /**
      * MeetupStatsPublic
@@ -1903,6 +2472,242 @@ export interface components {
       cancellations: components["schemas"]["CancellationStats"];
       guest_types: components["schemas"]["GuestTypeStats"];
       payment: components["schemas"]["PaymentStats"];
+    };
+    /**
+     * MeetupWeatherPublic
+     * @description Weather during the first 6 hours of a meetup, from Open-Meteo.
+     *
+     *     Each float summarizes the hours of the window [floor_hour(date), date + 6h). A null
+     *     means the provider had no value for that series anywhere in the window
+     *     (shown as "no data"), never zero:
+     *     - avg_temperature, avg_apparent_temperature: degrees Celsius, mean.
+     *     - total_precipitation_mm: millimetres, sum. Null when unknown.
+     *     - max_wind_kmh: km/h, highest hour.
+     *     - rained: total_precipitation_mm >= 0.2. Null exactly when
+     *       total_precipitation_mm is null: unknown is not the same as dry.
+     *
+     *     fetched_at is when the snapshot was taken; source names the provider
+     *     dataset. The raw hourly arrays are stored but not returned.
+     */
+    MeetupWeatherPublic: {
+      /** Avg Temperature */
+      avg_temperature: number | null;
+      /** Avg Apparent Temperature */
+      avg_apparent_temperature: number | null;
+      /** Total Precipitation Mm */
+      total_precipitation_mm: number | null;
+      /** Max Wind Kmh */
+      max_wind_kmh: number | null;
+      /** Rained */
+      rained: boolean | null;
+      /**
+       * Fetched At
+       * Format: date-time
+       */
+      fetched_at: string;
+      /** Source */
+      source: string;
+    };
+    /**
+     * MeetupWeatherStatusPublic
+     * @description Weather of a meetup plus where it stands.
+     *
+     *     status is OK (weather is set), NO_LOCATION (no coordinates), PENDING
+     *     (located, but the window is not over plus 2 hours) or NOT_FETCHED (ready,
+     *     no row yet). weather is null unless status is OK. ready is true when the
+     *     meetup has coordinates and its window ended at least 2 hours ago, whether
+     *     or not a row exists.
+     */
+    MeetupWeatherStatusPublic: {
+      status: components["schemas"]["WeatherStatus"];
+      weather: components["schemas"]["MeetupWeatherPublic"] | null;
+      /** Ready */
+      ready: boolean;
+    };
+    /**
+     * NoShowAgeGroupPublic
+     * @description Expected RSVPs and no-shows of one age group.
+     */
+    NoShowAgeGroupPublic: {
+      key: components["schemas"]["StatsAgeBucket"];
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowGenderGroupPublic
+     * @description Expected RSVPs and no-shows of one gender group. key is a Mazmo gender code (null: unknown).
+     */
+    NoShowGenderGroupPublic: {
+      /** Key */
+      key: string | null;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowGuestPublic
+     * @description One guest who missed meetups: expected RSVPs, attendances (expected = attended
+     *     + no_show) and the start of the last meetup they missed.
+     */
+    NoShowGuestPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Expected */
+      expected: number;
+      /** Attended */
+      attended: number;
+      /** No Show */
+      no_show: number;
+      /**
+       * Last No Show
+       * Format: date-time
+       */
+      last_no_show: string;
+    };
+    /**
+     * NoShowHistoryGroupPublic
+     * @description Expected RSVPs and no-shows of guests who had, or had not, come to an earlier meetup of the org.
+     */
+    NoShowHistoryGroupPublic: {
+      key: components["schemas"]["StatsVisitHistory"];
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowMeetupRowPublic
+     * @description Expected RSVPs and no-shows of one finalized meetup.
+     */
+    NoShowMeetupRowPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowStatsPublic
+     * @description Who signs up and does not come, and what those RSVPs have in common.
+     *     Period mode: meetups lists the period's finalized meetups and guests the
+     *     guests with 2 or more no-shows in it. One-meetup mode: meetups is empty
+     *     and guests lists everyone who missed that meetup, counted over all time.
+     *     guests holds the first 50, most no-shows first; guests_total counts them all.
+     */
+    NoShowStatsPublic: {
+      summary: components["schemas"]["NoShowSummaryPublic"];
+      /** Meetups */
+      meetups: components["schemas"]["NoShowMeetupRowPublic"][];
+      /** Gender */
+      gender: components["schemas"]["NoShowGenderGroupPublic"][];
+      /** Age */
+      age: components["schemas"]["NoShowAgeGroupPublic"][];
+      /** History */
+      history: components["schemas"]["NoShowHistoryGroupPublic"][];
+      /** Lead Time */
+      lead_time: components["schemas"]["LeadTimeRowPublic"][];
+      /** Guests */
+      guests: components["schemas"]["NoShowGuestPublic"][];
+      /** Guests Total */
+      guests_total: number;
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["NoShowSummaryPublic"] | null;
+    };
+    /**
+     * NoShowSummaryPublic
+     * @description Expected audience RSVPs (signed up, not cancelled) and no-shows in scope.
+     *     repeat_guests counts the guests with 2 or more no-shows: in the period,
+     *     or for one meetup, those of its no-shows who reach 2 over all time. As a
+     *     one-meetup comparison it holds the period's totals, so only no_show_rate
+     *     compares like with like there.
+     */
+    NoShowSummaryPublic: {
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Repeat Guests */
+      repeat_guests: number;
+    };
+    /**
+     * OperationsPaymentStatsPublic
+     * @description Attended RSVPs of the meetups that require payment. Only NORMAL guests pay; every other
+     *     type is exempt. paid_share is paid / (paid + pending), null when nobody owes entry.
+     */
+    OperationsPaymentStatsPublic: {
+      /** Paying Events */
+      paying_events: number;
+      /** Paid */
+      paid: number;
+      /** Pending */
+      pending: number;
+      /** Exempt */
+      exempt: number;
+      /** Cancelled But Paid */
+      cancelled_but_paid: number;
+      /** Paid Share */
+      paid_share: number | null;
+    };
+    /**
+     * OperationsStatsPublic
+     * @description Door operations over every guest type, with the figures to compare against. payments is
+     *     null when no meetup in scope requires payment; ban_list holds the newest 20 of summary.bans.
+     */
+    OperationsStatsPublic: {
+      summary: components["schemas"]["OperationsSummaryPublic"];
+      /** Guest Types */
+      guest_types: components["schemas"]["GuestTypeRowPublic"][];
+      payments: components["schemas"]["OperationsPaymentStatsPublic"] | null;
+      /** Staff */
+      staff: components["schemas"]["StaffCheckinsPublic"][];
+      busiest: components["schemas"]["BusiestSlotPublic"] | null;
+      /** Ban List */
+      ban_list: components["schemas"]["BanRowPublic"][];
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["OperationsSummaryPublic"] | null;
+    };
+    /**
+     * OperationsSummaryPublic
+     * @description The figures compared between two scopes. avg_peak_checkins is the mean of each meetup's busiest quarter hour.
+     */
+    OperationsSummaryPublic: {
+      /** Attended */
+      attended: number;
+      /** Paid Share */
+      paid_share: number | null;
+      /** Avg Peak Checkins */
+      avg_peak_checkins: number | null;
+      /** Bans */
+      bans: number;
     };
     /**
      * OrgCreate
@@ -2054,6 +2859,44 @@ export interface components {
       username: string;
     };
     /**
+     * RetentionStatsPublic
+     * @description New and returning guests, cohorts, frequency and lapsed regulars, with the figures to
+     *     compare against. For one meetup the lists are empty and lapsed_total is null; for a
+     *     period without a start, lapsed is empty and lapsed_total is null.
+     */
+    RetentionStatsPublic: {
+      summary: components["schemas"]["RetentionSummaryPublic"];
+      /** Meetups */
+      meetups: components["schemas"]["MeetupNewReturningPublic"][];
+      /** Cohorts */
+      cohorts: components["schemas"]["CohortRowPublic"][];
+      /** Frequency */
+      frequency: components["schemas"]["FrequencyRowPublic"][];
+      /** Lapsed */
+      lapsed: components["schemas"]["LapsedRegularPublic"][];
+      /** Lapsed Total */
+      lapsed_total: number | null;
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["RetentionSummaryPublic"] | null;
+    };
+    /**
+     * RetentionSummaryPublic
+     * @description Unique guests in scope. new_share and first_timer_return_rate are null with nothing to
+     *     divide by; the return rate counts later attendances even after the period ends.
+     */
+    RetentionSummaryPublic: {
+      /** Attendees */
+      attendees: number;
+      /** New Guests */
+      new_guests: number;
+      /** Returning */
+      returning: number;
+      /** New Share */
+      new_share: number | null;
+      /** First Timer Return Rate */
+      first_timer_return_rate: number | null;
+    };
+    /**
      * RolePublic
      * @description Public representation of a user role.
      *
@@ -2132,6 +2975,18 @@ export interface components {
      */
     ServiceStatus: "healthy" | "unhealthy" | "degraded";
     /**
+     * StaffCheckinsPublic
+     * @description Check-ins by one staff user. user_id and username are null for check-ins with no recorded checker.
+     */
+    StaffCheckinsPublic: {
+      /** User Id */
+      user_id: number | null;
+      /** Username */
+      username: string | null;
+      /** Checkins */
+      checkins: number;
+    };
+    /**
      * StaffRegisterRequest
      * @description Request body for staff registration.
      *
@@ -2144,6 +2999,66 @@ export interface components {
       /** Password */
       password: string;
     };
+    /**
+     * StatsAgeBucket
+     * @description Age range of an attendee, from the Mazmo profile. UNKNOWN covers missing and implausible ages.
+     * @enum {string}
+     */
+    StatsAgeBucket:
+      | "AGE_18_24"
+      | "AGE_25_29"
+      | "AGE_30_34"
+      | "AGE_35_39"
+      | "AGE_40_49"
+      | "AGE_50_PLUS"
+      | "UNKNOWN";
+    /**
+     * StatsComparisonKind
+     * @description What an org statistics block is compared against.
+     *
+     *     PREVIOUS_PERIOD: the period of the same length right before the selected one.
+     *     PERIOD_AVERAGE:  one meetup compared with the whole selected period.
+     * @enum {string}
+     */
+    StatsComparisonKind: "PREVIOUS_PERIOD" | "PERIOD_AVERAGE";
+    /**
+     * StatsFrequencyBucket
+     * @description How many times a guest attended in the selected period.
+     * @enum {string}
+     */
+    StatsFrequencyBucket: "ONE" | "TWO" | "THREE_FIVE" | "SIX_PLUS";
+    /**
+     * StatsLeadTimeBucket
+     * @description How many whole local days before the meetup an RSVP was made.
+     * @enum {string}
+     */
+    StatsLeadTimeBucket:
+      | "SAME_DAY"
+      | "ONE_DAY"
+      | "TWO_THREE"
+      | "FOUR_SEVEN"
+      | "EIGHT_FOURTEEN"
+      | "FIFTEEN_PLUS";
+    /**
+     * StatsTemperatureBand
+     * @description Average temperature of a meetup's first 6 hours, in degrees Celsius. The lower bound is inclusive.
+     * @enum {string}
+     */
+    StatsTemperatureBand:
+      | "BELOW_10"
+      | "FROM_10_TO_15"
+      | "FROM_15_TO_20"
+      | "FROM_20_TO_25"
+      | "FROM_25";
+    /**
+     * StatsVisitHistory
+     * @description Whether a guest had come before when they signed up for a meetup.
+     *
+     *     FIRST_TIME: no attendance at an earlier finalized meetup of the org.
+     *     RETURNING:  at least one.
+     * @enum {string}
+     */
+    StatsVisitHistory: "FIRST_TIME" | "RETURNING";
     /**
      * SyncResponse
      * @description Response after syncing guests from Mazmo.
@@ -2158,6 +3073,19 @@ export interface components {
       skipped: number;
       /** Total In Db */
       total_in_db: number;
+    };
+    /**
+     * TemperatureBandRowPublic
+     * @description Meetups whose average temperature falls in one band; figures as in WeatherGroupPublic.
+     */
+    TemperatureBandRowPublic: {
+      band: components["schemas"]["StatsTemperatureBand"];
+      /** Events */
+      events: number;
+      /** Avg Attended */
+      avg_attended: number | null;
+      /** No Show Rate */
+      no_show_rate: number | null;
     };
     /**
      * TokenResponse
@@ -2271,6 +3199,114 @@ export interface components {
       /** Code */
       code: string;
     };
+    /**
+     * WeatherEventPublic
+     * @description The weather standing of one meetup (as GET .../meetups/{id}/weather) plus its attendance.
+     */
+    WeatherEventPublic: {
+      status: components["schemas"]["WeatherStatus"];
+      weather: components["schemas"]["MeetupWeatherPublic"] | null;
+      /** Ready */
+      ready: boolean;
+      /** Attended */
+      attended: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * WeatherGroupPublic
+     * @description Meetups that share a weather condition. avg_attended is the mean attended per
+     *     event; no_show_rate is pooled over the group (all no-shows over all expected
+     *     guests, not an average of rates). Both are null for a group with no events.
+     */
+    WeatherGroupPublic: {
+      /** Events */
+      events: number;
+      /** Avg Attended */
+      avg_attended: number | null;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * WeatherMeetupRowPublic
+     * @description One finalized meetup with its attendance and weather. The weather fields are
+     *     null without a value: all three when the meetup has no weather row, and
+     *     rained and total_precipitation_mm when the provider had no precipitation data.
+     *     has_weather is true when the meetup has a weather row, so false exactly for
+     *     the meetups counted in without_weather.
+     */
+    WeatherMeetupRowPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Attended */
+      attended: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Avg Temperature */
+      avg_temperature: number | null;
+      /** Rained */
+      rained: boolean | null;
+      /** Total Precipitation Mm */
+      total_precipitation_mm: number | null;
+      /** Has Weather */
+      has_weather: boolean;
+    };
+    /**
+     * WeatherStatsPublic
+     * @description How weather relates to attendance, over finalized meetups.
+     *
+     *     Aggregate mode (no meetup_id): event is null. meetups lists every meetup in
+     *     the period by date ascending. rainy is rained true and dry is rained false;
+     *     a meetup whose weather row has no precipitation data (rained null) joins
+     *     neither. temperature_bands always has all five bands in order, lower bound
+     *     inclusive, over avg_temperature; a meetup whose row has no temperature joins
+     *     none. without_weather counts only the meetups with no weather row at all;
+     *     a row with a null value is not counted there.
+     *
+     *     One-event mode (meetup_id): event is set; meetups, temperature_bands are
+     *     empty, rainy and dry are null and without_weather is 0.
+     *
+     *     The tab compares groups of events against each other instead of against
+     *     another period, so comparison_kind and comparison are always null.
+     */
+    WeatherStatsPublic: {
+      event: components["schemas"]["WeatherEventPublic"] | null;
+      /** Meetups */
+      meetups: components["schemas"]["WeatherMeetupRowPublic"][];
+      rainy: components["schemas"]["WeatherGroupPublic"] | null;
+      dry: components["schemas"]["WeatherGroupPublic"] | null;
+      /** Temperature Bands */
+      temperature_bands: components["schemas"]["TemperatureBandRowPublic"][];
+      /** Without Weather */
+      without_weather: number;
+      /** Comparison Kind */
+      comparison_kind: null;
+      /** Comparison */
+      comparison: null;
+    };
+    /**
+     * WeatherStatus
+     * @description Where the weather of a meetup stands.
+     *
+     *     OK:           a weather row exists.
+     *     NO_LOCATION:  the meetup has no coordinates, so there is nothing to look up.
+     *     PENDING:      it has a location but its window is not over yet, plus the
+     *                   provider delay (see is_weather_ready).
+     *     NOT_FETCHED:  ready, but no row yet (the worker has not got to it, or the
+     *                   provider failed); an org admin can refresh.
+     * @enum {string}
+     */
+    WeatherStatus: "OK" | "NO_LOCATION" | "PENDING" | "NOT_FETCHED";
   };
   responses: never;
   parameters: never;
@@ -3209,6 +4245,85 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  geocode_address_organizations__org_id__geocode_get: {
+    parameters: {
+      query: {
+        /** @description Address text to search for */
+        q: string;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Up to 5 matching addresses in Argentina, best match first */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GeocodeResult"][];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Address search unavailable */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Address search timed out */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };
@@ -5104,6 +6219,69 @@ export interface operations {
       };
     };
   };
+  update_meetup_location_organizations__org_id__meetups__meetup_id__location_patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MeetupLocationUpdate"];
+      };
+    };
+    responses: {
+      /** @description Meetup location updated (also allowed on finalized meetups) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
   disable_payment_requirement_organizations__org_id__meetups__meetup_id__disable_payment_patch: {
     parameters: {
       query?: never;
@@ -5304,6 +6482,151 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_meetup_weather_organizations__org_id__meetups__meetup_id__weather_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weather of the meetup and where it stands */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupWeatherStatusPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Account not approved or disabled */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  refresh_meetup_weather_organizations__org_id__meetups__meetup_id__weather_refresh_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        org_id: string;
+        meetup_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weather fetched again and stored over the previous snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MeetupWeatherPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Weather cannot be refreshed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Weather provider error */
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Weather provider timed out */
+      504: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };
@@ -5622,6 +6945,461 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_attendance_stats_organizations__org_id__stats_attendance_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Attendance of finalized meetups in the period */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_arrival_stats_organizations__org_id__stats_arrivals_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Arrival times and sign-up lead time of finalized meetups in the period */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ArrivalStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_no_show_stats_organizations__org_id__stats_no_shows_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Who signed up for finalized meetups in the period and did not come */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoShowStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_demographic_stats_organizations__org_id__stats_demographics_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Gender and age of the people who attended finalized meetups in the period */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DemographicStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_retention_stats_organizations__org_id__stats_retention_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description New and returning guests, cohorts, frequency and lapsed regulars of finalized meetups */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetentionStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_operations_stats_organizations__org_id__stats_operations_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Door operations of finalized meetups: guest types, payments, check-ins and bans */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OperationsStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_weather_stats_organizations__org_id__stats_weather_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Weather against the attendance of finalized meetups */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WeatherStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
     };

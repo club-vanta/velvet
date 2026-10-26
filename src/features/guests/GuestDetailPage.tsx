@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/auth/AuthContext";
-import { useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/lib/org";
 import { useLanguage } from "@/lib/i18n";
 import { GuestProfile } from "./GuestProfile";
 import {
@@ -21,11 +20,9 @@ type Dialog = "edit" | "link" | "unlink" | "ban";
 export function GuestDetailPage() {
   const { t } = useLanguage();
   const { guestId } = useParams<{ guestId: string }>();
-  const { user } = useAuth();
   const { activeOrg } = useOrg();
   const orgId = activeOrg?.org_id ?? "";
-  const isOrgAdmin =
-    user?.role.name === "SITE_ADMIN" || activeOrg?.role === "ADMIN";
+  const isOrgAdmin = useIsOrgAdmin();
   const [dialog, setDialog] = useState<{ kind: Dialog; guest: Guest } | null>(
     null,
   );

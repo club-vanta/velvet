@@ -1,29 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { StatCard } from "@/components/StatCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/hooks/useMeetupStats";
 import { cn } from "@/lib/utils";
-
-function StatCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      aria-label={title}
-      className="rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 space-y-2 sm:space-y-3 min-w-0"
-    >
-      <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
-}
 
 function StatRows({
   rows,

@@ -11,6 +11,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Building2,
+  ChartColumn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/api/client";
 import { useAuth } from "@/auth/AuthContext";
-import { useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/lib/org";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -100,8 +101,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
-  const isOrgAdmin = activeOrg?.role === "ADMIN";
-  const canSeeAdminNav = isSiteAdmin || isOrgAdmin;
+  const canSeeAdminNav = useIsOrgAdmin();
 
   function toggleSidebar() {
     setSidebarOpen((prev) => {
@@ -125,6 +125,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
       adminOnly: false,
     },
     { label: t("navGuests"), href: "/guests", icon: Users, adminOnly: false },
+    {
+      label: t("navStats"),
+      shortLabel: t("navStatsShort"),
+      href: "/stats",
+      icon: ChartColumn,
+      adminOnly: true,
+    },
     {
       label: t("navStaff"),
       href: "/staff",

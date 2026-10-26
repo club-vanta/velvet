@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { extractApiError } from "@/api/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Banknote,
+  Check,
   Lock,
   LockOpen,
   RefreshCw,
@@ -48,9 +49,8 @@ import {
   PronounPill,
 } from "@/components/GuestBadges";
 import { GuestProfile } from "@/features/guests/GuestProfile";
-import { useAuth } from "@/auth/AuthContext";
 import { api } from "@/api/client";
-import { useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/lib/org";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
 import { meetupTiming } from "@/lib/meetupTiming";
 import {
@@ -63,24 +63,35 @@ import {
   type SortDir,
 } from "@/lib/guestListView";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { useAllGuests } from "@/hooks/useAllGuests";
 import { useGuestSearch } from "@/hooks/useGuestSearch";
 import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { ShowMoreButton } from "@/components/ListToolbar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useRelativeDay } from "@/hooks/useRelativeDay";
-import { isPaymentExempt } from "@/lib/guestType";
+import {
+  isGuestType,
+  isPaymentExempt,
+  PAYMENT_EXEMPT_REASON,
+} from "@/lib/guestType";
+import { useBannedGuests } from "@/hooks/useBannedGuests";
 import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
   meetupGuestsKey,
+  meetupKey,
+  meetupsKey,
 } from "@/lib/queryKeys";
 import { MeetupStats } from "./MeetupStats";
 import { GuestRowActions } from "./GuestRowActions";
 import { GuestListToolbar } from "./GuestListToolbar";
+import { GuestCard } from "./GuestCard";
+import { GuestStatusLine } from "./GuestStatusLine";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
+import { MeetupLocation } from "./MeetupLocation";
+import { MeetupWeather } from "./MeetupWeather";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -142,19 +153,83 @@ function SortableHead({
   );
 }
 
-function PaymentCell({
+// Why the guest pays no fee, falling back to a bare "Exempt" for a type the
+// API sends that this build does not know yet.
+function exemptReason(guestType: string): TranslationKey {
+  return isGuestType(guestType) && guestType !== "NORMAL"
+    ? PAYMENT_EXEMPT_REASON[guestType]
+    : "paymentExempt";
+}
+
+/**
+ * A low-key undo under a state, so it never competes with the next step.
+ * On a tinted line it takes the line's color through `className`, since
+ * muted grey on the tint falls under 4.5:1 in the light theme.
+ */
+function InlineUndo({
+  onClick,
+  className,
+  children,
+}: {
+  onClick: () => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      variant="link"
+      size="xs"
+      className={cn(
+        "h-auto px-0 text-xs text-muted-foreground hover:text-foreground",
+        className,
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+}
+
+/** Whether the guest is in: the badge, the arrival time and, if given, the undo. */
+function CheckInStatus({
+  guest,
+  onUndo,
+}: {
+  guest: MeetupGuest;
+  onUndo?: () => void;
+}) {
+  const { t } = useLanguage();
+  const { has_arrived, arrival_time } = guest.rsvp;
+
+  if (!has_arrived) return <Badge variant="secondary">{t("pending")}</Badge>;
+
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <Badge>{t("checkedIn")}</Badge>
+      {arrival_time && (
+        <p className="text-xs text-muted-foreground">
+          {formatDateTime(arrival_time)}
+        </p>
+      )}
+      {onUndo && <InlineUndo onClick={onUndo}>{t("undo")}</InlineUndo>}
+    </div>
+  );
+}
+
+/**
+ * Where the guest stands with the entrance fee: the badge, when it was paid
+ * and, for admins, the undo. "Mark paid" is the next step, so callers place
+ * it with the other actions.
+ */
+function PaymentStatus({
   guest,
   isExempt,
   isOrgAdmin,
-  onMarkPaid,
   onUndoPayment,
-  isFinalized,
 }: {
   guest: MeetupGuest;
   isExempt: boolean;
   isOrgAdmin: boolean;
-  isFinalized: boolean;
-  onMarkPaid: () => void;
   onUndoPayment: () => void;
 }) {
   const { t } = useLanguage();
@@ -164,62 +239,40 @@ function PaymentCell({
   // reclassified keeps "Undo payment" so a refund can be recorded.
   if (isExempt) {
     return (
-      <div className="space-y-0.5">
+      <div className="flex flex-col items-start gap-0.5">
         <Badge variant="outline" title={t("paymentExemptHint")}>
           {t("paymentExempt")}
         </Badge>
         {has_paid && (
-          <div className="flex items-center gap-1 flex-wrap text-xs text-muted-foreground">
-            <span>
+          <>
+            <p className="text-xs text-muted-foreground">
               {t("paidBeforeExempt")}
               {paid_at ? ` · ${formatDateTime(paid_at)}` : ""}
-            </span>
+            </p>
             {isOrgAdmin && (
-              <Button
-                variant="link"
-                size="xs"
-                className="h-auto px-0 text-xs"
-                onClick={onUndoPayment}
-              >
+              <InlineUndo onClick={onUndoPayment}>
                 {t("undoPayment")}
-              </Button>
+              </InlineUndo>
             )}
-          </div>
+          </>
         )}
       </div>
     );
   }
 
-  if (has_paid) {
-    return (
-      <div className="space-y-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge>{t("paid")}</Badge>
-          {isOrgAdmin && (
-            <Button variant="ghost" size="sm" onClick={onUndoPayment}>
-              {t("undoPayment")}
-            </Button>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {paid_at ? formatDateTime(paid_at) : ""}
-        </p>
-      </div>
-    );
-  }
+  if (!has_paid)
+    return <Badge variant="secondary">{t("paymentPending")}</Badge>;
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <Badge variant="secondary">{t("paymentPending")}</Badge>
+    <div className="flex flex-col items-start gap-0.5">
+      <Badge>{t("paid")}</Badge>
+      {paid_at && (
+        <p className="text-xs text-muted-foreground">
+          {formatDateTime(paid_at)}
+        </p>
+      )}
       {isOrgAdmin && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onMarkPaid}
-          disabled={isFinalized}
-        >
-          {t("markPaid")}
-        </Button>
+        <InlineUndo onClick={onUndoPayment}>{t("undoPayment")}</InlineUndo>
       )}
     </div>
   );
@@ -411,6 +464,31 @@ function CheckInBannedDialog({
 }) {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
+  const bannedQ = useBannedGuests(orgId);
+  const ban = bannedQ.data?.guests.find((g) => g.id === guest.guest.id);
+  const reasonHeadingId = useId();
+
+  // A cached list can predate a vant made on another device, so a missing
+  // guest only counts as "no reason" once the refetch has settled.
+  function renderBanReason() {
+    if (ban)
+      return (
+        <p className="break-words text-muted-foreground">{ban.banned_reason}</p>
+      );
+    if (bannedQ.isFetching)
+      return (
+        <Skeleton
+          role="status"
+          aria-label={t("banReasonLoading")}
+          className="h-4 w-48"
+        />
+      );
+    return (
+      <p className="text-muted-foreground">
+        {t(bannedQ.isError ? "banReasonUnavailable" : "banReasonMissing")}
+      </p>
+    );
+  }
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -453,6 +531,19 @@ function CheckInBannedDialog({
           </span>{" "}
           {t("bannedGuestDialogBody")}
         </p>
+        {/* The reason is what staff weigh before letting the guest in, so it
+            gets its own section. Loading or failing never blocks the choice. */}
+        <section
+          aria-labelledby={reasonHeadingId}
+          className="space-y-1 border-t pt-3 text-sm"
+        >
+          <h3 id={reasonHeadingId} className="font-medium">
+            {t("banReasonLabel")}
+          </h3>
+          {/* Polite, so the reason is read out when it arrives after the
+              dialog has opened. */}
+          <div aria-live="polite">{renderBanReason()}</div>
+        </section>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             {t("cancel")}
@@ -500,9 +591,9 @@ function PaymentRequirementDialog({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["meetup", orgId, meetupId],
+        queryKey: meetupKey(orgId, meetupId),
       });
-      void queryClient.invalidateQueries({ queryKey: ["meetups", orgId] });
+      void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
       toast.success(t("paymentRequirementUpdated"));
       onClose();
     },
@@ -679,9 +770,7 @@ export function MeetupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { activeOrg } = useOrg();
   const orgId = activeOrg?.org_id ?? "";
-  const { user } = useAuth();
-  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
-  const isOrgAdmin = isSiteAdmin || activeOrg?.role === "ADMIN";
+  const isOrgAdmin = useIsOrgAdmin();
   const queryClient = useQueryClient();
   // The table needs about 1000px; below xl (with the sidebar open) it would
   // need sideways scrolling to reach "Check in", so cards are used instead.
@@ -721,7 +810,7 @@ export function MeetupDetailPage() {
   }
 
   const meetupQ = useQuery({
-    queryKey: ["meetup", orgId, id],
+    queryKey: meetupKey(orgId, id!),
     queryFn: async () => {
       const { data, error } = await api.GET(
         "/organizations/{org_id}/meetups/{meetup_id}",
@@ -825,7 +914,8 @@ export function MeetupDetailPage() {
     };
   }
 
-  function renderIdentity(mg: MeetupGuest) {
+  // `meta` is an extra line under the name, in the same text column.
+  function renderIdentity(mg: MeetupGuest, meta?: React.ReactNode) {
     return (
       <div className="flex items-center gap-3 min-w-0">
         <GuestAvatar
@@ -864,95 +954,222 @@ export function MeetupDetailPage() {
             )}
             <MazmoFlagBadges profile={mg.guest.mazmo_profile} />
           </div>
+          {meta}
         </div>
       </div>
     );
   }
 
-  function renderStatus(mg: MeetupGuest) {
-    return mg.rsvp.has_arrived ? (
-      <div className="space-y-0.5">
-        <Badge>{t("checkedIn")}</Badge>
-        <p className="text-xs text-muted-foreground">
-          {mg.rsvp.arrival_time ? formatDateTime(mg.rsvp.arrival_time) : ""}
-        </p>
-      </div>
-    ) : (
-      <Badge variant="secondary">{t("pending")}</Badge>
-    );
-  }
-
-  function renderPayment(mg: MeetupGuest) {
+  function renderPaymentStatus(mg: MeetupGuest) {
     return (
-      <PaymentCell
+      <PaymentStatus
         guest={mg}
         isExempt={rowState(mg).isExempt}
         isOrgAdmin={isOrgAdmin}
-        onMarkPaid={() => setMarkPaidTarget(mg)}
-        isFinalized={isFinalized}
         onUndoPayment={() => setUndoPaymentTarget(mg)}
       />
     );
   }
 
-  function renderActions(mg: MeetupGuest) {
-    const { isBlockedByPayment, isCheckingIn } = rowState(mg);
+  // Null when there is nothing to collect from this guest, or when the
+  // meetup is finalized and the backend would refuse the payment.
+  function renderMarkPaid(mg: MeetupGuest) {
+    if (
+      !requiresPayment ||
+      !isOrgAdmin ||
+      isFinalized ||
+      rowState(mg).isExempt ||
+      mg.rsvp.has_paid
+    )
+      return null;
     return (
-      <div className="flex items-center gap-1 justify-end">
-        {mg.rsvp.has_arrived ? (
-          <Button variant="ghost" size="sm" onClick={() => setUndoTarget(mg)}>
-            {t("undo")}
-          </Button>
-        ) : isBlockedByPayment ? (
-          <span title={t("checkInBlockedUnpaid")} className="inline-flex">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled
-              aria-describedby={`checkin-blocked-${mg.guest.id}`}
-            >
-              {t("checkIn")}
-            </Button>
-            <span id={`checkin-blocked-${mg.guest.id}`} className="sr-only">
-              {t("checkInBlockedUnpaid")}
-            </span>
+      <Button variant="outline" size="sm" onClick={() => setMarkPaidTarget(mg)}>
+        {t("markPaid")}
+      </Button>
+    );
+  }
+
+  // Null once the guest is in. `blockedHintId` names a visible line that
+  // already says why a blocked check-in is blocked; without one the button
+  // carries its own hidden explanation.
+  function renderCheckIn(mg: MeetupGuest, blockedHintId?: string) {
+    if (mg.rsvp.has_arrived) return null;
+    const { isBlockedByPayment, isCheckingIn } = rowState(mg);
+    return isBlockedByPayment ? (
+      <span title={t("checkInBlockedUnpaid")} className="inline-flex">
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled
+          aria-describedby={blockedHintId ?? `checkin-blocked-${mg.guest.id}`}
+        >
+          {t("checkIn")}
+        </Button>
+        {!blockedHintId && (
+          <span id={`checkin-blocked-${mg.guest.id}`} className="sr-only">
+            {t("checkInBlockedUnpaid")}
           </span>
-        ) : (
-          <>
-            <Button
-              size="sm"
-              variant={mg.guest.is_banned ? "destructive" : "default"}
-              onClick={() => {
-                if (mg.guest.is_banned) {
-                  setBannedTarget(mg);
-                } else {
-                  checkInMutation.mutate(mg);
-                }
-              }}
-              disabled={checkInMutation.isPending || isFinalized}
-              title={isFinalized ? t("checkInBlockedFinalized") : undefined}
-              aria-describedby={
-                isFinalized ? `checkin-finalized-${mg.guest.id}` : undefined
-              }
-            >
-              {isCheckingIn ? t("checkingIn") : t("checkIn")}
-            </Button>
-            {isFinalized && (
-              <span id={`checkin-finalized-${mg.guest.id}`} className="sr-only">
-                {t("checkInBlockedFinalized")}
+        )}
+      </span>
+    ) : (
+      <>
+        <Button
+          size="sm"
+          variant={mg.guest.is_banned ? "destructive" : "default"}
+          onClick={() => {
+            if (mg.guest.is_banned) {
+              setBannedTarget(mg);
+            } else {
+              checkInMutation.mutate(mg);
+            }
+          }}
+          disabled={checkInMutation.isPending || isFinalized}
+          title={isFinalized ? t("checkInBlockedFinalized") : undefined}
+          aria-describedby={
+            isFinalized ? `checkin-finalized-${mg.guest.id}` : undefined
+          }
+        >
+          {isCheckingIn ? t("checkingIn") : t("checkIn")}
+        </Button>
+        {isFinalized && (
+          <span id={`checkin-finalized-${mg.guest.id}`} className="sr-only">
+            {t("checkInBlockedFinalized")}
+          </span>
+        )}
+      </>
+    );
+  }
+
+  function renderRowMenu(mg: MeetupGuest) {
+    return (
+      <GuestRowActions
+        guest={mg}
+        orgId={orgId}
+        meetupId={id!}
+        isOrgAdmin={isOrgAdmin}
+        isFinalized={isFinalized}
+        onViewProfile={() => openProfile(mg)}
+      />
+    );
+  }
+
+  // The id of the card's unpaid line, or undefined when the card has none.
+  function unpaidLineId(mg: MeetupGuest) {
+    const { has_paid } = mg.rsvp;
+    return requiresPayment &&
+      paymentStateKnown &&
+      !rowState(mg).isExempt &&
+      !has_paid
+      ? `unpaid-${mg.guest.id}`
+      : undefined;
+  }
+
+  // One tinted line per state the card shows: in, then paid, exempt or
+  // owing. A guest who is not in gets no check-in line, since the "Check in"
+  // step already says so.
+  function renderCardStatuses(mg: MeetupGuest) {
+    const { has_arrived, arrival_time, arrival_order, has_paid, paid_at } =
+      mg.rsvp;
+    const unpaidId = unpaidLineId(mg);
+    return (
+      <>
+        {has_arrived && (
+          <GuestStatusLine
+            tone="done"
+            icon={Check}
+            action={
+              <InlineUndo
+                onClick={() => setUndoTarget(mg)}
+                className="text-current hover:text-current"
+              >
+                {t("undo")}
+              </InlineUndo>
+            }
+          >
+            {arrival_order != null && (
+              <span className="mr-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold">
+                {ordinal(arrival_order)}
               </span>
             )}
-          </>
+            <span className="font-medium">{t("statusCheckedIn")}</span>
+            {arrival_time && (
+              <>
+                {" "}
+                <span className="whitespace-nowrap">
+                  {formatDateTime(arrival_time)}
+                </span>
+              </>
+            )}
+          </GuestStatusLine>
         )}
-        <GuestRowActions
-          guest={mg}
-          orgId={orgId}
-          meetupId={id!}
-          isOrgAdmin={isOrgAdmin}
-          isFinalized={isFinalized}
-          onViewProfile={() => openProfile(mg)}
-        />
-      </div>
+        {requiresPayment &&
+          (has_paid ? (
+            <GuestStatusLine
+              tone="paid"
+              icon={Banknote}
+              action={
+                isOrgAdmin && (
+                  <InlineUndo
+                    onClick={() => setUndoPaymentTarget(mg)}
+                    className="text-current hover:text-current"
+                  >
+                    {t("undoPayment")}
+                  </InlineUndo>
+                )
+              }
+            >
+              <span className="font-medium">{t("statusPaid")}</span>
+              {paid_at && (
+                <>
+                  {" "}
+                  <span className="whitespace-nowrap">
+                    {formatDateTime(paid_at)}
+                  </span>
+                </>
+              )}
+            </GuestStatusLine>
+          ) : rowState(mg).isExempt ? (
+            <GuestStatusLine tone="neutral">
+              {t(exemptReason(mg.rsvp.guest_type))}
+            </GuestStatusLine>
+          ) : (
+            unpaidId && (
+              <GuestStatusLine tone="missing" icon={Banknote} id={unpaidId}>
+                <span className="font-medium">{t("statusUnpaid")}</span>
+              </GuestStatusLine>
+            )
+          ))}
+      </>
+    );
+  }
+
+  function renderCard(mg: MeetupGuest) {
+    const markPaid = renderMarkPaid(mg);
+    // Once finalized the header says the door is closed, so the cards drop
+    // their steps band instead of showing dead buttons.
+    const checkIn = isFinalized ? null : renderCheckIn(mg, unpaidLineId(mg));
+    return (
+      <GuestCard
+        key={mg.guest.id}
+        identity={renderIdentity(
+          mg,
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">{t("rsvp")}</span>{" "}
+            {formatDateTime(mg.rsvp.rsvp_time)}
+          </p>,
+        )}
+        menu={renderRowMenu(mg)}
+        statuses={renderCardStatuses(mg)}
+        actions={
+          markPaid || checkIn ? (
+            <>
+              {markPaid}
+              {checkIn}
+            </>
+          ) : null
+        }
+        dimmed={mg.rsvp.cancelled_rsvp}
+      />
     );
   }
 
@@ -1008,16 +1225,22 @@ export function MeetupDetailPage() {
                 : "bg-[radial-gradient(ellipse_at_top_left,--theme(--color-foreground/7%),transparent_65%)]",
             )}
           />
-          <div className="flex items-start gap-4 px-4 pt-5 pb-5 @md:items-center @md:gap-6 @md:px-6 @md:pt-6">
-            <DateTile date={meetup.date} timing={timing} size="lg" />
-            <div className="min-w-0 flex-1 space-y-2">
+          {/* Below @md everything stacks on one centered axis: the date
+              tile, the title and dates, then the location and Mazmo link set
+              apart by a rule. From @md the tile sits to the left, centered
+              against the text column. */}
+          <div className="flex flex-col items-center gap-3 px-4 py-5 text-center @md:grid @md:grid-cols-[auto_1fr] @md:items-start @md:gap-x-6 @md:gap-y-2 @md:px-6 @md:pt-6 @md:text-left">
+            <div className="@md:row-span-2 @md:self-center">
+              <DateTile date={meetup.date} timing={timing} size="lg" />
+            </div>
+            <div className="w-full min-w-0 space-y-2 @md:col-start-2">
               <h1
                 id="meetup-title"
                 className="text-2xl leading-tight font-semibold tracking-tight break-words @md:text-3xl"
               >
                 {meetup.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground @md:justify-start">
                 <span>
                   {formatDate(meetup.date)}
                   {/* The "Today" badge already says it for today's meetup. */}
@@ -1030,17 +1253,34 @@ export function MeetupDetailPage() {
                 </span>
                 <MeetupBadges meetup={meetup} timing={timing} />
               </div>
+            </div>
+            <div className="w-full min-w-0 space-y-2 border-t pt-3 empty:hidden @md:col-start-2 @md:border-t-0 @md:pt-0">
+              <MeetupLocation
+                orgId={orgId}
+                meetup={meetup}
+                canEdit={isOrgAdmin}
+              />
               <MazmoUrlLink
                 url={meetup.mazmo_meetup_url}
+                text={t("goToMazmoEvent")}
                 className="max-w-full text-xs text-muted-foreground"
               />
             </div>
           </div>
           {/* The meetup's tools, in a band of their own like the footer of
-              the guest profile card. Settings (payment, finalize) sit apart
-              on the right. Once finalized the door tools are gone and the
-              band says so, rather than showing a row of dead buttons. */}
-          <div className="flex flex-wrap items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:px-6">
+              the guest profile card. On phones the buttons stack centered at
+              one width. On medium cards they fill an even two-column grid, so
+              four tools never wrap three and one; once all of them fit they
+              sit in one row from the left. Once finalized the door tools are
+              gone and the band says so, rather than showing dead buttons. */}
+          <div
+            className={cn(
+              "flex flex-col items-center gap-2 border-t bg-muted/30 px-4 py-3 @md:px-6 [&>button]:w-full [&>button]:max-w-72 @md:[&>button]:max-w-none",
+              isFinalized
+                ? "@md:flex-row @md:flex-wrap @md:[&>button]:w-auto"
+                : "@md:grid @md:grid-cols-2 @4xl:flex @4xl:flex-row @4xl:[&>button]:w-auto",
+            )}
+          >
             {isFinalized ? (
               <div className="flex min-w-0 flex-1 basis-full items-start gap-2 text-sm @md:basis-0">
                 <Lock
@@ -1089,10 +1329,10 @@ export function MeetupDetailPage() {
               </>
             )}
             {isOrgAdmin && (
-              <div className="flex flex-wrap gap-2 @md:ml-auto">
+              <>
                 {!isFinalized && (
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => setPaymentToggleOpen(true)}
                     className="gap-2"
                   >
@@ -1112,10 +1352,14 @@ export function MeetupDetailPage() {
                   )}
                   {isFinalized ? t("reopenMeetup") : t("finalizeMeetup")}
                 </Button>
-              </div>
+              </>
             )}
           </div>
         </section>
+      )}
+
+      {meetupQ.isSuccess && (
+        <MeetupWeather orgId={orgId} meetupId={id!} canRefresh={isOrgAdmin} />
       )}
 
       {/* Stats */}
@@ -1264,11 +1508,33 @@ export function MeetupDetailPage() {
                   <TableCell className="text-muted-foreground text-sm">
                     {formatDateTime(mg.rsvp.rsvp_time)}
                   </TableCell>
-                  <TableCell>{renderStatus(mg)}</TableCell>
+                  <TableCell>
+                    <CheckInStatus guest={mg} />
+                  </TableCell>
                   {requiresPayment && (
-                    <TableCell>{renderPayment(mg)}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {renderPaymentStatus(mg)}
+                        {renderMarkPaid(mg)}
+                      </div>
+                    </TableCell>
                   )}
-                  <TableCell>{renderActions(mg)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      {mg.rsvp.has_arrived ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setUndoTarget(mg)}
+                        >
+                          {t("undo")}
+                        </Button>
+                      ) : (
+                        renderCheckIn(mg)
+                      )}
+                      {renderRowMenu(mg)}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -1279,54 +1545,24 @@ export function MeetupDetailPage() {
           {guestsQ.isLoading &&
             Array.from({ length: 5 }).map((_, i) => (
               <li key={i}>
-                <Skeleton className="h-28 w-full rounded-lg" />
+                <Skeleton className="h-44 w-full rounded-lg" />
               </li>
             ))}
           {!guestsQ.isLoading && rawGuests.length === 0 && (
-            <li className="text-center text-sm text-muted-foreground py-8">
+            <li className="py-8 text-center text-sm text-muted-foreground">
               {t("noGuestsSyncMazmo")}
             </li>
           )}
           {!guestsQ.isLoading &&
             rawGuests.length > 0 &&
             (guests?.length ?? 0) === 0 && (
-              <li className="text-center text-sm text-muted-foreground py-8">
+              <li className="py-8 text-center text-sm text-muted-foreground">
                 {search.trim()
                   ? t("noGuestsMatchSearch")
                   : t("noGuestsMatchFilters")}
               </li>
             )}
-          {(guests ?? []).map((mg) => (
-            <li
-              key={mg.guest.id}
-              className={cn(
-                // Stacked on phones; one row once the list is wide enough,
-                // with fixed-width columns so rows line up like a table.
-                "flex flex-col gap-3 rounded-lg border p-3 @3xl:flex-row @3xl:items-center @3xl:gap-4",
-                mg.rsvp.cancelled_rsvp && "opacity-50",
-              )}
-            >
-              <div className="flex min-w-0 flex-1 items-start justify-between gap-2 @3xl:items-center">
-                {renderIdentity(mg)}
-                {mg.rsvp.arrival_order != null && (
-                  <span className="shrink-0">{renderArrivalOrder(mg)}</span>
-                )}
-              </div>
-              <div className="flex items-end justify-between gap-2 @3xl:contents">
-                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 @3xl:flex-none @3xl:flex-nowrap @3xl:gap-4">
-                  <p className="text-xs text-muted-foreground @3xl:order-first @3xl:w-40 @3xl:whitespace-nowrap">
-                    <span className="font-medium">{t("rsvp")}</span>{" "}
-                    {formatDateTime(mg.rsvp.rsvp_time)}
-                  </p>
-                  <div className="@3xl:w-32">{renderStatus(mg)}</div>
-                  {requiresPayment && (
-                    <div className="@3xl:w-40">{renderPayment(mg)}</div>
-                  )}
-                </div>
-                <div className="shrink-0 @3xl:w-36">{renderActions(mg)}</div>
-              </div>
-            </li>
-          ))}
+          {(guests ?? []).map((mg) => renderCard(mg))}
         </ul>
       )}
 
