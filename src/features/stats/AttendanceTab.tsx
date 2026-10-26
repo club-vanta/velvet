@@ -8,10 +8,12 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { useAttendanceStats } from "@/hooks/useAttendanceStats";
+import { formatApiDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 import { legendOrder, SERIES } from "./attendanceSeries";
 import { ChartCard } from "./ChartCard";
+import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
@@ -33,17 +35,20 @@ type Attendance = components["schemas"]["AttendanceStatsPublic"];
 function AttendanceChart({
   meetups,
   single,
+  labelledBy,
 }: {
   meetups: Attendance["meetups"];
   single: boolean;
+  labelledBy: string;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const config: ChartConfig = Object.fromEntries(
     SERIES.map(({ key, label, color }) => [key, { label: t(label), color }]),
   );
   const withYear = spansYears(meetups.map((m) => m.date));
-  const data = sortByDate(meetups).map((m) => ({
+  const sorted = sortByDate(meetups);
+  const data = sorted.map((m) => ({
     ...m,
     day: formatEventDay(m.date, withYear),
   }));
@@ -70,41 +75,61 @@ function AttendanceChart({
   );
 
   return (
-    <ChartContainer
-      config={config}
-      className={single ? "aspect-auto h-32 w-full" : "aspect-auto h-64 w-full"}
-    >
-      {single ? (
-        <BarChart data={data} layout="vertical">
-          <CartesianGrid horizontal={false} />
-          <XAxis type="number" allowDecimals={false} />
-          <YAxis type="category" dataKey="day" hide />
-          {tooltip}
-          {legend}
-          {bars}
-        </BarChart>
-      ) : (
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="day"
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-            minTickGap={16}
-          />
-          <YAxis
-            width={32}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          {tooltip}
-          {legend}
-          {bars}
-        </BarChart>
-      )}
-    </ChartContainer>
+    <>
+      <ChartContainer
+        config={config}
+        className={
+          single ? "aspect-auto h-32 w-full" : "aspect-auto h-64 w-full"
+        }
+      >
+        {single ? (
+          <BarChart data={data} layout="vertical">
+            <CartesianGrid horizontal={false} />
+            <XAxis type="number" allowDecimals={false} />
+            <YAxis type="category" dataKey="day" hide />
+            {tooltip}
+            {legend}
+            {bars}
+          </BarChart>
+        ) : (
+          <BarChart data={data}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="day"
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+              minTickGap={16}
+            />
+            <YAxis
+              width={32}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            {tooltip}
+            {legend}
+            {bars}
+          </BarChart>
+        )}
+      </ChartContainer>
+      <ChartTextTable
+        labelledBy={labelledBy}
+        headers={[
+          t("statsEventHeader"),
+          t("statsDateHeader"),
+          ...SERIES.map(({ label }) => t(label)),
+        ]}
+        rows={sorted.map((m) => ({
+          key: m.meetup_id,
+          cells: [
+            m.name,
+            formatApiDate(m.date),
+            ...SERIES.map(({ key }) => formatCount(m[key], lang)),
+          ],
+        }))}
+      />
+    </>
   );
 }
 
@@ -200,7 +225,13 @@ function AttendanceContent({
         )}
       </div>
       <ChartCard title={t("statsAttendanceChart")}>
-        <AttendanceChart meetups={meetups} single={single} />
+        {(headingId) => (
+          <AttendanceChart
+            meetups={meetups}
+            single={single}
+            labelledBy={headingId}
+          />
+        )}
       </ChartCard>
       <StatsNote>{t("statsNoteAttendance")}</StatsNote>
     </div>

@@ -22,6 +22,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { useIsOrgAdmin } from "@/lib/org";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
+import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { headlineGrid } from "./headlineGrid";
 import { RateCell } from "./RateCell";
@@ -270,48 +271,6 @@ function TemperatureScatter({ points }: { points: Point[] }) {
   );
 }
 
-/** The scatter's points as text, for screen readers. */
-function ScatterTable({
-  points,
-  labelledBy,
-}: {
-  points: Point[];
-  labelledBy: string;
-}) {
-  const { t, lang } = useLanguage();
-
-  return (
-    // sr-only on the wrapper: a table sizes to its content and would still
-    // widen the page.
-    <div className="sr-only">
-      <table aria-labelledby={labelledBy}>
-        <thead>
-          <tr>
-            <th scope="col">{t("statsEventHeader")}</th>
-            <th scope="col">{t("statsDateHeader")}</th>
-            <th scope="col">{t("statsTemperatureAxis")}</th>
-            <th scope="col">{t("statsAttended")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((p) => (
-            <tr key={p.id}>
-              <th scope="row" data-slot="name">
-                {p.name}
-              </th>
-              <td data-slot="date">{formatApiDate(p.date)}</td>
-              <td data-slot="temperature">
-                {formatDecimal(p.temperature, lang)}
-              </td>
-              <td data-slot="attended">{formatCount(p.attended, lang)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 /** Events that have no weather yet, each linked to its page. */
 function WithoutWeatherList({ meetups }: { meetups: Row[] }) {
   return (
@@ -372,7 +331,24 @@ function WeatherAggregate({ data }: { data: Weather }) {
           ) : (
             <>
               <TemperatureScatter points={points} />
-              <ScatterTable points={points} labelledBy={headingId} />
+              <ChartTextTable
+                labelledBy={headingId}
+                headers={[
+                  t("statsEventHeader"),
+                  t("statsDateHeader"),
+                  t("statsTemperatureAxis"),
+                  t("statsAttended"),
+                ]}
+                rows={points.map((p) => ({
+                  key: p.id,
+                  cells: [
+                    p.name,
+                    formatApiDate(p.date),
+                    formatDecimal(p.temperature, lang),
+                    formatCount(p.attended, lang),
+                  ],
+                }))}
+              />
             </>
           )
         }

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -122,6 +122,18 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
 const ok = (data: Demographics) => Promise.resolve({ data, error: undefined });
 const respond = (result: unknown) =>
   mockApiGet.mockImplementation(() => result);
+
+/** The header and body rows of a sr-only chart table, as text. */
+function tableText(name: string) {
+  const table = screen.getByRole("table", { name, hidden: true });
+  // sr-only sits on the wrapper: a table ignores a width limit.
+  expect(table).not.toHaveClass("sr-only");
+  expect(table.parentElement).toHaveClass("sr-only");
+  const [header, ...body] = within(table).getAllByRole("row", { hidden: true });
+  const texts = (row: HTMLElement) =>
+    Array.from(row.children).map((c) => c.textContent);
+  return { header: texts(header!), body: body.map(texts) };
+}
 
 function headline(label: string): HTMLElement {
   const card = Array.from(
@@ -282,7 +294,9 @@ describe("DemographicsTab", () => {
     await headlinesReady();
 
     expect(
-      screen.getAllByRole("columnheader").map((th) => th.textContent),
+      within(screen.getByRole("table", { name: "No-show por grupo" }))
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent),
     ).toEqual(["Grupo", "Se esperaban", "No-show"]);
 
     const male = groupRow("Hombre");
@@ -408,5 +422,32 @@ describe("DemographicsTab", () => {
     renderTab({ query: null });
     expect(screen.getByTestId("demographics-skeleton")).toBeInTheDocument();
     expect(mockApiGet).not.toHaveBeenCalled();
+  });
+
+  it("lists the shares of both share charts in text tables", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    const header = ["Grupo", "Vinieron", "Se esperaban"];
+    expect(tableText("Género")).toEqual({
+      header,
+      body: [
+        ["Hombre", "75%", "74%"],
+        ["NEW_CODE", "2%", "3%"],
+        ["Sin dato", "23%", "24%"],
+      ],
+    });
+    expect(tableText("Edad")).toEqual({
+      header,
+      body: [
+        ["18-24", "28%", "29%"],
+        ["25-29", "27%", "26%"],
+        ["30-34", "18%", "16%"],
+        ["35-39", "8%", "9%"],
+        ["40-49", "6%", "6%"],
+        ["50+", "3%", "4%"],
+        ["Sin dato", "10%", "10%"],
+      ],
+    });
   });
 });

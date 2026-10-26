@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -123,6 +123,18 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
 const ok = (data: Arrivals) => Promise.resolve({ data, error: undefined });
 const respond = (result: unknown) =>
   mockApiGet.mockImplementation(() => result);
+
+/** The header and body rows of a sr-only chart table, as text. */
+function tableText(name: string) {
+  const table = screen.getByRole("table", { name, hidden: true });
+  // sr-only sits on the wrapper: a table ignores a width limit.
+  expect(table).not.toHaveClass("sr-only");
+  expect(table.parentElement).toHaveClass("sr-only");
+  const [header, ...body] = within(table).getAllByRole("row", { hidden: true });
+  const texts = (row: HTMLElement) =>
+    Array.from(row.children).map((c) => c.textContent);
+  return { header: texts(header!), body: body.map(texts) };
+}
 
 function headline(label: string): HTMLElement {
   const card = Array.from(
@@ -296,9 +308,13 @@ describe("ArrivalsTab", () => {
     localStorage.setItem("lang", "en");
     respond(ok(stats()));
     renderTab();
-    await waitFor(() => screen.getAllByRole("columnheader"));
+    const table = await screen.findByRole("table", {
+      name: "How early people sign up",
+    });
     expect(
-      screen.getAllByRole("columnheader").map((th) => th.textContent),
+      within(table)
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent),
     ).toEqual(["Lead time", "Signed up", "No-show"]);
   });
 
@@ -324,7 +340,13 @@ describe("ArrivalsTab", () => {
     await headlinesReady();
 
     expect(
-      screen.getAllByRole("columnheader").map((th) => th.textContent),
+      within(
+        screen.getByRole("table", {
+          name: "Con cuánta anticipación se anotan",
+        }),
+      )
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent),
     ).toEqual(["Anticipación", "Anotados", "No-show"]);
 
     const sameDay = leadRow("El mismo día");
@@ -366,7 +388,11 @@ describe("ArrivalsTab", () => {
     renderTab();
     await headlinesReady();
     expect(screen.getByText("No hubo inscripciones")).toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", {
+        name: "Con cuánta anticipación se anotan",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("explains what the numbers leave out", async () => {
@@ -436,5 +462,18 @@ describe("ArrivalsTab", () => {
     renderTab({ query: null });
     expect(screen.getByTestId("arrivals-skeleton")).toBeInTheDocument();
     expect(mockApiGet).not.toHaveBeenCalled();
+  });
+
+  it("lists the arrival curve in a text table", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await screen.findByText("Llegadas cada 15 minutos");
+    expect(tableText("Llegadas cada 15 minutos")).toEqual({
+      header: ["Hora", "Llegadas"],
+      body: [
+        ["+0:15", "20"],
+        ["+0:30", "40"],
+      ],
+    });
   });
 });

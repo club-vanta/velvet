@@ -10,6 +10,7 @@ import { useArrivalsStats } from "@/hooks/useArrivalsStats";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
+import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { RateCell } from "./RateCell";
 import { StatsNote } from "@/components/StatsNote";
@@ -43,11 +44,13 @@ const LEAD_LABELS: Record<LeadRow["bucket"], TranslationKey> = {
 function ArrivalCurve({
   curve,
   single,
+  labelledBy,
 }: {
   curve: Arrivals["curve"];
   single: boolean;
+  labelledBy: string;
 }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const config: ChartConfig = {
     arrivals: { label: t("statsArrivalsSeries"), color: "var(--chart-1)" },
   };
@@ -57,26 +60,36 @@ function ArrivalCurve({
   }));
 
   return (
-    <ChartContainer config={config} className="aspect-auto h-64 w-full">
-      <BarChart data={data}>
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="label"
-          tickLine={false}
-          axisLine={false}
-          interval="preserveStartEnd"
-          minTickGap={24}
-        />
-        <YAxis
-          width={32}
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-        />
-        <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="arrivals" fill="var(--color-arrivals)" />
-      </BarChart>
-    </ChartContainer>
+    <>
+      <ChartContainer config={config} className="aspect-auto h-64 w-full">
+        <BarChart data={data}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="label"
+            tickLine={false}
+            axisLine={false}
+            interval="preserveStartEnd"
+            minTickGap={24}
+          />
+          <YAxis
+            width={32}
+            tickLine={false}
+            axisLine={false}
+            allowDecimals={false}
+          />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar dataKey="arrivals" fill="var(--color-arrivals)" />
+        </BarChart>
+      </ChartContainer>
+      <ChartTextTable
+        labelledBy={labelledBy}
+        headers={[t("statsArrivalTimeHeader"), t("statsArrivalsSeries")]}
+        rows={data.map(({ label, arrivals }) => ({
+          key: label,
+          cells: [label, formatCount(arrivals, lang)],
+        }))}
+      />
+    </>
   );
 }
 
@@ -260,13 +273,19 @@ function ArrivalsContent({
         />
       </div>
       <ChartCard title={t("statsArrivalCurve")}>
-        {summary.arrivals === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {t("statsNoArrivals")}
-          </p>
-        ) : (
-          <ArrivalCurve curve={curve} single={single} />
-        )}
+        {(headingId) =>
+          summary.arrivals === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {t("statsNoArrivals")}
+            </p>
+          ) : (
+            <ArrivalCurve
+              curve={curve}
+              single={single}
+              labelledBy={headingId}
+            />
+          )
+        }
       </ChartCard>
       <StatsNote>{t("statsNoteArrivals")}</StatsNote>
       {summary.excluded_arrivals > 0 && (

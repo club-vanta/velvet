@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -98,6 +98,18 @@ const statsCalls = () =>
   mockApiGet.mock.calls.filter(
     ([path]) => path === "/organizations/{org_id}/stats/attendance",
   );
+
+/** The header and body rows of a sr-only chart table, as text. */
+function tableText(name: string) {
+  const table = screen.getByRole("table", { name, hidden: true });
+  // sr-only sits on the wrapper: a table ignores a width limit.
+  expect(table).not.toHaveClass("sr-only");
+  expect(table.parentElement).toHaveClass("sr-only");
+  const [header, ...body] = within(table).getAllByRole("row", { hidden: true });
+  const texts = (row: HTMLElement) =>
+    Array.from(row.children).map((c) => c.textContent);
+  return { header: texts(header!), body: body.map(texts) };
+}
 
 async function headlinesReady() {
   await waitFor(() => headline("Vinieron"));
@@ -278,5 +290,35 @@ describe("AttendanceTab", () => {
     renderTab({ query: null }, client);
     expect(screen.getByTestId("attendance-skeleton")).toBeInTheDocument();
     expect(mockApiGet).not.toHaveBeenCalled();
+  });
+
+  it("lists the chart's numbers in a text table, in date order", async () => {
+    respond(
+      ok(
+        stats({
+          meetups: [
+            {
+              ...ROW,
+              meetup_id: "m2",
+              name: "Alter Abril",
+              date: "2026-04-14T22:00:00Z",
+              attended: 70,
+              no_show: 5,
+              cancelled: 3,
+            },
+            ROW,
+          ],
+        }),
+      ),
+    );
+    renderTab();
+    await headlinesReady();
+    expect(tableText("Asistencia por evento")).toEqual({
+      header: ["Evento", "Fecha", "Vinieron", "No-show", "Se bajaron"],
+      body: [
+        ["Alter Marzo", "10 de mar de 2026", "80", "10", "10"],
+        ["Alter Abril", "14 de abr de 2026", "70", "5", "3"],
+      ],
+    });
   });
 });

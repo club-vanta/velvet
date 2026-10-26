@@ -349,19 +349,21 @@ describe("WeatherTab", () => {
     // A table ignores a width limit, so the sr-only class sits on its wrapper.
     expect(table).not.toHaveClass("sr-only");
     expect(table.parentElement).toHaveClass("sr-only");
-    const rows = within(table).getAllByRole("row", { hidden: true });
-    const cells = (r: HTMLElement, name: string) => part(r, name);
-    const body = rows.slice(1);
-    expect(body.map((r) => cells(r, "name"))).toEqual([
-      "Alter Febrero",
-      "Alter Marzo",
+    const [header, ...body] = within(table).getAllByRole("row", {
+      hidden: true,
+    });
+    const texts = (row: HTMLElement) =>
+      Array.from(row.children).map((c) => c.textContent);
+    expect(texts(header!)).toEqual([
+      "Evento",
+      "Fecha",
+      "Temperatura (°C)",
+      "Vinieron",
     ]);
-    expect(body.map((r) => cells(r, "date"))).toEqual([
-      "9 de feb de 2026",
-      "9 de mar de 2026",
+    expect(body.map(texts)).toEqual([
+      ["Alter Febrero", "9 de feb de 2026", "25,4", "90"],
+      ["Alter Marzo", "9 de mar de 2026", "18,2", "100"],
     ]);
-    expect(body.map((r) => cells(r, "temperature"))).toEqual(["25,4", "18,2"]);
-    expect(body.map((r) => cells(r, "attended"))).toEqual(["90", "100"]);
   });
 
   it("defines a color for every series the charts paint", async () => {

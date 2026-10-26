@@ -469,6 +469,7 @@ export const translations = {
     statsTemperatureAxis: "Temperature (°C)",
     statsEventHeader: "Event",
     statsDateHeader: "Date",
+    statsArrivalTimeHeader: "Time",
     statsNoTempPoints: "Not enough events with temperature to chart",
     statsWithoutWeatherList: "Events without weather",
     statsNoteWeather:
@@ -1123,6 +1124,7 @@ export const translations = {
     statsTemperatureAxis: "Temperatura (°C)",
     statsEventHeader: "Evento",
     statsDateHeader: "Fecha",
+    statsArrivalTimeHeader: "Hora",
     statsNoTempPoints: "Hay pocos eventos con temperatura para graficar",
     statsWithoutWeatherList: "Eventos sin clima",
     statsNoteWeather:

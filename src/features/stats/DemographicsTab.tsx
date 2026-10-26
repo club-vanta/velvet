@@ -13,6 +13,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { MAZMO_GENDER_LABEL, mazmoLabel } from "@/lib/mazmoProfile";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
+import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { RateCell } from "./RateCell";
 import { StatsNote } from "@/components/StatsNote";
@@ -63,11 +64,13 @@ function ShareChart<G extends Group>({
   groups,
   label,
   bars,
+  labelledBy,
 }: {
   groups: G[];
   label: (key: G["key"]) => string;
   /** The direction the bars grow: sideways for long labels, upward otherwise. */
   bars: "horizontal" | "vertical";
+  labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
   const horizontal = bars === "horizontal";
@@ -87,73 +90,91 @@ function ShareChart<G extends Group>({
   const domain: [number, number] = [0, ticks[ticks.length - 1]];
 
   return (
-    <ChartContainer
-      config={config}
-      className="aspect-auto w-full"
-      style={{
-        height: horizontal ? data.length * ROW_HEIGHT + CHART_CHROME : 256,
-      }}
-    >
-      <BarChart data={data} layout={horizontal ? "vertical" : "horizontal"}>
-        <CartesianGrid vertical={horizontal} horizontal={!horizontal} />
-        {horizontal ? (
-          <>
-            <XAxis
-              type="number"
-              domain={domain}
-              ticks={ticks}
-              tickFormatter={percent}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              type="category"
-              dataKey="label"
-              width={96}
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-            />
-          </>
-        ) : (
-          <>
-            <XAxis
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-            />
-            <YAxis
-              width={40}
-              domain={domain}
-              ticks={ticks}
-              tickFormatter={percent}
-              tickLine={false}
-              axisLine={false}
-            />
-          </>
-        )}
-        <ChartTooltip
-          content={
-            <ChartTooltipContent
-              formatter={(value, name) => (
-                <span className="flex w-full justify-between gap-4">
-                  <span className="text-muted-foreground">
-                    {config[String(name)]?.label}
+    <>
+      <ChartContainer
+        config={config}
+        className="aspect-auto w-full"
+        style={{
+          height: horizontal ? data.length * ROW_HEIGHT + CHART_CHROME : 256,
+        }}
+      >
+        <BarChart data={data} layout={horizontal ? "vertical" : "horizontal"}>
+          <CartesianGrid vertical={horizontal} horizontal={!horizontal} />
+          {horizontal ? (
+            <>
+              <XAxis
+                type="number"
+                domain={domain}
+                ticks={ticks}
+                tickFormatter={percent}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                type="category"
+                dataKey="label"
+                width={96}
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+              />
+            </>
+          ) : (
+            <>
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+              />
+              <YAxis
+                width={40}
+                domain={domain}
+                ticks={ticks}
+                tickFormatter={percent}
+                tickLine={false}
+                axisLine={false}
+              />
+            </>
+          )}
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(value, name) => (
+                  <span className="flex w-full justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      {config[String(name)]?.label}
+                    </span>
+                    <span className="font-mono font-medium tabular-nums">
+                      {percent(Number(value))}
+                    </span>
                   </span>
-                  <span className="font-mono font-medium tabular-nums">
-                    {percent(Number(value))}
-                  </span>
-                </span>
-              )}
-            />
-          }
-        />
-        <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey="attended" fill="var(--color-attended)" />
-        <Bar dataKey="expected" fill="var(--color-expected)" />
-      </BarChart>
-    </ChartContainer>
+                )}
+              />
+            }
+          />
+          <ChartLegend content={<ChartLegendContent />} />
+          <Bar dataKey="attended" fill="var(--color-attended)" />
+          <Bar dataKey="expected" fill="var(--color-expected)" />
+        </BarChart>
+      </ChartContainer>
+      <ChartTextTable
+        labelledBy={labelledBy}
+        headers={[
+          t("statsGroupHeader"),
+          t("statsSeriesAttended"),
+          t("statsSeriesExpected"),
+        ]}
+        rows={groups.map((g) => ({
+          key: String(g.key),
+          cells: [
+            label(g.key),
+            formatRate(g.attended_share, lang),
+            formatRate(g.expected_share, lang),
+          ],
+        }))}
+      />
+    </>
   );
 }
 
@@ -305,11 +326,25 @@ function DemographicsContent({ data }: { data: Demographics }) {
         />
       </div>
       <ChartCard title={t("statsGender")}>
-        <ShareChart groups={gender} label={labels.gender} bars="horizontal" />
+        {(headingId) => (
+          <ShareChart
+            groups={gender}
+            label={labels.gender}
+            bars="horizontal"
+            labelledBy={headingId}
+          />
+        )}
       </ChartCard>
       <StatsNote>{t("statsNoteGender")}</StatsNote>
       <ChartCard title={t("statsAge")}>
-        <ShareChart groups={age} label={labels.age} bars="vertical" />
+        {(headingId) => (
+          <ShareChart
+            groups={age}
+            label={labels.age}
+            bars="vertical"
+            labelledBy={headingId}
+          />
+        )}
       </ChartCard>
       <StatsNote>{t("statsNoteAge")}</StatsNote>
       <ChartCard title={t("statsNoShowByGroup")}>
