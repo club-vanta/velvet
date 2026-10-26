@@ -1529,6 +1529,8 @@ export interface components {
     ArrivalStatsPublic: {
       /** Curve */
       curve: components["schemas"]["ArrivalBucketPublic"][];
+      /** Clock Curve */
+      clock_curve: components["schemas"]["ClockBucketPublic"][];
       summary: components["schemas"]["ArrivalSummaryPublic"];
       /** Lead Time */
       lead_time: components["schemas"]["LeadTimeRowPublic"][];
@@ -1766,6 +1768,20 @@ export interface components {
       id: number;
       /** Username */
       username: string;
+    };
+    /**
+     * ClockBucketPublic
+     * @description Arrivals in one quarter hour of the local clock, summed over the meetups in scope.
+     *     start_minute counts from the local midnight starting the night (00:15 after midnight
+     *     is 1455); local_time is its "HH:MM".
+     */
+    ClockBucketPublic: {
+      /** Start Minute */
+      start_minute: number;
+      /** Local Time */
+      local_time: string;
+      /** Arrivals */
+      arrivals: number;
     };
     /**
      * CohortRowPublic

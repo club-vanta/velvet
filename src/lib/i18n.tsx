@@ -386,6 +386,9 @@ export const translations = {
     statsDurationHours: "{0} h",
     statsDurationHoursMinutes: "{0} h {1} min",
     statsArrivalAxisFromStart: "Hours from the start of the event",
+    statsArrivalAxisClock: "Arrival time",
+    statsViewClock: "Clock time",
+    statsViewFromStart: "From start",
     statsArrivalCurve: "Arrivals every 15 minutes",
     statsLeadTime: "How early people sign up",
     statsLeadSameDay: "Same day",
@@ -399,7 +402,7 @@ export const translations = {
     statsNoteArrivals:
       "Times use the check-in at the door. Each card shows the time of day people arrived, and under it how long after the event started.",
     statsNoteArrivalClock:
-      "With several events, the time of day and the time from the start are worked out separately. If the events start at different hours, the two can tell slightly different stories. The chart lines events up by their start.",
+      "With several events, the time of day and the time from the start are worked out separately. If the events start at different hours, the two can tell slightly different stories.",
     statsNoteLeadTime: "Walk-ins are left out because they never signed up.",
     statsLeadTimeHeader: "Lead time",
     statsArrivalsSeries: "Arrivals",
@@ -1094,6 +1097,9 @@ export const translations = {
     statsDurationHours: "{0} h",
     statsDurationHoursMinutes: "{0} h {1} min",
     statsArrivalAxisFromStart: "Horas desde el inicio del evento",
+    statsArrivalAxisClock: "Hora de llegada",
+    statsViewClock: "Hora",
+    statsViewFromStart: "Desde el inicio",
     statsArrivalCurve: "Llegadas cada 15 minutos",
     statsLeadTime: "Con cuánta anticipación se anotan",
     statsLeadSameDay: "El mismo día",
@@ -1107,7 +1113,7 @@ export const translations = {
     statsNoteArrivals:
       "Los horarios salen del ingreso en la puerta. Cada tarjeta muestra la hora a la que llegó la gente y, debajo, cuánto después del inicio fue.",
     statsNoteArrivalClock:
-      "Con varios eventos, la hora del día y el tiempo desde el inicio se calculan por separado. Si los eventos empiezan a distintas horas, pueden no coincidir del todo. El gráfico alinea los eventos por su hora de inicio.",
+      "Con varios eventos, la hora del día y el tiempo desde el inicio se calculan por separado. Si los eventos empiezan a distintas horas, pueden no coincidir del todo.",
     statsNoteLeadTime: "Los discretos no se cuentan porque nunca se anotaron.",
     statsLeadTimeHeader: "Anticipación",
     statsArrivalsSeries: "Llegadas",

@@ -98,16 +98,6 @@ export function minuteChange(
   return Math.round(current - baseline) || 0;
 }
 
-/** The x-axis label of an arrival bucket: clock time for one event, else the offset from the start. */
-export function formatCurveLabel(
-  bucket: { start_minute: number; local_time: string | null },
-  single: boolean,
-): string {
-  return (
-    (single ? bucket.local_time : null) ?? formatOffset(bucket.start_minute)
-  );
-}
-
 /** Difference in years rounded to one decimal, or null when either side is missing. */
 export function yearsChange(
   current: number | null,
