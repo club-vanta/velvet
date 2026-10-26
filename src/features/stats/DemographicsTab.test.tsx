@@ -33,57 +33,47 @@ const NOBODY: Summary = {
 const share = (part: number, total: number) =>
   total === 0 ? null : Math.round((part / total) * 10000) / 10000;
 
-/**
- * A group as the API counts it: of `expected` people, `noShow` did not come
- * and the rest attended. `withShares` fills in its shares of the totals.
- */
+/** A group of `attended` people; `withShares` fills in its share of the total. */
 function group<K extends GenderGroup["key"] | AgeGroup["key"]>(
   key: K,
-  expected: number,
-  noShow: number,
+  attended: number,
 ) {
   const g: Omit<GenderGroup, "key"> & { key: K } = {
     key,
-    attended: expected - noShow,
-    expected,
-    no_show: noShow,
-    no_show_rate: share(noShow, expected),
+    attended,
     attended_share: null,
-    expected_share: null,
   };
   return g;
 }
 
-/** Each group's share of the attended and expected totals, null on a zero total. */
+/** Each group's share of the attended total, null on a zero total. */
 function withShares<G extends GenderGroup | AgeGroup>(groups: G[]): G[] {
   const attended = groups.reduce((sum, g) => sum + g.attended, 0);
-  const expected = groups.reduce((sum, g) => sum + g.expected, 0);
   return groups.map((g) => ({
     ...g,
     attended_share: share(g.attended, attended),
-    expected_share: share(g.expected, expected),
   }));
 }
 
-// Gender and age split the same RSVPs, so their totals agree.
+// Gender and age split the same attendances, so their totals agree.
 const GENDER: GenderGroup[] = withShares([
-  group("MALE", 100, 10),
-  group("NEW_CODE", 4, 2),
-  group(null, 32, 4),
+  group("MALE", 90),
+  group("NEW_CODE", 2),
+  group(null, 28),
 ]);
 
 const AGE: AgeGroup[] = withShares([
-  group("AGE_18_24", 40, 6),
-  group("AGE_25_29", 35, 3),
-  group("AGE_30_34", 22, 1),
-  group("AGE_35_39", 12, 2),
-  group("AGE_40_49", 8, 1),
-  group("AGE_50_PLUS", 5, 1),
-  group("UNKNOWN", 14, 2),
+  group("AGE_18_24", 34),
+  group("AGE_25_29", 32),
+  group("AGE_30_34", 21),
+  group("AGE_35_39", 10),
+  group("AGE_40_49", 7),
+  group("AGE_50_PLUS", 4),
+  group("UNKNOWN", 12),
 ]);
 
 /** Every age bucket with nothing in it: the API always sends all seven. */
-const NO_AGES: AgeGroup[] = AGE.map((g) => group(g.key, 0, 0));
+const NO_AGES: AgeGroup[] = AGE.map((g) => group(g.key, 0));
 
 function stats(overrides: Partial<Demographics> = {}): Demographics {
   return {
@@ -150,19 +140,6 @@ function slot(label: string, name: string): string | null {
     headline(label).querySelector(`[data-slot="${name}"]`)?.textContent ?? null
   );
 }
-
-function groupRow(label: string): HTMLElement {
-  const row = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-slot="group-row"]'),
-  ).find(
-    (el) => el.querySelector('[data-slot="group"]')?.textContent === label,
-  );
-  if (!row) throw new Error(`No group row ${label}`);
-  return row;
-}
-
-const part = (row: HTMLElement, name: string) =>
-  row.querySelector(`[data-slot="${name}"]`)?.textContent ?? null;
 
 const statsCalls = () =>
   mockApiGet.mock.calls.filter(
@@ -256,77 +233,6 @@ describe("DemographicsTab", () => {
     expect(slot("Asistencias", "comparison")).toBeNull();
   });
 
-  it("shows dashes when everyone expected was a no-show", async () => {
-    respond(
-      ok(
-        stats({
-          gender: withShares([group(null, 3, 3)]),
-          age: withShares(
-            NO_AGES.map((g) => (g.key === "UNKNOWN" ? group(g.key, 3, 3) : g)),
-          ),
-          summary: NOBODY,
-        }),
-      ),
-    );
-    renderTab();
-    await headlinesReady();
-    expect(slot("Edad mediana", "value")).toBe("–");
-    expect(slot("Con edad conocida", "value")).toBe("–");
-    expect(slot("Asistencias", "value")).toBe("0");
-    expect(slot("Con edad conocida", "sample")).toBeNull();
-    expect(document.body).not.toHaveTextContent("NaN");
-  });
-
-  it("labels gender groups through the Mazmo labels and shows unknown codes raw", async () => {
-    respond(ok(stats()));
-    renderTab();
-    await headlinesReady();
-    expect(part(groupRow("Hombre"), "expected")).toBe("100");
-    expect(part(groupRow("NEW_CODE"), "expected")).toBe("4");
-    expect(part(groupRow("Sin dato"), "expected")).toBe("32");
-    expect(part(groupRow("18-24"), "expected")).toBe("40");
-    expect(part(groupRow("50+"), "expected")).toBe("5");
-  });
-
-  it("lists the no-show rates in a table and dims small groups with n", async () => {
-    respond(ok(stats()));
-    renderTab();
-    await headlinesReady();
-
-    expect(
-      within(screen.getByRole("table", { name: "No-show por grupo" }))
-        .getAllByRole("columnheader")
-        .map((th) => th.textContent),
-    ).toEqual(["Grupo", "Se esperaban", "No-show"]);
-
-    const male = groupRow("Hombre");
-    expect(part(male, "rate-value")).toBe("10%");
-    expect(part(male, "sample")).toBeNull();
-    expect(male.querySelector('[data-slot="rate"]')).not.toHaveClass(
-      "text-muted-foreground",
-    );
-
-    const small = groupRow("NEW_CODE");
-    expect(part(small, "rate-value")).toBe("50%");
-    expect(part(small, "sample")).toBe("n = 4");
-    expect(small.querySelector('[data-slot="rate"]')).toHaveClass(
-      "text-muted-foreground",
-    );
-
-    const unknown = groupRow("Sin dato");
-    expect(part(unknown, "rate-value")).toBe("13%");
-    expect(part(unknown, "sample")).toBeNull();
-  });
-
-  it("names the no-show table after its card", async () => {
-    respond(ok(stats()));
-    renderTab();
-    await headlinesReady();
-    expect(
-      screen.getByRole("table", { name: "No-show por grupo" }),
-    ).toBeInTheDocument();
-  });
-
   it("names the known-age card in English", async () => {
     localStorage.setItem("lang", "en");
     respond(ok(stats()));
@@ -340,48 +246,6 @@ describe("DemographicsTab", () => {
     renderTab();
     await headlinesReady();
     expect(slot("Con edad conocida", "sample")).toBe("n = 5");
-  });
-
-  it("shows no n for a group whose RSVPs were all cancelled", async () => {
-    respond(
-      ok(stats({ gender: withShares([...GENDER, group("FEMALE", 0, 0)]) })),
-    );
-    renderTab();
-    await headlinesReady();
-    const row = groupRow("Mujer");
-    expect(part(row, "rate-value")).toBe("–");
-    expect(part(row, "sample")).toBeNull();
-  });
-
-  it("splits the table into gender and age groups", async () => {
-    respond(ok(stats()));
-    renderTab();
-    await headlinesReady();
-    const headers = Array.from(
-      document.querySelectorAll<HTMLElement>('th[scope="rowgroup"]'),
-    );
-    expect(headers.map((th) => th.textContent)).toEqual(["Género", "Edad"]);
-    const rowsOf = (th: HTMLElement) =>
-      Array.from(
-        th.closest("tbody")!.querySelectorAll('[data-slot="group"]'),
-      ).map((el) => el.textContent);
-    expect(rowsOf(headers[0])).toEqual(["Hombre", "NEW_CODE", "Sin dato"]);
-    expect(rowsOf(headers[1])).toEqual([
-      "18-24",
-      "25-29",
-      "30-34",
-      "35-39",
-      "40-49",
-      "50+",
-      "Sin dato",
-    ]);
-  });
-
-  it("formats the expected counts for the locale", async () => {
-    respond(ok(stats({ gender: withShares([group("FEMALE", 12000, 1200)]) })));
-    renderTab();
-    await headlinesReady();
-    expect(part(groupRow("Mujer"), "expected")).toBe("12.000");
   });
 
   it("explains how gender and age are read", async () => {
@@ -424,30 +288,38 @@ describe("DemographicsTab", () => {
     expect(mockApiGet).not.toHaveBeenCalled();
   });
 
-  it("lists the shares of both share charts in text tables", async () => {
+  it("lists each group's share of the attendances in text tables, with Mazmo labels and unknown codes raw", async () => {
     respond(ok(stats()));
     renderTab();
     await headlinesReady();
-    const header = ["Grupo", "Vinieron", "Se esperaban"];
+    const header = ["Grupo", "Vinieron"];
     expect(tableText("Género")).toEqual({
       header,
       body: [
-        ["Hombre", "75%", "74%"],
-        ["NEW_CODE", "2%", "3%"],
-        ["Sin dato", "23%", "24%"],
+        ["Hombre", "75%"],
+        ["NEW_CODE", "2%"],
+        ["Sin dato", "23%"],
       ],
     });
     expect(tableText("Edad")).toEqual({
       header,
       body: [
-        ["18-24", "28%", "29%"],
-        ["25-29", "27%", "26%"],
-        ["30-34", "18%", "16%"],
-        ["35-39", "8%", "9%"],
-        ["40-49", "6%", "6%"],
-        ["50+", "3%", "4%"],
-        ["Sin dato", "10%", "10%"],
+        ["18-24", "28%"],
+        ["25-29", "27%"],
+        ["30-34", "18%"],
+        ["35-39", "8%"],
+        ["40-49", "6%"],
+        ["50+", "3%"],
+        ["Sin dato", "10%"],
       ],
     });
+  });
+
+  it("shows no expected or no-show figures", async () => {
+    respond(ok(stats()));
+    renderTab();
+    await headlinesReady();
+    expect(document.body).not.toHaveTextContent("Se esperaban");
+    expect(document.body).not.toHaveTextContent("No vinieron");
   });
 });

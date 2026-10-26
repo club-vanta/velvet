@@ -20,10 +20,11 @@ const SUMMARY: Summary = {
   arrivals: 200,
   excluded_arrivals: 0,
   peak: { start_minute: 30, local_time: null, arrivals: 40 },
-  median_minutes: 45,
+  peak_local_time: "22:30",
+  mean_minutes: 45,
   p90_minutes: 90,
-  median_local_time: null,
-  p90_local_time: null,
+  mean_local_time: "22:45",
+  p90_local_time: "23:30",
   first_hour_share: 0.86,
 };
 
@@ -31,9 +32,10 @@ const NOBODY: Summary = {
   arrivals: 0,
   excluded_arrivals: 0,
   peak: null,
-  median_minutes: null,
+  peak_local_time: null,
+  mean_minutes: null,
   p90_minutes: null,
-  median_local_time: null,
+  mean_local_time: null,
   p90_local_time: null,
   first_hour_share: null,
 };
@@ -171,7 +173,12 @@ const statsCalls = () =>
     ([path]) => path === "/organizations/{org_id}/stats/arrivals",
   );
 
-const headlinesReady = () => waitFor(() => headline("Pico de llegada"));
+const MEAN = "Hora promedio de llegada";
+const BUSIEST = "Franja con más llegadas";
+const NINETY = "El 90% llegó antes de las";
+const FIRST_HOUR = "Llegó en la primera hora";
+
+const headlinesReady = () => waitFor(() => headline(MEAN));
 
 describe("ArrivalsTab", () => {
   beforeEach(() => {
@@ -228,7 +235,7 @@ describe("ArrivalsTab", () => {
           comparison_kind: "PREVIOUS_PERIOD",
           comparison: {
             ...SUMMARY,
-            median_minutes: 40,
+            mean_minutes: 40,
             p90_minutes: 90,
             first_hour_share: 0.8,
           },
@@ -243,21 +250,37 @@ describe("ArrivalsTab", () => {
         name: "Llegadas cada 15 minutos",
       }),
     ).toBeInTheDocument();
-    expect(slot("Pico de llegada", "value")).toBe("+0:30");
-    expect(slot("Pico de llegada", "comparison")).toBeNull();
-    expect(slot("Llegó el 50%", "value")).toBe("+0:45");
-    expect(slot("Llegó el 50%", "comparison")).toBe(
-      "+5 min vs. período anterior",
+    expect(slot(MEAN, "value")).toBe("22:45");
+    expect(slot(MEAN, "subline")).toBe("45 min después del inicio");
+    expect(slot(MEAN, "comparison")).toBe("+5 min vs. período anterior");
+    expect(slot(BUSIEST, "value")).toBe("22:30-22:45");
+    expect(slot(BUSIEST, "subline")).toBe("30 min después del inicio");
+    expect(slot(BUSIEST, "comparison")).toBeNull();
+    expect(slot(NINETY, "value")).toBe("23:30");
+    expect(slot(NINETY, "subline")).toBe("1 h 30 min después del inicio");
+    expect(slot(NINETY, "comparison")).toBe("0 min vs. período anterior");
+    expect(slot(FIRST_HOUR, "value")).toBe("86%");
+    expect(slot(FIRST_HOUR, "subline")).toBeNull();
+    expect(slot(FIRST_HOUR, "comparison")).toBe("+6 pts vs. período anterior");
+    expect(slot(FIRST_HOUR, "sample")).toBeNull();
+  });
+
+  it("says when a time falls before or right at the start", async () => {
+    respond(
+      ok(
+        stats({
+          summary: {
+            ...SUMMARY,
+            peak: { start_minute: 0, local_time: null, arrivals: 40 },
+            mean_minutes: -20,
+          },
+        }),
+      ),
     );
-    expect(slot("Llegó el 90%", "value")).toBe("+1:30");
-    expect(slot("Llegó el 90%", "comparison")).toBe(
-      "0 min vs. período anterior",
-    );
-    expect(slot("En la primera hora", "value")).toBe("86%");
-    expect(slot("En la primera hora", "comparison")).toBe(
-      "+6 pts vs. período anterior",
-    );
-    expect(slot("En la primera hora", "sample")).toBeNull();
+    renderTab();
+    await headlinesReady();
+    expect(slot(MEAN, "subline")).toBe("20 min antes del inicio");
+    expect(slot(BUSIEST, "subline")).toBe("justo al inicio");
   });
 
   it("uses clock times and the period average for one event", async () => {
@@ -268,37 +291,39 @@ describe("ArrivalsTab", () => {
           summary: {
             ...SUMMARY,
             peak: { start_minute: 30, local_time: "23:30", arrivals: 40 },
-            median_local_time: "23:45",
+            peak_local_time: "23:30",
+            mean_local_time: "23:45",
             p90_local_time: "00:30",
           },
           comparison_kind: "PERIOD_AVERAGE",
-          comparison: { ...SUMMARY, median_minutes: 65, p90_minutes: 95 },
+          comparison: {
+            ...SUMMARY,
+            mean_local_time: "00:05",
+            p90_local_time: "00:35",
+          },
         }),
       ),
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot("Pico de llegada", "value")).toBe("23:30-23:45");
-    expect(slot("Llegó el 50%", "value")).toBe("23:45");
-    expect(slot("Llegó el 50%", "comparison")).toBe(
-      "+0:45 desde el inicio · promedio: +1:05",
-    );
-    expect(slot("Llegó el 90%", "value")).toBe("00:30");
-    expect(slot("Llegó el 90%", "comparison")).toBe(
-      "+1:30 desde el inicio · promedio: +1:35",
-    );
-    expect(slot("En la primera hora", "comparison")).toBe("promedio: 86%");
+    expect(slot(BUSIEST, "value")).toBe("23:30-23:45");
+    expect(slot(MEAN, "value")).toBe("23:45");
+    expect(slot(MEAN, "subline")).toBe("45 min después del inicio");
+    expect(slot(MEAN, "comparison")).toBe("promedio: 00:05");
+    expect(slot(NINETY, "value")).toBe("00:30");
+    expect(slot(NINETY, "comparison")).toBe("promedio: 00:35");
+    expect(slot(FIRST_HOUR, "comparison")).toBe("promedio: 86%");
   });
 
   it("shows dashes and says nobody checked in when there are no arrivals", async () => {
     respond(ok(stats({ curve: [], summary: NOBODY })));
     renderTab();
     await headlinesReady();
-    expect(slot("Pico de llegada", "value")).toBe("–");
-    expect(slot("Llegó el 50%", "value")).toBe("–");
-    expect(slot("Llegó el 90%", "value")).toBe("–");
-    expect(slot("En la primera hora", "value")).toBe("–");
-    expect(slot("En la primera hora", "sample")).toBeNull();
+    for (const label of [MEAN, BUSIEST, NINETY, FIRST_HOUR]) {
+      expect(slot(label, "value")).toBe("–");
+    }
+    expect(slot(MEAN, "subline")).toBeNull();
+    expect(slot(FIRST_HOUR, "sample")).toBeNull();
     expect(screen.getByText("Nadie ingresó")).toBeInTheDocument();
     expect(leadRow("El mismo día")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("NaN");
@@ -331,7 +356,7 @@ describe("ArrivalsTab", () => {
     respond(ok(stats({ summary: { ...SUMMARY, arrivals: 5 } })));
     renderTab();
     await headlinesReady();
-    expect(slot("En la primera hora", "sample")).toBe("n = 5");
+    expect(slot(FIRST_HOUR, "sample")).toBe("n = 5");
   });
 
   it("lists the lead times in a table with exact counts and dims small rates", async () => {
@@ -347,7 +372,7 @@ describe("ArrivalsTab", () => {
       )
         .getAllByRole("columnheader")
         .map((th) => th.textContent),
-    ).toEqual(["Anticipación", "Anotados", "No-show"]);
+    ).toEqual(["Anticipación", "Anotados", "No vinieron"]);
 
     const sameDay = leadRow("El mismo día");
     expect(part(sameDay, "signed-up")).toBe("120");
@@ -402,7 +427,12 @@ describe("ArrivalsTab", () => {
     const arrivals = screen.getByText(/^Los horarios salen del ingreso/);
     expect(arrivals.tagName).toBe("BLOCKQUOTE");
     expect(arrivals).toHaveTextContent(
-      "Los horarios salen del ingreso en la puerta. En el agregado, los minutos se cuentan desde el inicio de cada evento para que eventos a distintas horas se puedan comparar.",
+      "Los horarios salen del ingreso en la puerta. Cada tarjeta muestra la hora a la que llegó la gente y, debajo, cuánto después del inicio fue.",
+    );
+    expect(
+      screen.getByText(/^Con varios eventos, la hora del día/),
+    ).toHaveTextContent(
+      "Con varios eventos, la hora del día y el tiempo desde el inicio se calculan por separado. Si los eventos empiezan a distintas horas, pueden no coincidir del todo. El gráfico alinea los eventos por su hora de inicio.",
     );
     expect(
       screen.getByText("Los discretos no se cuentan porque nunca se anotaron.")
@@ -471,9 +501,31 @@ describe("ArrivalsTab", () => {
     expect(tableText("Llegadas cada 15 minutos")).toEqual({
       header: ["Hora", "Llegadas"],
       body: [
-        ["+0:15", "20"],
-        ["+0:30", "40"],
+        ["0:15", "20"],
+        ["0:30", "40"],
       ],
     });
+    expect(
+      screen.getByText("Horas desde el inicio del evento"),
+    ).toBeInTheDocument();
+  });
+
+  it("labels one event's curve by clock time, without the several-events note", async () => {
+    respond(
+      ok(
+        stats({
+          curve: [{ start_minute: 30, local_time: "23:30", arrivals: 40 }],
+        }),
+      ),
+    );
+    renderTab({ query: { meetupId: "m1" } });
+    await screen.findByText("Llegadas cada 15 minutos");
+    expect(tableText("Llegadas cada 15 minutos").body).toEqual([
+      ["23:30", "40"],
+    ]);
+    expect(
+      screen.queryByText("Horas desde el inicio del evento"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Con varios eventos/)).not.toBeInTheDocument();
   });
 });

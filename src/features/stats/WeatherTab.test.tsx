@@ -256,11 +256,11 @@ describe("WeatherTab", () => {
     renderTab();
     await ready();
     expect(slot("Con lluvia", "value")).toBe("80");
-    expect(slot("Con lluvia", "subline")).toBe("31% no-show");
+    expect(slot("Con lluvia", "subline")).toBe("31% no vinieron");
     // The rainy group has 12 events, at or above the small-sample threshold.
     expect(slot("Con lluvia", "sample")).toBeNull();
     expect(slot("Sin lluvia", "value")).toBe("120");
-    expect(slot("Sin lluvia", "subline")).toBe("18% no-show");
+    expect(slot("Sin lluvia", "subline")).toBe("18% no vinieron");
     // 12 events is not a small sample, so no n; 3 events is.
     expect(slot("Sin lluvia", "sample")).toBe("n = 3");
     expect(slot("Sin clima", "value")).toBe("1");
@@ -480,7 +480,7 @@ describe("WeatherTab", () => {
       renderTab({ query: single });
       await waitFor(() => headline("Vinieron"));
       expect(slot("Vinieron", "value")).toBe("140");
-      expect(slot("No-show", "value")).toBe("15%");
+      expect(slot("No vinieron", "value")).toBe("15%");
       const card = screen.getByRole("region", { name: "Clima" });
       expect(part(card, "weather-temperature")).toBe("21,5 °C");
       expect(part(card, "weather-rain")).toBe("No llovió, 0,0 mm");
@@ -525,7 +525,7 @@ describe("WeatherTab", () => {
       respond(ok(oneEvent(event({ no_show_rate: null }))));
       renderTab({ query: single });
       await waitFor(() => headline("Vinieron"));
-      expect(slot("No-show", "value")).toBe("–");
+      expect(slot("No vinieron", "value")).toBe("–");
     });
   });
 

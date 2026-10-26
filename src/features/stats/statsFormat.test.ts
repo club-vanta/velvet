@@ -4,6 +4,7 @@ import {
   formatEventDay,
   minuteChange,
   formatCurveLabel,
+  formatDuration,
   formatOffset,
   pointChange,
   formatRate,
@@ -117,18 +118,32 @@ describe("spansYears", () => {
 });
 
 describe("formatOffset", () => {
-  it("shows hours and minutes from the start with a sign", () => {
-    expect(formatOffset(75)).toBe("+1:15");
+  it("shows hours and minutes from the start, negative before it", () => {
+    expect(formatOffset(75)).toBe("1:15");
     expect(formatOffset(-10)).toBe("-0:10");
-    expect(formatOffset(0)).toBe("+0:00");
+    expect(formatOffset(0)).toBe("0:00");
     expect(formatOffset(-75)).toBe("-1:15");
-    expect(formatOffset(600)).toBe("+10:00");
+    expect(formatOffset(600)).toBe("10:00");
   });
 
   it("rounds a fractional average to whole minutes", () => {
-    expect(formatOffset(64.6)).toBe("+1:05");
-    expect(formatOffset(59.7)).toBe("+1:00");
-    expect(formatOffset(-0.2)).toBe("+0:00");
+    expect(formatOffset(64.6)).toBe("1:05");
+    expect(formatOffset(59.7)).toBe("1:00");
+    expect(formatOffset(-0.2)).toBe("0:00");
+  });
+});
+
+describe("formatDuration", () => {
+  it("names hours and minutes, leaving out an empty part", () => {
+    expect(formatDuration(82)).toBe("1 h 22 min");
+    expect(formatDuration(120)).toBe("2 h");
+    expect(formatDuration(45)).toBe("45 min");
+    expect(formatDuration(0)).toBe("0 min");
+  });
+
+  it("drops the sign and rounds to whole minutes", () => {
+    expect(formatDuration(-20)).toBe("20 min");
+    expect(formatDuration(59.6)).toBe("1 h");
   });
 });
 
@@ -156,7 +171,7 @@ describe("formatCurveLabel", () => {
     ).toBe("-0:15");
     expect(
       formatCurveLabel({ start_minute: 45, local_time: "23:45" }, false),
-    ).toBe("+0:45");
+    ).toBe("0:45");
   });
 
   it("labels one-event buckets by clock time", () => {

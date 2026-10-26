@@ -1316,6 +1316,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/organizations/{org_id}/stats/no-shows": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Who signs up for finalized meetups and does not come */
+    get: operations["get_no_show_stats_organizations__org_id__stats_no_shows_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/organizations/{org_id}/stats/demographics": {
     parameters: {
       query?: never;
@@ -1471,23 +1488,15 @@ export interface components {
     };
     /**
      * AgeGroupPublic
-     * @description One age group of audience RSVPs, keyed by a StatsAgeBucket. Rates and
-     *     shares are null with nothing to divide by.
+     * @description One age group of attendances, keyed by a StatsAgeBucket. attended_share
+     *     is null when nobody attended.
      */
     AgeGroupPublic: {
       key: components["schemas"]["StatsAgeBucket"];
       /** Attended */
       attended: number;
-      /** Expected */
-      expected: number;
-      /** No Show */
-      no_show: number;
-      /** No Show Rate */
-      no_show_rate: number | null;
       /** Attended Share */
       attended_share: number | null;
-      /** Expected Share */
-      expected_share: number | null;
     };
     /**
      * ApproveUserRequest
@@ -1528,11 +1537,16 @@ export interface components {
     };
     /**
      * ArrivalSummaryPublic
-     * @description Offsets are minutes from the meetup start. The *_local_time fields are
-     *     "HH:MM" only for one meetup's own summary. arrivals counts the arrivals
-     *     from 120 minutes before to 720 minutes after the start; excluded_arrivals
-     *     counts those outside that window, which no other field includes. The
-     *     optional fields are null when nobody arrived inside the window.
+     * @description *_minutes are offsets from the meetup start (negative = before);
+     *     *_local_time are "HH:MM" of the local clock, counted from midnight of each
+     *     meetup's local date. Over several meetups the offset and clock figures are
+     *     computed separately, so they need not line up when meetups start at
+     *     different hours. peak is the busiest bucket of the curve; peak_local_time
+     *     is the start of the busiest local quarter hour. Means are rounded to the
+     *     minute. arrivals counts the arrivals from 120 minutes before to 720
+     *     minutes after the start; excluded_arrivals counts those outside that
+     *     window, which no other field includes. The optional fields are null when
+     *     nobody arrived inside the window.
      */
     ArrivalSummaryPublic: {
       /** Arrivals */
@@ -1540,12 +1554,14 @@ export interface components {
       /** Excluded Arrivals */
       excluded_arrivals: number;
       peak: components["schemas"]["ArrivalBucketPublic"] | null;
-      /** Median Minutes */
-      median_minutes: number | null;
+      /** Peak Local Time */
+      peak_local_time: string | null;
+      /** Mean Minutes */
+      mean_minutes: number | null;
       /** P90 Minutes */
       p90_minutes: number | null;
-      /** Median Local Time */
-      median_local_time: string | null;
+      /** Mean Local Time */
+      mean_local_time: string | null;
       /** P90 Local Time */
       p90_local_time: string | null;
       /** First Hour Share */
@@ -1919,24 +1935,16 @@ export interface components {
     };
     /**
      * GenderGroupPublic
-     * @description One gender group of audience RSVPs. key is a Mazmo gender code (null:
-     *     unknown). Rates and shares are null with nothing to divide by.
+     * @description One gender group of attendances. key is a Mazmo gender code (null:
+     *     unknown). attended_share is null when nobody attended.
      */
     GenderGroupPublic: {
       /** Key */
       key: string | null;
       /** Attended */
       attended: number;
-      /** Expected */
-      expected: number;
-      /** No Show */
-      no_show: number;
-      /** No Show Rate */
-      no_show_rate: number | null;
       /** Attended Share */
       attended_share: number | null;
-      /** Expected Share */
-      expected_share: number | null;
     };
     /**
      * GeocodeResult
@@ -2516,6 +2524,138 @@ export interface components {
       ready: boolean;
     };
     /**
+     * NoShowAgeGroupPublic
+     * @description Expected RSVPs and no-shows of one age group.
+     */
+    NoShowAgeGroupPublic: {
+      key: components["schemas"]["StatsAgeBucket"];
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowGenderGroupPublic
+     * @description Expected RSVPs and no-shows of one gender group. key is a Mazmo gender code (null: unknown).
+     */
+    NoShowGenderGroupPublic: {
+      /** Key */
+      key: string | null;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowGuestPublic
+     * @description One guest who missed meetups: expected RSVPs, attendances (expected = attended
+     *     + no_show) and the start of the last meetup they missed.
+     */
+    NoShowGuestPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Expected */
+      expected: number;
+      /** Attended */
+      attended: number;
+      /** No Show */
+      no_show: number;
+      /**
+       * Last No Show
+       * Format: date-time
+       */
+      last_no_show: string;
+    };
+    /**
+     * NoShowHistoryGroupPublic
+     * @description Expected RSVPs and no-shows of guests who had, or had not, come to an earlier meetup of the org.
+     */
+    NoShowHistoryGroupPublic: {
+      key: components["schemas"]["StatsVisitHistory"];
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowMeetupRowPublic
+     * @description Expected RSVPs and no-shows of one finalized meetup.
+     */
+    NoShowMeetupRowPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+    };
+    /**
+     * NoShowStatsPublic
+     * @description Who signs up and does not come, and what those RSVPs have in common.
+     *     Period mode: meetups lists the period's finalized meetups and guests the
+     *     guests with 2 or more no-shows in it. One-meetup mode: meetups is empty
+     *     and guests lists everyone who missed that meetup, counted over all time.
+     *     guests holds the first 50, most no-shows first; guests_total counts them all.
+     */
+    NoShowStatsPublic: {
+      summary: components["schemas"]["NoShowSummaryPublic"];
+      /** Meetups */
+      meetups: components["schemas"]["NoShowMeetupRowPublic"][];
+      /** Gender */
+      gender: components["schemas"]["NoShowGenderGroupPublic"][];
+      /** Age */
+      age: components["schemas"]["NoShowAgeGroupPublic"][];
+      /** History */
+      history: components["schemas"]["NoShowHistoryGroupPublic"][];
+      /** Lead Time */
+      lead_time: components["schemas"]["LeadTimeRowPublic"][];
+      /** Guests */
+      guests: components["schemas"]["NoShowGuestPublic"][];
+      /** Guests Total */
+      guests_total: number;
+      comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
+      comparison: components["schemas"]["NoShowSummaryPublic"] | null;
+    };
+    /**
+     * NoShowSummaryPublic
+     * @description Expected audience RSVPs (signed up, not cancelled) and no-shows in scope.
+     *     repeat_guests counts the guests with 2 or more no-shows: in the period,
+     *     or for one meetup, those of its no-shows who reach 2 over all time.
+     */
+    NoShowSummaryPublic: {
+      /** Expected */
+      expected: number;
+      /** No Show */
+      no_show: number;
+      /** No Show Rate */
+      no_show_rate: number | null;
+      /** Repeat Guests */
+      repeat_guests: number;
+    };
+    /**
      * OperationsPaymentStatsPublic
      * @description Attended RSVPs of the meetups that require payment. Only NORMAL guests pay; every other
      *     type is exempt. paid_share is paid / (paid + pending), null when nobody owes entry.
@@ -2907,6 +3047,15 @@ export interface components {
       | "FROM_15_TO_20"
       | "FROM_20_TO_25"
       | "FROM_25";
+    /**
+     * StatsVisitHistory
+     * @description Whether a guest had come before when they signed up for a meetup.
+     *
+     *     FIRST_TIME: no attendance at an earlier finalized meetup of the org.
+     *     RETURNING:  at least one.
+     * @enum {string}
+     */
+    StatsVisitHistory: "FIRST_TIME" | "RETURNING";
     /**
      * SyncResponse
      * @description Response after syncing guests from Mazmo.
@@ -6887,6 +7036,71 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ArrivalStatsPublic"];
+        };
+      };
+      /** @description Invalid or missing credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Admin role required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Meetup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  get_no_show_stats_organizations__org_id__stats_no_shows_get: {
+    parameters: {
+      query?: {
+        /** @description First local date to include. Omit for no lower bound. */
+        from?: string | null;
+        /** @description Local date the period ends before. Omit for no upper bound. */
+        to?: string | null;
+        /** @description Focus on one finalized meetup instead of the whole period. */
+        meetup_id?: string | null;
+      };
+      header?: never;
+      path: {
+        org_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Who signed up for finalized meetups in the period and did not come */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoShowStatsPublic"];
         };
       };
       /** @description Invalid or missing credentials */

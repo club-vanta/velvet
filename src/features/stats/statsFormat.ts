@@ -65,12 +65,21 @@ export function spansYears(isos: string[]): boolean {
   return years.size > 1;
 }
 
-/** Minutes from an event's start as `+1:15` or `-0:10`. */
+/** Minutes from an event's start as `1:15`, or `-0:10` before it: an axis tick. */
 export function formatOffset(minutes: number): string {
   const whole = Math.round(minutes);
   const abs = Math.abs(whole);
-  const sign = whole < 0 ? "-" : "+";
+  const sign = whole < 0 ? "-" : "";
   return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, "0")}`;
+}
+
+/** A length of time in whole minutes, sign dropped: `1 h 22 min`, `2 h`, `45 min`. */
+export function formatDuration(minutes: number): string {
+  const abs = Math.abs(Math.round(minutes));
+  const hours = Math.floor(abs / 60);
+  const rest = abs % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
 /** Whole-minute difference between two offsets, or null when either is missing. */

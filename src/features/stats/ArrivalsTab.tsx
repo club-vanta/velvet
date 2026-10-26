@@ -7,9 +7,11 @@ import {
 } from "@/components/ui/chart";
 import type { components } from "@/api/types";
 import { useArrivalsStats } from "@/hooks/useArrivalsStats";
-import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
+import { useGroupLabels } from "./groupLabels";
+import { BAR_END_RIGHT, BAR_END_UP, BAR_GAP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
 import { RateCell } from "./RateCell";
@@ -20,8 +22,8 @@ import {
   formatClockWindow,
   formatCount,
   formatCurveLabel,
+  formatDuration,
   minuteChange,
-  formatOffset,
   pointChange,
   formatRate,
   NO_VALUE,
@@ -34,15 +36,6 @@ type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 4;
-
-const LEAD_LABELS: Record<LeadRow["bucket"], TranslationKey> = {
-  SAME_DAY: "statsLeadSameDay",
-  ONE_DAY: "statsLeadOneDay",
-  TWO_THREE: "statsLeadTwoThree",
-  FOUR_SEVEN: "statsLeadFourSeven",
-  EIGHT_FOURTEEN: "statsLeadEightFourteen",
-  FIFTEEN_PLUS: "statsLeadFifteenPlus",
-};
 
 function ArrivalCurve({
   curve,
@@ -81,9 +74,19 @@ function ArrivalCurve({
             allowDecimals={false}
           />
           <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar dataKey="arrivals" fill="var(--color-arrivals)" />
+          <Bar
+            dataKey="arrivals"
+            fill="var(--color-arrivals)"
+            radius={BAR_END_UP}
+            {...BAR_GAP}
+          />
         </BarChart>
       </ChartContainer>
+      {!single && (
+        <p className="text-center text-xs text-muted-foreground">
+          {t("statsArrivalAxisFromStart")}
+        </p>
+      )}
       <ChartTextTable
         labelledBy={labelledBy}
         headers={[t("statsArrivalTimeHeader"), t("statsArrivalsSeries")]}
@@ -98,11 +101,12 @@ function ArrivalCurve({
 
 function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
   const { t } = useLanguage();
+  const labels = useGroupLabels();
   const config: ChartConfig = {
     signed_up: { label: t("statsSeriesSignedUp"), color: "var(--chart-2)" },
   };
   const data = rows.map((r) => ({
-    label: t(LEAD_LABELS[r.bucket]),
+    label: labels.leadTime(r.bucket),
     signed_up: r.signed_up,
   }));
 
@@ -125,7 +129,11 @@ function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
           interval={0}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="signed_up" fill="var(--color-signed_up)" />
+        <Bar
+          dataKey="signed_up"
+          fill="var(--color-signed_up)"
+          radius={BAR_END_RIGHT}
+        />
       </BarChart>
     </ChartContainer>
   );
@@ -140,6 +148,7 @@ function LeadTimeTable({
   labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
+  const labels = useGroupLabels();
   const head = "py-1.5 text-xs font-medium text-muted-foreground";
 
   return (
@@ -168,7 +177,7 @@ function LeadTimeTable({
               data-slot="bucket"
               className="py-1.5 text-left font-normal"
             >
-              {t(LEAD_LABELS[r.bucket])}
+              {labels.leadTime(r.bucket)}
             </th>
             <td data-slot="signed-up" className="py-1.5 text-right">
               {formatCount(r.signed_up, lang)}
@@ -196,30 +205,24 @@ function ArrivalsContent({
     return <StatsEmptyState />;
   }
 
-  /**
-   * The line under a time. One event: its offset from the start (its card
-   * shows a clock time) and the period average. Aggregate: the change vs. the
-   * previous period.
-   */
-  function compareMinutes(
+  /** How long before or after the start: the line under a clock time. */
+  function fromStart(minutes: number | null): string | undefined {
+    if (minutes === null) return undefined;
+    if (minutes === 0) return t("statsAtStart");
+    const key = minutes > 0 ? "statsAfterStart" : "statsBeforeStart";
+    return t(key).replace("{0}", formatDuration(minutes));
+  }
+
+  /** One event: the period's clock time; aggregate: the change in minutes from the start. */
+  function compareTime(
     current: number | null,
     baseline: number | null | undefined,
+    baselineClock: string | null | undefined,
   ): string | undefined {
-    if (comparison_kind === "PERIOD_AVERAGE") {
-      const fromStart =
-        current === null
-          ? []
-          : [t("statsFromStart").replace("{0}", formatOffset(current))];
-      const average =
-        baseline == null
-          ? []
-          : [t("statsPeriodAverage").replace("{0}", formatOffset(baseline))];
-      const parts = [...fromStart, ...average];
-      return parts.length > 0 ? parts.join(" · ") : undefined;
-    }
     return line({
       unit: "minutes",
       change: minuteChange(current, baseline ?? null),
+      average: baselineClock ?? undefined,
     });
   }
 
@@ -235,37 +238,36 @@ function ArrivalsContent({
     });
   }
 
-  const time = (local: string | null, minutes: number | null) =>
-    (single ? local : null) ??
-    (minutes === null ? NO_VALUE : formatOffset(minutes));
-  const peak = summary.peak;
-  // The peak is a 15-minute bucket: one event shows the window it covers.
-  const peakLabel = (p: NonNullable<typeof peak>) =>
-    single && p.local_time
-      ? formatClockWindow(p.local_time)
-      : formatOffset(p.start_minute);
-
   return (
     <div className="space-y-3">
       <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
-          label={t("statsPeakArrival")}
-          value={peak ? peakLabel(peak) : NO_VALUE}
-        />
-        <HeadlineStat
-          label={t("statsHalfArrived")}
-          value={time(summary.median_local_time, summary.median_minutes)}
-          comparison={compareMinutes(
-            summary.median_minutes,
-            comparison?.median_minutes,
+          label={t("statsMeanArrival")}
+          value={summary.mean_local_time ?? NO_VALUE}
+          subline={fromStart(summary.mean_minutes)}
+          comparison={compareTime(
+            summary.mean_minutes,
+            comparison?.mean_minutes,
+            comparison?.mean_local_time,
           )}
         />
         <HeadlineStat
+          label={t("statsBusiestQuarter")}
+          value={
+            summary.peak_local_time
+              ? formatClockWindow(summary.peak_local_time)
+              : NO_VALUE
+          }
+          subline={fromStart(summary.peak?.start_minute ?? null)}
+        />
+        <HeadlineStat
           label={t("statsNinetyArrived")}
-          value={time(summary.p90_local_time, summary.p90_minutes)}
-          comparison={compareMinutes(
+          value={summary.p90_local_time ?? NO_VALUE}
+          subline={fromStart(summary.p90_minutes)}
+          comparison={compareTime(
             summary.p90_minutes,
             comparison?.p90_minutes,
+            comparison?.p90_local_time,
           )}
         />
         <HeadlineStat
@@ -291,6 +293,7 @@ function ArrivalsContent({
         }
       </ChartCard>
       <StatsNote>{t("statsNoteArrivals")}</StatsNote>
+      {!single && <StatsNote>{t("statsNoteArrivalClock")}</StatsNote>}
       {summary.excluded_arrivals > 0 && (
         <StatsNote>
           {t("statsNoteExcludedArrivals").replace(

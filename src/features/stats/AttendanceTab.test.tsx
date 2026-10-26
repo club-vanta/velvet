@@ -197,8 +197,10 @@ describe("AttendanceTab", () => {
     ).toBeInTheDocument();
     expect(slot("Vinieron", "value")).toBe("412");
     expect(slot("Vinieron", "comparison")).toBe("+8% vs. período anterior");
-    expect(slot("No-show", "value")).toBe("18%");
-    expect(slot("No-show", "comparison")).toBe("+3 pts vs. período anterior");
+    expect(slot("No vinieron", "value")).toBe("18%");
+    expect(slot("No vinieron", "comparison")).toBe(
+      "+3 pts vs. período anterior",
+    );
     expect(slot("Se bajaron", "value")).toBe("10%");
     expect(slot("Se bajaron", "comparison")).toBe("0 pts vs. período anterior");
     expect(slot("Discretos", "value")).toBe("12");
@@ -219,7 +221,7 @@ describe("AttendanceTab", () => {
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
     expect(slot("Vinieron", "comparison")).toBe("promedio: 82,4");
-    expect(slot("No-show", "comparison")).toBe("promedio: 20%");
+    expect(slot("No vinieron", "comparison")).toBe("promedio: 20%");
     expect(slot("Discretos", "comparison")).toBeNull();
     expect(() => headline("Eventos")).toThrow();
   });
@@ -234,8 +236,8 @@ describe("AttendanceTab", () => {
     );
     renderTab();
     await headlinesReady();
-    const noShow = headline("No-show");
-    expect(slot("No-show", "sample")).toBe("n = 7");
+    const noShow = headline("No vinieron");
+    expect(slot("No vinieron", "sample")).toBe("n = 7");
     expect(noShow).toHaveClass("text-muted-foreground");
     expect(headline("Vinieron")).not.toHaveClass("text-muted-foreground");
   });
@@ -260,7 +262,7 @@ describe("AttendanceTab", () => {
     );
     renderTab();
     await headlinesReady();
-    expect(slot("No-show", "value")).toBe("–");
+    expect(slot("No vinieron", "value")).toBe("–");
     expect(slot("Se bajaron", "value")).toBe("–");
     expect(slot("Promedio por evento", "value")).toBe("–");
     expect(document.body).not.toHaveTextContent("NaN");
@@ -314,7 +316,7 @@ describe("AttendanceTab", () => {
     renderTab();
     await headlinesReady();
     expect(tableText("Asistencia por evento")).toEqual({
-      header: ["Evento", "Fecha", "Vinieron", "No-show", "Se bajaron"],
+      header: ["Evento", "Fecha", "Vinieron", "No vinieron", "Se bajaron"],
       body: [
         ["Alter Marzo", "10 de mar de 2026", "80", "10", "10"],
         ["Alter Abril", "14 de abr de 2026", "70", "5", "3"],

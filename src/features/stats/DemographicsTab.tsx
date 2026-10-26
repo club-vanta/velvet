@@ -1,21 +1,18 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 import type { components } from "@/api/types";
 import { useDemographicsStats } from "@/hooks/useDemographicsStats";
-import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { MAZMO_GENDER_LABEL, mazmoLabel } from "@/lib/mazmoProfile";
-import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
+import { useGroupLabels } from "./groupLabels";
+import { BAR_END_RIGHT, BAR_END_UP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { HeadlineStat } from "./HeadlineStat";
-import { RateCell } from "./RateCell";
 import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
@@ -39,30 +36,11 @@ type Group = GenderGroup | AgeGroup;
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 3;
 
-const AGE_LABELS: Record<AgeGroup["key"], TranslationKey> = {
-  AGE_18_24: "statsAge18to24",
-  AGE_25_29: "statsAge25to29",
-  AGE_30_34: "statsAge30to34",
-  AGE_35_39: "statsAge35to39",
-  AGE_40_49: "statsAge40to49",
-  AGE_50_PLUS: "statsAge50Plus",
-  UNKNOWN: "statsUnknown",
-};
-
 /** Bar height per row of a horizontal chart, plus room for the axis and legend. */
 const ROW_HEIGHT = 56;
 const CHART_CHROME = 72;
 
-function useGroupLabels() {
-  const { t } = useLanguage();
-  return {
-    gender: (key: string | null) =>
-      key === null ? t("statsUnknown") : mazmoLabel(MAZMO_GENDER_LABEL, key, t),
-    age: (key: AgeGroup["key"]) => t(AGE_LABELS[key]),
-  };
-}
-
-/** Each group's share of the people who came next to its share of those expected. */
+/** Each group's share of the attendances. */
 function ShareChart<G extends Group>({
   groups,
   label,
@@ -79,17 +57,13 @@ function ShareChart<G extends Group>({
   const horizontal = bars === "horizontal";
   const config: ChartConfig = {
     attended: { label: t("statsSeriesAttended"), color: "var(--chart-1)" },
-    expected: { label: t("statsSeriesExpected"), color: "var(--chart-2)" },
   };
   const data = groups.map((g) => ({
     label: label(g.key),
     attended: g.attended_share ?? 0,
-    expected: g.expected_share ?? 0,
   }));
   const percent = (value: number) => formatRate(value, lang);
-  const ticks = shareTicks(
-    Math.max(0, ...data.flatMap((d) => [d.attended, d.expected])),
-  );
+  const ticks = shareTicks(Math.max(0, ...data.map((d) => d.attended)));
   const domain: [number, number] = [0, ticks[ticks.length - 1]];
 
   return (
@@ -156,110 +130,22 @@ function ShareChart<G extends Group>({
               />
             }
           />
-          <ChartLegend content={<ChartLegendContent />} />
-          <Bar dataKey="attended" fill="var(--color-attended)" />
-          <Bar dataKey="expected" fill="var(--color-expected)" />
+          <Bar
+            dataKey="attended"
+            fill="var(--color-attended)"
+            radius={horizontal ? BAR_END_RIGHT : BAR_END_UP}
+          />
         </BarChart>
       </ChartContainer>
       <ChartTextTable
         labelledBy={labelledBy}
-        headers={[
-          t("statsGroupHeader"),
-          t("statsSeriesAttended"),
-          t("statsSeriesExpected"),
-        ]}
+        headers={[t("statsGroupHeader"), t("statsSeriesAttended")]}
         rows={groups.map((g) => ({
           key: String(g.key),
-          cells: [
-            label(g.key),
-            formatRate(g.attended_share, lang),
-            formatRate(g.expected_share, lang),
-          ],
+          cells: [label(g.key), formatRate(g.attended_share, lang)],
         }))}
       />
     </>
-  );
-}
-
-/** One titled block of table rows: a header row, then a row per group. */
-function NoShowGroupRows<G extends Group>({
-  title,
-  groups,
-  label,
-}: {
-  title: string;
-  groups: G[];
-  label: (key: G["key"]) => string;
-}) {
-  const { lang } = useLanguage();
-
-  return (
-    <tbody className="divide-y">
-      <tr>
-        <th
-          colSpan={3}
-          scope="rowgroup"
-          className="pt-3 pb-1 text-left text-xs font-medium text-muted-foreground"
-        >
-          {title}
-        </th>
-      </tr>
-      {groups.map((group) => (
-        <tr key={group.key ?? ""} data-slot="group-row">
-          <th
-            scope="row"
-            data-slot="group"
-            className="py-1.5 text-left font-normal"
-          >
-            {label(group.key)}
-          </th>
-          <td data-slot="expected" className="py-1.5 text-right">
-            {formatCount(group.expected, lang)}
-          </td>
-          <RateCell rate={group.no_show_rate} n={group.expected} />
-        </tr>
-      ))}
-    </tbody>
-  );
-}
-
-/** The no-show rate of each gender and age group; a rate from few people is dimmed with its n. */
-function NoShowTable({
-  gender,
-  age,
-  labels,
-  labelledBy,
-}: {
-  gender: GenderGroup[];
-  age: AgeGroup[];
-  labels: ReturnType<typeof useGroupLabels>;
-  labelledBy: string;
-}) {
-  const { t } = useLanguage();
-  const head = "py-1.5 text-xs font-medium text-muted-foreground";
-
-  return (
-    <table aria-labelledby={labelledBy} className="w-full text-sm tabular-nums">
-      <thead>
-        <tr className="border-b">
-          <th scope="col" className={cn(head, "text-left")}>
-            {t("statsGroupHeader")}
-          </th>
-          <th scope="col" className={cn(head, "text-right")}>
-            {t("statsSeriesExpected")}
-          </th>
-          <th scope="col" className={cn(head, "text-right")}>
-            {t("statsNoShowRate")}
-          </th>
-        </tr>
-      </thead>
-      <NoShowGroupRows
-        title={t("statsGender")}
-        groups={gender}
-        label={labels.gender}
-      />
-      <NoShowGroupRows title={t("statsAge")} groups={age} label={labels.age} />
-    </table>
   );
 }
 
@@ -269,7 +155,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
   const { gender, age, summary, comparison, comparison_kind } = data;
   const line = useComparisonLine(comparison_kind);
 
-  if (summary.attended === 0 && age.every((g) => g.expected === 0)) {
+  if (summary.attended === 0) {
     return <StatsEmptyState />;
   }
 
@@ -347,16 +233,6 @@ function DemographicsContent({ data }: { data: Demographics }) {
         )}
       </ChartCard>
       <StatsNote>{t("statsNoteAge")}</StatsNote>
-      <ChartCard title={t("statsNoShowByGroup")}>
-        {(headingId) => (
-          <NoShowTable
-            gender={gender}
-            age={age}
-            labels={labels}
-            labelledBy={headingId}
-          />
-        )}
-      </ChartCard>
     </div>
   );
 }
