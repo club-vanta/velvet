@@ -397,6 +397,24 @@ describe("MeetupLocation", () => {
     );
   });
 
+  it("moves focus to Change location when the same address is saved again", async () => {
+    renderLocation(
+      makeMeetup({
+        location_label: CALLAO.label,
+        latitude: CALLAO.latitude,
+        longitude: CALLAO.longitude,
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "Change location" }));
+    await type("Callao");
+    await user.click(await screen.findByRole("option", { name: CALLAO.label }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Change location" }),
+      ).toHaveFocus(),
+    );
+  });
+
   it("offers no change action to a member", () => {
     renderLocation(LOCATED, false);
     expect(

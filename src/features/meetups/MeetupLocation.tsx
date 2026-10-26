@@ -58,11 +58,18 @@ export function MeetupLocation({
     location: components["schemas"]["MeetupLocationUpdate"],
     successMessage: string,
   ) => {
-    focusAfterSave.current = true;
+    // Saving the location already shown renders nothing new, so the
+    // focus moves now rather than on the next location.
+    const unchanged =
+      location.location_label === label &&
+      location.latitude === latitude &&
+      location.longitude === longitude;
+    focusAfterSave.current = !unchanged;
     setLocation.mutate(location, {
       onSuccess: () => {
         setChanging(false);
         toast.success(successMessage);
+        if (unchanged) requestAnimationFrame(() => changeRef.current?.focus());
       },
       onError: (err) => {
         focusAfterSave.current = false;
