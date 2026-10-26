@@ -36,6 +36,9 @@ type GenderGroup = components["schemas"]["GenderGroupPublic"];
 type AgeGroup = components["schemas"]["AgeGroupPublic"];
 type Group = GenderGroup | AgeGroup;
 
+/** Headline cards of the loaded tab; the skeleton shows the same count. */
+const HEADLINE_CARDS = 3;
+
 const AGE_LABELS: Record<AgeGroup["key"], TranslationKey> = {
   AGE_18_24: "statsAge18to24",
   AGE_25_29: "statsAge25to29",
@@ -304,7 +307,7 @@ function DemographicsContent({ data }: { data: Demographics }) {
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(3)}>
+      <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
           label={t("statsMedianAge")}
           value={formatAge(summary.median_age, lang)}
@@ -366,7 +369,7 @@ export function DemographicsTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={single}
-      cards={3}
+      cards={HEADLINE_CARDS}
       testId="demographics-skeleton"
       onShowAll={onShowAll}
     >

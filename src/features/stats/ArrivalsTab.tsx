@@ -32,6 +32,9 @@ import { useComparisonLine } from "./useComparisonLine";
 type Arrivals = components["schemas"]["ArrivalStatsPublic"];
 type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 
+/** Headline cards of the loaded tab; the skeleton shows the same count. */
+const HEADLINE_CARDS = 4;
+
 const LEAD_LABELS: Record<LeadRow["bucket"], TranslationKey> = {
   SAME_DAY: "statsLeadSameDay",
   ONE_DAY: "statsLeadOneDay",
@@ -244,7 +247,7 @@ function ArrivalsContent({
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(4)}>
+      <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
           label={t("statsPeakArrival")}
           value={peak ? peakLabel(peak) : NO_VALUE}
@@ -323,7 +326,7 @@ export function ArrivalsTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={single}
-      cards={4}
+      cards={HEADLINE_CARDS}
       testId="arrivals-skeleton"
       onShowAll={onShowAll}
     >

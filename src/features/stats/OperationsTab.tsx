@@ -1,6 +1,6 @@
 import type { components } from "@/api/types";
 import { useOperationsStats } from "@/hooks/useOperationsStats";
-import { formatApiDate } from "@/lib/format";
+import { formatApiDate, formatDecimal } from "@/lib/format";
 import { GUEST_TYPE_LABEL } from "@/lib/guestType";
 import { useLanguage } from "@/lib/i18n";
 import { ChartCard } from "./ChartCard";
@@ -25,6 +25,12 @@ type Payments = components["schemas"]["OperationsPaymentStatsPublic"];
 type GuestTypeRow = components["schemas"]["GuestTypeRowPublic"];
 
 /** One chart color per guest type, so a type keeps its color in any order. */
+/**
+ * Headline cards of the loaded tab. An org that takes no payments has no
+ * payment-share card; the skeleton shows the common case.
+ */
+const CARDS = { withPayments: 4, withoutPayments: 3 };
+
 const TYPE_COLORS: Record<GuestTypeRow["guest_type"], string> = {
   NORMAL: "var(--chart-1)",
   INVITED: "var(--chart-2)",
@@ -238,18 +244,17 @@ function OperationsContent({ data }: { data: Operations }) {
     return line({
       unit: "percent",
       change: null,
-      average:
-        average === null
-          ? NO_VALUE
-          : formatCount(Math.round(average * 10) / 10, lang),
+      average: average === null ? NO_VALUE : formatDecimal(average, lang),
     });
   }
 
-  const cards = payments ? 4 : 3;
-
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(cards)}>
+      <div
+        className={headlineGrid(
+          payments ? CARDS.withPayments : CARDS.withoutPayments,
+        )}
+      >
         <HeadlineStat
           label={t("statsCameIn")}
           value={formatCount(summary.attended, lang)}
@@ -316,7 +321,7 @@ export function OperationsTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={!!query?.meetupId}
-      cards={4}
+      cards={CARDS.withPayments}
       testId="operations-skeleton"
       onShowAll={onShowAll}
     >

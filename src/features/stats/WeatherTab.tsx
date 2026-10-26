@@ -37,6 +37,9 @@ type Band = components["schemas"]["TemperatureBandRowPublic"];
 type Group = components["schemas"]["WeatherGroupPublic"];
 type Event = components["schemas"]["WeatherEventPublic"];
 
+/** Headline cards of the loaded tab; the skeleton shows the same count. */
+const CARDS = { all: 3, single: 2 };
+
 const BAND_LABEL: Record<Band["band"], TranslationKey> = {
   BELOW_10: "statsBandBelow10",
   FROM_10_TO_15: "statsBandFrom10",
@@ -299,7 +302,7 @@ function WeatherAggregate({ data }: { data: Weather }) {
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(3)}>
+      <div className={headlineGrid(CARDS.all)}>
         {rainy && <GroupStat label={t("statsRainy")} group={rainy} />}
         {dry && <GroupStat label={t("statsDryEvents")} group={dry} />}
         <HeadlineStat
@@ -364,7 +367,7 @@ function WeatherEvent({ event }: { event: Event }) {
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(2)}>
+      <div className={headlineGrid(CARDS.single)}>
         <HeadlineStat
           label={t("statsAttended")}
           value={formatCount(event.attended, lang)}
@@ -393,7 +396,7 @@ export function WeatherTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={single}
-      cards={single ? 2 : 3}
+      cards={single ? CARDS.single : CARDS.all}
       testId="weather-skeleton"
       onShowAll={onShowAll}
     >

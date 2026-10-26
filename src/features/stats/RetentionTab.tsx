@@ -35,6 +35,9 @@ import { useComparisonLine } from "./useComparisonLine";
 type Retention = components["schemas"]["RetentionStatsPublic"];
 type FrequencyRow = components["schemas"]["FrequencyRowPublic"];
 
+/** Headline cards of the loaded tab; the skeleton shows the same count. */
+const HEADLINE_CARDS = 3;
+
 const FREQUENCY_LABELS: Record<FrequencyRow["bucket"], TranslationKey> = {
   ONE: "statsFreqOne",
   TWO: "statsFreqTwo",
@@ -258,7 +261,7 @@ function RetentionContent({
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(3)}>
+      <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
           label={t("statsPeople")}
           value={formatCount(summary.attendees, lang)}
@@ -340,7 +343,7 @@ export function RetentionTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={single}
-      cards={3}
+      cards={HEADLINE_CARDS}
       testId="retention-skeleton"
       onShowAll={onShowAll}
     >

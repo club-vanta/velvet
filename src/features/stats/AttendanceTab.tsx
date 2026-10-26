@@ -32,6 +32,9 @@ import { useComparisonLine } from "./useComparisonLine";
 
 type Attendance = components["schemas"]["AttendanceStatsPublic"];
 
+/** Headline cards of the loaded tab; the skeleton shows the same count. */
+const CARDS = { all: 6, single: 4 };
+
 function AttendanceChart({
   meetups,
   single,
@@ -164,12 +167,13 @@ function AttendanceContent({
     });
   }
 
+  const cards = single ? CARDS.single : CARDS.all;
   const rate = (value: number | null) => formatRate(value, lang);
   const count = (value: number | null) => formatCount(value, lang);
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(single ? 4 : 6)}>
+      <div className={headlineGrid(cards)}>
         <HeadlineStat
           label={t("statsAttended")}
           value={count(totals.attended)}
@@ -246,7 +250,7 @@ export function AttendanceTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={single}
-      cards={single ? 4 : 6}
+      cards={single ? CARDS.single : CARDS.all}
       testId="attendance-skeleton"
       onShowAll={onShowAll}
     >

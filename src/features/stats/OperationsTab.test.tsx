@@ -311,6 +311,25 @@ describe("OperationsTab", () => {
     expect(slot("Pico en la puerta", "subline")).toBe("23:15");
   });
 
+  it("shows the period average peak with one decimal even when it is whole", async () => {
+    respond(
+      ok(
+        stats({
+          comparison_kind: "PERIOD_AVERAGE",
+          comparison: {
+            attended: 4000,
+            paid_share: 0.8,
+            avg_peak_checkins: 32,
+            bans: 20,
+          },
+        }),
+      ),
+    );
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(slot("Pico en la puerta", "comparison")).toBe("promedio: 32,0");
+  });
+
   it("lists every guest type in order with its count and share", async () => {
     respond(ok(stats()));
     renderTab();
