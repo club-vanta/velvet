@@ -1,8 +1,9 @@
 import type { components } from "@/api/types";
+import type { CSSProperties } from "react";
 import type { TranslationKey } from "@/lib/i18n";
+import { formatCount } from "./statsFormat";
 
 type NightGuest = components["schemas"]["NightGuestPublic"];
-type AfterwardsMeetup = components["schemas"]["AfterwardsMeetupPublic"];
 
 /**
  * Which visit a night was for a person, in the same steps as the frequency
@@ -18,6 +19,33 @@ export function visitBand(visit: number): VisitBand {
   return visit <= 5 ? "few" : "regular";
 }
 
+// First-timers in the "new" colour of the period view, then one blue that
+// deepens with the visits, so the eye reads newcomers against regulars.
+const BAND_COLORS: Record<VisitBand, string> = {
+  first: "var(--chart-1)",
+  second: "color-mix(in oklab, var(--chart-2) 50%, var(--card))",
+  few: "color-mix(in oklab, var(--chart-2) 75%, var(--card))",
+  regular: "var(--chart-2)",
+};
+
+/** The band colour for Tailwind's arbitrary-value classes, set at runtime. */
+export const bandStyle = (band: VisitBand): CSSProperties =>
+  ({ "--band": BAND_COLORS[band] }) as CSSProperties;
+
+/** Who came back looks vivid; who has not, faded. The ring keeps its colour. */
+export const FADED = "opacity-50 grayscale";
+
+/** "Primera vez" for a first visit, else "Visita 4". */
+export function visitLabel(
+  visit: number,
+  t: (key: TranslationKey) => string,
+  lang: string,
+): string {
+  return visit === 1
+    ? t("statsBandFirst")
+    : t("statsVisitNumber").replace("{0}", formatCount(visit, lang));
+}
+
 /** A regular is someone for whom the night was their 6th visit or later. */
 export function isRegular(visit: number): boolean {
   return visitBand(visit) === "regular";
@@ -31,46 +59,6 @@ export function groupByVisits(
     band,
     guests: guests.filter((g) => visitBand(g.visit) === band),
   }));
-}
-
-export type ReturnPoint = {
-  key: string;
-  /** null for the night itself, the curve's starting point. */
-  date: string | null;
-  name: string | null;
-  /** Share of the first-timers back by then, null without first-timers. */
-  first: number | null;
-  /** Share of those who already came back by then, null without them. */
-  already: number | null;
-};
-
-/**
- * The share of the night's first-timers and of those who already came that
- * had come back by each later event, from zero on the night itself.
- */
-export function returnCurve(
-  afterwards: AfterwardsMeetup[],
-  attendees: number,
-  newGuests: number,
-): ReturnPoint[] {
-  const returning = attendees - newGuests;
-  const share = (back: number, of: number) => (of === 0 ? null : back / of);
-  return [
-    {
-      key: "night",
-      date: null,
-      name: null,
-      first: share(0, newGuests),
-      already: share(0, returning),
-    },
-    ...afterwards.map((m) => ({
-      key: m.meetup_id,
-      date: m.date,
-      name: m.name,
-      first: share(m.back_new, newGuests),
-      already: share(m.back - m.back_new, returning),
-    })),
-  ];
 }
 
 const DAYS_IN_MONTH = 30.44;

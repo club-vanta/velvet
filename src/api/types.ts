@@ -1488,9 +1488,8 @@ export interface components {
     };
     /**
      * AfterwardsMeetupPublic
-     * @description A finalized meetup after the one meetup. back and back_new are how many of the one
-     *     meetup's attendees, and of its first-timers, had come back by this meetup: they
-     *     attended it or an earlier one of the list.
+     * @description A finalized meetup after the one meetup, with which of the one meetup's attendees came
+     *     to it, in the order of RetentionNightPublic.guests.
      */
     AfterwardsMeetupPublic: {
       /**
@@ -1505,10 +1504,8 @@ export interface components {
        * Format: date-time
        */
       date: string;
-      /** Back */
-      back: number;
-      /** Back New */
-      back_new: number;
+      /** Guest Ids */
+      guest_ids: string[];
     };
     /**
      * AgeGroupPublic

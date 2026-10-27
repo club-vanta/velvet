@@ -108,15 +108,19 @@ const NIGHT: Night = {
       meetup_id: "m-apr",
       name: "Alter Abril",
       date: "2026-04-05T01:00:00Z",
-      back: 1,
-      back_new: 1,
+      guest_ids: ["g-dani"],
     },
     {
       meetup_id: "m-may",
       name: "Alter Mayo",
       date: "2026-05-10T01:00:00Z",
-      back: 2,
-      back_new: 1,
+      guest_ids: ["g-ana", "g-dani"],
+    },
+    {
+      meetup_id: "m-jun",
+      name: "Alter Junio",
+      date: "2026-06-07T01:00:00Z",
+      guest_ids: [],
     },
   ],
 };
@@ -534,13 +538,13 @@ describe("RetentionTab", () => {
     const card = (slotName: string) =>
       document.querySelector(`[data-slot="${slotName}"]`)?.textContent ?? null;
     expect(card("name")).toBe("Beto");
-    expect(card("visit")).toBe("Visita 4");
+    expect(card("visit")).toBe("Esa noche: Visita 4");
     expect(card("gap")).toBe("7 meses");
     expect(card("back")).toBe("Todavía no volvió");
 
     await user.hover(document.querySelector('[data-guest="g-dani"]')!);
     expect(card("name")).toBe("Dani");
-    expect(card("visit")).toBe("Primera vez");
+    expect(card("visit")).toBe("Esa noche: Primera vez");
     expect(card("gap")).toBeNull();
     expect(card("back")).toBe("Volvió después");
 
@@ -602,16 +606,96 @@ describe("RetentionTab", () => {
     expect(document.querySelector('[data-slot="name"]')).toBeNull();
   });
 
-  it("follows the night through the next events", async () => {
+  it("shows who of the night came to each next event", async () => {
     respond(ok(eventStats()));
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(textTable("¿Volvieron después?")).toEqual([
-      ["Evento", "Fecha", "Primera vez", "Ya venían"],
-      ["Esa noche", "–", "0%", "0%"],
-      ["Alter Abril", "4 de abr de 2026", "50%", "0%"],
-      ["Alter Mayo", "9 de may de 2026", "50%", "33%"],
+    const rows = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-afterwards] [data-meetup]"),
+    ).map((row) => [
+      part(row, "event"),
+      part(row, "date"),
+      part(row, "came"),
+      Array.from(row.querySelectorAll<HTMLElement>("[data-guest]")).map(
+        (face) => face.dataset.guest,
+      ),
     ]);
+    expect(rows).toEqual([
+      [
+        "Alter Abril",
+        "4 de abr de 2026",
+        "Vino 1 de las 5 personas de esa noche",
+        ["g-dani"],
+      ],
+      [
+        "Alter Mayo",
+        "9 de may de 2026",
+        "Vinieron 2 de las 5 personas de esa noche",
+        ["g-ana", "g-dani"],
+      ],
+      ["Alter Junio", "6 de jun de 2026", "No vino nadie de esa noche", []],
+    ]);
+    expect(textTable("¿Volvieron después?")).toEqual([
+      ["Evento", "Fecha", "De esa noche", "Quiénes"],
+      ["Alter Abril", "4 de abr de 2026", "1", "Dani"],
+      ["Alter Mayo", "9 de may de 2026", "2", "Ana, Dani"],
+      ["Alter Junio", "6 de jun de 2026", "0", "–"],
+    ]);
+  });
+
+  it("shows a face's card in the next events too", async () => {
+    const user = userEvent.setup();
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    await user.hover(
+      document.querySelector('[data-meetup="m-may"] [data-guest="g-ana"]')!,
+    );
+    expect(document.querySelector('[data-slot="name"]')?.textContent).toBe(
+      "Ana",
+    );
+    // Everyone in these rows came back, so the card does not say so.
+    expect(document.querySelector('[data-slot="back"]')).toBeNull();
+  });
+
+  it("keeps one card open when faces of both cards are tapped", async () => {
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    const tap = (el: Element) => {
+      fireEvent.pointerDown(el, { pointerType: "touch" });
+      fireEvent.pointerUp(el, { pointerType: "touch" });
+    };
+    tap(document.querySelector('[data-crowd] [data-guest="g-beto"]')!);
+    tap(document.querySelector('[data-meetup="m-may"] [data-guest="g-ana"]')!);
+    expect(
+      Array.from(document.querySelectorAll('[data-slot="name"]')).map(
+        (el) => el.textContent,
+      ),
+    ).toEqual(["Ana"]);
+  });
+
+  it("says when everyone from the night came to a later event", async () => {
+    respond(
+      ok(
+        eventStats({
+          night: {
+            ...NIGHT,
+            afterwards: [
+              {
+                ...NIGHT.afterwards[0],
+                guest_ids: NIGHT.guests.map((g) => g.guest_id),
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(
+      part(document.querySelector<HTMLElement>("[data-meetup]")!, "came"),
+    ).toBe("Vinieron todos los de esa noche");
   });
 
   it("says when no event came after the night yet", async () => {
