@@ -16,9 +16,9 @@ import { BAR_END_UP, BAR_GAP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { CohortTable } from "./CohortTable";
 import { HeadlineStat } from "./HeadlineStat";
+import { NightAfterwards } from "./NightAfterwards";
 import { NightCrowd } from "./NightCrowd";
-import { isRegular, returnCurve } from "./nightCrowd";
-import { ReturnCurve } from "./ReturnCurve";
+import { isRegular } from "./nightCrowd";
 import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsLink } from "./StatsLink";
@@ -229,13 +229,7 @@ function LapsedList({
 }
 
 /** Who came to the one event and how many of them came back afterwards. */
-function NightCharts({
-  night,
-  summary,
-}: {
-  night: Night;
-  summary: Retention["summary"];
-}) {
+function NightCharts({ night }: { night: Night }) {
   const { t } = useLanguage();
   return (
     <>
@@ -255,14 +249,7 @@ function NightCharts({
               <p className="text-xs text-muted-foreground">
                 {t("statsAfterwardsHint")}
               </p>
-              <ReturnCurve
-                points={returnCurve(
-                  night.afterwards,
-                  summary.attendees,
-                  summary.new_guests,
-                )}
-                labelledBy={headingId}
-              />
+              <NightAfterwards night={night} labelledBy={headingId} />
             </div>
           )
         }
@@ -392,7 +379,7 @@ function RetentionContent({
       {night && (
         // Keyed by the event: a cached switch keeps the instance, and with it
         // a card left open over another night's faces.
-        <NightCharts key={meetupId} night={night} summary={summary} />
+        <NightCharts key={meetupId} night={night} />
       )}
       {!single && (
         <>

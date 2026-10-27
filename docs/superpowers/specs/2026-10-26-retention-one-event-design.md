@@ -52,10 +52,13 @@ a tab stop per person would bury the rest of the page on a big night.
 
 ### "¿Volvieron después?"
 
-For the next up to 6 finalized events of the org after that night, the share
-of that night's crowd that had come back to at least one of them by then.
-Two lines: first-timers and those who already came. With no later event, a
-short "no events after this one yet" message.
+The next up to 6 finalized events of the org after that night, one per row:
+its name and date, "Vinieron 3 de las 12 personas de esa noche" with a bar of
+that share, and the faces of those people, with the same card as above. Each
+row counts only that event, so nobody has to add up the rows before. A first
+version drew a cumulative curve of the share back by each event; the user
+found it hard to read, so it was replaced. With no later event, a short "no
+events after this one yet" message.
 
 ## Approaches considered
 
@@ -80,9 +83,8 @@ short "no events after this one yet" message.
   Buenos Aires days), `came_back` (attended any later finalized meetup).
   Ordered by visit, most first.
 - `afterwards`: the next up to 6 finalized meetups after it, oldest first:
-  `meetup_id`, `name`, `date`, `back` and `back_new` (how many of the
-  night's attendees, and of its first-timers, had attended this meetup or an
-  earlier one of the list).
+  `meetup_id`, `name`, `date` and `guest_ids` (which of the night's
+  attendees came to it, in the order of `guests`).
 
 ## Left to the builder
 
