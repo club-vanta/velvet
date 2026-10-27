@@ -17,6 +17,7 @@ import {
   pointChange,
   formatRate,
 } from "./statsFormat";
+import type { StatsPeriodChoice } from "./statsPeriod";
 import type { StatsTabProps } from "./statsTab";
 import { useComparisonLine } from "./useComparisonLine";
 
@@ -197,7 +198,13 @@ function BanList({
   );
 }
 
-function OperationsContent({ data }: { data: Operations }) {
+function OperationsContent({
+  data,
+  period,
+}: {
+  data: Operations;
+  period: StatsPeriodChoice;
+}) {
   const { t, lang } = useLanguage();
   const {
     summary,
@@ -209,7 +216,7 @@ function OperationsContent({ data }: { data: Operations }) {
     comparison,
     comparison_kind,
   } = data;
-  const line = useComparisonLine(comparison_kind);
+  const line = useComparisonLine(comparison_kind, period);
   // For one event the comparison holds period totals and averages.
   const isOneEvent = comparison_kind === "PERIOD_AVERAGE";
 
@@ -314,7 +321,12 @@ function OperationsContent({ data }: { data: Operations }) {
   );
 }
 
-export function OperationsTab({ orgId, query, onShowAll }: StatsTabProps) {
+export function OperationsTab({
+  orgId,
+  query,
+  period,
+  onShowAll,
+}: StatsTabProps) {
   const statsQ = useOperationsStats(orgId, query);
 
   return (
@@ -325,7 +337,7 @@ export function OperationsTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="operations-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <OperationsContent data={data} />}
+      {(data) => <OperationsContent data={data} period={period} />}
     </StatsTabGate>
   );
 }

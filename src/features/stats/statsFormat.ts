@@ -40,11 +40,19 @@ export function isSmallSample(n: number): boolean {
   return n < SMALL_SAMPLE;
 }
 
+function dayMonth(day: string): string {
+  return `${day.slice(8)}/${day.slice(5, 7)}`;
+}
+
 /** dd/mm of an event's local day, or dd/mm/yy with `withYear`. */
 export function formatEventDay(iso: string, withYear = false): string {
   const day = localDay(parseApiDateTime(iso));
-  const dayMonth = `${day.slice(8)}/${day.slice(5, 7)}`;
-  return withYear ? `${dayMonth}/${day.slice(2, 4)}` : dayMonth;
+  return withYear ? `${dayMonth(day)}/${day.slice(2, 4)}` : dayMonth(day);
+}
+
+/** A YYYY-MM-DD day as dd/mm/yyyy. */
+export function formatFullDay(day: string): string {
+  return `${dayMonth(day)}/${day.slice(0, 4)}`;
 }
 
 /**

@@ -100,6 +100,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
         <DemographicsTab
           orgId="org-1"
           query={PERIOD}
+          period={{ preset: "3m" }}
           onShowAll={onShowAll}
           {...props}
         />
@@ -201,15 +202,17 @@ describe("DemographicsTab", () => {
     await headlinesReady();
     expect(slot("Edad mediana", "value")).toBe("32,7");
     expect(slot("Edad mediana", "comparison")).toBe(
-      "+1,5 años vs. período anterior",
+      "+1,5 años respecto al período anterior",
     );
     expect(slot("Con edad conocida", "value")).toBe("90%");
     expect(slot("Con edad conocida", "comparison")).toBe(
-      "+10 pts vs. período anterior",
+      "+10 puntos respecto al período anterior",
     );
     expect(slot("Con edad conocida", "sample")).toBeNull();
     expect(slot("Asistencias", "value")).toBe("120");
-    expect(slot("Asistencias", "comparison")).toBe("+25% vs. período anterior");
+    expect(slot("Asistencias", "comparison")).toBe(
+      "+25% respecto al período anterior",
+    );
   });
 
   it("compares one event with the period without comparing the counts", async () => {
@@ -228,8 +231,12 @@ describe("DemographicsTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot("Edad mediana", "comparison")).toBe("promedio: 31,2");
-    expect(slot("Con edad conocida", "comparison")).toBe("promedio: 80%");
+    expect(slot("Edad mediana", "comparison")).toBe(
+      "En todos los eventos de los últimos 3 meses: 31,2",
+    );
+    expect(slot("Con edad conocida", "comparison")).toBe(
+      "En todos los eventos de los últimos 3 meses: 80%",
+    );
     expect(slot("Asistencias", "comparison")).toBeNull();
   });
 

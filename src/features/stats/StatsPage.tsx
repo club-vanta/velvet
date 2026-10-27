@@ -33,6 +33,7 @@ export function StatsPage() {
   const tabProps: StatsTabProps = {
     orgId: activeOrg?.org_id ?? "",
     query: filters.query,
+    period: filters.period,
     onShowAll: () => filters.setMeetupId(undefined),
   };
   // Without the events, a selected event cannot be checked, so no tab can

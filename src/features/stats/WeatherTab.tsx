@@ -8,38 +8,35 @@ import {
   YAxis,
 } from "recharts";
 import type { components } from "@/api/types";
-import { WeatherDetails } from "@/components/WeatherDetails";
 import {
   ChartContainer,
   ChartTooltip,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { StatCard } from "@/components/StatCard";
 import { StatsNote } from "@/components/StatsNote";
 import { useWeatherStats } from "@/hooks/useWeatherStats";
 import { formatApiDate, formatDecimal } from "@/lib/format";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { useIsOrgAdmin } from "@/lib/org";
 import { cn } from "@/lib/utils";
 import { ChartCard } from "./ChartCard";
 import { BAR_END_UP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
-import { HeadlineStat } from "./HeadlineStat";
-import { headlineGrid } from "./headlineGrid";
 import { RateCell } from "./RateCell";
-import { StatsLink } from "./StatsLink";
+import { TooltipBox } from "./TooltipBox";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
-import { formatCount, formatRate, sortByDate } from "./statsFormat";
+import { formatCount, sortByDate } from "./statsFormat";
 import type { StatsTabProps } from "./statsTab";
+import { useUrlView } from "./useUrlView";
+import { ViewToggle } from "./ViewToggle";
+import { EVENT_CARDS, WeatherEventView } from "./WeatherEventView";
 
 type Weather = components["schemas"]["WeatherStatsPublic"];
 type Row = components["schemas"]["WeatherMeetupRowPublic"];
 type Band = components["schemas"]["TemperatureBandRowPublic"];
-type Group = components["schemas"]["WeatherGroupPublic"];
-type Event = components["schemas"]["WeatherEventPublic"];
 
-/** Headline cards of the loaded tab; the skeleton shows the same count. */
-const CARDS = { all: 3, single: 2 };
+/** Which temperature the charts use: the 3 hours before the start, or the event itself. */
+const WINDOWS = ["during", "before"] as const;
+type WeatherWindow = (typeof WINDOWS)[number];
 
 const BAND_LABEL: Record<Band["band"], TranslationKey> = {
   BELOW_10: "statsBandBelow10",
@@ -63,51 +60,23 @@ type Point = {
   attended: number;
 };
 
-/** One point per meetup with a temperature, in date order. */
-function scatterPoints(meetups: Row[]): Point[] {
-  return sortByDate(meetups).flatMap((m) =>
-    m.avg_temperature === null
+/** One point per meetup with a temperature in the window, in date order. */
+function scatterPoints(meetups: Row[], weatherWindow: WeatherWindow): Point[] {
+  return sortByDate(meetups).flatMap((m) => {
+    const temperature =
+      weatherWindow === "before" ? m.before_avg_temperature : m.avg_temperature;
+    return temperature === null
       ? []
       : [
           {
             id: m.meetup_id,
             name: m.name,
             date: m.date,
-            temperature: m.avg_temperature,
+            temperature,
             attended: m.attended,
           },
-        ],
-  );
-}
-
-/** A rainy or dry group: its average turnout, with its no-show rate under it. */
-function GroupStat({ label, group }: { label: string; group: Group }) {
-  const { t, lang } = useLanguage();
-  return (
-    <HeadlineStat
-      label={label}
-      value={formatCount(roundAverage(group.avg_attended), lang)}
-      subline={
-        group.no_show_rate === null
-          ? undefined
-          : t("statsNoShowLine").replace(
-              "{0}",
-              formatRate(group.no_show_rate, lang),
-            )
-      }
-      n={group.avg_attended === null ? undefined : group.events}
-    />
-  );
-}
-
-// The charts use their own tooltip because ChartTooltipContent shows only the
-// series value, not the events count or the meetup name and date.
-function TooltipBox({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs shadow-xl">
-      {children}
-    </div>
-  );
+        ];
+  });
 }
 
 function BandsChart({ rows }: { rows: Band[] }) {
@@ -274,54 +243,42 @@ function TemperatureScatter({ points }: { points: Point[] }) {
   );
 }
 
-/** Events that have no weather yet, each linked to its page. */
-function WithoutWeatherList({ meetups }: { meetups: Row[] }) {
-  return (
-    <ul className="divide-y text-sm">
-      {meetups.map((m) => (
-        <li
-          key={m.meetup_id}
-          className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5"
-        >
-          <StatsLink to={`/meetups/${m.meetup_id}`} data-slot="name">
-            {m.name}
-          </StatsLink>
-          <span data-slot="date" className="text-muted-foreground tabular-nums">
-            {formatApiDate(m.date)}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function WeatherAggregate({ data }: { data: Weather }) {
   const { t, lang } = useLanguage();
-  const { meetups, rainy, dry, temperature_bands, without_weather } = data;
+  const [weatherWindow, setWeatherWindow] = useUrlView(
+    "weather_window",
+    WINDOWS,
+    "during",
+  );
+  const { meetups } = data;
   if (meetups.length === 0) {
     return <StatsEmptyState />;
   }
 
-  const points = scatterPoints(meetups);
-  const missing = sortByDate(meetups.filter((m) => !m.has_weather));
+  const points = scatterPoints(meetups, weatherWindow);
+  const bands =
+    weatherWindow === "before"
+      ? data.temperature_bands_before
+      : data.temperature_bands;
 
   return (
     <div className="space-y-3">
-      <div className={headlineGrid(CARDS.all)}>
-        {rainy && <GroupStat label={t("statsRainy")} group={rainy} />}
-        {dry && <GroupStat label={t("statsDryEvents")} group={dry} />}
-        <HeadlineStat
-          label={t("statsWithoutWeather")}
-          value={formatCount(without_weather, lang)}
-        />
-      </div>
+      <ViewToggle
+        label={t("statsWeatherWindow")}
+        options={[
+          { value: "during", label: t("statsWeatherDuring") },
+          { value: "before", label: t("statsWeatherBefore") },
+        ]}
+        value={weatherWindow}
+        onChange={setWeatherWindow}
+      />
       <StatsNote>{t("statsNoteWeather")}</StatsNote>
       <StatsNote>{t("statsNoteWeatherSample")}</StatsNote>
       <ChartCard title={t("statsTempBands")}>
         {(headingId) => (
           <>
-            <BandsChart rows={temperature_bands} />
-            <BandsTable rows={temperature_bands} labelledBy={headingId} />
+            <BandsChart rows={bands} />
+            <BandsTable rows={bands} labelledBy={headingId} />
           </>
         )}
       </ChartCard>
@@ -356,39 +313,6 @@ function WeatherAggregate({ data }: { data: Weather }) {
           )
         }
       </ChartCard>
-      {missing.length > 0 && (
-        <ChartCard title={t("statsWithoutWeatherList")}>
-          <WithoutWeatherList meetups={missing} />
-        </ChartCard>
-      )}
-    </div>
-  );
-}
-
-function WeatherEvent({ event }: { event: Event }) {
-  const { t, lang } = useLanguage();
-  // As on the meetup page: site admins and org admins can set the location.
-  const canSetLocation = useIsOrgAdmin();
-
-  return (
-    <div className="space-y-3">
-      <div className={headlineGrid(CARDS.single)}>
-        <HeadlineStat
-          label={t("statsAttended")}
-          value={formatCount(event.attended, lang)}
-        />
-        <HeadlineStat
-          label={t("statsNoShowRate")}
-          value={formatRate(event.no_show_rate, lang)}
-        />
-      </div>
-      <StatCard title={t("weatherTitle")}>
-        <WeatherDetails
-          status={event.status}
-          weather={event.weather}
-          canSetLocation={canSetLocation}
-        />
-      </StatCard>
     </div>
   );
 }
@@ -401,13 +325,14 @@ export function WeatherTab({ orgId, query, onShowAll }: StatsTabProps) {
     <StatsTabGate
       statsQ={statsQ}
       single={single}
-      cards={single ? CARDS.single : CARDS.all}
+      // The aggregate has no headline cards, only its charts.
+      cards={single ? EVENT_CARDS : 0}
       testId="weather-skeleton"
       onShowAll={onShowAll}
     >
       {(data) =>
         data.event ? (
-          <WeatherEvent event={data.event} />
+          <WeatherEventView event={data.event} orgId={orgId} query={query} />
         ) : (
           <WeatherAggregate data={data} />
         )

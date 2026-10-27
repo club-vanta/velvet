@@ -6,13 +6,12 @@ import { parseApiDateTime } from "@/lib/apiDateTime";
 import { useOrg } from "@/lib/org";
 import type { StatsQuery } from "@/lib/statsQuery";
 import {
-  DEFAULT_RANGE,
   addDays,
-  isRangePreset,
-  isValidDay,
   localDay,
+  parsePeriod,
   resolveRange,
   type RangePreset,
+  type CustomRange,
 } from "./statsPeriod";
 import { isStatsTab, type StatsTab } from "./statsTabs";
 
@@ -20,14 +19,12 @@ type Meetup = components["schemas"]["MeetupPublic"];
 
 type OfferedEvent = { meetup: Meetup; date: Date };
 
-type CustomRange = { from: string; to: string };
-
 /** Range shown when "custom" is picked from "all time", which has no bounds. */
 const CUSTOM_SEED_FROM_ALL: RangePreset = "3m";
 
 /**
  * The stats filters, kept in the URL so a view can be shared and survives a
- * reload. A missing, unknown, or malformed `range` falls back to the default.
+ * reload.
  */
 export function useStatsFilters() {
   const { activeOrg } = useOrg();
@@ -36,17 +33,13 @@ export function useStatsFilters() {
   // Once per render, so every range in this render shares one "today".
   const today = localDay(new Date());
 
-  const rangeParam = searchParams.get("range");
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-  const customValid = isValidDay(from) && isValidDay(to) && from <= to;
-
-  let preset: RangePreset = isRangePreset(rangeParam)
-    ? rangeParam
-    : DEFAULT_RANGE;
-  if (preset === "custom" && !customValid) preset = DEFAULT_RANGE;
-  const custom: CustomRange | undefined =
-    preset === "custom" && customValid ? { from, to } : undefined;
+  const period = parsePeriod(
+    searchParams.get("range"),
+    searchParams.get("from"),
+    searchParams.get("to"),
+  );
+  const { preset } = period;
+  const custom = period.preset === "custom" ? period.custom : undefined;
 
   const tabParam = searchParams.get("tab");
   const tab: StatsTab = isStatsTab(tabParam) ? tabParam : "attendance";
@@ -159,6 +152,8 @@ export function useStatsFilters() {
   return {
     preset,
     custom,
+    /** The picked period by name, for text such as "the last 3 months". */
+    period,
     meetupId,
     events,
     tab,

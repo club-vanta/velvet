@@ -1,9 +1,16 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
+import { statsRetentionKey } from "@/lib/queryKeys";
 import { RetentionTab } from "./RetentionTab";
 import type { StatsTabProps } from "./statsTab";
 import type { components } from "@/api/types";
@@ -16,6 +23,7 @@ vi.mock("@/api/client", () => ({
 type Retention = components["schemas"]["RetentionStatsPublic"];
 type Summary = components["schemas"]["RetentionSummaryPublic"];
 type Lapsed = components["schemas"]["LapsedRegularPublic"];
+type Night = components["schemas"]["RetentionNightPublic"];
 
 const SUMMARY: Summary = {
   attendees: 120,
@@ -51,6 +59,77 @@ const LAPSED: Lapsed[] = [
   },
 ];
 
+/** Five people: Ana a regular, Beto back after months, Caro on her 2nd, two first-timers. */
+const NIGHT: Night = {
+  guests: [
+    {
+      guest_id: "g-ana",
+      displayname: "Ana",
+      avatar_url: "https://cdn.mazmo.net/ana.jpg",
+      visit: 9,
+      days_since_previous: 28,
+      came_back: true,
+    },
+    {
+      guest_id: "g-beto",
+      displayname: "Beto",
+      avatar_url: null,
+      visit: 4,
+      days_since_previous: 210,
+      came_back: false,
+    },
+    {
+      guest_id: "g-caro",
+      displayname: "Caro",
+      avatar_url: null,
+      visit: 2,
+      days_since_previous: 35,
+      came_back: false,
+    },
+    {
+      guest_id: "g-dani",
+      displayname: "Dani",
+      avatar_url: null,
+      visit: 1,
+      days_since_previous: null,
+      came_back: true,
+    },
+    {
+      guest_id: "g-eli",
+      displayname: "Eli",
+      avatar_url: null,
+      visit: 1,
+      days_since_previous: null,
+      came_back: false,
+    },
+  ],
+  afterwards: [
+    {
+      meetup_id: "m-apr",
+      name: "Alter Abril",
+      date: "2026-04-05T01:00:00Z",
+      back: 1,
+      back_new: 1,
+    },
+    {
+      meetup_id: "m-may",
+      name: "Alter Mayo",
+      date: "2026-05-10T01:00:00Z",
+      back: 2,
+      back_new: 1,
+    },
+  ],
+};
+
+const NIGHT_SUMMARY: Summary = {
+  attendees: 5,
+  new_guests: 2,
+  came_back: 1,
+  returning: 3,
+  new_share: 0.4,
+  first_timer_return_rate: 0.5,
+};
+
 function stats(overrides: Partial<Retention> = {}): Retention {
   return {
     summary: SUMMARY,
@@ -84,11 +163,12 @@ function stats(overrides: Partial<Retention> = {}): Retention {
     lapsed_total: 5,
     comparison_kind: null,
     comparison: null,
+    night: null,
     ...overrides,
   };
 }
 
-/** What the API sends for one event: only the summary. */
+/** What the API sends for one event: the summary and the night. */
 function eventStats(overrides: Partial<Retention> = {}): Retention {
   return stats({
     meetups: [],
@@ -96,6 +176,8 @@ function eventStats(overrides: Partial<Retention> = {}): Retention {
     frequency: [],
     lapsed: [],
     lapsed_total: null,
+    summary: NIGHT_SUMMARY,
+    night: NIGHT,
     ...overrides,
   });
 }
@@ -115,6 +197,7 @@ function renderTab(props: Partial<StatsTabProps> = {}) {
           <RetentionTab
             orgId="org-1"
             query={PERIOD}
+            period={{ preset: "3m" }}
             onShowAll={onShowAll}
             {...props}
           />
@@ -159,7 +242,33 @@ const statsCalls = () =>
     ([path]) => path === "/organizations/{org_id}/stats/retention",
   );
 
-const headlinesReady = () => waitFor(() => headline("Personas"));
+const headlinesReady = () => waitFor(() => headline("Volvieron"));
+
+function crowdRowElement(band: string): HTMLElement {
+  const row = document.querySelector<HTMLElement>(`[data-band="${band}"]`);
+  if (!row) throw new Error(`No crowd row ${band}`);
+  return row;
+}
+
+/** The crowd row of a band: its count and its faces, and who came back. */
+function crowdRow(band: string) {
+  const row = crowdRowElement(band);
+  return {
+    count: part(row, "count"),
+    dots: Array.from(row.querySelectorAll<HTMLElement>("[data-guest]")).map(
+      (dot) => [dot.dataset.guest, dot.dataset.cameBack],
+    ),
+  };
+}
+
+function textTable(caption: string): string[][] {
+  const table = screen.getByRole("table", { name: caption });
+  return Array.from(table.querySelectorAll("tr")).map((row) =>
+    Array.from(row.querySelectorAll("th, td")).map(
+      (cell) => cell.textContent ?? "",
+    ),
+  );
+}
 
 const AGGREGATE_HEADINGS = [
   "Nuevas y conocidas por evento",
@@ -238,12 +347,16 @@ describe("RetentionTab", () => {
     renderTab();
     await headlinesReady();
     expect(slot("Personas", "value")).toBe("120");
-    expect(slot("Personas", "comparison")).toBe("+20% vs. período anterior");
+    expect(slot("Personas", "comparison")).toBe(
+      "+20% respecto al período anterior",
+    );
     expect(slot("Primera vez", "value")).toBe("49");
     expect(slot("Primera vez", "subline")).toBe("41% del total");
     expect(slot("Primera vez", "comparison")).toBeNull();
     expect(slot("Volvieron", "value")).toBe("35%");
-    expect(slot("Volvieron", "comparison")).toBe("+5 pts vs. período anterior");
+    expect(slot("Volvieron", "comparison")).toBe(
+      "+5 puntos respecto al período anterior",
+    );
     expect(slot("Volvieron", "sample")).toBeNull();
   });
 
@@ -336,7 +449,7 @@ describe("RetentionTab", () => {
     ]);
   });
 
-  it("shows only the headlines for one event", async () => {
+  it("shows the night instead of the period sections for one event", async () => {
     respond(
       ok(
         eventStats({
@@ -351,18 +464,172 @@ describe("RetentionTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot("Personas", "comparison")).toBeNull();
-    expect(slot("Primera vez", "subline")).toBe("41% del total");
+    expect(() => headline("Personas")).toThrow();
+    expect(slot("Primera vez", "subline")).toBe("40% del total");
     expect(slot("Primera vez", "comparison")).toBeNull();
-    expect(slot("Volvieron", "value")).toBe("35%");
+    expect(slot("Volvieron", "value")).toBe("50%");
     expect(slot("Volvieron", "subline")).toBe(
       "De quienes vinieron por primera vez",
     );
-    expect(slot("Volvieron", "comparison")).toBe("promedio: 30%");
+    expect(slot("Volvieron", "comparison")).toBe(
+      "En todos los eventos de los últimos 3 meses: 30%",
+    );
     for (const heading of AGGREGATE_HEADINGS) {
       expect(screen.queryByText(heading)).not.toBeInTheDocument();
     }
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByText("El público de esa noche")).toBeInTheDocument();
+    expect(screen.getByText("¿Volvieron después?")).toBeInTheDocument();
+  });
+
+  it("counts the regulars of the night instead of the people", async () => {
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(slot("Habitués", "value")).toBe("1");
+    expect(slot("Habitués", "subline")).toBe(
+      "20% del total, con 6 visitas o más",
+    );
+  });
+
+  it("draws one face per person by visits, marking who came back", async () => {
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(crowdRow("first")).toEqual({
+      count: "2",
+      dots: [
+        ["g-dani", "true"],
+        ["g-eli", "false"],
+      ],
+    });
+    expect(crowdRow("second")).toEqual({
+      count: "1",
+      dots: [["g-caro", "false"]],
+    });
+    expect(crowdRow("few")).toEqual({
+      count: "1",
+      dots: [["g-beto", "false"]],
+    });
+    expect(crowdRow("regular")).toEqual({
+      count: "1",
+      dots: [["g-ana", "true"]],
+    });
+    expect(textTable("El público de esa noche")).toEqual([
+      ["Persona", "Visita", "Desde su visita anterior", "¿Volvió?"],
+      ["Dani", "Primera vez", "–", "Volvió después"],
+      ["Eli", "Primera vez", "–", "Todavía no volvió"],
+      ["Caro", "Visita 2", "35 días", "Todavía no volvió"],
+      ["Beto", "Visita 4", "7 meses", "Todavía no volvió"],
+      ["Ana", "Visita 9", "28 días", "Volvió después"],
+    ]);
+  });
+
+  it("shows who a face is on hover", async () => {
+    const user = userEvent.setup();
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    const beto = document.querySelector<HTMLElement>('[data-guest="g-beto"]')!;
+    await user.hover(beto);
+    const card = (slotName: string) =>
+      document.querySelector(`[data-slot="${slotName}"]`)?.textContent ?? null;
+    expect(card("name")).toBe("Beto");
+    expect(card("visit")).toBe("Visita 4");
+    expect(card("gap")).toBe("7 meses");
+    expect(card("back")).toBe("Todavía no volvió");
+
+    await user.hover(document.querySelector('[data-guest="g-dani"]')!);
+    expect(card("name")).toBe("Dani");
+    expect(card("visit")).toBe("Primera vez");
+    expect(card("gap")).toBeNull();
+    expect(card("back")).toBe("Volvió después");
+
+    await user.unhover(document.querySelector('[data-guest="g-dani"]')!);
+    await user.hover(screen.getByText("El público de esa noche"));
+    expect(card("name")).toBeNull();
+  });
+
+  it("keeps a tapped face's card open until a tap lands elsewhere", async () => {
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    const ana = document.querySelector<HTMLElement>('[data-guest="g-ana"]')!;
+    const card = () =>
+      document.querySelector('[data-slot="name"]')?.textContent ?? null;
+    // A finger scrolling across a face does not open it.
+    fireEvent.pointerEnter(ana, { pointerType: "touch" });
+    expect(card()).toBeNull();
+    fireEvent.pointerUp(ana, { pointerType: "touch" });
+    fireEvent.pointerLeave(document.querySelector("[data-crowd]")!, {
+      pointerType: "touch",
+    });
+    expect(card()).toBe("Ana");
+    fireEvent.pointerDown(screen.getByText("¿Volvieron después?"));
+    expect(card()).toBeNull();
+  });
+
+  it("closes an open card when the event changes", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    // The second event is cached, so the tab does not unmount to load it.
+    queryClient.setQueryData(
+      statsRetentionKey("org-1", { meetupId: "m2" }),
+      eventStats(),
+    );
+    respond(ok(eventStats()));
+    const tab = (meetupId: string) => (
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <MemoryRouter>
+            <RetentionTab
+              orgId="org-1"
+              query={{ meetupId }}
+              period={{ preset: "3m" }}
+              onShowAll={vi.fn()}
+            />
+          </MemoryRouter>
+        </LanguageProvider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(tab("m1"));
+    await headlinesReady();
+    fireEvent.pointerUp(document.querySelector('[data-guest="g-ana"]')!, {
+      pointerType: "touch",
+    });
+    expect(document.querySelector('[data-slot="name"]')).not.toBeNull();
+    rerender(tab("m2"));
+    expect(document.querySelector('[data-slot="name"]')).toBeNull();
+  });
+
+  it("follows the night through the next events", async () => {
+    respond(ok(eventStats()));
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(textTable("¿Volvieron después?")).toEqual([
+      ["Evento", "Fecha", "Primera vez", "Ya venían"],
+      ["Esa noche", "–", "0%", "0%"],
+      ["Alter Abril", "4 de abr de 2026", "50%", "0%"],
+      ["Alter Mayo", "9 de may de 2026", "50%", "33%"],
+    ]);
+  });
+
+  it("says when no event came after the night yet", async () => {
+    respond(
+      ok(
+        eventStats({
+          night: { ...NIGHT, afterwards: [] },
+        }),
+      ),
+    );
+    renderTab({ query: { meetupId: "m1" } });
+    await headlinesReady();
+    expect(
+      screen.getByText("Todavía no hubo eventos después de este."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", { name: "¿Volvieron después?" }),
+    ).not.toBeInTheDocument();
   });
 
   it("leaves out the first-timers subline when the event had no first-timers", async () => {

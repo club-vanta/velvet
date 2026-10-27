@@ -67,6 +67,7 @@ function renderTab(
         <AttendanceTab
           orgId="org-1"
           query={PERIOD}
+          period={{ preset: "3m" }}
           onShowAll={onShowAll}
           {...props}
         />
@@ -196,13 +197,17 @@ describe("AttendanceTab", () => {
       screen.getByRole("heading", { level: 2, name: "Asistencia por evento" }),
     ).toBeInTheDocument();
     expect(slot("Vinieron", "value")).toBe("412");
-    expect(slot("Vinieron", "comparison")).toBe("+8% vs. período anterior");
+    expect(slot("Vinieron", "comparison")).toBe(
+      "+8% respecto al período anterior",
+    );
     expect(slot("No vinieron", "value")).toBe("18%");
     expect(slot("No vinieron", "comparison")).toBe(
-      "+3 pts vs. período anterior",
+      "+3 puntos respecto al período anterior",
     );
     expect(slot("Se bajaron", "value")).toBe("10%");
-    expect(slot("Se bajaron", "comparison")).toBe("0 pts vs. período anterior");
+    expect(slot("Se bajaron", "comparison")).toBe(
+      "0 puntos respecto al período anterior",
+    );
     expect(slot("Discretos", "value")).toBe("12");
     expect(slot("Eventos", "value")).toBe("5");
     expect(slot("Promedio por evento", "value")).toBe("82,4");
@@ -220,8 +225,12 @@ describe("AttendanceTab", () => {
     );
     renderTab({ query: { meetupId: "m1" } });
     await headlinesReady();
-    expect(slot("Vinieron", "comparison")).toBe("promedio: 82,4");
-    expect(slot("No vinieron", "comparison")).toBe("promedio: 20%");
+    expect(slot("Vinieron", "comparison")).toBe(
+      "En todos los eventos de los últimos 3 meses: 82,4",
+    );
+    expect(slot("No vinieron", "comparison")).toBe(
+      "En todos los eventos de los últimos 3 meses: 20%",
+    );
     expect(slot("Discretos", "comparison")).toBeNull();
     expect(() => headline("Eventos")).toThrow();
   });

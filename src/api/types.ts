@@ -1391,7 +1391,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Rain and temperature against the attendance of finalized meetups */
+    /** Temperature against attendance, or the hourly weather of one meetup */
     get: operations["get_weather_stats_organizations__org_id__stats_weather_get"];
     put?: never;
     post?: never;
@@ -1485,6 +1485,30 @@ export interface components {
     AddOrgMemberRequest: {
       /** Role */
       role: string;
+    };
+    /**
+     * AfterwardsMeetupPublic
+     * @description A finalized meetup after the one meetup. back and back_new are how many of the one
+     *     meetup's attendees, and of its first-timers, had come back by this meetup: they
+     *     attended it or an earlier one of the list.
+     */
+    AfterwardsMeetupPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Back */
+      back: number;
+      /** Back New */
+      back_new: number;
     };
     /**
      * AgeGroupPublic
@@ -2502,7 +2526,8 @@ export interface components {
      *       total_precipitation_mm is null: unknown is not the same as dry.
      *
      *     fetched_at is when the snapshot was taken; source names the provider
-     *     dataset. The raw hourly arrays are stored but not returned.
+     *     dataset. The raw hourly arrays are not returned here; the weather stats
+     *     return them for one meetup.
      */
     MeetupWeatherPublic: {
       /** Avg Temperature */
@@ -2538,6 +2563,30 @@ export interface components {
       weather: components["schemas"]["MeetupWeatherPublic"] | null;
       /** Ready */
       ready: boolean;
+    };
+    /**
+     * NightGuestPublic
+     * @description An attendee of the one meetup, with their Mazmo avatar when known. visit is which of
+     *     their attendances it was (1 is their first time), days_since_previous the Buenos Aires
+     *     days since the one before (null on a first time), and came_back whether they attended
+     *     a later meetup.
+     */
+    NightGuestPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Avatar Url */
+      avatar_url: string | null;
+      /** Visit */
+      visit: number;
+      /** Days Since Previous */
+      days_since_previous: number | null;
+      /** Came Back */
+      came_back: boolean;
     };
     /**
      * NoShowAgeGroupPublic
@@ -2874,10 +2923,21 @@ export interface components {
       username: string;
     };
     /**
+     * RetentionNightPublic
+     * @description The one meetup's attendees, most visits first, and the next finalized meetups after it, oldest first.
+     */
+    RetentionNightPublic: {
+      /** Guests */
+      guests: components["schemas"]["NightGuestPublic"][];
+      /** Afterwards */
+      afterwards: components["schemas"]["AfterwardsMeetupPublic"][];
+    };
+    /**
      * RetentionStatsPublic
      * @description New and returning guests, cohorts, frequency and lapsed regulars, with the figures to
-     *     compare against. For one meetup the lists are empty and lapsed_total is null; for a
-     *     period without a start, lapsed is empty and lapsed_total is null.
+     *     compare against. For one meetup the lists are empty, lapsed_total is null and night is
+     *     set; for a period night is null, and without a start lapsed is empty and lapsed_total
+     *     is null.
      */
     RetentionStatsPublic: {
       summary: components["schemas"]["RetentionSummaryPublic"];
@@ -2893,6 +2953,7 @@ export interface components {
       lapsed_total: number | null;
       comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
       comparison: components["schemas"]["RetentionSummaryPublic"] | null;
+      night: components["schemas"]["RetentionNightPublic"] | null;
     };
     /**
      * RetentionSummaryPublic
@@ -3059,7 +3120,8 @@ export interface components {
       | "FIFTEEN_PLUS";
     /**
      * StatsTemperatureBand
-     * @description Average temperature of a meetup's first 6 hours, in degrees Celsius. The lower bound is inclusive.
+     * @description Band of an average temperature in degrees Celsius: a meetup's first 6 hours, or the 3 hours before it.
+     *     The lower bound is inclusive.
      * @enum {string}
      */
     StatsTemperatureBand:
@@ -3094,7 +3156,9 @@ export interface components {
     };
     /**
      * TemperatureBandRowPublic
-     * @description Meetups whose average temperature falls in one band; figures as in WeatherGroupPublic.
+     * @description Meetups whose average temperature falls in one band. avg_attended is the mean
+     *     attended per event; no_show_rate is pooled over the band (all no-shows over
+     *     all expected guests, not an average of rates). Both are null for an empty band.
      */
     TemperatureBandRowPublic: {
       band: components["schemas"]["StatsTemperatureBand"];
@@ -3219,39 +3283,53 @@ export interface components {
     };
     /**
      * WeatherEventPublic
-     * @description The weather standing of one meetup (as GET .../meetups/{id}/weather) plus its attendance.
+     * @description The weather standing of one meetup (as GET .../meetups/{id}/weather, whose
+     *     weather is the during window) plus the window before its start and every
+     *     stored hour from 3 hours before the start hour through 6 hours after the
+     *     start. before is null and hours empty when the meetup has no weather row.
      */
     WeatherEventPublic: {
       status: components["schemas"]["WeatherStatus"];
       weather: components["schemas"]["MeetupWeatherPublic"] | null;
       /** Ready */
       ready: boolean;
-      /** Attended */
-      attended: number;
-      /** No Show Rate */
-      no_show_rate: number | null;
+      before: components["schemas"]["WeatherWindowPublic"] | null;
+      /** Hours */
+      hours: components["schemas"]["WeatherHourPublic"][];
     };
     /**
-     * WeatherGroupPublic
-     * @description Meetups that share a weather condition. avg_attended is the mean attended per
-     *     event; no_show_rate is pooled over the group (all no-shows over all expected
-     *     guests, not an average of rates). Both are null for a group with no events.
+     * WeatherHourPublic
+     * @description One stored hour of a meetup's weather. time is the UTC start of the hour;
+     *     offset_minutes runs from the meetup start to it, negative before (the hour
+     *     that contains a 22:30 start is -30). weather_code is the WMO code and is_day
+     *     whether the sun is up. Values are null where the provider had none.
      */
-    WeatherGroupPublic: {
-      /** Events */
-      events: number;
-      /** Avg Attended */
-      avg_attended: number | null;
-      /** No Show Rate */
-      no_show_rate: number | null;
+    WeatherHourPublic: {
+      /**
+       * Time
+       * Format: date-time
+       */
+      time: string;
+      /** Offset Minutes */
+      offset_minutes: number;
+      /** Temperature */
+      temperature: number | null;
+      /** Apparent Temperature */
+      apparent_temperature: number | null;
+      /** Precipitation Mm */
+      precipitation_mm: number | null;
+      /** Weather Code */
+      weather_code: number | null;
+      /** Is Day */
+      is_day: boolean | null;
     };
     /**
      * WeatherMeetupRowPublic
      * @description One finalized meetup with its attendance and weather. The weather fields are
-     *     null without a value: all three when the meetup has no weather row, and
-     *     rained and total_precipitation_mm when the provider had no precipitation data.
-     *     has_weather is true when the meetup has a weather row, so false exactly for
-     *     the meetups counted in without_weather.
+     *     null without a value: all of them when the meetup has no weather row,
+     *     rained and total_precipitation_mm when the provider had no precipitation
+     *     data, and before_avg_temperature when it had no temperature in the 3 hours
+     *     before the start. has_weather is true when the meetup has a weather row.
      */
     WeatherMeetupRowPublic: {
       /**
@@ -3276,23 +3354,22 @@ export interface components {
       rained: boolean | null;
       /** Total Precipitation Mm */
       total_precipitation_mm: number | null;
+      /** Before Avg Temperature */
+      before_avg_temperature: number | null;
       /** Has Weather */
       has_weather: boolean;
     };
     /**
      * WeatherStatsPublic
-     * @description How weather relates to attendance, over finalized meetups.
+     * @description How temperature relates to attendance, over finalized meetups.
      *
      *     Aggregate mode (no meetup_id): event is null. meetups lists every meetup in
-     *     the period by date ascending. rainy is rained true and dry is rained false;
-     *     a meetup whose weather row has no precipitation data (rained null) joins
-     *     neither. temperature_bands always has all five bands in order, lower bound
-     *     inclusive, over avg_temperature; a meetup whose row has no temperature joins
-     *     none. without_weather counts only the meetups with no weather row at all;
-     *     a row with a null value is not counted there.
+     *     the period by date ascending. temperature_bands and temperature_bands_before
+     *     always have all five bands in order, lower bound inclusive, over
+     *     avg_temperature and before_avg_temperature respectively; a meetup without
+     *     that temperature joins no band of that list.
      *
-     *     One-event mode (meetup_id): event is set; meetups, temperature_bands are
-     *     empty, rainy and dry are null and without_weather is 0.
+     *     One-event mode (meetup_id): event is set; meetups and both band lists are empty.
      *
      *     The tab compares groups of events against each other instead of against
      *     another period, so comparison_kind and comparison are always null.
@@ -3301,12 +3378,10 @@ export interface components {
       event: components["schemas"]["WeatherEventPublic"] | null;
       /** Meetups */
       meetups: components["schemas"]["WeatherMeetupRowPublic"][];
-      rainy: components["schemas"]["WeatherGroupPublic"] | null;
-      dry: components["schemas"]["WeatherGroupPublic"] | null;
       /** Temperature Bands */
       temperature_bands: components["schemas"]["TemperatureBandRowPublic"][];
-      /** Without Weather */
-      without_weather: number;
+      /** Temperature Bands Before */
+      temperature_bands_before: components["schemas"]["TemperatureBandRowPublic"][];
       /** Comparison Kind */
       comparison_kind: null;
       /** Comparison */
@@ -3325,6 +3400,22 @@ export interface components {
      * @enum {string}
      */
     WeatherStatus: "OK" | "NO_LOCATION" | "PENDING" | "NOT_FETCHED";
+    /**
+     * WeatherWindowPublic
+     * @description The weather in the 3 hours before a meetup's start: averages of temperature
+     *     and apparent temperature, total precipitation and rained (>= 0.2 mm), each
+     *     null when the provider had no value for it there.
+     */
+    WeatherWindowPublic: {
+      /** Avg Temperature */
+      avg_temperature: number | null;
+      /** Avg Apparent Temperature */
+      avg_apparent_temperature: number | null;
+      /** Total Precipitation Mm */
+      total_precipitation_mm: number | null;
+      /** Rained */
+      rained: boolean | null;
+    };
   };
   responses: never;
   parameters: never;
@@ -7375,7 +7466,7 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Weather against the attendance of finalized meetups */
+      /** @description Temperature against the attendance of finalized meetups, or the weather of one */
       200: {
         headers: {
           [name: string]: unknown;

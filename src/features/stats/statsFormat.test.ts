@@ -3,6 +3,7 @@ import { translations, type TranslationKey } from "@/lib/i18n";
 import {
   percentChange,
   formatEventDay,
+  formatFullDay,
   minuteChange,
   formatDuration,
   formatOffset,
@@ -89,6 +90,12 @@ describe("formatEventDay", () => {
 
   it("adds a two-digit year when asked", () => {
     expect(formatEventDay("2027-01-01T02:30:00Z", true)).toBe("31/12/26");
+  });
+});
+
+describe("formatFullDay", () => {
+  it("writes a day as dd/mm/yyyy", () => {
+    expect(formatFullDay("2026-04-05")).toBe("05/04/2026");
   });
 });
 

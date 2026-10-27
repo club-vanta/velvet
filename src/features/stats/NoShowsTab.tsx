@@ -33,6 +33,7 @@ import {
   sortByDate,
   spansYears,
 } from "./statsFormat";
+import type { StatsPeriodChoice } from "./statsPeriod";
 import type { StatsTabProps } from "./statsTab";
 import { StatsEmptyState, StatsTabGate } from "./StatsTabState";
 import { useComparisonLine } from "./useComparisonLine";
@@ -243,11 +244,19 @@ function GuestList({
   );
 }
 
-function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
+function NoShowsContent({
+  data,
+  single,
+  period,
+}: {
+  data: NoShows;
+  single: boolean;
+  period: StatsPeriodChoice;
+}) {
   const { t, lang } = useLanguage();
   const labels = useGroupLabels();
   const { summary, comparison, comparison_kind } = data;
-  const line = useComparisonLine(comparison_kind);
+  const line = useComparisonLine(comparison_kind, period);
   const [view, setView] = useUrlView("noshow_view", NO_SHOW_VIEWS, "rate");
 
   if (summary.expected === 0) return <StatsEmptyState />;
@@ -383,7 +392,7 @@ function NoShowsContent({ data, single }: { data: NoShows; single: boolean }) {
   );
 }
 
-export function NoShowsTab({ orgId, query, onShowAll }: StatsTabProps) {
+export function NoShowsTab({ orgId, query, period, onShowAll }: StatsTabProps) {
   const statsQ = useNoShowStats(orgId, query);
   const single = !!query?.meetupId;
 
@@ -395,7 +404,7 @@ export function NoShowsTab({ orgId, query, onShowAll }: StatsTabProps) {
       testId="no-shows-skeleton"
       onShowAll={onShowAll}
     >
-      {(data) => <NoShowsContent data={data} single={single} />}
+      {(data) => <NoShowsContent data={data} single={single} period={period} />}
     </StatsTabGate>
   );
 }
