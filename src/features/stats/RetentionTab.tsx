@@ -16,6 +16,9 @@ import { BAR_END_UP, BAR_GAP } from "./chartMarks";
 import { ChartTextTable } from "./ChartTextTable";
 import { CohortTable } from "./CohortTable";
 import { HeadlineStat } from "./HeadlineStat";
+import { NightCrowd } from "./NightCrowd";
+import { isRegular, returnCurve } from "./nightCrowd";
+import { ReturnCurve } from "./ReturnCurve";
 import { StatsNote } from "@/components/StatsNote";
 import { headlineGrid } from "./headlineGrid";
 import { StatsLink } from "./StatsLink";
@@ -36,6 +39,7 @@ import { useComparisonLine } from "./useComparisonLine";
 
 type Retention = components["schemas"]["RetentionStatsPublic"];
 type FrequencyRow = components["schemas"]["FrequencyRowPublic"];
+type Night = components["schemas"]["RetentionNightPublic"];
 
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 3;
@@ -224,15 +228,60 @@ function LapsedList({
   );
 }
 
+/** Who came to the one event and how many of them came back afterwards. */
+function NightCharts({
+  night,
+  summary,
+}: {
+  night: Night;
+  summary: Retention["summary"];
+}) {
+  const { t } = useLanguage();
+  return (
+    <>
+      <ChartCard title={t("statsNightCrowd")}>
+        {(headingId) => (
+          <NightCrowd guests={night.guests} labelledBy={headingId} />
+        )}
+      </ChartCard>
+      <ChartCard title={t("statsAfterwards")}>
+        {(headingId) =>
+          night.afterwards.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("statsAfterwardsNone")}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {t("statsAfterwardsHint")}
+              </p>
+              <ReturnCurve
+                points={returnCurve(
+                  night.afterwards,
+                  summary.attendees,
+                  summary.new_guests,
+                )}
+                labelledBy={headingId}
+              />
+            </div>
+          )
+        }
+      </ChartCard>
+    </>
+  );
+}
+
 function RetentionContent({
   data,
   single,
   allTime,
   period,
+  meetupId,
 }: {
   data: Retention;
   single: boolean;
   period: StatsPeriodChoice;
+  meetupId: string | undefined;
   /**
    * Every guest's first time falls inside "all time", so "First time" would
    * always read 100%; the card shows who came only once instead.
@@ -249,6 +298,7 @@ function RetentionContent({
     lapsed_total,
     comparison,
     comparison_kind,
+    night,
   } = data;
   const line = useComparisonLine(comparison_kind, period);
 
@@ -280,15 +330,28 @@ function RetentionContent({
 
   const returnRate = summary.first_timer_return_rate;
   const cameOnce = summary.attendees - summary.came_back;
+  const regulars = night?.guests.filter((g) => isRegular(g.visit)).length;
 
   return (
     <div className="space-y-3">
       <div className={headlineGrid(HEADLINE_CARDS)}>
-        <HeadlineStat
-          label={t("statsPeople")}
-          value={formatCount(summary.attendees, lang)}
-          comparison={compareAttendees()}
-        />
+        {/* For one event, how many came is on Asistencia already. */}
+        {regulars === undefined ? (
+          <HeadlineStat
+            label={t("statsPeople")}
+            value={formatCount(summary.attendees, lang)}
+            comparison={compareAttendees()}
+          />
+        ) : (
+          <HeadlineStat
+            label={t("statsRegulars")}
+            value={formatCount(regulars, lang)}
+            subline={t("statsRegularsShare").replace(
+              "{0}",
+              formatRate(regulars / summary.attendees, lang),
+            )}
+          />
+        )}
         {allTime ? (
           <HeadlineStat
             label={t("statsCameOnce")}
@@ -326,6 +389,11 @@ function RetentionContent({
       </div>
       {!allTime && <StatsNote>{t("statsNoteRetention")}</StatsNote>}
       <StatsNote>{t("statsNoteReturnRate")}</StatsNote>
+      {night && (
+        // Keyed by the event: a cached switch keeps the instance, and with it
+        // a card left open over another night's faces.
+        <NightCharts key={meetupId} night={night} summary={summary} />
+      )}
       {!single && (
         <>
           <ChartCard title={t("statsNewReturning")}>
@@ -391,6 +459,7 @@ export function RetentionTab({
           single={single}
           allTime={!single && !query?.from && !query?.to}
           period={period}
+          meetupId={query?.meetupId}
         />
       )}
     </StatsTabGate>

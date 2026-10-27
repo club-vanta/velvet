@@ -1487,6 +1487,30 @@ export interface components {
       role: string;
     };
     /**
+     * AfterwardsMeetupPublic
+     * @description A finalized meetup after the one meetup. back and back_new are how many of the one
+     *     meetup's attendees, and of its first-timers, had come back by this meetup: they
+     *     attended it or an earlier one of the list.
+     */
+    AfterwardsMeetupPublic: {
+      /**
+       * Meetup Id
+       * Format: uuid
+       */
+      meetup_id: string;
+      /** Name */
+      name: string;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Back */
+      back: number;
+      /** Back New */
+      back_new: number;
+    };
+    /**
      * AgeGroupPublic
      * @description One age group of attendances, keyed by a StatsAgeBucket. attended_share
      *     is null when nobody attended.
@@ -2502,7 +2526,8 @@ export interface components {
      *       total_precipitation_mm is null: unknown is not the same as dry.
      *
      *     fetched_at is when the snapshot was taken; source names the provider
-     *     dataset. The raw hourly arrays are stored but not returned.
+     *     dataset. The raw hourly arrays are not returned here; the weather stats
+     *     return them for one meetup.
      */
     MeetupWeatherPublic: {
       /** Avg Temperature */
@@ -2538,6 +2563,30 @@ export interface components {
       weather: components["schemas"]["MeetupWeatherPublic"] | null;
       /** Ready */
       ready: boolean;
+    };
+    /**
+     * NightGuestPublic
+     * @description An attendee of the one meetup, with their Mazmo avatar when known. visit is which of
+     *     their attendances it was (1 is their first time), days_since_previous the Buenos Aires
+     *     days since the one before (null on a first time), and came_back whether they attended
+     *     a later meetup.
+     */
+    NightGuestPublic: {
+      /**
+       * Guest Id
+       * Format: uuid
+       */
+      guest_id: string;
+      /** Displayname */
+      displayname: string;
+      /** Avatar Url */
+      avatar_url: string | null;
+      /** Visit */
+      visit: number;
+      /** Days Since Previous */
+      days_since_previous: number | null;
+      /** Came Back */
+      came_back: boolean;
     };
     /**
      * NoShowAgeGroupPublic
@@ -2874,10 +2923,21 @@ export interface components {
       username: string;
     };
     /**
+     * RetentionNightPublic
+     * @description The one meetup's attendees, most visits first, and the next finalized meetups after it, oldest first.
+     */
+    RetentionNightPublic: {
+      /** Guests */
+      guests: components["schemas"]["NightGuestPublic"][];
+      /** Afterwards */
+      afterwards: components["schemas"]["AfterwardsMeetupPublic"][];
+    };
+    /**
      * RetentionStatsPublic
      * @description New and returning guests, cohorts, frequency and lapsed regulars, with the figures to
-     *     compare against. For one meetup the lists are empty and lapsed_total is null; for a
-     *     period without a start, lapsed is empty and lapsed_total is null.
+     *     compare against. For one meetup the lists are empty, lapsed_total is null and night is
+     *     set; for a period night is null, and without a start lapsed is empty and lapsed_total
+     *     is null.
      */
     RetentionStatsPublic: {
       summary: components["schemas"]["RetentionSummaryPublic"];
@@ -2893,6 +2953,7 @@ export interface components {
       lapsed_total: number | null;
       comparison_kind: components["schemas"]["StatsComparisonKind"] | null;
       comparison: components["schemas"]["RetentionSummaryPublic"] | null;
+      night: components["schemas"]["RetentionNightPublic"] | null;
     };
     /**
      * RetentionSummaryPublic
