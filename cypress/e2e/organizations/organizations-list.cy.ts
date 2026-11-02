@@ -35,7 +35,6 @@ describe("Organizations list", () => {
 
     it("invites the first organization when there is none", () => {
       stubAllOrganizations([]);
-      cy.stubApi("GET", "/guests/", { body: { total: 0, guests: [] } });
       cy.visit("/organizations");
       cy.wait("@getOrgs");
 
@@ -61,7 +60,6 @@ describe("Organizations list", () => {
       cy.stubApiError("GET", "/organizations/", { statusCode: 500 }).as(
         "getOrgs",
       );
-      cy.stubApi("GET", "/guests/", { body: { total: 0, guests: [] } });
       cy.visit("/organizations");
       cy.wait("@getOrgs");
 
