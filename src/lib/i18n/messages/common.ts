@@ -4,6 +4,7 @@
 
 export const en = {
   // Common
+  appName: "Alter Tracker",
   retry: "Retry",
   cancel: "Cancel",
   close: "Close",
@@ -16,6 +17,7 @@ export const en = {
 
 export const es: Record<keyof typeof en, string> = {
   // Common
+  appName: "Alter Tracker",
   retry: "Reintentar",
   cancel: "Cancelar",
   close: "Cerrar",
