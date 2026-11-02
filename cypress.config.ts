@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
 import { defineConfig } from "cypress";
 import registerCodeCoverageTasks from "@cypress/code-coverage/task";
 
@@ -6,11 +8,32 @@ import registerCodeCoverageTasks from "@cypress/code-coverage/task";
 // Keep in sync with VITE_API_BASE_URL in .env.e2e.
 const STUB_API_URL = "http://api.e2e.test";
 
-// Prints a table in the terminal (used to report accessibility violations).
+// The smoke suite seeds a local alter-tracker-backend checkout. Override the
+// path with VELVET_BACKEND_DIR.
+const BACKEND_DIR = resolve(
+  process.env.VELVET_BACKEND_DIR ?? "../alter-tracker-backend",
+);
+
 const tasks = {
+  // Prints a table in the terminal (used to report accessibility violations).
   table(rows: unknown[]) {
     console.table(rows);
     return null;
+  },
+  // Resets the smoke suite's organization in the local backend database and
+  // returns the seeded IDs (see scripts/seed_e2e.py in the backend). It runs
+  // a script that exits; the backend server itself is started before Cypress.
+  "db:seed"() {
+    const output = execFileSync(
+      "uv",
+      ["run", "python", "scripts/seed_e2e.py"],
+      {
+        cwd: BACKEND_DIR,
+        env: { ...process.env, PYTHONPATH: "." },
+        encoding: "utf8",
+      },
+    );
+    return JSON.parse(output.trim().split("\n").at(-1) ?? "null");
   },
 };
 
@@ -20,6 +43,10 @@ export default defineConfig({
   expose: {
     apiUrl: STUB_API_URL,
     realBackend: false,
+  },
+  // Secrets read with cy.env(); they never reach the browser bundle.
+  env: {
+    e2ePassword: process.env.E2E_PASSWORD,
   },
   viewportWidth: 1280,
   viewportHeight: 800,

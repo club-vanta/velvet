@@ -129,14 +129,25 @@ Per-suite reports are in `coverage/unit` and `coverage/cypress`.
 ## Smoke suite (real backend)
 
 The smoke suite exercises the full client-server contract on the paths the
-door depends on. It needs the backend from
+door depends on: logging in, checking a guest in and taking their payment, and
+closing a meetup. It runs against a local
 [alter-tracker-backend](https://github.com/club-vanta/alter-tracker-backend)
-running on `localhost:8000` with its seed data loaded (see that repo's README),
-then:
+checkout (default `../alter-tracker-backend`, override with
+`VELVET_BACKEND_DIR`):
 
-```bash
-npm run test:smoke
-```
+1. Start the backend on `localhost:8000` with its database migrated (backend
+   README, "Quick Start").
+2. In the shell that runs Cypress, export the backend's `DATABASE_URL` and
+   `JWT_SIGNING_KEY` (the backend's dev shell sets them) and an `E2E_PASSWORD`
+   of 15+ characters.
+3. Run:
 
-Credentials come from `CYPRESS_SMOKE_USERNAME` and `CYPRESS_SMOKE_PASSWORD`
-and are read with `cy.env()`, never committed.
+   ```bash
+   npm run test:smoke
+   ```
+
+Before each test the `db:seed` task runs the backend's `scripts/seed_e2e.py`,
+which resets an isolated "E2E Club" organization (two accounts, two meetups,
+two guests) and returns its IDs, so every test starts from the same state. The
+script refuses to touch a database that is not on localhost. The password is
+read with `cy.env()`, so it never reaches the browser bundle or the repo.
