@@ -21,7 +21,6 @@ Branch `worktree-agent-af3e81c0c73813f7b`, base `cd90782`.
   button; per-row "Removing..."; role error fallback no longer says success;
   add-member search labelled, contrast fixed, debounced; org page keyed by
   :orgId; clipboard refusal or absence handled.
-- Code review run; findings fixed except the ones listed below.
 
 ## Known failing or unverified
 
@@ -29,10 +28,8 @@ Branch `worktree-agent-af3e81c0c73813f7b`, base `cd90782`.
   copies it" failed 1 of 3 runs with retries=0 (cy.clock/cy.tick around the
   2 s "Copied!" reset). Last commit is wip. Likely fix: install cy.clock()
   before the dialog opens, or drop the tick step and only assert "Copied!".
-- Not re-run after the wip hook change: the full E2E and CT suites
-  (the last full E2E run, before that change, was 104/105 green with this
-  same test failing). npm run check, test:run and build were green on
-  87585ac.
+- Not re-run after the wip change: full E2E/CT (before it: E2E 104/105,
+  same test). check, test:run, build green on 87585ac.
 
 ## For other owners (not changed here)
 
@@ -43,13 +40,6 @@ Branch `worktree-agent-af3e81c0c73813f7b`, base `cd90782`.
   switch it to organizationsKey and throw on error.
 - MeetupRow "(7 days ago)" uses text-muted-foreground/70: fails axe contrast.
 - Shell's phone header has an icon button with no accessible name.
-- Org keys live in stats.ts and recovery-code keys in auth.ts; move them to
-  organizations.ts and staff.ts.
-- A stubApiValidationError command (422 with a detail array) would let specs
-  test Pydantic errors without raw cy.intercept.
-- Not changed (kept original behavior): one approval or role change disables
-  that control on every staff row; infinite audit log refetches all loaded
-  pages on window focus.
 
 ## How to verify
 
