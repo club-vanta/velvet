@@ -148,6 +148,7 @@ export function MeetupDetailPage() {
         guests={list.shown}
         total={allGuests.length}
         loading={guestsQ.isLoading}
+        loaded={guestsQ.isSuccess}
         searching={list.search.trim() !== ""}
         ctx={ctx}
         sort={list.sort}

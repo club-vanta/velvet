@@ -92,6 +92,7 @@ describe("Meetup detail", () => {
       "contain.text",
       "Failed to load guest list.",
     );
+    cy.getBySel("guest-list-empty").should("not.exist");
     // Without the meetup there are no tools, weather or stats to offer.
     cy.getBySel("meetup-toolbar").should("not.exist");
     cy.getByRole("region", { name: "Weather" }).should("not.exist");
@@ -123,6 +124,8 @@ describe("Meetup detail", () => {
     cy.visit("/meetups/m-1");
     cy.wait("@meetup");
     cy.getBySel("guest-list-error").should("be.visible");
+    // A failed load is not an empty list: no "sync to load guests" advice.
+    cy.getBySel("guest-list-empty").should("not.exist");
 
     stubMeetupPage({ meetup: MEETUP, guests: [LUNA] });
     cy.getBySel("guest-list-error").findBySel("retry").click();

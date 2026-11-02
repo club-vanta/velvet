@@ -16,6 +16,7 @@ export function GuestList({
   guests,
   total,
   loading,
+  loaded,
   searching,
   ctx,
   sort,
@@ -26,6 +27,8 @@ export function GuestList({
   /** Every guest of the meetup, before filters and search. */
   total: number;
   loading: boolean;
+  /** The list arrived. A failed load says nothing about who is coming. */
+  loaded: boolean;
   searching: boolean;
   ctx: GuestRowContext;
   sort: GuestSort;
@@ -37,7 +40,7 @@ export function GuestList({
   const isDesktop = useMediaQuery("(min-width: 1280px)");
 
   function emptyMessage() {
-    if (loading || guests.length > 0) return null;
+    if (!loaded || guests.length > 0) return null;
     if (total === 0) return t("noGuestsSyncMazmo");
     return searching ? t("noGuestsMatchSearch") : t("noGuestsMatchFilters");
   }
