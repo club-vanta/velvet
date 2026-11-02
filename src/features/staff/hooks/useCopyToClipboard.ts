@@ -16,8 +16,10 @@ export function useCopyToClipboard() {
   }, [copiedAt]);
 
   function copy(text: string) {
-    // A refused write (no permission, insecure context) just never says
-    // "Copied!"; the code stays on screen to copy by hand.
+    // A refused write (no permission) or a missing clipboard (plain http
+    // outside localhost) just never says "Copied!"; the code stays on
+    // screen to copy by hand.
+    if (!navigator.clipboard) return;
     void navigator.clipboard.writeText(text).then(
       () => setCopiedAt(Date.now()),
       () => setCopiedAt(null),

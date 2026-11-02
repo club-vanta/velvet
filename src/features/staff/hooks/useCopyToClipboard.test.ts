@@ -41,6 +41,17 @@ describe("useCopyToClipboard", () => {
     expect(result.current.copied).toBe(true);
   });
 
+  it("does nothing without a clipboard (plain http)", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      configurable: true,
+    });
+    const { result } = renderHook(() => useCopyToClipboard());
+
+    await act(async () => result.current.copy("042567"));
+    expect(result.current.copied).toBe(false);
+  });
+
   it("does not claim a copy the browser refused", async () => {
     writeText.mockRejectedValue(new Error("denied"));
     const { result } = renderHook(() => useCopyToClipboard());
