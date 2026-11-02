@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import {
   memberOrganizationsKey,
@@ -97,5 +97,7 @@ export function useUserSearch(q: string) {
       });
       return data ?? [];
     },
+    // Keep the last results on screen while the next search runs.
+    placeholderData: keepPreviousData,
   });
 }

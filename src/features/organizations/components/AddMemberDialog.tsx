@@ -12,11 +12,14 @@ import {
 import type { components } from "@/api/types";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useUserSearch } from "../api/useOrganizations";
 import { useAddMember } from "../api/useOrgMutations";
 import { OrgRoleSelect } from "./OrgRoleSelect";
 
 type UserResult = components["schemas"]["UserSearchResult"];
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 /** Finds an account by username and adds it to the org with a role. */
 export function AddMemberDialog({
@@ -30,7 +33,8 @@ export function AddMemberDialog({
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<UserResult | null>(null);
   const [role, setRole] = useState("STAFF");
-  const usersQ = useUserSearch(search);
+  // One search when the typing stops, not one per keystroke.
+  const usersQ = useUserSearch(useDebouncedValue(search, SEARCH_DEBOUNCE_MS));
   const add = useAddMember(orgId);
   const users = usersQ.data ?? [];
   const roleLabelId = useId();

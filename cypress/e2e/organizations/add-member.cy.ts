@@ -64,14 +64,18 @@ describe("Adding a member", () => {
       .should("have.text", "sol");
   });
 
-  it("searches with what was typed", () => {
+  it("searches once, with what was typed, when the typing stops", () => {
     openAddMemberDialog();
+    cy.wait("@searchUsers")
+      .its("request.query")
+      .should("deep.equal", { q: "" });
     cy.getByRole("textbox", { name: "Username" }).type("sol");
 
-    cy.get("@searchUsers.all").should((calls) => {
-      const last = calls.at(-1) as unknown as { request: { query: object } };
-      expect(last.request.query).to.deep.equal({ q: "sol" });
-    });
+    cy.wait("@searchUsers")
+      .its("request.query")
+      .should("deep.equal", { q: "sol" });
+    // Not one request per keystroke.
+    cy.get("@searchUsers.all").should("have.length", 2);
   });
 
   it("adds as staff by default", () => {
