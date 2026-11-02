@@ -207,3 +207,24 @@ export function invalidateOrganization(
   void queryClient.invalidateQueries({ queryKey: organizationsKey });
   void queryClient.invalidateQueries({ queryKey: organizationKey(orgId) });
 }
+
+/** A new or changed meetup shows in the org's meetup list. */
+export function invalidateMeetups(
+  queryClient: QueryClient,
+  orgId: string,
+): void {
+  void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
+}
+
+/**
+ * A meetup's own fields (payment requirement, finalized state) show on its
+ * page and in the meetup list, so both are refreshed together.
+ */
+export function invalidateMeetup(
+  queryClient: QueryClient,
+  orgId: string,
+  meetupId: string,
+): void {
+  void queryClient.invalidateQueries({ queryKey: meetupKey(orgId, meetupId) });
+  invalidateMeetups(queryClient, orgId);
+}

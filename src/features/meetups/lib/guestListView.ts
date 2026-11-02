@@ -19,6 +19,17 @@ export const GUEST_SORT_KEYS: readonly GuestSortKey[] = [
 // Alphabetical, the order staff used to get from the old table.
 export const DEFAULT_GUEST_SORT: GuestSort = { key: "name", dir: "asc" };
 
+/**
+ * A column header click: the active column flips its direction, another
+ * column starts ascending. There is no "unsorted" state, since alphabetical
+ * is the default.
+ */
+export function toggleGuestSort(prev: GuestSort, key: GuestSortKey): GuestSort {
+  return prev.key === key
+    ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+    : { key, dir: "asc" };
+}
+
 export type GuestFilters = {
   status: "all" | "pending" | "arrived";
   rsvp: "all" | "active" | "cancelled";

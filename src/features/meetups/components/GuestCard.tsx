@@ -13,6 +13,7 @@ export function GuestCard({
   statuses,
   actions,
   dimmed,
+  "data-cy": dataCy,
 }: {
   identity: ReactNode;
   menu: ReactNode;
@@ -20,6 +21,7 @@ export function GuestCard({
   /** Null when the guest has no step left. */
   actions: ReactNode;
   dimmed: boolean;
+  "data-cy"?: string;
 }) {
   return (
     <li
@@ -27,6 +29,7 @@ export function GuestCard({
         "flex flex-col overflow-hidden rounded-lg border",
         dimmed && "opacity-50",
       )}
+      data-cy={dataCy}
     >
       <div className="flex items-start gap-2 p-3">
         <div className="min-w-0 flex-1">{identity}</div>

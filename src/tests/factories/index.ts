@@ -4,5 +4,6 @@
 export * from "./admin";
 export * from "./guest";
 export * from "./meetup";
+export * from "./meetups";
 export * from "./schemas";
 export * from "./session";

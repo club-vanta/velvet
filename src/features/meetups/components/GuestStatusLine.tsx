@@ -24,6 +24,7 @@ export function GuestStatusLine({
   children,
   action,
   id,
+  "data-cy": dataCy,
 }: {
   tone: StatusTone;
   icon?: LucideIcon;
@@ -31,6 +32,7 @@ export function GuestStatusLine({
   action?: ReactNode;
   /** Lets a disabled button point `aria-describedby` at this line. */
   id?: string;
+  "data-cy"?: string;
 }) {
   return (
     <div
@@ -38,6 +40,7 @@ export function GuestStatusLine({
         "flex items-center gap-2 border-t px-3 py-2 text-sm",
         TONE_CLASS[tone],
       )}
+      data-cy={dataCy}
     >
       {Icon && <Icon className="size-4 shrink-0" aria-hidden="true" />}
       <p id={id} className="min-w-0 flex-1">
