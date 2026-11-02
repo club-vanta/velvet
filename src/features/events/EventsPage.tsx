@@ -21,11 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/api/client";
-import { useOrg } from "@/lib/org";
+import { useOrg } from "@/domain/session";
 import { formatDateTime } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
-import { GUEST_TYPE_LABEL, isGuestType } from "@/lib/guestType";
-import { meetupsKey } from "@/lib/queryKeys";
+import { GUEST_TYPE_LABEL, isGuestType } from "@/domain/guest";
+import { meetupsKey } from "@/api/queryKeys";
 import type { components } from "@/api/types";
 
 type EventLog = components["schemas"]["EventLogPublic"];

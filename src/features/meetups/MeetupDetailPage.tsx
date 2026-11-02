@@ -48,11 +48,11 @@ import {
   MazmoFlagBadges,
   PronounPill,
 } from "@/components/GuestBadges";
-import { GuestProfile } from "@/features/guests/GuestProfile";
+import { GuestProfile } from "@/features/guests";
 import { api } from "@/api/client";
-import { useIsOrgAdmin, useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/domain/session";
 import { formatDate, formatDateTime, ordinal } from "@/lib/format";
-import { meetupTiming } from "@/lib/meetupTiming";
+import { meetupTiming, useRelativeDay } from "@/domain/meetup";
 import {
   DEFAULT_GUEST_FILTERS,
   DEFAULT_GUEST_SORT,
@@ -61,37 +61,40 @@ import {
   type GuestSort,
   type GuestSortKey,
   type SortDir,
-} from "@/lib/guestListView";
+} from "./lib/guestListView";
 import { cn } from "@/lib/utils";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { useAllGuests } from "@/hooks/useAllGuests";
-import { useGuestSearch } from "@/hooks/useGuestSearch";
-import { useIncrementalList } from "@/hooks/useIncrementalList";
-import { ShowMoreButton } from "@/components/ListToolbar";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useRelativeDay } from "@/hooks/useRelativeDay";
 import {
+  useAllGuests,
+  useGuestSearch,
   isGuestType,
   isPaymentExempt,
   PAYMENT_EXEMPT_REASON,
-} from "@/lib/guestType";
-import { useBannedGuests } from "@/hooks/useBannedGuests";
+  useBannedGuests,
+} from "@/domain/guest";
+import { useIncrementalList } from "@/hooks/useIncrementalList";
+import { ShowMoreButton } from "@/components/ListToolbar";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   invalidateAllGuestIdentities,
   invalidateMeetupGuests,
   meetupGuestsKey,
   meetupKey,
   meetupsKey,
-} from "@/lib/queryKeys";
-import { MeetupStats } from "./MeetupStats";
-import { GuestRowActions } from "./GuestRowActions";
-import { GuestListToolbar } from "./GuestListToolbar";
-import { GuestCard } from "./GuestCard";
-import { GuestStatusLine } from "./GuestStatusLine";
-import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
-import { DateTile, MazmoUrlLink, MeetupBadges } from "./MeetupListItem";
-import { MeetupLocation } from "./MeetupLocation";
-import { MeetupWeather } from "./MeetupWeather";
+} from "@/api/queryKeys";
+import { MeetupStats } from "./components/MeetupStats";
+import { GuestRowActions } from "./components/GuestRowActions";
+import { GuestListToolbar } from "./components/GuestListToolbar";
+import { GuestCard } from "./components/GuestCard";
+import { GuestStatusLine } from "./components/GuestStatusLine";
+import { FinalizeMeetupDialog } from "./components/FinalizeMeetupDialog";
+import {
+  DateTile,
+  MazmoUrlLink,
+  MeetupBadges,
+} from "./components/MeetupListItem";
+import { MeetupLocation } from "./components/MeetupLocation";
+import { MeetupWeather } from "./components/MeetupWeather";
 import type { components } from "@/api/types";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];

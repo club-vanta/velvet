@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/api/client";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "@/domain/session";
 import { formatDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";

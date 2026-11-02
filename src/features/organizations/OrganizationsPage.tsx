@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/auth/AuthContext";
-import { useOrg } from "@/lib/org";
+import { useAuth, useOrg } from "@/domain/session";
 import { extractApiError } from "@/api/errors";
 import { toast } from "sonner";
 import { ChevronRight } from "lucide-react";

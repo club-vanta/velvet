@@ -7,22 +7,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Fact, FactStrip } from "@/components/FactStrip";
 import { api } from "@/api/client";
-import { useAllGuests } from "@/hooks/useAllGuests";
-import { useAuth } from "@/auth/AuthContext";
-import { useOrg } from "@/lib/org";
+import { useAllGuests } from "@/domain/guest";
+import { useAuth, useOrg } from "@/domain/session";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { formatDate } from "@/lib/format";
-import { featuredMeetup, type MeetupTiming } from "@/lib/meetupTiming";
+import {
+  featuredMeetup,
+  type MeetupTiming,
+  useMeetupStats,
+  useRelativeDay,
+} from "@/domain/meetup";
 import { cn } from "@/lib/utils";
 import {
   DateTile,
   MazmoUrlLink,
   MeetupBadges,
   MeetupRow,
-} from "@/features/meetups/MeetupListItem";
-import { useMeetupStats } from "@/hooks/useMeetupStats";
-import { useRelativeDay } from "@/hooks/useRelativeDay";
-import { meetupsKey } from "@/lib/queryKeys";
+} from "@/features/meetups";
+import { meetupsKey } from "@/api/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];

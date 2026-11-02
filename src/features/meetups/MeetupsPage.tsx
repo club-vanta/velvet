@@ -17,13 +17,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/api/client";
-import { useOrg } from "@/lib/org";
-import { useOrgMeetups } from "@/hooks/useOrgMeetups";
-import { groupMeetupsByTiming } from "@/lib/meetupTiming";
+import { useOrg } from "@/domain/session";
+import { useOrgMeetups, groupMeetupsByTiming } from "@/domain/meetup";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
-import { MeetupRow } from "./MeetupListItem";
-import { meetupsKey } from "@/lib/queryKeys";
+import { MeetupRow } from "./components/MeetupListItem";
+import { meetupsKey } from "@/api/queryKeys";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];

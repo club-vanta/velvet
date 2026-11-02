@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/api/client";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 

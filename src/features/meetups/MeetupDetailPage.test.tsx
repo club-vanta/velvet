@@ -31,14 +31,14 @@ vi.mock("sonner", () => ({
 let mockRole = "ADMIN";
 // Holds the meetup request open, for the states shown while it loads.
 let meetupPending = false;
-vi.mock("@/lib/org", () => ({
+vi.mock("@/domain/session/OrgContext", () => ({
   useOrg: () => ({
     activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: mockRole },
   }),
   useIsOrgAdmin: () => mockRole === "ADMIN",
 }));
 
-vi.mock("@/auth/AuthContext", () => ({
+vi.mock("@/domain/session/AuthContext", () => ({
   useAuth: () => ({
     user: { id: 1, username: "admin", role: { name: "USER" } },
   }),

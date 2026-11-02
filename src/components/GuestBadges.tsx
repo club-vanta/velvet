@@ -1,12 +1,14 @@
 import { TriangleAlert, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/i18n";
-import { GUEST_TYPE_LABEL, isGuestType, type GuestType } from "@/lib/guestType";
 import {
+  GUEST_TYPE_LABEL,
+  isGuestType,
+  type GuestType,
   MAZMO_PRONOUN_LABEL,
   MAZMO_PRONOUN_SHORT,
   mazmoLabel,
-} from "@/lib/mazmoProfile";
+} from "@/domain/guest";
 import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
 

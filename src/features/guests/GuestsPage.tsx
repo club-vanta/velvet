@@ -43,20 +43,22 @@ import {
   EditGuestDialog,
   LinkMazmoDialog,
   UnlinkMazmoDialog,
-} from "./GuestDialogs";
-import { useUnbanGuest } from "./useUnbanGuest";
-import { useBannedGuests } from "@/hooks/useBannedGuests";
-import { useAllGuests } from "@/hooks/useAllGuests";
-import { useGuestSearch } from "@/hooks/useGuestSearch";
+} from "./components/GuestDialogs";
+import { useUnbanGuest } from "./api/useUnbanGuest";
+import {
+  useBannedGuests,
+  useAllGuests,
+  useGuestSearch,
+  MAZMO_PRONOUN_SHORT,
+  mazmoLabel,
+} from "@/domain/guest";
 import { useIncrementalList } from "@/hooks/useIncrementalList";
 import { api } from "@/api/client";
-import { useAuth } from "@/auth/AuthContext";
-import { useOrg } from "@/lib/org";
+import { useAuth, useOrg } from "@/domain/session";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { invalidateAllGuestIdentities } from "@/lib/queryKeys";
+import { invalidateAllGuestIdentities } from "@/api/queryKeys";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { MAZMO_PRONOUN_SHORT, mazmoLabel } from "@/lib/mazmoProfile";
 import type { SortDir } from "@/lib/sortNames";
 import {
   DEFAULT_DIRECTORY_FILTERS,
@@ -69,7 +71,7 @@ import {
   type DirectorySortKey,
   type ListSort,
   type VantedSortKey,
-} from "@/lib/guestDirectoryView";
+} from "./lib/guestDirectoryView";
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];

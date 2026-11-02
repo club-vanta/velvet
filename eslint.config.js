@@ -6,8 +6,25 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
+// Layering (see CLAUDE.md, "Code map"):
+//   app -> features -> components -> domain -> hooks / lib / api
+// A layer may import the layers to its right, never to its left. Features and
+// domain modules are imported through their index.ts, never by deep path.
+const deepImport = {
+  group: ["@/features/*/**", "@/domain/*/**"],
+  message:
+    'Import features and domain modules through their public index ("@/features/<name>", "@/domain/<name>").',
+};
+const upward = (layers, who) => ({
+  group: layers.flatMap((l) => [`@/${l}`, `@/${l}/**`]),
+  message: `${who} cannot import from ${layers.join(", ")}.`,
+});
+const restrict = (...patterns) => ({
+  "no-restricted-imports": ["error", { patterns }],
+});
+
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "coverage", ".nyc_output"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -26,5 +43,37 @@ export default defineConfig([
     // shadcn/ui generates files that export variants alongside components
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
+    files: ["src/app/**/*.{ts,tsx}", "src/features/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}", "**/*.cy.{ts,tsx}"],
+    rules: restrict(deepImport, upward(["app"], "Features")),
+  },
+  {
+    files: ["src/domain/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}", "**/*.cy.{ts,tsx}"],
+    rules: restrict(
+      deepImport,
+      upward(["app", "features", "components"], "Domain modules"),
+    ),
+  },
+  {
+    files: ["src/components/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}", "**/*.cy.{ts,tsx}"],
+    rules: restrict(
+      deepImport,
+      upward(["app", "features"], "Shared components"),
+    ),
+  },
+  {
+    files: [
+      "src/lib/**/*.{ts,tsx}",
+      "src/hooks/**/*.{ts,tsx}",
+      "src/api/**/*.ts",
+    ],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: restrict(
+      upward(["app", "features", "domain", "components"], "lib, hooks and api"),
+    ),
   },
 ]);

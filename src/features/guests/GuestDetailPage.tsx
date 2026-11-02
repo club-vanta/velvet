@@ -2,16 +2,16 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useIsOrgAdmin, useOrg } from "@/lib/org";
+import { useIsOrgAdmin, useOrg } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
-import { GuestProfile } from "./GuestProfile";
+import { GuestProfile } from "./components/GuestProfile";
 import {
   BanDialog,
   EditGuestDialog,
   LinkMazmoDialog,
   UnlinkMazmoDialog,
-} from "./GuestDialogs";
-import { useUnbanGuest } from "./useUnbanGuest";
+} from "./components/GuestDialogs";
+import { useUnbanGuest } from "./api/useUnbanGuest";
 import type { components } from "@/api/types";
 
 type Guest = components["schemas"]["GuestPublic"];

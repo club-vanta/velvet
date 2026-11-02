@@ -19,7 +19,7 @@ vi.mock("@/api/client", () => ({
   api: { GET: (...a: unknown[]) => mockApiGet(...a) },
 }));
 
-vi.mock("@/lib/org", () => ({
+vi.mock("@/domain/session/OrgContext", () => ({
   useOrg: () => ({
     activeOrg: { org_id: "org-1", org_name: "Club Vanta", role: "ADMIN" },
   }),

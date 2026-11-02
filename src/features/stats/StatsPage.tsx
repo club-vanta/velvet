@@ -7,12 +7,12 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { useLanguage } from "@/lib/i18n";
-import { useOrg } from "@/lib/org";
-import { StatsErrorState } from "./StatsErrorState";
-import { StatsFilterBar } from "./StatsFilterBar";
-import type { StatsTabProps } from "./statsTab";
+import { useOrg } from "@/domain/session";
+import { StatsErrorState } from "./components/StatsErrorState";
+import { StatsFilterBar } from "./components/StatsFilterBar";
+import type { StatsTabProps } from "./lib/statsTab";
 import { STATS_TABS, type StatsTab } from "./statsTabs";
-import { useStatsFilters } from "./useStatsFilters";
+import { useStatsFilters } from "./hooks/useStatsFilters";
 
 export function StatsPage() {
   const { t } = useLanguage();
