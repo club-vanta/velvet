@@ -1,49 +1,10 @@
-import { Loader2, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WeatherDetails } from "@/components/WeatherDetails";
-import { useMeetupWeather } from "../api/useMeetupWeather";
-import { useRefreshMeetupWeather } from "../api/useRefreshMeetupWeather";
 import { useLanguage } from "@/lib/i18n";
-
-function RefreshButton({
-  orgId,
-  meetupId,
-}: {
-  orgId: string;
-  meetupId: string;
-}) {
-  const { t } = useLanguage();
-  const refresh = useRefreshMeetupWeather(orgId, meetupId);
-  const Icon = refresh.isPending ? Loader2 : RefreshCw;
-
-  // aria-disabled instead of disabled, so the button keeps keyboard focus
-  // while the request runs.
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      aria-busy={refresh.isPending}
-      aria-disabled={refresh.isPending}
-      className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-      onClick={() => {
-        if (refresh.isPending) return;
-        refresh.mutate(undefined, {
-          onSuccess: () => toast.success(t("weatherRefreshed")),
-          onError: (err) => toast.error(err.message),
-        });
-      }}
-    >
-      <Icon
-        className={refresh.isPending ? "animate-spin" : undefined}
-        aria-hidden="true"
-      />
-      {t("weatherRefresh")}
-    </Button>
-  );
-}
+import { useMeetupWeather } from "../api/useMeetupWeather";
+import { WeatherRefreshButton } from "./WeatherRefreshButton";
 
 /**
  * The weather of the first six hours of a meetup, or why it is not there yet.
@@ -71,6 +32,7 @@ export function MeetupWeather({
           aria-busy="true"
           aria-label={t("weatherTitle")}
           className="grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-4"
+          data-cy="meetup-weather-loading"
         >
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-1">
@@ -89,9 +51,15 @@ export function MeetupWeather({
       <div
         role="alert"
         className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
+        data-cy="meetup-weather-error"
       >
         {t("failedLoadWeather")}
-        <Button variant="ghost" size="sm" onClick={() => weatherQ.refetch()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => weatherQ.refetch()}
+          data-cy="retry"
+        >
           {t("retry")}
         </Button>
       </div>
@@ -108,7 +76,7 @@ export function MeetupWeather({
         canSetLocation={canRefresh}
       />
       {canRefresh && ready && (
-        <RefreshButton orgId={orgId} meetupId={meetupId} />
+        <WeatherRefreshButton orgId={orgId} meetupId={meetupId} />
       )}
     </StatCard>
   );
