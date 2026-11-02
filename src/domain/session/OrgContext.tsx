@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { organizationsKey } from "@/api/queryKeys";
 import { useAuth } from "./AuthContext";
 
 export type ActiveOrg = {
@@ -32,7 +33,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
 
   const { data: allOrgsData, isLoading: allOrgsLoading } = useQuery({
-    queryKey: ["organizations"],
+    queryKey: organizationsKey,
     queryFn: async () => {
       const { data } = await api.GET("/organizations/");
       return data;
