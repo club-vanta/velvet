@@ -3,6 +3,7 @@
 // test cares about. Type-only imports keep this file importable from
 // Cypress specs, which do not resolve the "@/" alias.
 import type { Schema } from "./schemas";
+import type { GuestRowContext } from "../../features/meetups/lib/guestRow";
 import { makeGuest } from "./guest";
 import { makeMeetupGuest } from "./meetup";
 import { USERS } from "./session";
@@ -102,4 +103,29 @@ export function makeDirectoryGuests(count: number): Schema<"GuestPublic">[] {
       displayname: `Directory ${n}`,
     });
   });
+}
+
+/**
+ * What a guest row of an open, free meetup knows, seen by staff. Handlers do
+ * nothing; component tests pass cy.spy() for the ones they check.
+ */
+export function makeGuestRowContext(
+  overrides: Partial<GuestRowContext> = {},
+): GuestRowContext {
+  const noop = () => {};
+  return {
+    orgId: "org-1",
+    meetupId: "meetup-1",
+    requiresPayment: false,
+    paymentStateKnown: true,
+    isFinalized: false,
+    isOrgAdmin: false,
+    checkingInId: null,
+    onCheckIn: noop,
+    onUndoCheckIn: noop,
+    onMarkPaid: noop,
+    onUndoPayment: noop,
+    onViewProfile: noop,
+    ...overrides,
+  };
 }
