@@ -34,8 +34,11 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
   const { data: allOrgsData, isLoading: allOrgsLoading } = useQuery({
     queryKey: organizationsKey,
+    // Same contract as the organizations page, which shares the key: throw
+    // on error instead of caching `undefined`.
     queryFn: async () => {
-      const { data } = await api.GET("/organizations/");
+      const { data, error } = await api.GET("/organizations/");
+      if (error) throw new Error("Failed to load organizations");
       return data;
     },
     enabled: !!user && isSiteAdmin,

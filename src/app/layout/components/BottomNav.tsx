@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "../navItems";
+import type { NavBadges, NavItem } from "../navItems";
 import { PendingBadge } from "./PendingBadge";
 
 // Keep in sync with the bottom padding of the Shell's <main>.
@@ -14,7 +14,7 @@ export function BottomNav({
 }: {
   items: NavItem[];
   /** Counts shown on an item's icon, by item id. */
-  badges: Partial<Record<string, number>>;
+  badges: NavBadges;
 }) {
   const { t } = useLanguage();
   return (

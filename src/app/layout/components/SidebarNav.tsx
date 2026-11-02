@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "../navItems";
+import type { NavBadges, NavItem } from "../navItems";
 import { PendingBadge } from "./PendingBadge";
 
 /** The desktop sidebar; hidden on phones, where BottomNav takes over. */
@@ -12,7 +12,7 @@ export function SidebarNav({
 }: {
   items: NavItem[];
   /** Counts shown next to an item, by item id. */
-  badges: Partial<Record<string, number>>;
+  badges: NavBadges;
   open: boolean;
 }) {
   const { t } = useLanguage();

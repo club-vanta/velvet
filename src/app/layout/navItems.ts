@@ -11,9 +11,21 @@ import {
 import type { TranslationKey } from "@/lib/i18n";
 import { canAccess, type Access, type Viewer } from "../access";
 
+export type NavItemId =
+  | "dashboard"
+  | "meetups"
+  | "guests"
+  | "stats"
+  | "staff"
+  | "events"
+  | "organizations";
+
+/** Counts shown on nav items (the pending-approvals badge), by item id. */
+export type NavBadges = Partial<Record<NavItemId, number>>;
+
 export type NavItem = {
-  /** Stable id for tests (`shell-sidebar-link-<id>`). */
-  id: string;
+  /** Stable id for badges and tests (`shell-sidebar-link-<id>`). */
+  id: NavItemId;
   href: string;
   icon: LucideIcon;
   label: TranslationKey;
