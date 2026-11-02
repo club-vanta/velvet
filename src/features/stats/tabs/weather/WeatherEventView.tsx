@@ -2,28 +2,18 @@ import type { components } from "@/api/types";
 import { StatCard } from "@/components/StatCard";
 import { StatsNote } from "@/components/StatsNote";
 import { WeatherDetails } from "@/components/WeatherDetails";
-import { useArrivalsStats } from "../../api/useArrivalsStats";
-import { formatDecimal, formatTime } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import { useIsOrgAdmin } from "@/domain/session";
 import type { StatsQuery } from "@/api/statsQuery";
 import { ChartCard } from "../../components/ChartCard";
-import { HeadlineStat } from "../../components/HeadlineStat";
 import { headlineGrid } from "../../lib/headlineGrid";
 import { startHourOffset } from "./meteogramData";
-import { WeatherMeteogram } from "./WeatherMeteogram";
+import { EventMeteogram } from "./EventMeteogram";
+import { WindowStat } from "./WindowStat";
 
 type Event = components["schemas"]["WeatherEventPublic"];
 type Hour = components["schemas"]["WeatherHourPublic"];
-
-/** The fields a before or during summary share. */
-type WindowSummary = Pick<
-  components["schemas"]["WeatherWindowPublic"],
-  | "avg_temperature"
-  | "avg_apparent_temperature"
-  | "total_precipitation_mm"
-  | "rained"
->;
 
 /** Headline cards of the loaded event; the skeleton shows the same count. */
 export const EVENT_CARDS = 2;
@@ -31,40 +21,6 @@ export const EVENT_CARDS = 2;
 const MINUTE_MS = 60 * 1000;
 /** The during window ends 6 hours after the start, as the backend summarizes it. */
 const DURING_MINUTES = 6 * 60;
-
-/** One window's rain as the big value and its temperatures under it. */
-function WindowStat({
-  label,
-  summary,
-}: {
-  label: string;
-  summary: WindowSummary | null;
-}) {
-  const { t, lang } = useLanguage();
-  const degrees = (value: number | null) =>
-    value === null ? null : `${formatDecimal(value, lang)} °C`;
-  const rained = summary?.rained ?? null;
-  const precipitation = summary?.total_precipitation_mm ?? null;
-  const value =
-    rained === null || precipitation === null
-      ? t("weatherNoData")
-      : rained
-        ? t("statsWeatherRainMm").replace(
-            "{0}",
-            formatDecimal(precipitation, lang),
-          )
-        : t("weatherDry");
-  const temperature = degrees(summary?.avg_temperature ?? null);
-  const felt = degrees(summary?.avg_apparent_temperature ?? null);
-  const subline =
-    temperature && felt
-      ? t("statsWeatherFeltLike")
-          .replace("{0}", temperature)
-          .replace("{1}", felt)
-      : (temperature ?? felt ?? undefined);
-
-  return <HeadlineStat label={label} value={value} subline={subline} />;
-}
 
 /** An hour's start moved by some minutes, as an ISO string. */
 const shifted = (hour: Hour, minutes: number) =>
@@ -89,7 +45,7 @@ export function WeatherEventView({
 
   if (event.status !== "OK" || event.hours.length === 0) {
     return (
-      <StatCard title={t("weatherTitle")}>
+      <StatCard title={t("weatherTitle")} data-cy="stats-weather-missing">
         <WeatherDetails
           status={event.status}
           weather={event.weather}
@@ -117,10 +73,12 @@ export function WeatherEventView({
     <div className="space-y-3">
       <div className={headlineGrid(EVENT_CARDS)}>
         <WindowStat
+          data-cy="stats-headline-weather-before"
           label={label(t("statsWeatherBefore"), first.time, startHour)}
           summary={event.before}
         />
         <WindowStat
+          data-cy="stats-headline-weather-during"
           label={label(t("statsWeatherDuring"), startHour, end)}
           summary={event.weather}
         />
@@ -137,32 +95,5 @@ export function WeatherEventView({
         )}
       </ChartCard>
     </div>
-  );
-}
-
-/** The meteogram with the event's arrivals, asked for with the same filters. */
-function EventMeteogram({
-  hours,
-  orgId,
-  query,
-  labelledBy,
-}: {
-  hours: Hour[];
-  orgId: string;
-  query: StatsQuery | null;
-  labelledBy: string;
-}) {
-  const arrivalsQ = useArrivalsStats(orgId, query);
-  const arrivals = arrivalsQ.isError
-    ? null
-    : arrivalsQ.data
-      ? arrivalsQ.data.curve
-      : undefined;
-  return (
-    <WeatherMeteogram
-      hours={hours}
-      arrivals={arrivals}
-      labelledBy={labelledBy}
-    />
   );
 }

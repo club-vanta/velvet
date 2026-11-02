@@ -18,6 +18,7 @@ import {
   formatCohortMonth,
   signed,
   sortByDate,
+  withEventDays,
 } from "./statsFormat";
 
 describe("formatRate", () => {
@@ -266,5 +267,33 @@ describe("sortByDate", () => {
     ];
     expect(sortByDate(events).map((e) => e.id)).toEqual(["a", "b", "c"]);
     expect(events.map((e) => e.id)).toEqual(["b", "c", "a"]);
+  });
+});
+
+describe("withEventDays", () => {
+  beforeEach(() => vi.stubEnv("TZ", "America/Argentina/Buenos_Aires"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("sorts the events by date and labels each with its local day", () => {
+    const events = [
+      { id: "b", date: "2026-04-14T22:00:00Z" },
+      // 22:30 on Mar 9 in Buenos Aires.
+      { id: "a", date: "2026-03-10T01:30:00Z" },
+    ];
+    expect(withEventDays(events)).toEqual([
+      { id: "a", date: "2026-03-10T01:30:00Z", day: "09/03" },
+      { id: "b", date: "2026-04-14T22:00:00Z", day: "14/04" },
+    ]);
+  });
+
+  it("adds the year when the events span two years", () => {
+    const events = [
+      { date: "2027-01-10T22:00:00Z" },
+      { date: "2026-12-20T22:00:00Z" },
+    ];
+    expect(withEventDays(events).map((e) => e.day)).toEqual([
+      "20/12/26",
+      "10/01/27",
+    ]);
   });
 });

@@ -1,146 +1,30 @@
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import type { components } from "@/api/types";
-import { useDemographicsStats } from "../../api/useDemographicsStats";
-import { useLanguage } from "@/lib/i18n";
-import { ChartCard } from "../../components/ChartCard";
-import { percentFormatter } from "../../components/percentTooltip";
-import { useGroupLabels } from "../../lib/groupLabels";
-import { BAR_END_RIGHT, BAR_END_UP } from "../../lib/chartMarks";
-import { ChartTextTable } from "../../components/ChartTextTable";
-import { HeadlineStat } from "../../components/HeadlineStat";
 import { StatsNote } from "@/components/StatsNote";
+import { useLanguage } from "@/lib/i18n";
+import { useDemographicsStats } from "../../api/useDemographicsStats";
+import { ChartCard } from "../../components/ChartCard";
+import { HeadlineStat } from "../../components/HeadlineStat";
+import { StatsEmptyState } from "../../components/StatsEmptyState";
+import { StatsTabGate } from "../../components/StatsTabGate";
+import { useComparisonLine } from "../../hooks/useComparisonLine";
+import { useGroupLabels } from "../../lib/groupLabels";
 import { headlineGrid } from "../../lib/headlineGrid";
-import { StatsEmptyState, StatsTabGate } from "../../components/StatsTabState";
 import {
   formatAge,
-  percentChange,
   formatCount,
-  pointChange,
   formatRate,
+  percentChange,
+  pointChange,
   yearsChange,
-  shareTicks,
 } from "../../lib/statsFormat";
 import type { StatsPeriodChoice } from "../../lib/statsPeriod";
 import type { StatsTabProps } from "../../lib/statsTab";
-import { useComparisonLine } from "../../hooks/useComparisonLine";
+import { ShareChart } from "./ShareChart";
 
 type Demographics = components["schemas"]["DemographicStatsPublic"];
-type GenderGroup = components["schemas"]["GenderGroupPublic"];
-type AgeGroup = components["schemas"]["AgeGroupPublic"];
-type Group = GenderGroup | AgeGroup;
 
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 3;
-
-/** Bar height per row of a horizontal chart, plus room for the axis. */
-const ROW_HEIGHT = 40;
-const CHART_CHROME = 40;
-
-/** Each group's share of the attendances. */
-function ShareChart<G extends Group>({
-  groups,
-  label,
-  bars,
-  labelledBy,
-}: {
-  groups: G[];
-  label: (key: G["key"]) => string;
-  /** The direction the bars grow: sideways for long labels, upward otherwise. */
-  bars: "horizontal" | "vertical";
-  labelledBy: string;
-}) {
-  const { t, lang } = useLanguage();
-  const horizontal = bars === "horizontal";
-  const config: ChartConfig = {
-    attended: { label: t("statsSeriesAttended"), color: "var(--chart-1)" },
-  };
-  const data = groups.map((g) => ({
-    label: label(g.key),
-    attended: g.attended_share ?? 0,
-  }));
-  const percent = (value: number) => formatRate(value, lang);
-  const ticks = shareTicks(Math.max(0, ...data.map((d) => d.attended)));
-  const domain: [number, number] = [0, ticks[ticks.length - 1]];
-
-  return (
-    <>
-      <ChartContainer
-        config={config}
-        className="aspect-auto w-full"
-        style={{
-          height: horizontal ? data.length * ROW_HEIGHT + CHART_CHROME : 256,
-        }}
-      >
-        <BarChart data={data} layout={horizontal ? "vertical" : "horizontal"}>
-          <CartesianGrid vertical={horizontal} horizontal={!horizontal} />
-          {horizontal ? (
-            <>
-              <XAxis
-                type="number"
-                domain={domain}
-                ticks={ticks}
-                tickFormatter={percent}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="label"
-                width={96}
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-              />
-            </>
-          ) : (
-            <>
-              <XAxis
-                dataKey="label"
-                tickLine={false}
-                axisLine={false}
-                interval={0}
-              />
-              <YAxis
-                width={40}
-                domain={domain}
-                ticks={ticks}
-                tickFormatter={percent}
-                tickLine={false}
-                axisLine={false}
-              />
-            </>
-          )}
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                formatter={percentFormatter(config, percent)}
-              />
-            }
-          />
-          <Bar
-            dataKey="attended"
-            fill="var(--color-attended)"
-            radius={horizontal ? BAR_END_RIGHT : BAR_END_UP}
-          />
-        </BarChart>
-      </ChartContainer>
-      <ChartTextTable
-        labelledBy={labelledBy}
-        headers={[t("statsGroupHeader"), t("statsSeriesAttended")]}
-        rows={groups.map((g) => ({
-          key: String(g.key),
-          cells: [label(g.key), formatRate(g.attended_share, lang)],
-        }))}
-      />
-    </>
-  );
-}
 
 function DemographicsContent({
   data,
@@ -194,17 +78,20 @@ function DemographicsContent({
     <div className="space-y-3">
       <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
+          data-cy="stats-headline-median-age"
           label={t("statsMedianAge")}
           value={formatAge(summary.median_age, lang)}
           comparison={compareAge()}
         />
         <HeadlineStat
+          data-cy="stats-headline-known-age"
           label={t("statsKnownAge")}
           value={formatRate(summary.known_age_share, lang)}
           comparison={compareKnown()}
           n={summary.known_age_share === null ? undefined : summary.attended}
         />
         <HeadlineStat
+          data-cy="stats-headline-attendances"
           label={t("statsAttendances")}
           value={formatCount(summary.attended, lang)}
           comparison={compareAttended()}
@@ -250,7 +137,7 @@ export function DemographicsTab({
       statsQ={statsQ}
       single={single}
       cards={HEADLINE_CARDS}
-      testId="demographics-skeleton"
+      tab="demographics"
       onShowAll={onShowAll}
     >
       {(data) => <DemographicsContent data={data} period={period} />}

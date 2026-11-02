@@ -1,262 +1,32 @@
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import type { components } from "@/api/types";
-import { useRetentionStats } from "../../api/useRetentionStats";
-import { formatApiDate } from "@/lib/format";
-import { useLanguage, type TranslationKey } from "@/lib/i18n";
-import { ChartCard } from "../../components/ChartCard";
-import { BAR_END_UP, BAR_GAP } from "../../lib/chartMarks";
-import { ChartTextTable } from "../../components/ChartTextTable";
-import { CohortTable } from "./CohortTable";
-import { HeadlineStat } from "../../components/HeadlineStat";
-import { NightAfterwards } from "./NightAfterwards";
-import { NightCrowd } from "./NightCrowd";
-import { isRegular } from "./nightCrowd";
 import { StatsNote } from "@/components/StatsNote";
+import { useLanguage } from "@/lib/i18n";
+import { useRetentionStats } from "../../api/useRetentionStats";
+import { ChartCard } from "../../components/ChartCard";
+import { HeadlineStat } from "../../components/HeadlineStat";
+import { StatsEmptyState } from "../../components/StatsEmptyState";
+import { StatsTabGate } from "../../components/StatsTabGate";
+import { useComparisonLine } from "../../hooks/useComparisonLine";
 import { headlineGrid } from "../../lib/headlineGrid";
-import { StatsLink } from "../../components/StatsLink";
-import { StatsListMore } from "../../components/StatsListMore";
-import { StatsEmptyState, StatsTabGate } from "../../components/StatsTabState";
 import {
-  percentChange,
   formatCount,
-  formatEventDay,
-  pointChange,
   formatRate,
-  sortByDate,
-  spansYears,
+  percentChange,
+  pointChange,
 } from "../../lib/statsFormat";
 import type { StatsPeriodChoice } from "../../lib/statsPeriod";
 import type { StatsTabProps } from "../../lib/statsTab";
-import { useComparisonLine } from "../../hooks/useComparisonLine";
+import { CohortTable } from "./CohortTable";
+import { FrequencyChart } from "./FrequencyChart";
+import { LapsedList } from "./LapsedList";
+import { NewReturningChart } from "./NewReturningChart";
+import { NightCharts } from "./NightCharts";
+import { isRegular } from "./nightCrowd";
 
 type Retention = components["schemas"]["RetentionStatsPublic"];
-type FrequencyRow = components["schemas"]["FrequencyRowPublic"];
-type Night = components["schemas"]["RetentionNightPublic"];
 
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 3;
-
-const FREQUENCY_LABELS: Record<FrequencyRow["bucket"], TranslationKey> = {
-  ONE: "statsFreqOne",
-  TWO: "statsFreqTwo",
-  THREE_FIVE: "statsFreqThreeFive",
-  SIX_PLUS: "statsFreqSixPlus",
-};
-
-/** New and returning people of each event, stacked. An event nobody came to keeps its empty slot. */
-function NewReturningChart({
-  meetups,
-  labelledBy,
-}: {
-  meetups: Retention["meetups"];
-  labelledBy: string;
-}) {
-  const { t, lang } = useLanguage();
-  const config: ChartConfig = {
-    new: { label: t("statsSeriesNew"), color: "var(--chart-1)" },
-    returning: { label: t("statsSeriesReturning"), color: "var(--chart-2)" },
-  };
-  const withYear = spansYears(meetups.map((m) => m.date));
-  const sorted = sortByDate(meetups);
-  const data = sorted.map((m) => ({
-    ...m,
-    day: formatEventDay(m.date, withYear),
-  }));
-
-  return (
-    <>
-      <ChartContainer config={config} className="aspect-auto h-64 w-full">
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="day"
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-            minTickGap={16}
-          />
-          <YAxis
-            width={32}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                labelFormatter={(_, payload) => payload[0]?.payload?.name}
-              />
-            }
-          />
-          <ChartLegend content={<ChartLegendContent />} />
-          <Bar
-            dataKey="new"
-            stackId="people"
-            fill="var(--color-new)"
-            {...BAR_GAP}
-          />
-          <Bar
-            dataKey="returning"
-            stackId="people"
-            fill="var(--color-returning)"
-            radius={BAR_END_UP}
-            {...BAR_GAP}
-          />
-        </BarChart>
-      </ChartContainer>
-      <ChartTextTable
-        labelledBy={labelledBy}
-        headers={[
-          t("statsEventHeader"),
-          t("statsDateHeader"),
-          t("statsSeriesNew"),
-          t("statsSeriesReturning"),
-        ]}
-        rows={sorted.map((m) => ({
-          key: m.meetup_id,
-          cells: [
-            m.name,
-            formatApiDate(m.date),
-            formatCount(m.new, lang),
-            formatCount(m.returning, lang),
-          ],
-        }))}
-      />
-    </>
-  );
-}
-
-/** How many people came once, twice, and so on in the period. */
-function FrequencyChart({
-  rows,
-  labelledBy,
-}: {
-  rows: FrequencyRow[];
-  labelledBy: string;
-}) {
-  const { t, lang } = useLanguage();
-  const config: ChartConfig = {
-    guests: { label: t("statsPeople"), color: "var(--chart-1)" },
-  };
-  const data = rows.map((r) => ({
-    label: t(FREQUENCY_LABELS[r.bucket]),
-    guests: r.guests,
-  }));
-
-  return (
-    <>
-      <ChartContainer config={config} className="aspect-auto h-56 w-full">
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-          />
-          <YAxis
-            width={32}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar
-            dataKey="guests"
-            fill="var(--color-guests)"
-            radius={BAR_END_UP}
-          />
-        </BarChart>
-      </ChartContainer>
-      <ChartTextTable
-        labelledBy={labelledBy}
-        headers={[t("statsFrequencyHeader"), t("statsPeople")]}
-        rows={data.map((d) => ({
-          key: d.label,
-          cells: [d.label, formatCount(d.guests, lang)],
-        }))}
-      />
-    </>
-  );
-}
-
-/** Regulars who did not come in the period, each linked to their guest page. */
-function LapsedList({
-  lapsed,
-  total,
-}: {
-  lapsed: Retention["lapsed"];
-  total: number;
-}) {
-  const { t, lang } = useLanguage();
-  const more = total - lapsed.length;
-
-  return (
-    <>
-      <ul className="divide-y text-sm">
-        {lapsed.map((guest) => (
-          <li
-            key={guest.guest_id}
-            className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5"
-          >
-            <StatsLink to={`/guests/${guest.guest_id}`}>
-              {guest.displayname}
-            </StatsLink>
-            <span className="text-muted-foreground tabular-nums">
-              <span data-slot="times">
-                {t("statsLapsedCame").replace(
-                  "{0}",
-                  formatCount(guest.attended_before, lang),
-                )}
-              </span>
-              {" · "}
-              <span data-slot="last">{formatApiDate(guest.last_attended)}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <StatsListMore count={more} slot="lapsed-more" />
-    </>
-  );
-}
-
-/** Who came to the one event and how many of them came back afterwards. */
-function NightCharts({ night }: { night: Night }) {
-  const { t } = useLanguage();
-  return (
-    <>
-      <ChartCard title={t("statsNightCrowd")}>
-        {(headingId) => (
-          <NightCrowd guests={night.guests} labelledBy={headingId} />
-        )}
-      </ChartCard>
-      <ChartCard title={t("statsAfterwards")}>
-        {(headingId) =>
-          night.afterwards.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t("statsAfterwardsNone")}
-            </p>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                {t("statsAfterwardsHint")}
-              </p>
-              <NightAfterwards night={night} labelledBy={headingId} />
-            </div>
-          )
-        }
-      </ChartCard>
-    </>
-  );
-}
 
 function RetentionContent({
   data,
@@ -325,12 +95,14 @@ function RetentionContent({
         {/* For one event, how many came is on Asistencia already. */}
         {regulars === undefined ? (
           <HeadlineStat
+            data-cy="stats-headline-people"
             label={t("statsPeople")}
             value={formatCount(summary.attendees, lang)}
             comparison={compareAttendees()}
           />
         ) : (
           <HeadlineStat
+            data-cy="stats-headline-regulars"
             label={t("statsRegulars")}
             value={formatCount(regulars, lang)}
             subline={t("statsRegularsShare").replace(
@@ -341,6 +113,7 @@ function RetentionContent({
         )}
         {allTime ? (
           <HeadlineStat
+            data-cy="stats-headline-came-once"
             label={t("statsCameOnce")}
             value={formatCount(cameOnce, lang)}
             subline={t("statsShareOfTotal").replace(
@@ -350,6 +123,7 @@ function RetentionContent({
           />
         ) : (
           <HeadlineStat
+            data-cy="stats-headline-first-time"
             label={t("statsFirstTime")}
             value={formatCount(summary.new_guests, lang)}
             subline={
@@ -363,6 +137,7 @@ function RetentionContent({
           />
         )}
         <HeadlineStat
+          data-cy="stats-headline-came-back"
           label={t("statsCameBack")}
           value={formatRate(returnRate, lang)}
           subline={
@@ -437,7 +212,7 @@ export function RetentionTab({
       statsQ={statsQ}
       single={single}
       cards={HEADLINE_CARDS}
-      testId="retention-skeleton"
+      tab="retention"
       onShowAll={onShowAll}
     >
       {(data) => (

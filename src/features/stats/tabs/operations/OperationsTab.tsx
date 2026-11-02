@@ -1,202 +1,35 @@
 import type { components } from "@/api/types";
-import { useOperationsStats } from "../../api/useOperationsStats";
-import { formatApiDate, formatDecimal } from "@/lib/format";
-import { GUEST_TYPE_LABEL } from "@/domain/guest";
+import { StatsNote } from "@/components/StatsNote";
+import { formatDecimal } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
+import { useOperationsStats } from "../../api/useOperationsStats";
 import { ChartCard } from "../../components/ChartCard";
 import { HeadlineStat } from "../../components/HeadlineStat";
-import { StatsNote } from "@/components/StatsNote";
+import { StatsEmptyState } from "../../components/StatsEmptyState";
+import { StatsTabGate } from "../../components/StatsTabGate";
+import { useComparisonLine } from "../../hooks/useComparisonLine";
 import { headlineGrid } from "../../lib/headlineGrid";
-import { StatsLink } from "../../components/StatsLink";
-import { StatsListMore } from "../../components/StatsListMore";
-import { StatsEmptyState, StatsTabGate } from "../../components/StatsTabState";
 import {
+  formatCount,
+  formatRate,
   NO_VALUE,
   percentChange,
-  formatCount,
   pointChange,
-  formatRate,
 } from "../../lib/statsFormat";
 import type { StatsPeriodChoice } from "../../lib/statsPeriod";
 import type { StatsTabProps } from "../../lib/statsTab";
-import { useComparisonLine } from "../../hooks/useComparisonLine";
+import { BanList } from "./BanList";
+import { GuestTypeBars } from "./GuestTypeBars";
+import { PaymentsCounts } from "./PaymentsCounts";
+import { StaffList } from "./StaffList";
 
 type Operations = components["schemas"]["OperationsStatsPublic"];
-type Payments = components["schemas"]["OperationsPaymentStatsPublic"];
-type GuestTypeRow = components["schemas"]["GuestTypeRowPublic"];
 
-/** One chart color per guest type, so a type keeps its color in any order. */
 /**
  * Headline cards of the loaded tab. An org that takes no payments has no
  * payment-share card; the skeleton shows the common case.
  */
 const CARDS = { withPayments: 4, withoutPayments: 3 };
-
-const TYPE_COLORS: Record<GuestTypeRow["guest_type"], string> = {
-  NORMAL: "var(--chart-1)",
-  INVITED: "var(--chart-2)",
-  STAFF: "var(--chart-3)",
-  VENDOR: "var(--chart-4)",
-};
-
-/** Everyone who came in by guest type: a bar sized by its share of all. */
-function GuestTypeBars({ rows }: { rows: GuestTypeRow[] }) {
-  const { t, lang } = useLanguage();
-
-  return (
-    <ul className="space-y-2 text-sm">
-      {rows.map((row) => (
-        <li key={row.guest_type} className="space-y-1">
-          <div className="flex items-baseline justify-between gap-3">
-            <span data-slot="name" className="min-w-0 break-words">
-              {t(GUEST_TYPE_LABEL[row.guest_type])}
-            </span>
-            <span className="text-muted-foreground tabular-nums">
-              <span data-slot="count">{formatCount(row.attended, lang)}</span>
-              {" · "}
-              <span data-slot="share">{formatRate(row.share, lang)}</span>
-            </span>
-          </div>
-          <div
-            aria-hidden
-            className="h-2 rounded-full bg-muted"
-            data-slot="bar-track"
-          >
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${(row.share ?? 0) * 100}%`,
-                backgroundColor: TYPE_COLORS[row.guest_type],
-              }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PaymentCount({
-  slot,
-  label,
-  value,
-}: {
-  slot: string;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd data-slot={slot} className="font-medium tabular-nums">
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-/** Paid, pending and exempt people, and those who cancelled after paying. */
-function PaymentsCounts({ payments }: { payments: Payments }) {
-  const { t, lang } = useLanguage();
-
-  return (
-    <>
-      <dl className="space-y-1 text-sm">
-        <PaymentCount
-          slot="paid"
-          label={t("statsPaymentPaid")}
-          value={formatCount(payments.paid, lang)}
-        />
-        <PaymentCount
-          slot="pending"
-          label={t("statsPaymentPending")}
-          value={formatCount(payments.pending, lang)}
-        />
-        <PaymentCount
-          slot="exempt"
-          label={t("statsPaymentExempt")}
-          value={formatCount(payments.exempt, lang)}
-        />
-      </dl>
-      {payments.cancelled_but_paid > 0 && (
-        <p
-          data-slot="cancelled-paid"
-          className="text-sm text-muted-foreground tabular-nums"
-        >
-          {t("statsCancelledButPaid").replace(
-            "{0}",
-            formatCount(payments.cancelled_but_paid, lang),
-          )}
-        </p>
-      )}
-    </>
-  );
-}
-
-/** Check-ins of each staff member; those with no recorded checker share one row. */
-function StaffList({ staff }: { staff: Operations["staff"] }) {
-  const { t, lang } = useLanguage();
-
-  return (
-    <ul className="divide-y text-sm">
-      {staff.map((member) => (
-        <li
-          key={member.user_id ?? "none"}
-          className="flex items-baseline justify-between gap-3 py-1.5"
-        >
-          <span data-slot="name" className="min-w-0 break-words">
-            {member.username ?? t("statsNoChecker")}
-          </span>
-          <span data-slot="count" className="tabular-nums">
-            {formatCount(member.checkins, lang)}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** The newest bans, each guest linked to their page. */
-function BanList({
-  bans,
-  total,
-}: {
-  bans: Operations["ban_list"];
-  total: number;
-}) {
-  const more = total - bans.length;
-
-  return (
-    <>
-      <ul className="divide-y text-sm">
-        {bans.map((ban) => (
-          <li
-            key={`${ban.guest_id}-${ban.timestamp}`}
-            className="space-y-0.5 py-1.5"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-              <StatsLink to={`/guests/${ban.guest_id}`}>
-                {ban.displayname}
-              </StatsLink>
-              <span
-                data-slot="date"
-                className="text-muted-foreground tabular-nums"
-              >
-                {formatApiDate(ban.timestamp)}
-              </span>
-            </div>
-            <p className="text-muted-foreground break-words">
-              <span data-slot="reason">{ban.reason ?? NO_VALUE}</span>
-              {" · "}
-              <span data-slot="actor">{ban.actor_username ?? NO_VALUE}</span>
-            </p>
-          </li>
-        ))}
-      </ul>
-      <StatsListMore count={more} slot="bans-more" />
-    </>
-  );
-}
 
 function OperationsContent({
   data,
@@ -263,12 +96,14 @@ function OperationsContent({
         )}
       >
         <HeadlineStat
+          data-cy="stats-headline-came-in"
           label={t("statsCameIn")}
           value={formatCount(summary.attended, lang)}
           comparison={compareCount(summary.attended, comparison?.attended)}
         />
         {payments && (
           <HeadlineStat
+            data-cy="stats-headline-paid"
             label={t("statsPaid")}
             value={formatRate(payments.paid_share, lang)}
             comparison={comparePaidShare()}
@@ -280,6 +115,7 @@ function OperationsContent({
           />
         )}
         <HeadlineStat
+          data-cy="stats-headline-door-peak"
           label={t("statsDoorPeak")}
           value={formatCount(busiest?.checkins ?? null, lang)}
           subline={
@@ -292,6 +128,7 @@ function OperationsContent({
           comparison={comparePeak()}
         />
         <HeadlineStat
+          data-cy="stats-headline-bans"
           label={t("statsBans")}
           value={formatCount(summary.bans, lang)}
           comparison={compareCount(summary.bans, comparison?.bans)}
@@ -334,7 +171,7 @@ export function OperationsTab({
       statsQ={statsQ}
       single={!!query?.meetupId}
       cards={CARDS.withPayments}
-      testId="operations-skeleton"
+      tab="operations"
       onShowAll={onShowAll}
     >
       {(data) => <OperationsContent data={data} period={period} />}

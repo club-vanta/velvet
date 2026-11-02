@@ -1,26 +1,19 @@
-import type { components } from "@/api/types";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useOrgMeetups } from "@/domain/meetup";
-import { parseApiDateTime } from "@/lib/apiDateTime";
 import { useOrg } from "@/domain/session";
 import type { StatsQuery } from "@/api/statsQuery";
 import {
-  addDays,
+  clampCustom,
+  customSeed,
   localDay,
   parsePeriod,
   resolveRange,
-  type RangePreset,
   type CustomRange,
+  type RangePreset,
 } from "../lib/statsPeriod";
+import { offeredEvents } from "../lib/offeredEvents";
 import { isStatsTab, type StatsTab } from "../statsTabs";
-
-type Meetup = components["schemas"]["MeetupPublic"];
-
-type OfferedEvent = { meetup: Meetup; date: Date };
-
-/** Range shown when "custom" is picked from "all time", which has no bounds. */
-const CUSTOM_SEED_FROM_ALL: RangePreset = "3m";
 
 /**
  * The stats filters, kept in the URL so a view can be shared and survives a
@@ -47,16 +40,7 @@ export function useStatsFilters() {
   const range = resolveRange(preset, today, custom);
 
   // Finalized events inside the period: what the event filter offers.
-  const events: OfferedEvent[] = (meetups.data?.meetups ?? [])
-    .filter((m) => m.is_finalized)
-    .map((m) => ({ meetup: m, date: parseApiDateTime(m.date) }))
-    .filter(({ date }) => {
-      const day = localDay(date);
-      return (
-        (!range.from || day >= range.from) && (!range.to || day < range.to)
-      );
-    })
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  const events = offeredEvents(meetups.data?.meetups ?? [], range);
 
   // The URL param only counts once it is known to be one of the offered
   // events. A failed meetups request proves nothing, so the param stays.
@@ -113,13 +97,7 @@ export function useStatsFilters() {
   function setPreset(p: RangePreset) {
     update((next) => {
       if (p !== "custom") return writePeriod(next, p);
-      // Seed with what is on screen, with the inclusive end the pickers use.
-      const shown =
-        preset === "all" ? resolveRange(CUSTOM_SEED_FROM_ALL, today) : range;
-      writePeriod(next, p, {
-        from: shown.from ?? today,
-        to: shown.to ? addDays(shown.to, -1) : today,
-      });
+      writePeriod(next, p, customSeed(preset, today, custom));
     });
   }
 
@@ -129,13 +107,9 @@ export function useStatsFilters() {
    * one keystroke at a time.
    */
   function setCustom(r: CustomRange, changed: keyof CustomRange) {
-    const clamped =
-      r.from <= r.to
-        ? r
-        : changed === "from"
-          ? { from: r.from, to: r.from }
-          : { from: r.to, to: r.to };
-    update((next) => writePeriod(next, "custom", clamped), { replace: true });
+    update((next) => writePeriod(next, "custom", clampCustom(r, changed)), {
+      replace: true,
+    });
   }
 
   function setMeetupId(id?: string) {

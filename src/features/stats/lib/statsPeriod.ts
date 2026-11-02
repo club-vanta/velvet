@@ -102,3 +102,37 @@ export function resolveRange(
       return { from: `${today.slice(0, 4)}-01-01`, to: addDays(today, 1) };
   }
 }
+
+/** Range shown when "custom" is picked from "all time", which has no bounds. */
+const CUSTOM_SEED_FROM_ALL: NamedPreset = "3m";
+
+/**
+ * The custom range to start from when "custom" is picked: the period on
+ * screen, with the inclusive end the date pickers use.
+ */
+export function customSeed(
+  preset: RangePreset,
+  today: string,
+  custom?: CustomRange,
+): CustomRange {
+  const shown = resolveRange(
+    preset === "all" ? CUSTOM_SEED_FROM_ALL : preset,
+    today,
+    custom,
+  );
+  return {
+    from: shown.from ?? today,
+    to: shown.to ? addDays(shown.to, -1) : today,
+  };
+}
+
+/** A typed `from` past `to` moves `to` along, and the reverse. */
+export function clampCustom(
+  range: CustomRange,
+  changed: keyof CustomRange,
+): CustomRange {
+  if (range.from <= range.to) return range;
+  return changed === "from"
+    ? { from: range.from, to: range.from }
+    : { from: range.to, to: range.to };
+}

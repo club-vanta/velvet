@@ -46,7 +46,7 @@ export function StatsPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div data-cy="stats-page" className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">
         {t("statsTitle")}
       </h1>
@@ -66,6 +66,7 @@ export function StatsPage() {
             <TabsTrigger
               key={value}
               value={value}
+              data-cy={`stats-tab-${value}`}
               className="z-10 data-active:bg-transparent data-active:shadow-none dark:data-active:border-transparent dark:data-active:bg-transparent"
             >
               {t(label)}
@@ -76,6 +77,7 @@ export function StatsPage() {
           <TabsContent
             key={value}
             value={value}
+            data-cy={`stats-panel-${value}`}
             className="animate-in duration-300 fade-in motion-reduce:animate-none"
           >
             {eventsError || <Tab {...tabProps} />}

@@ -9,22 +9,27 @@ export function ViewToggle<V extends string>({
   options,
   value,
   onChange,
+  "data-cy": dataCy,
 }: {
   /** Names the group for screen readers. */
   label: string;
   options: readonly { value: V; label: string }[];
   value: V;
   onChange: (value: V) => void;
+  /** Names the group; each option is `<data-cy>-<value>`. */
+  "data-cy": string;
 }) {
   return (
     <div
       role="group"
+      data-cy={dataCy}
       aria-label={label}
       className="inline-flex gap-1 rounded-lg border p-1"
     >
       {options.map((o) => (
         <Button
           key={o.value}
+          data-cy={`${dataCy}-${o.value}`}
           size="sm"
           variant={value === o.value ? "secondary" : "ghost"}
           aria-pressed={value === o.value}

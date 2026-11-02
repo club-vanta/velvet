@@ -2,7 +2,7 @@ import type { components } from "@/api/types";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChartTextTable } from "../../components/ChartTextTable";
-import { Face } from "./CrowdFace";
+import { Face } from "./Face";
 import {
   bandStyle,
   FADED,
@@ -39,7 +39,7 @@ function CompositionBar({
         .map(({ band, guests }) => (
           <div
             key={band}
-            data-share={band}
+            data-cy={`stats-crowd-share-${band}`}
             className="h-full bg-(--band)"
             style={{ ...bandStyle(band), flexGrow: guests.length }}
           />
@@ -99,11 +99,15 @@ export function NightCrowd({
       </div>
       <div aria-hidden className="space-y-4">
         <CompositionBar groups={groups} />
-        <div data-crowd className="relative space-y-3" {...containerProps}>
+        <div
+          data-cy="stats-crowd"
+          className="relative space-y-3"
+          {...containerProps}
+        >
           {groups.map(({ band, guests: members }, row) => (
             <div
               key={band}
-              data-band={band}
+              data-cy={`stats-crowd-band-${band}`}
               className="grid gap-2 sm:grid-cols-[10rem_1fr] sm:items-center sm:gap-3"
             >
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -112,7 +116,7 @@ export function NightCrowd({
                   style={bandStyle(band)}
                 />
                 <span
-                  data-slot="count"
+                  data-cy="stats-crowd-count"
                   className="text-sm font-semibold text-foreground tabular-nums"
                 >
                   {formatCount(members.length, lang)}

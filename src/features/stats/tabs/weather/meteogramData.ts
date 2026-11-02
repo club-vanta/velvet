@@ -1,4 +1,6 @@
 import type { components } from "@/api/types";
+import { formatDecimal } from "@/lib/format";
+import { NO_VALUE } from "../../lib/statsFormat";
 
 type Hour = components["schemas"]["WeatherHourPublic"];
 type Bucket = components["schemas"]["ArrivalBucketPublic"];
@@ -70,3 +72,12 @@ export const bucketCenter = (b: Bucket) => b.start_minute + QUARTER / 2;
 
 /** Where an hour sits on the x axis: its middle. */
 export const hourCenter = (h: Hour) => h.offset_minutes + HOUR / 2;
+
+/** An hour's value with one decimal and its unit, or a dash when it is missing. */
+export function formatMeasure(
+  value: number | null,
+  unit: string,
+  locale: string,
+): string {
+  return value === null ? NO_VALUE : `${formatDecimal(value, locale)} ${unit}`;
+}

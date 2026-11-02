@@ -19,10 +19,16 @@ export function MeteogramTooltip({
   if (!active || !tip) return null;
   return (
     <TooltipBox>
-      <p className="font-medium tabular-nums">{tip.title}</p>
+      <p data-cy="stats-tooltip-title" className="font-medium tabular-nums">
+        {tip.title}
+      </p>
       <ul className="grid gap-0.5">
         {tip.lines.map(([name, value]) => (
-          <li key={name} className="flex justify-between gap-4">
+          <li
+            key={name}
+            data-cy="stats-tooltip-line"
+            className="flex justify-between gap-4"
+          >
             <span className="text-muted-foreground">{name}</span>
             <span className="font-mono font-medium tabular-nums">{value}</span>
           </li>

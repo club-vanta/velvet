@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { formatEventDay } from "../lib/statsFormat";
 import { PRESETS, type RangePreset } from "../lib/statsPeriod";
 import type { useStatsFilters } from "../hooks/useStatsFilters";
+import { DateField } from "./DateField";
 
 type Filters = ReturnType<typeof useStatsFilters>;
 
@@ -23,35 +23,6 @@ const PRESET_LABELS: Record<RangePreset, TranslationKey> = {
 };
 
 const ALL_EVENTS = "all";
-
-function DateField({
-  label,
-  value,
-  min,
-  max,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  min?: string;
-  max?: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground sm:flex-none">
-      {label}
-      <Input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => {
-          if (e.target.value) onChange(e.target.value);
-        }}
-      />
-    </label>
-  );
-}
 
 export function StatsFilterBar({ filters }: { filters: Filters }) {
   const { t } = useLanguage();
@@ -72,12 +43,13 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
   const presetName = t(PRESET_LABELS[preset]);
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div data-cy="stats-filters" className="flex flex-wrap items-end gap-3">
       <Select
         value={preset}
         onValueChange={(v) => v && setPreset(v as RangePreset)}
       >
         <SelectTrigger
+          data-cy="stats-period"
           className="w-full sm:w-48"
           aria-label={`${t("statsPeriodLabel")}: ${presetName}`}
         >
@@ -85,7 +57,7 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
         </SelectTrigger>
         <SelectContent>
           {PRESETS.map((p) => (
-            <SelectItem key={p} value={p}>
+            <SelectItem key={p} value={p} data-cy={`stats-period-${p}`}>
               {t(PRESET_LABELS[p])}
             </SelectItem>
           ))}
@@ -96,12 +68,14 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
         <div className="flex w-full gap-3 sm:w-auto">
           <DateField
             label={t("statsRangeFrom")}
+            data-cy="stats-range-from"
             value={custom.from}
             max={custom.to}
             onChange={(from) => setCustom({ from, to: custom.to }, "from")}
           />
           <DateField
             label={t("statsRangeTo")}
+            data-cy="stats-range-to"
             value={custom.to}
             min={custom.from}
             onChange={(to) => setCustom({ from: custom.from, to }, "to")}
@@ -116,15 +90,22 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
         }
       >
         <SelectTrigger
+          data-cy="stats-event"
           className="w-full sm:w-64"
           aria-label={`${t("statsEventLabel")}: ${eventName}`}
         >
           <SelectValue>{eventName}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL_EVENTS}>{t("statsAllEvents")}</SelectItem>
+          <SelectItem value={ALL_EVENTS} data-cy="stats-event-all">
+            {t("statsAllEvents")}
+          </SelectItem>
           {events.map((event) => (
-            <SelectItem key={event.meetup.id} value={event.meetup.id}>
+            <SelectItem
+              key={event.meetup.id}
+              value={event.meetup.id}
+              data-cy={`stats-event-${event.meetup.id}`}
+            >
               {eventLabel(event.meetup)}
             </SelectItem>
           ))}

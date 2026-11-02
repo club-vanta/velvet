@@ -7,3 +7,4 @@ export * from "./meetup";
 export * from "./meetups";
 export * from "./schemas";
 export * from "./session";
+export * from "./stats";

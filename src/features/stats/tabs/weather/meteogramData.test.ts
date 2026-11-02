@@ -3,6 +3,7 @@ import type { components } from "@/api/types";
 import {
   arrivalsInDomain,
   clockAt,
+  formatMeasure,
   hourRows,
   meteogramDomain,
   startHourOffset,
@@ -92,5 +93,16 @@ describe("clockAt", () => {
     const hours = [hour(-180, { time: "2026-04-05T19:00:00.000Z" })];
     expect(clockAt(hours, 15)).toBe("2026-04-05T22:15:00.000Z");
     expect(clockAt(hours, -30)).toBe("2026-04-05T21:30:00.000Z");
+  });
+});
+
+describe("formatMeasure", () => {
+  it("shows one decimal and the unit", () => {
+    expect(formatMeasure(12, "°C", "es")).toBe("12,0 °C");
+    expect(formatMeasure(0.6, "mm", "en")).toBe("0.6 mm");
+  });
+
+  it("shows a dash for a missing value", () => {
+    expect(formatMeasure(null, "mm", "es")).toBe("–");
   });
 });

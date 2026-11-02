@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampCustom,
+  customSeed,
   DEFAULT_RANGE,
   isRangePreset,
   parsePeriod,
@@ -78,5 +80,45 @@ describe("parsePeriod", () => {
     ["custom", "2026-03-31", "2026-03-01"],
   ])("falls back to the default for range=%s from=%s to=%s", (r, f, t) => {
     expect(parsePeriod(r, f, t)).toEqual({ preset: DEFAULT_RANGE });
+  });
+});
+
+describe("customSeed", () => {
+  it("starts from the period on screen, with an inclusive end", () => {
+    expect(customSeed("3m", TODAY)).toEqual({
+      from: "2026-07-24",
+      to: "2026-10-24",
+    });
+  });
+
+  it("starts from the last 3 months when the period is all time", () => {
+    expect(customSeed("all", TODAY)).toEqual({
+      from: "2026-07-24",
+      to: "2026-10-24",
+    });
+  });
+
+  it("keeps a custom range as it is", () => {
+    const custom = { from: "2026-03-01", to: "2026-03-31" };
+    expect(customSeed("custom", TODAY, custom)).toEqual(custom);
+  });
+});
+
+describe("clampCustom", () => {
+  it("keeps an ordered range", () => {
+    const range = { from: "2026-03-01", to: "2026-03-31" };
+    expect(clampCustom(range, "from")).toBe(range);
+  });
+
+  it("moves the end along when the start passes it", () => {
+    expect(
+      clampCustom({ from: "2026-04-10", to: "2026-03-31" }, "from"),
+    ).toEqual({ from: "2026-04-10", to: "2026-04-10" });
+  });
+
+  it("moves the start back when the end passes it", () => {
+    expect(clampCustom({ from: "2026-03-01", to: "2026-02-01" }, "to")).toEqual(
+      { from: "2026-02-01", to: "2026-02-01" },
+    );
   });
 });
