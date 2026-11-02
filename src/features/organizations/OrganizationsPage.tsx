@@ -52,7 +52,7 @@ export function OrganizationsPage() {
             </div>
           ))}
 
-        {!isLoading && organizations.length === 0 && (
+        {!isLoading && !isError && organizations.length === 0 && (
           <p
             className="text-center text-muted-foreground py-12"
             data-cy="orgs-empty"

@@ -53,6 +53,7 @@ export function EventsPage() {
       <EventsTable
         events={events}
         isLoading={eventsQ.isLoading}
+        isError={eventsQ.isError}
         meetupNames={meetupNames}
       />
 

@@ -69,6 +69,7 @@ describe("Organizations list", () => {
         "contain.text",
         "Failed to load organizations",
       );
+      cy.getBySel("orgs-empty").should("not.exist");
       stubAllOrganizations();
       cy.getBySel("orgs-error").within(() => {
         cy.getByRole("button", { name: "Retry" }).click();

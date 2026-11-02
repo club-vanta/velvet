@@ -178,6 +178,7 @@ describe("Organization members", () => {
     cy.wait("@getMembers");
 
     cy.getBySel("org-members-error").should("be.visible");
+    cy.getBySel("org-members-empty").should("not.exist");
     stubMembers([makeOrgMember()]);
     cy.getBySel("org-members-error").within(() => {
       cy.getByRole("button", { name: "Retry" }).click();

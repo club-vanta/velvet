@@ -82,17 +82,19 @@ export function MembersSection({ orgId }: { orgId: string }) {
                   </TableCell>
                 </TableRow>
               ))}
-            {!membersQ.isLoading && members.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={COLUMNS}
-                  className="text-center text-muted-foreground py-6"
-                  data-cy="org-members-empty"
-                >
-                  {t("noStaffAccounts")}
-                </TableCell>
-              </TableRow>
-            )}
+            {!membersQ.isLoading &&
+              !membersQ.isError &&
+              members.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={COLUMNS}
+                    className="text-center text-muted-foreground py-6"
+                    data-cy="org-members-empty"
+                  >
+                    {t("noStaffAccounts")}
+                  </TableCell>
+                </TableRow>
+              )}
             {members.map((m) => (
               <MemberRow
                 key={m.user_id}

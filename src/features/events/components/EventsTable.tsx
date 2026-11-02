@@ -18,10 +18,13 @@ const COLUMNS = 6;
 export function EventsTable({
   events,
   isLoading,
+  isError,
   meetupNames,
 }: {
   events: EventLog[];
   isLoading: boolean;
+  /** A failed load is not an empty log, so the empty row stays hidden. */
+  isError: boolean;
   /** Meetup names by id, for the meetup column. */
   meetupNames: ReadonlyMap<string, string>;
 }) {
@@ -51,7 +54,7 @@ export function EventsTable({
                 ))}
               </TableRow>
             ))}
-          {!isLoading && events.length === 0 && (
+          {!isLoading && !isError && events.length === 0 && (
             <TableRow>
               <TableCell
                 colSpan={COLUMNS}

@@ -112,6 +112,7 @@ describe("Audit log", () => {
         "contain.text",
         "Failed to load audit log.",
       );
+      cy.getBySel("events-empty").should("not.exist");
       stubAuditLog({ events: [checkIn] });
       cy.getBySel("events-error").within(() => {
         cy.getByRole("button", { name: "Retry" }).click();
