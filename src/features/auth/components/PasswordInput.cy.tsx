@@ -34,7 +34,8 @@ describe("<PasswordInput />", () => {
     });
 
     it("does not limit the length of an existing password", () => {
-      cy.getBySel("field").clear().type("short");
+      cy.getBySel("field").clear();
+      cy.getBySel("field").type("short");
       cy.getBySel("field")
         .should("match", ":valid")
         .and("not.have.attr", "minlength");
@@ -62,13 +63,13 @@ describe("<PasswordInput />", () => {
         </form>,
         { lang },
       );
+      cy.getBySel("field").should("have.attr", "minlength", "15");
+      cy.getBySel("field").type("a".repeat(14));
       cy.getBySel("field")
-        .should("have.attr", "minlength", "15")
-        .type("a".repeat(14))
         .should("match", ":invalid")
-        .and("have.prop", "validationMessage", message)
-        .type("a")
-        .should("match", ":valid");
+        .and("have.prop", "validationMessage", message);
+      cy.getBySel("field").type("a");
+      cy.getBySel("field").should("match", ":valid");
       cy.get("@onChange").should("have.callCount", 15);
     });
   }
