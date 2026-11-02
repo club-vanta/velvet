@@ -30,7 +30,7 @@ export function LanguageMenu() {
         <Languages className="h-3.5 w-3.5" aria-hidden />
         <span aria-hidden>{current?.flag}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" data-cy="shell-language-options">
         {LANGUAGES.map((option) => (
           <DropdownMenuItem
             key={option.lang}

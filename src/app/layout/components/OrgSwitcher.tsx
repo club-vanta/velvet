@@ -40,7 +40,7 @@ export function OrgSwitcher() {
           {activeOrg?.org_name ?? "—"}
         </span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" data-cy="shell-org-menu">
         {orgs.map((org) => (
           <DropdownMenuItem
             key={org.org_id}
