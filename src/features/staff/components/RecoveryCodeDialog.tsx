@@ -78,7 +78,9 @@ export function RecoveryCodeDialog({
               >
                 {copied ? t("codeCopied") : t("copyCode")}
               </Button>
-              <Button onClick={onClose}>{t("close")}</Button>
+              <Button data-cy="staff-recovery-close" onClick={onClose}>
+                {t("close")}
+              </Button>
             </DialogFooter>
           </>
         )}

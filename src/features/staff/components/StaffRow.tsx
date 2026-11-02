@@ -65,7 +65,7 @@ export function StaffRow({
               aria-label={t("roleOf").replace("{0}", user.username)}
               data-cy="staff-role-select"
             >
-              <SelectValue />
+              <SelectValue data-cy="staff-role-value" />
             </SelectTrigger>
             <SelectContent>
               {SITE_ROLES.map((role) => (
