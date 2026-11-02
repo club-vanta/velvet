@@ -65,12 +65,7 @@ export function MeetupHeader({
             <span data-cy="meetup-date">
               {formatDate(meetup.date)}
               {/* The "Today" badge already says it for today's meetup. */}
-              {timing !== "today" && (
-                <span className="text-muted-foreground/70">
-                  {" "}
-                  ({relativeDay(meetup.date)})
-                </span>
-              )}
+              {timing !== "today" && <span> ({relativeDay(meetup.date)})</span>}
             </span>
             <MeetupBadges meetup={meetup} timing={timing} />
           </div>

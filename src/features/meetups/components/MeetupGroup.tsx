@@ -28,10 +28,7 @@ export function MeetupGroup({
           id={headingId}
           className="text-sm font-medium text-muted-foreground"
         >
-          {title}{" "}
-          <span className="tabular-nums text-muted-foreground/70">
-            ({meetups.length})
-          </span>
+          {title} <span className="tabular-nums">({meetups.length})</span>
         </h2>
       )}
       <ul className="divide-y overflow-hidden rounded-xl border bg-card">

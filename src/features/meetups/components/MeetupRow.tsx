@@ -44,12 +44,7 @@ export function MeetupRow({ meetup }: { meetup: Meetup }) {
           <span data-cy="meetup-row-date">
             {formatDate(meetup.date)}
             {/* The "Today" badge already says it for today's meetup. */}
-            {timing !== "today" && (
-              <span className="text-muted-foreground/70">
-                {" "}
-                ({relativeDay(meetup.date)})
-              </span>
-            )}
+            {timing !== "today" && <span> ({relativeDay(meetup.date)})</span>}
           </span>
           <MazmoUrlLink
             url={meetup.mazmo_meetup_url}
