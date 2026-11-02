@@ -1,5 +1,9 @@
 import { makeGuest } from "../../../src/tests/factories";
-import { shouldListNames, stubGuestsPage } from "../../support/routes/guests";
+import {
+  shouldBeSettled,
+  shouldListNames,
+  stubGuestsPage,
+} from "../../support/routes/guests";
 
 const GUESTS = [
   makeGuest({
@@ -151,7 +155,7 @@ describe("Guest directory sorting", () => {
 
   it("has no accessibility violations with the sort menu open", () => {
     cy.getBySel("list-sort").click();
-    cy.getByRole("menu").should("be.visible");
+    shouldBeSettled("menu");
     cy.checkA11yAA();
   });
 });

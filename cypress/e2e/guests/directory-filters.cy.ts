@@ -3,6 +3,7 @@ import {
   shouldListNames,
   stubGuestsPage,
   vanted,
+  shouldBeSettled,
 } from "../../support/routes/guests";
 
 const ANA = makeGuest({
@@ -130,7 +131,7 @@ describe("Guest directory filters", () => {
 
   it("has no accessibility violations with the filter menu open", () => {
     cy.getBySel("list-filter").click();
-    cy.getByRole("menu").should("be.visible");
+    shouldBeSettled("menu");
     cy.checkA11yAA();
   });
 });

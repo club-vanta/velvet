@@ -43,7 +43,7 @@ export function SectionError({
       className="flex items-center justify-between gap-2 text-sm text-destructive"
       data-cy="section-error"
     >
-      {message}
+      <span data-cy="section-error-message">{message}</span>
       <Button variant="ghost" size="sm" onClick={onRetry}>
         {t("retry")}
       </Button>

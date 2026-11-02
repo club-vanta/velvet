@@ -126,6 +126,14 @@ export function shouldBeDescribedBy(selector: string, text: string): void {
   });
 }
 
+/**
+ * Waits for the open dialog or menu to finish its fade-in, so an
+ * accessibility scan doesn't measure contrast mid-animation.
+ */
+export function shouldBeSettled(role: "dialog" | "menu"): void {
+  cy.getByRole(role, { native: false }).should("have.css", "opacity", "1");
+}
+
 /** The toast the app showed last (sonner renders them in a live region). */
 export function lastToast(): Cypress.Chainable<JQuery<HTMLElement>> {
   return cy

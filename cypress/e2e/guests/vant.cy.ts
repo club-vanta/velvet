@@ -5,6 +5,7 @@ import {
   stubGuestProfile,
   stubGuestsPage,
   vanted,
+  shouldBeSettled,
 } from "../../support/routes/guests";
 
 const LUNA = makeGuest({ id: "guest-luna", displayname: "Luna" });
@@ -134,6 +135,7 @@ describe("Vanting a guest", () => {
 
     it("has no accessibility violations", () => {
       vantDialog().should("be.visible");
+      shouldBeSettled("dialog");
       cy.checkA11yAA('[role="dialog"]');
     });
   });

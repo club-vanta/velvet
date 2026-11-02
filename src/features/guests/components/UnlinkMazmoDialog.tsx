@@ -30,7 +30,10 @@ export function UnlinkMazmoDialog({
       onConfirm={() => mutation.mutate(undefined, { onSuccess: onClose })}
       onClose={onClose}
     >
-      <p className="py-2 text-sm text-muted-foreground">
+      <p
+        className="py-2 text-sm text-muted-foreground"
+        data-cy="unlink-mazmo-body"
+      >
         {t("unlinkMazmoDialogBody")}{" "}
         <span className="font-medium text-foreground">{guest.displayname}</span>{" "}
         (@{guest.mazmo_handle}).

@@ -18,7 +18,7 @@ export function VantAlert({
   return (
     <Alert variant="destructive" data-cy="guest-vant-alert">
       <ShieldBan />
-      <AlertTitle>
+      <AlertTitle data-cy="guest-vant-title">
         {orgName
           ? t("vantedInOrg").replace("{0}", orgName)
           : t("vantedInThisOrg")}

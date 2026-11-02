@@ -25,7 +25,7 @@ export function MazmoFlagAlerts({
           data-cy="guest-mazmo-flag-alert"
         >
           <TriangleAlert />
-          <AlertTitle>
+          <AlertTitle data-cy="guest-mazmo-flag-title">
             {profile.mazmo_banned
               ? t("mazmoBannedTitle")
               : t("mazmoSuspendedTitle")}
@@ -38,7 +38,9 @@ export function MazmoFlagAlerts({
       {profile.mazmo_deleted && (
         <Alert data-cy="guest-mazmo-deleted-alert">
           <UserX />
-          <AlertTitle>{t("mazmoDeletedTitle")}</AlertTitle>
+          <AlertTitle data-cy="guest-mazmo-deleted-title">
+            {t("mazmoDeletedTitle")}
+          </AlertTitle>
           <AlertDescription>{t("mazmoDeletedExplanation")}</AlertDescription>
         </Alert>
       )}
