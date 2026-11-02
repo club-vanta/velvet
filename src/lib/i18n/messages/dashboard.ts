@@ -20,7 +20,7 @@ export const en = {
   noMeetupsYet: "No meetups yet.",
   failedLoadMeetups: "Failed to load meetups.",
   failedLoadGuests: "Failed to load guests.",
-  failedLoadPending: "Failed to load pending staff.",
+  totalFailed: "Could not load",
 };
 
 export const es: Record<keyof typeof en, string> = {
@@ -41,5 +41,5 @@ export const es: Record<keyof typeof en, string> = {
   noMeetupsYet: "Aún no hay eventos.",
   failedLoadMeetups: "Error al cargar eventos.",
   failedLoadGuests: "Error al cargar invitados.",
-  failedLoadPending: "Error al cargar staff pendiente.",
+  totalFailed: "No se pudo cargar",
 };

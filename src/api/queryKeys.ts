@@ -74,6 +74,30 @@ export const statsWeatherKey = (orgId: string, filters: StatsQuery | null) =>
 export const geocodeKey = (orgId: string, q: string) =>
   ["geocode", orgId, q] as const;
 
+// Staff accounts (site admins). The pending list sits under the same root, so
+// invalidating staffKey refreshes both tabs and the pending badges.
+export const staffKey = ["staff"] as const;
+
+export const pendingStaffKey = [...staffKey, "pending"] as const;
+
+// Organizations and their members. Every org list (all orgs for site admins,
+// member orgs for the rest) sits under the same root.
+export const organizationsKey = ["organizations"] as const;
+
+export const memberOrganizationsKey = (orgIds: readonly string[]) =>
+  [...organizationsKey, "member", orgIds] as const;
+
+export const organizationKey = (orgId: string) => ["org", orgId] as const;
+
+export const orgMembersKey = (orgId: string) => ["org-members", orgId] as const;
+
+// Users matching the add-member search; the query is the text typed so far.
+export const userSearchKey = (q: string) => ["user-search", q] as const;
+
+// An org's audit log, one entry per type filter ("all" for none).
+export const orgEventsKey = (orgId: string, type: string) =>
+  ["events", orgId, type] as const;
+
 /**
  * Anything that changes an RSVP (check-in, payment, guest type, walk-in,
  * sync) also changes the meetup stats, the attendance shown on guest
@@ -169,4 +193,17 @@ export function invalidateGuestBan(
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });
   void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
+}
+
+/**
+ * An org's name and slug show on its page, in every org list and in the org
+ * switcher (which reads the site admin's org list), so all are refreshed
+ * together.
+ */
+export function invalidateOrganization(
+  queryClient: QueryClient,
+  orgId: string,
+): void {
+  void queryClient.invalidateQueries({ queryKey: organizationsKey });
+  void queryClient.invalidateQueries({ queryKey: organizationKey(orgId) });
 }
