@@ -168,6 +168,32 @@ describe("Login", () => {
     cy.location("pathname").should("eq", "/dashboard");
   });
 
+  it("drops the token when the profile fails to load after it", () => {
+    cy.stubApi("POST", "/auth/token", {
+      body: { access_token: "token-door", token_type: "bearer" },
+    }).as("token");
+    cy.stubApiError("GET", "/auth/userinfo", {
+      statusCode: 500,
+      detail: "Internal Server Error",
+    }).as("userinfo");
+
+    fillCredentials();
+    cy.getBySel("login-submit").click();
+
+    cy.wait("@token");
+    cy.getBySel("login-error").should("have.text", "Internal Server Error");
+    cy.window()
+      .its("localStorage")
+      .invoke("getItem", "auth_token")
+      .should("be.null");
+    // A reload must not sign in a user who was told sign-in failed.
+    cy.reload();
+    cy.wait("@userinfo")
+      .its("request.headers")
+      .should("not.have.property", "authorization");
+    cy.getBySel("login-username").should("be.visible");
+  });
+
   it("links to password recovery and signup", () => {
     cy.getBySel("login-forgot-link")
       .should("have.text", "Forgot your password?")

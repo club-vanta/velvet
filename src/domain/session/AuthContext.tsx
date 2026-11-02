@@ -52,11 +52,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setAuthToken(data.access_token);
 
-    const userInfo = await api.GET("/auth/userinfo");
-    if (userInfo.error || !userInfo.data) {
-      throw new Error(extractApiError(userInfo.error, t("somethingWentWrong")));
+    try {
+      const userInfo = await api.GET("/auth/userinfo");
+      if (userInfo.error || !userInfo.data) {
+        throw new Error(
+          extractApiError(userInfo.error, t("somethingWentWrong")),
+        );
+      }
+      setUser(userInfo.data);
+    } catch (err) {
+      // The sign-in failed as far as the user can tell: drop the token, or a
+      // reload would bring back a session they were told did not start.
+      setAuthToken(null);
+      throw err;
     }
-    setUser(userInfo.data);
   }
 
   function logout() {
