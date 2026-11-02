@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import type { TimelineMarker } from "../lib/timelineMarker";
 
 // Building blocks shared by the timeline sections of the guest profile.
 
@@ -21,7 +22,7 @@ export function SectionTitle({
 
 export function SectionSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-cy="section-loading">
       {Array.from({ length: 3 }).map((_, i) => (
         <Skeleton key={i} className="h-10 w-full" />
       ))}
@@ -38,8 +39,11 @@ export function SectionError({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="flex items-center justify-between gap-2 text-sm text-destructive">
-      {message}
+    <div
+      className="flex items-center justify-between gap-2 text-sm text-destructive"
+      data-cy="section-error"
+    >
+      <span data-cy="section-error-message">{message}</span>
       <Button variant="ghost" size="sm" onClick={onRetry}>
         {t("retry")}
       </Button>
@@ -51,8 +55,6 @@ export function Timeline({ children }: { children: React.ReactNode }) {
   return <ol className="ml-1.5 border-l border-border">{children}</ol>;
 }
 
-export type TimelineMarker = "filled" | "hollow" | "faint" | "danger";
-
 const MARKER_CLASS: Record<TimelineMarker, string> = {
   filled: "bg-foreground",
   hollow: "border-2 border-muted-foreground/60 bg-background",
@@ -62,13 +64,15 @@ const MARKER_CLASS: Record<TimelineMarker, string> = {
 
 export function TimelineItem({
   marker,
+  "data-cy": dataCy,
   children,
 }: {
   marker: TimelineMarker;
+  "data-cy"?: string;
   children: React.ReactNode;
 }) {
   return (
-    <li className="relative pl-6 pb-4 last:pb-0">
+    <li className="relative pl-6 pb-4 last:pb-0" data-cy={dataCy}>
       <span
         aria-hidden="true"
         className={cn(

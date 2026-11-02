@@ -3,6 +3,7 @@
 // fields a test cares about. Never cast a partial object instead.
 export * from "./admin";
 export * from "./guest";
+export * from "./guests";
 export * from "./meetup";
 export * from "./meetups";
 export * from "./schemas";

@@ -38,16 +38,25 @@ export function Fact({
   label,
   children,
   hint,
+  "data-cy": dataCy,
 }: {
   label: string;
   children: React.ReactNode;
   // A secondary line under the value, e.g. a percentage or a progress bar.
   hint?: React.ReactNode;
+  /** Test selector for the fact; its value is `${dataCy}-value`. */
+  "data-cy"?: string;
 }) {
   return (
-    <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 px-4 py-2.5 @sm:block @sm:py-3 @md:px-5 @md:py-4">
+    <div
+      data-cy={dataCy}
+      className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 px-4 py-2.5 @sm:block @sm:py-3 @md:px-5 @md:py-4"
+    >
       <dt className="shrink-0 text-xs text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 text-right text-base font-medium leading-snug @sm:mt-1 @sm:text-left @md:text-lg">
+      <dd
+        data-cy={dataCy && `${dataCy}-value`}
+        className="min-w-0 text-right text-base font-medium leading-snug @sm:mt-1 @sm:text-left @md:text-lg"
+      >
         {children}
       </dd>
       {hint && (

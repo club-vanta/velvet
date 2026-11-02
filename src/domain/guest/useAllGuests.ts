@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { allGuestsKey } from "@/api/queryKeys";
 
 /**
  * Every known guest (GET /guests/). The Guests page, the dashboard, and the
@@ -7,7 +8,7 @@ import { api } from "@/api/client";
  */
 export function useAllGuests() {
   return useQuery({
-    queryKey: ["guests"],
+    queryKey: allGuestsKey,
     queryFn: async () => {
       const { data, error } = await api.GET("/guests/");
       if (error) throw new Error("Failed to load guests");
