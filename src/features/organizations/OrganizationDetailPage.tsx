@@ -6,9 +6,19 @@ import { EditOrgDialog } from "./components/EditOrgDialog";
 import { MembersSection } from "./components/MembersSection";
 import { OrgHeader } from "./components/OrgHeader";
 
+/**
+ * The route element for /organizations/:orgId. React Router keeps it
+ * mounted when only the id changes (back/forward, a link to another org),
+ * so the page is keyed by the id: open dialogs and a typed search never
+ * carry over to the next org.
+ */
 export function OrganizationDetailPage() {
-  const { user } = useAuth();
   const { orgId = "" } = useParams<{ orgId: string }>();
+  return <OrganizationDetail key={orgId} orgId={orgId} />;
+}
+
+function OrganizationDetail({ orgId }: { orgId: string }) {
+  const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
   const orgQ = useOrganization(orgId);

@@ -1,4 +1,5 @@
 import {
+  NOCTURNA,
   VANTA,
   stubAllOrganizations,
   stubMembers,
@@ -119,6 +120,26 @@ describe("Organization detail", () => {
       cy.getByRole("button", { name: "Back to organizations" }).click();
       cy.location("pathname").should("eq", "/organizations");
     });
+  });
+
+  it("starts fresh when the route moves to another organization", () => {
+    cy.loginAs("siteAdmin");
+    stubOrganizationDetail(VANTA);
+    stubOrganizationDetail(NOCTURNA);
+    cy.stubApi("GET", "/users/", { body: [] });
+    cy.visit(`/organizations/${VANTA.id}`);
+    cy.getByRole("heading", { name: "Club Vanta" }).should("be.visible");
+    cy.getBySel("org-add-member").click();
+    cy.getBySel("org-member-search").type("sol");
+
+    // Back/forward or a link to another org keeps the same route element.
+    cy.window().then((win) => {
+      win.history.pushState({}, "", `/organizations/${NOCTURNA.id}`);
+      win.dispatchEvent(new PopStateEvent("popstate"));
+    });
+
+    cy.getByRole("heading", { name: "Nocturna" }).should("be.visible");
+    cy.getBySel("org-add-member-dialog").should("not.exist");
   });
 
   context("as an org admin", () => {
