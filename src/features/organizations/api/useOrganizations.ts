@@ -42,7 +42,12 @@ export function useVisibleOrganizations() {
           }),
         ),
       );
-      return results.flatMap((r) => (r.data ? [r.data] : []));
+      // One failed org is a failed list: showing the rest would read as
+      // complete, and showing none as "no organizations".
+      return results.map(({ data, error }) => {
+        if (error || !data) throw new Error(t("failedLoadOrgs"));
+        return data;
+      });
     },
     enabled: !isSiteAdmin && memberOrgIds.length > 0,
   });

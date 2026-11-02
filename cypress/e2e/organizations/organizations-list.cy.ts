@@ -104,6 +104,29 @@ describe("Organizations list", () => {
     });
   });
 
+  context("as an org admin whose organization fails to load", () => {
+    it("shows the error, not an empty list, and retries", () => {
+      cy.loginAs("orgAdmin");
+      cy.stubApiError("GET", "/organizations/{org_id}", {
+        statusCode: 500,
+      }).as("getOrg");
+      cy.visit("/organizations");
+      cy.wait("@getOrg");
+
+      cy.getBySel("orgs-error").should(
+        "contain.text",
+        "Failed to load organizations",
+      );
+      cy.getBySel("orgs-empty").should("not.exist");
+      stubOrganization(VANTA);
+      cy.getBySel("orgs-error").within(() => {
+        cy.getByRole("button", { name: "Retry" }).click();
+      });
+      cy.wait("@getOrg");
+      cy.getBySel(`org-row-${VANTA.id}`).should("be.visible");
+    });
+  });
+
   context("as door staff", () => {
     it("cannot reach the organizations pages", () => {
       cy.loginAs("staff");
