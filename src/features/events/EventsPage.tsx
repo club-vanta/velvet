@@ -4,7 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useOrgMeetups } from "@/domain/meetup";
 import { useOrg } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
-import { EVENTS_PAGE_SIZE, useOrgEvents } from "./api/useOrgEvents";
+import { useOrgEvents } from "./api/useOrgEvents";
 import { EventsTable } from "./components/EventsTable";
 import { EventTypeFilter } from "./components/EventTypeFilter";
 
@@ -13,18 +13,13 @@ export function EventsPage() {
   const { activeOrg } = useOrg();
   const orgId = activeOrg?.org_id ?? "";
   const [eventType, setEventType] = useState("all");
-  const [offset, setOffset] = useState(0);
 
   const meetupsQ = useOrgMeetups(orgId);
   const meetupNames = new Map(
     (meetupsQ.data?.meetups ?? []).map((m) => [m.id, m.name]),
   );
-  const { data, isLoading, isError, refetch } = useOrgEvents(
-    orgId,
-    eventType,
-    offset,
-  );
-  const events = data?.events ?? [];
+  const eventsQ = useOrgEvents(orgId, eventType);
+  const events = eventsQ.data?.pages.flatMap((page) => page.events) ?? [];
 
   if (!activeOrg) {
     return (
@@ -41,20 +36,14 @@ export function EventsPage() {
       <h1 className="text-2xl font-semibold">{t("auditLog")}</h1>
 
       <div className="flex items-center gap-3">
-        <EventTypeFilter
-          value={eventType}
-          onChange={(type) => {
-            setEventType(type);
-            setOffset(0);
-          }}
-        />
+        <EventTypeFilter value={eventType} onChange={setEventType} />
       </div>
 
-      {isError && (
+      {eventsQ.isError && (
         <Alert variant="destructive" data-cy="events-error">
           <AlertDescription className="flex items-center justify-between">
             {t("failedLoadAuditLog")}
-            <Button variant="ghost" size="sm" onClick={() => refetch()}>
+            <Button variant="ghost" size="sm" onClick={() => eventsQ.refetch()}>
               {t("retry")}
             </Button>
           </AlertDescription>
@@ -63,16 +52,17 @@ export function EventsPage() {
 
       <EventsTable
         events={events}
-        isLoading={isLoading}
+        isLoading={eventsQ.isLoading}
         meetupNames={meetupNames}
       />
 
-      {events.length === EVENTS_PAGE_SIZE && (
+      {eventsQ.hasNextPage && (
         <div className="flex justify-center">
           <Button
             variant="outline"
             data-cy="events-load-more"
-            onClick={() => setOffset(offset + EVENTS_PAGE_SIZE)}
+            onClick={() => eventsQ.fetchNextPage()}
+            disabled={eventsQ.isFetchingNextPage}
           >
             {t("loadMore")}
           </Button>

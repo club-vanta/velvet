@@ -65,6 +65,24 @@ describe("Filtering and paging the audit log", () => {
     cy.getBySel("events-load-more").should("not.exist");
   });
 
+  it("loads the next page below the first one", () => {
+    stubAuditLog({ events: makeEvents(50, 60), total: 60 });
+    cy.visit("/events");
+    cy.wait("@getEvents");
+    cy.getBySelLike("event-row-").should("have.length", 50);
+
+    stubAuditLog({ events: makeEvents(10, 10), total: 60 });
+    cy.getBySel("events-load-more").should("have.text", "Load more").click();
+
+    cy.wait("@getEvents")
+      .its("request.query")
+      .should("deep.equal", { limit: "50", offset: "50" });
+    cy.getBySelLike("event-row-").should("have.length", 60);
+    cy.getBySel("event-row-60").should("exist");
+    cy.getBySel("event-row-1").should("exist");
+    cy.getBySel("events-load-more").should("not.exist");
+  });
+
   it("starts from the first page again when the filter changes", () => {
     stubAuditLog({ events: makeEvents(50, 60), total: 60 });
     cy.visit("/events");
