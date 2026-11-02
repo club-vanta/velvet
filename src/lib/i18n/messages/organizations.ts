@@ -7,6 +7,7 @@ export const en = {
   createdAt: "Created",
   navOrganizations: "Organizations",
   backToOrgs: "Back to organizations",
+  failedSearchUsers: "Failed to search accounts",
 };
 
 export const es: Record<keyof typeof en, string> = {
@@ -14,4 +15,5 @@ export const es: Record<keyof typeof en, string> = {
   createdAt: "Creado",
   navOrganizations: "Organizaciones",
   backToOrgs: "Volver a organizaciones",
+  failedSearchUsers: "Error al buscar cuentas",
 };

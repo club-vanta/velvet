@@ -94,13 +94,15 @@ export function useOrgMembers(orgId: string) {
 
 /** Accounts whose username matches `q`; every account when `q` is empty. */
 export function useUserSearch(q: string) {
+  const { t } = useLanguage();
   return useQuery({
     queryKey: userSearchKey(q),
     queryFn: async () => {
-      const { data } = await api.GET("/users/", {
+      const { data, error } = await api.GET("/users/", {
         params: { query: { q } },
       });
-      return data ?? [];
+      if (error || !data) throw new Error(t("failedSearchUsers"));
+      return data;
     },
     // Keep the last results on screen while the next search runs.
     placeholderData: keepPreviousData,

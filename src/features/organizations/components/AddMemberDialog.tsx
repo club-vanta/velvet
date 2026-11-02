@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -34,7 +35,8 @@ export function AddMemberDialog({
   const [selected, setSelected] = useState<UserResult | null>(null);
   const [role, setRole] = useState("STAFF");
   // One search when the typing stops, not one per keystroke.
-  const usersQ = useUserSearch(useDebouncedValue(search, SEARCH_DEBOUNCE_MS));
+  const query = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+  const usersQ = useUserSearch(query);
   const add = useAddMember(orgId);
   const users = usersQ.data ?? [];
   const roleLabelId = useId();
@@ -65,14 +67,33 @@ export function AddMemberDialog({
               ))}
             </div>
           )}
-          {!usersQ.isLoading && users.length === 0 && search && (
-            <p
-              className="text-sm text-muted-foreground text-center py-2"
-              data-cy="org-member-search-empty"
-            >
-              {t("noStaffAccounts")}
-            </p>
+          {usersQ.isError && (
+            <Alert variant="destructive" data-cy="org-member-search-error">
+              <AlertDescription className="flex items-center justify-between">
+                {t("failedSearchUsers")}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => usersQ.refetch()}
+                >
+                  {t("retry")}
+                </Button>
+              </AlertDescription>
+            </Alert>
           )}
+          {/* Judged on the text the results are for, not the text typed
+              since, so it never flashes while the next search waits. */}
+          {!usersQ.isLoading &&
+            !usersQ.isError &&
+            users.length === 0 &&
+            query && (
+              <p
+                className="text-sm text-muted-foreground text-center py-2"
+                data-cy="org-member-search-empty"
+              >
+                {t("noStaffAccounts")}
+              </p>
+            )}
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {users.map((u) => (
               <button

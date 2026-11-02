@@ -59,6 +59,25 @@ describe("<AddMemberDialog />", () => {
     cy.getBySel("org-add-member-submit").should("be.enabled");
   });
 
+  it("shows an error, not an empty result, when the search fails", () => {
+    cy.stubApiError("GET", "/users/", { statusCode: 500 }).as("searchUsers");
+    mountDialog();
+    cy.wait("@searchUsers");
+    cy.getByRole("textbox", { name: "Username" }).type("sol");
+
+    cy.getBySel("org-member-search-error").should(
+      "contain.text",
+      "Failed to search accounts",
+    );
+    cy.getBySel("org-member-search-empty").should("not.exist");
+    cy.stubApi("GET", "/users/", { body: [sol] }).as("searchUsers");
+    cy.getBySel("org-member-search-error").within(() => {
+      cy.getByRole("button", { name: "Retry" }).click();
+    });
+    cy.wait("@searchUsers");
+    cy.getBySel("org-member-result-20").should("be.visible");
+  });
+
   it("has no accessibility violations", () => {
     cy.stubApi("GET", "/users/", { body: [sol] });
     mountDialog();
