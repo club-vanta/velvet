@@ -24,7 +24,10 @@ export function EventTypeFilter({
         aria-label={t("type")}
         data-cy="events-type-filter"
       >
-        <SelectValue placeholder={t("allEvents")}>
+        <SelectValue
+          placeholder={t("allEvents")}
+          data-cy="events-type-filter-value"
+        >
           {value === "all" ? t("allEvents") : eventTypeLabel(value, t)}
         </SelectValue>
       </SelectTrigger>
