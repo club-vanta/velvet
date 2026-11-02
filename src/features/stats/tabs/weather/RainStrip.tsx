@@ -45,6 +45,7 @@ export function RainStrip({
 
   return (
     <ChartContainer
+      data-cy="stats-meteogram-rain"
       config={METEOGRAM_CONFIG}
       className="aspect-auto h-16 w-full"
     >

@@ -20,22 +20,29 @@ export function GuestTypeBars({ rows }: { rows: GuestTypeRow[] }) {
   return (
     <ul className="space-y-2 text-sm">
       {rows.map((row) => (
-        <li key={row.guest_type} className="space-y-1">
+        <li
+          key={row.guest_type}
+          data-cy={`stats-guest-type-${row.guest_type}`}
+          className="space-y-1"
+        >
           <div className="flex items-baseline justify-between gap-3">
-            <span data-slot="name" className="min-w-0 break-words">
+            <span
+              data-cy="stats-guest-type-name"
+              className="min-w-0 break-words"
+            >
               {t(GUEST_TYPE_LABEL[row.guest_type])}
             </span>
             <span className="text-muted-foreground tabular-nums">
-              <span data-slot="count">{formatCount(row.attended, lang)}</span>
+              <span data-cy="stats-guest-type-count">
+                {formatCount(row.attended, lang)}
+              </span>
               {" · "}
-              <span data-slot="share">{formatRate(row.share, lang)}</span>
+              <span data-cy="stats-guest-type-share">
+                {formatRate(row.share, lang)}
+              </span>
             </span>
           </div>
-          <div
-            aria-hidden
-            className="h-2 rounded-full bg-muted"
-            data-slot="bar-track"
-          >
+          <div aria-hidden className="h-2 rounded-full bg-muted">
             <div
               className="h-full rounded-full"
               style={{

@@ -64,6 +64,7 @@ function AttendanceContent({
     <div className="space-y-3">
       <div className={headlineGrid(cards)}>
         <HeadlineStat
+          data-cy="stats-headline-attended"
           label={t("statsAttended")}
           value={count(totals.attended)}
           comparison={compare(
@@ -73,6 +74,7 @@ function AttendanceContent({
           )}
         />
         <HeadlineStat
+          data-cy="stats-headline-no-show-rate"
           label={t("statsNoShowRate")}
           value={rate(totals.no_show_rate)}
           comparison={compare(
@@ -84,6 +86,7 @@ function AttendanceContent({
           n={totals.signed_up - totals.cancelled}
         />
         <HeadlineStat
+          data-cy="stats-headline-cancel-rate"
           label={t("statsCancelRate")}
           value={rate(totals.cancellation_rate)}
           comparison={compare(
@@ -95,6 +98,7 @@ function AttendanceContent({
           n={totals.signed_up}
         />
         <HeadlineStat
+          data-cy="stats-headline-walkins"
           label={t("statsWalkins")}
           value={count(totals.walkin)}
           comparison={compare(totals.walkin, comparison?.walkin)}
@@ -102,11 +106,13 @@ function AttendanceContent({
         {!single && (
           <>
             <HeadlineStat
+              data-cy="stats-headline-events"
               label={t("statsEvents")}
               value={count(totals.events)}
               comparison={compare(totals.events, comparison?.events)}
             />
             <HeadlineStat
+              data-cy="stats-headline-avg-per-event"
               label={t("statsAvgPerEvent")}
               value={count(totals.avg_attended_per_event)}
               comparison={compare(
@@ -145,7 +151,7 @@ export function AttendanceTab({
       statsQ={statsQ}
       single={single}
       cards={single ? CARDS.single : CARDS.all}
-      testId="attendance-skeleton"
+      tab="attendance"
       onShowAll={onShowAll}
     >
       {(data) => (

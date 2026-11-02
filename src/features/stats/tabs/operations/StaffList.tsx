@@ -13,12 +13,13 @@ export function StaffList({ staff }: { staff: Operations["staff"] }) {
       {staff.map((member) => (
         <li
           key={member.user_id ?? "none"}
+          data-cy={`stats-staff-${member.user_id ?? "none"}`}
           className="flex items-baseline justify-between gap-3 py-1.5"
         >
-          <span data-slot="name" className="min-w-0 break-words">
+          <span data-cy="stats-staff-name" className="min-w-0 break-words">
             {member.username ?? t("statsNoChecker")}
           </span>
-          <span data-slot="count" className="tabular-nums">
+          <span data-cy="stats-staff-count" className="tabular-nums">
             {formatCount(member.checkins, lang)}
           </span>
         </li>

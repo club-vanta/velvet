@@ -95,12 +95,14 @@ function RetentionContent({
         {/* For one event, how many came is on Asistencia already. */}
         {regulars === undefined ? (
           <HeadlineStat
+            data-cy="stats-headline-people"
             label={t("statsPeople")}
             value={formatCount(summary.attendees, lang)}
             comparison={compareAttendees()}
           />
         ) : (
           <HeadlineStat
+            data-cy="stats-headline-regulars"
             label={t("statsRegulars")}
             value={formatCount(regulars, lang)}
             subline={t("statsRegularsShare").replace(
@@ -111,6 +113,7 @@ function RetentionContent({
         )}
         {allTime ? (
           <HeadlineStat
+            data-cy="stats-headline-came-once"
             label={t("statsCameOnce")}
             value={formatCount(cameOnce, lang)}
             subline={t("statsShareOfTotal").replace(
@@ -120,6 +123,7 @@ function RetentionContent({
           />
         ) : (
           <HeadlineStat
+            data-cy="stats-headline-first-time"
             label={t("statsFirstTime")}
             value={formatCount(summary.new_guests, lang)}
             subline={
@@ -133,6 +137,7 @@ function RetentionContent({
           />
         )}
         <HeadlineStat
+          data-cy="stats-headline-came-back"
           label={t("statsCameBack")}
           value={formatRate(returnRate, lang)}
           subline={
@@ -207,7 +212,7 @@ export function RetentionTab({
       statsQ={statsQ}
       single={single}
       cards={HEADLINE_CARDS}
-      testId="retention-skeleton"
+      tab="retention"
       onShowAll={onShowAll}
     >
       {(data) => (

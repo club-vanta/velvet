@@ -12,12 +12,12 @@ export function RateCell({ rate, n }: { rate: number | null; n: number }) {
 
   return (
     <td
-      data-slot="rate"
+      data-cy="stats-rate"
       className={cn("py-1.5 text-right", small && "text-muted-foreground")}
     >
-      <span data-slot="rate-value">{formatRate(rate, lang)}</span>
+      <span data-cy="stats-rate-value">{formatRate(rate, lang)}</span>
       {small && (
-        <span data-slot="sample" className="ml-2 text-xs">
+        <span data-cy="stats-rate-sample" className="ml-2 text-xs">
           {t("statsSample").replace("{0}", formatCount(n, lang))}
         </span>
       )}

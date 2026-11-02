@@ -73,12 +73,14 @@ function NoShowsContent({
     <div className="space-y-3">
       <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
+          data-cy="stats-headline-no-show-rate"
           label={t("statsNoShowRate")}
           value={formatRate(summary.no_show_rate, lang)}
           comparison={compareRate}
           n={summary.expected}
         />
         <HeadlineStat
+          data-cy="stats-headline-no-show-count"
           label={t("statsNoShowCount")}
           value={formatCount(summary.no_show, lang)}
           subline={t("statsNoShowOfExpected").replace(
@@ -88,6 +90,7 @@ function NoShowsContent({
           comparison={compareCount(summary.no_show, comparison?.no_show)}
         />
         <HeadlineStat
+          data-cy="stats-headline-repeat-no-shows"
           label={t("statsRepeatNoShows")}
           value={formatCount(summary.repeat_guests, lang)}
           subline={t(
@@ -108,6 +111,7 @@ function NoShowsContent({
         </ChartCard>
       )}
       <ViewToggle
+        data-cy="stats-noshow-view"
         label={t("statsViewLabel")}
         options={[
           { value: "rate", label: t("statsViewRate") },
@@ -151,7 +155,7 @@ function NoShowsContent({
         title={t(single ? "statsNoShowGuestsEvent" : "statsNoShowGuests")}
       >
         {data.guests_total === 0 ? (
-          <ChartEmptyNote>
+          <ChartEmptyNote data-cy="stats-noshow-guests-none">
             {t(single ? "statsNoShowGuestsNoneEvent" : "statsNoShowGuestsNone")}
           </ChartEmptyNote>
         ) : (
@@ -174,7 +178,7 @@ export function NoShowsTab({ orgId, query, period, onShowAll }: StatsTabProps) {
       statsQ={statsQ}
       single={single}
       cards={HEADLINE_CARDS}
-      testId="no-shows-skeleton"
+      tab="no-shows"
       onShowAll={onShowAll}
     >
       {(data) => <NoShowsContent data={data} single={single} period={period} />}

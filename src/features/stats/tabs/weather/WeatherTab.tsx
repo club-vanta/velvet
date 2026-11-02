@@ -14,7 +14,7 @@ export function WeatherTab({ orgId, query, onShowAll }: StatsTabProps) {
       single={single}
       // The aggregate has no headline cards, only its charts.
       cards={single ? EVENT_CARDS : 0}
-      testId="weather-skeleton"
+      tab="weather"
       onShowAll={onShowAll}
     >
       {(data) =>

@@ -24,25 +24,28 @@ export function LapsedList({
         {lapsed.map((guest) => (
           <li
             key={guest.guest_id}
+            data-cy={`stats-lapsed-${guest.guest_id}`}
             className="flex flex-wrap items-baseline justify-between gap-x-3 py-1.5"
           >
             <StatsLink to={`/guests/${guest.guest_id}`}>
               {guest.displayname}
             </StatsLink>
             <span className="text-muted-foreground tabular-nums">
-              <span data-slot="times">
+              <span data-cy="stats-lapsed-times">
                 {t("statsLapsedCame").replace(
                   "{0}",
                   formatCount(guest.attended_before, lang),
                 )}
               </span>
               {" · "}
-              <span data-slot="last">{formatApiDate(guest.last_attended)}</span>
+              <span data-cy="stats-lapsed-last">
+                {formatApiDate(guest.last_attended)}
+              </span>
             </span>
           </li>
         ))}
       </ul>
-      <StatsListMore count={more} slot="lapsed-more" />
+      <StatsListMore count={more} data-cy="stats-lapsed-more" />
     </>
   );
 }

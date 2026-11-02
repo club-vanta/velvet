@@ -11,7 +11,7 @@ export function StatsTabGate<T>({
   statsQ,
   single,
   cards,
-  testId,
+  tab,
   onShowAll,
   children,
 }: {
@@ -19,13 +19,14 @@ export function StatsTabGate<T>({
   single: boolean;
   /** How many headline cards the loaded tab shows. */
   cards: number;
-  testId: string;
+  /** The tab's URL value, which names its skeleton for tests. */
+  tab: string;
   /** Offered with the error only when a single event is selected. */
   onShowAll: () => void;
   children: (data: T) => ReactNode;
 }) {
   if (statsQ.isPending) {
-    return <StatsTabSkeleton cards={cards} testId={testId} />;
+    return <StatsTabSkeleton cards={cards} data-cy={`stats-${tab}-skeleton`} />;
   }
   if (statsQ.isError || !statsQ.data) {
     return (

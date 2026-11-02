@@ -55,12 +55,12 @@ export function RateBars({
           return (
             <tr
               key={row.key}
-              data-slot="rate-row"
+              data-cy={`stats-rate-row-${row.key}`}
               className={cn(small && "text-muted-foreground")}
             >
               <th
                 scope="row"
-                data-slot="group"
+                data-cy="stats-rate-group"
                 className="w-24 py-1.5 pr-3 text-left align-middle font-normal break-words sm:w-36"
               >
                 {row.label}
@@ -73,7 +73,7 @@ export function RateBars({
                   >
                     {row.rate !== null && (
                       <div
-                        data-slot="bar"
+                        data-cy="stats-rate-bar"
                         className={cn(
                           "h-full origin-left animate-bar-grow rounded-full bg-chart-2 motion-reduce:animate-none",
                           small && "opacity-50",
@@ -86,14 +86,14 @@ export function RateBars({
                     )}
                   </div>
                   <span
-                    data-slot="rate-value"
+                    data-cy="stats-rate-value"
                     className="w-10 shrink-0 text-right"
                   >
                     {formatRate(row.rate, lang)}
                   </span>
                 </div>
                 {small && (
-                  <p data-slot="sample" className="text-right text-xs">
+                  <p data-cy="stats-rate-sample" className="text-right text-xs">
                     {t("statsSample").replace("{0}", formatCount(row.n, lang))}
                   </p>
                 )}

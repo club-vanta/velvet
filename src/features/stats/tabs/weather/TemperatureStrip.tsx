@@ -52,6 +52,7 @@ export function TemperatureStrip({
 
   return (
     <ChartContainer
+      data-cy="stats-meteogram-temperature"
       config={METEOGRAM_CONFIG}
       className="aspect-auto h-28 w-full"
     >

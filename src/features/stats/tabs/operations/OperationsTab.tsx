@@ -96,12 +96,14 @@ function OperationsContent({
         )}
       >
         <HeadlineStat
+          data-cy="stats-headline-came-in"
           label={t("statsCameIn")}
           value={formatCount(summary.attended, lang)}
           comparison={compareCount(summary.attended, comparison?.attended)}
         />
         {payments && (
           <HeadlineStat
+            data-cy="stats-headline-paid"
             label={t("statsPaid")}
             value={formatRate(payments.paid_share, lang)}
             comparison={comparePaidShare()}
@@ -113,6 +115,7 @@ function OperationsContent({
           />
         )}
         <HeadlineStat
+          data-cy="stats-headline-door-peak"
           label={t("statsDoorPeak")}
           value={formatCount(busiest?.checkins ?? null, lang)}
           subline={
@@ -125,6 +128,7 @@ function OperationsContent({
           comparison={comparePeak()}
         />
         <HeadlineStat
+          data-cy="stats-headline-bans"
           label={t("statsBans")}
           value={formatCount(summary.bans, lang)}
           comparison={compareCount(summary.bans, comparison?.bans)}
@@ -167,7 +171,7 @@ export function OperationsTab({
       statsQ={statsQ}
       single={!!query?.meetupId}
       cards={CARDS.withPayments}
-      testId="operations-skeleton"
+      tab="operations"
       onShowAll={onShowAll}
     >
       {(data) => <OperationsContent data={data} period={period} />}

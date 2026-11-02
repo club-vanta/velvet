@@ -43,12 +43,13 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
   const presetName = t(PRESET_LABELS[preset]);
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div data-cy="stats-filters" className="flex flex-wrap items-end gap-3">
       <Select
         value={preset}
         onValueChange={(v) => v && setPreset(v as RangePreset)}
       >
         <SelectTrigger
+          data-cy="stats-period"
           className="w-full sm:w-48"
           aria-label={`${t("statsPeriodLabel")}: ${presetName}`}
         >
@@ -56,7 +57,7 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
         </SelectTrigger>
         <SelectContent>
           {PRESETS.map((p) => (
-            <SelectItem key={p} value={p}>
+            <SelectItem key={p} value={p} data-cy={`stats-period-${p}`}>
               {t(PRESET_LABELS[p])}
             </SelectItem>
           ))}
@@ -67,12 +68,14 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
         <div className="flex w-full gap-3 sm:w-auto">
           <DateField
             label={t("statsRangeFrom")}
+            data-cy="stats-range-from"
             value={custom.from}
             max={custom.to}
             onChange={(from) => setCustom({ from, to: custom.to }, "from")}
           />
           <DateField
             label={t("statsRangeTo")}
+            data-cy="stats-range-to"
             value={custom.to}
             min={custom.from}
             onChange={(to) => setCustom({ from: custom.from, to }, "to")}
@@ -87,15 +90,22 @@ export function StatsFilterBar({ filters }: { filters: Filters }) {
         }
       >
         <SelectTrigger
+          data-cy="stats-event"
           className="w-full sm:w-64"
           aria-label={`${t("statsEventLabel")}: ${eventName}`}
         >
           <SelectValue>{eventName}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL_EVENTS}>{t("statsAllEvents")}</SelectItem>
+          <SelectItem value={ALL_EVENTS} data-cy="stats-event-all">
+            {t("statsAllEvents")}
+          </SelectItem>
           {events.map((event) => (
-            <SelectItem key={event.meetup.id} value={event.meetup.id}>
+            <SelectItem
+              key={event.meetup.id}
+              value={event.meetup.id}
+              data-cy={`stats-event-${event.meetup.id}`}
+            >
               {eventLabel(event.meetup)}
             </SelectItem>
           ))}

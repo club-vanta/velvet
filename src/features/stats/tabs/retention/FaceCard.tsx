@@ -46,7 +46,7 @@ export function FaceCard({
       style={{ left: x, top: y }}
     >
       <TooltipBox>
-        <p data-slot="name" className="font-medium">
+        <p data-cy="stats-face-card-name" className="font-medium">
           {guest.displayname}
         </p>
         <p className="flex items-center gap-1.5 text-muted-foreground">
@@ -54,7 +54,7 @@ export function FaceCard({
             className="size-2 rounded-full bg-(--band)"
             style={bandStyle(visitBand(guest.visit))}
           />
-          <span data-slot="visit">
+          <span data-cy="stats-face-card-visit">
             {t("statsThatNightVisit").replace(
               "{0}",
               visitLabel(guest.visit, t, lang),
@@ -64,13 +64,13 @@ export function FaceCard({
         {guest.days_since_previous !== null && (
           <p className="text-muted-foreground">
             {t("statsSincePrevious")}:{" "}
-            <span data-slot="gap" className="text-foreground">
+            <span data-cy="stats-face-card-gap" className="text-foreground">
               {formatGap(guest.days_since_previous, t)}
             </span>
           </p>
         )}
         {showBack && (
-          <p data-slot="back">
+          <p data-cy="stats-face-card-back">
             {t(guest.came_back ? "statsCameBackLater" : "statsNotBackYet")}
           </p>
         )}

@@ -20,6 +20,7 @@ function WeatherValue({
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd
         data-slot={slot}
+        data-cy={slot}
         className="break-words text-base font-semibold tabular-nums sm:text-lg"
       >
         {children}
@@ -94,7 +95,7 @@ export function WeatherDetails({
     );
   }
   return (
-    <p className="text-sm text-muted-foreground">
+    <p data-cy="weather-reason" className="text-sm text-muted-foreground">
       {status === "OK" ? reasons.NOT_FETCHED : reasons[status]}
     </p>
   );

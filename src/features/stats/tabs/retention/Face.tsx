@@ -24,6 +24,7 @@ export function Face({
   return (
     <span
       data-guest={guest.guest_id}
+      data-cy={`stats-face-${guest.guest_id}`}
       data-came-back={guest.came_back}
       className="group inline-flex animate-in rounded-full ring-2 ring-(--band) transition-transform duration-150 fill-mode-both fade-in zoom-in-50 hover:scale-110 motion-reduce:animate-none"
       style={{

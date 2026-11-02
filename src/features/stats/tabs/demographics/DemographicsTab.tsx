@@ -78,17 +78,20 @@ function DemographicsContent({
     <div className="space-y-3">
       <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
+          data-cy="stats-headline-median-age"
           label={t("statsMedianAge")}
           value={formatAge(summary.median_age, lang)}
           comparison={compareAge()}
         />
         <HeadlineStat
+          data-cy="stats-headline-known-age"
           label={t("statsKnownAge")}
           value={formatRate(summary.known_age_share, lang)}
           comparison={compareKnown()}
           n={summary.known_age_share === null ? undefined : summary.attended}
         />
         <HeadlineStat
+          data-cy="stats-headline-attendances"
           label={t("statsAttendances")}
           value={formatCount(summary.attended, lang)}
           comparison={compareAttended()}
@@ -134,7 +137,7 @@ export function DemographicsTab({
       statsQ={statsQ}
       single={single}
       cards={HEADLINE_CARDS}
-      testId="demographics-skeleton"
+      tab="demographics"
       onShowAll={onShowAll}
     >
       {(data) => <DemographicsContent data={data} period={period} />}

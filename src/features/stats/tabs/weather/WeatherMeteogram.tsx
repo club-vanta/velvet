@@ -65,6 +65,7 @@ export function WeatherMeteogram({
       />
       <div
         role="group"
+        data-cy="stats-meteogram-scroll"
         aria-labelledby={labelledBy}
         // A scroll container must be focusable so the keyboard can scroll it
         // when the chart is wider than the card (WCAG 2.1.1).
@@ -73,7 +74,7 @@ export function WeatherMeteogram({
         className="overflow-x-auto rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <div
-          data-testid="meteogram-content"
+          data-cy="stats-meteogram-content"
           className="space-y-1"
           style={{ minWidth: Y_AXIS_WIDTH + hours.length * hourWidth }}
         >
@@ -103,18 +104,24 @@ export function WeatherMeteogram({
         </div>
       </div>
       {!rained && (
-        <p className="py-2 text-center text-sm text-muted-foreground">
+        <p
+          data-cy="stats-meteogram-no-rain"
+          className="py-2 text-center text-sm text-muted-foreground"
+        >
           {t("statsWeatherNoRain")}
         </p>
       )}
       {arrivals === undefined ? (
         <Skeleton
-          data-testid="meteogram-arrivals-skeleton"
+          data-cy="stats-meteogram-arrivals-skeleton"
           className="h-24 w-full"
         />
       ) : (
         !arrivalsCharted && (
-          <p className="py-4 text-center text-sm text-muted-foreground">
+          <p
+            data-cy="stats-meteogram-arrivals-note"
+            className="py-4 text-center text-sm text-muted-foreground"
+          >
             {t(
               arrivals === null
                 ? "statsWeatherArrivalsFailed"

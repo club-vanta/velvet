@@ -22,6 +22,7 @@ export function BanList({
         {bans.map((ban) => (
           <li
             key={`${ban.guest_id}-${ban.timestamp}`}
+            data-cy={`stats-ban-${ban.guest_id}`}
             className="space-y-0.5 py-1.5"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -29,21 +30,23 @@ export function BanList({
                 {ban.displayname}
               </StatsLink>
               <span
-                data-slot="date"
+                data-cy="stats-ban-date"
                 className="text-muted-foreground tabular-nums"
               >
                 {formatApiDate(ban.timestamp)}
               </span>
             </div>
             <p className="text-muted-foreground break-words">
-              <span data-slot="reason">{ban.reason ?? NO_VALUE}</span>
+              <span data-cy="stats-ban-reason">{ban.reason ?? NO_VALUE}</span>
               {" · "}
-              <span data-slot="actor">{ban.actor_username ?? NO_VALUE}</span>
+              <span data-cy="stats-ban-actor">
+                {ban.actor_username ?? NO_VALUE}
+              </span>
             </p>
           </li>
         ))}
       </ul>
-      <StatsListMore count={more} slot="bans-more" />
+      <StatsListMore count={more} data-cy="stats-bans-more" />
     </>
   );
 }

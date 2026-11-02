@@ -49,6 +49,7 @@ export function ArrivalsStrip({
 
   return (
     <ChartContainer
+      data-cy="stats-meteogram-arrivals"
       config={METEOGRAM_CONFIG}
       className="aspect-auto h-24 w-full"
     >

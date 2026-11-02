@@ -45,7 +45,7 @@ export function WeatherEventView({
 
   if (event.status !== "OK" || event.hours.length === 0) {
     return (
-      <StatCard title={t("weatherTitle")}>
+      <StatCard title={t("weatherTitle")} data-cy="stats-weather-missing">
         <WeatherDetails
           status={event.status}
           weather={event.weather}
@@ -73,10 +73,12 @@ export function WeatherEventView({
     <div className="space-y-3">
       <div className={headlineGrid(EVENT_CARDS)}>
         <WindowStat
+          data-cy="stats-headline-weather-before"
           label={label(t("statsWeatherBefore"), first.time, startHour)}
           summary={event.before}
         />
         <WindowStat
+          data-cy="stats-headline-weather-during"
           label={label(t("statsWeatherDuring"), startHour, end)}
           summary={event.weather}
         />

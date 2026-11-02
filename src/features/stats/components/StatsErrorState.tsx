@@ -13,15 +13,26 @@ export function StatsErrorState({
   return (
     <div
       role="alert"
+      data-cy="stats-error"
       className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
     >
       {t("failedLoadOrgStats")}
       <div className="flex gap-2">
-        <Button variant="ghost" size="sm" onClick={onRetry}>
+        <Button
+          variant="ghost"
+          size="sm"
+          data-cy="stats-retry"
+          onClick={onRetry}
+        >
           {t("retry")}
         </Button>
         {onShowAll && (
-          <Button variant="ghost" size="sm" onClick={onShowAll}>
+          <Button
+            variant="ghost"
+            size="sm"
+            data-cy="stats-show-all"
+            onClick={onShowAll}
+          >
             {t("statsBackToAll")}
           </Button>
         )}

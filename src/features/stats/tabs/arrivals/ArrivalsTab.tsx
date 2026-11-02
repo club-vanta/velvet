@@ -91,6 +91,7 @@ function ArrivalsContent({
     <div className="space-y-3">
       <div className={headlineGrid(HEADLINE_CARDS)}>
         <HeadlineStat
+          data-cy="stats-headline-mean-arrival"
           label={t("statsMeanArrival")}
           value={summary.mean_local_time ?? NO_VALUE}
           subline={fromStart(summary.mean_minutes)}
@@ -101,6 +102,7 @@ function ArrivalsContent({
           )}
         />
         <HeadlineStat
+          data-cy="stats-headline-busiest-quarter"
           label={t("statsBusiestQuarter")}
           value={
             summary.peak_local_time
@@ -110,6 +112,7 @@ function ArrivalsContent({
           subline={fromStart(summary.peak?.start_minute ?? null)}
         />
         <HeadlineStat
+          data-cy="stats-headline-ninety-arrived"
           label={t("statsNinetyArrived")}
           value={summary.p90_local_time ?? NO_VALUE}
           subline={fromStart(summary.p90_minutes)}
@@ -120,6 +123,7 @@ function ArrivalsContent({
           )}
         />
         <HeadlineStat
+          data-cy="stats-headline-first-hour"
           label={t("statsFirstHour")}
           value={formatRate(summary.first_hour_share, lang)}
           comparison={compareShare()}
@@ -128,6 +132,7 @@ function ArrivalsContent({
       </div>
       {summary.arrivals > 0 && (
         <ViewToggle
+          data-cy="stats-arrivals-view"
           label={t("statsViewLabel")}
           options={[
             { value: "clock", label: t("statsViewClock") },
@@ -140,7 +145,9 @@ function ArrivalsContent({
       <ChartCard title={t("statsArrivalCurve")}>
         {(headingId) =>
           summary.arrivals === 0 ? (
-            <ChartEmptyNote>{t("statsNoArrivals")}</ChartEmptyNote>
+            <ChartEmptyNote data-cy="stats-no-arrivals">
+              {t("statsNoArrivals")}
+            </ChartEmptyNote>
           ) : (
             <ArrivalCurve data={data} view={curveView} labelledBy={headingId} />
           )
@@ -159,7 +166,9 @@ function ArrivalsContent({
       <ChartCard title={t("statsLeadTime")}>
         {(headingId) =>
           lead_time.every((r) => r.signed_up === 0) ? (
-            <ChartEmptyNote>{t("statsNoSignups")}</ChartEmptyNote>
+            <ChartEmptyNote data-cy="stats-no-signups">
+              {t("statsNoSignups")}
+            </ChartEmptyNote>
           ) : (
             <>
               <LeadTimeChart rows={lead_time} />
@@ -187,7 +196,7 @@ export function ArrivalsTab({
       statsQ={statsQ}
       single={single}
       cards={HEADLINE_CARDS}
-      testId="arrivals-skeleton"
+      tab="arrivals"
       onShowAll={onShowAll}
     >
       {(data) => (

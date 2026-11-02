@@ -41,6 +41,7 @@ export function WeatherAggregate({ data }: { data: Weather }) {
   return (
     <div className="space-y-3">
       <ViewToggle
+        data-cy="stats-weather-window"
         label={t("statsWeatherWindow")}
         options={[
           { value: "during", label: t("statsWeatherDuring") },
@@ -62,7 +63,9 @@ export function WeatherAggregate({ data }: { data: Weather }) {
       <ChartCard title={t("statsTempVsAttendance")}>
         {(headingId) =>
           points.length < MIN_POINTS ? (
-            <ChartEmptyNote>{t("statsNoTempPoints")}</ChartEmptyNote>
+            <ChartEmptyNote data-cy="stats-no-temp-points">
+              {t("statsNoTempPoints")}
+            </ChartEmptyNote>
           ) : (
             <>
               <TemperatureScatter points={points} />

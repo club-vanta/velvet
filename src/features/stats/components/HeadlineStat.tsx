@@ -12,6 +12,7 @@ export function HeadlineStat({
   subline,
   comparison,
   n,
+  "data-cy": dataCy,
 }: {
   label: string;
   value: string;
@@ -19,33 +20,35 @@ export function HeadlineStat({
   subline?: string;
   comparison?: string;
   n?: number;
+  /** Names the card for tests: `stats-headline-<what it counts>`. */
+  "data-cy": string;
 }) {
   const { t, lang } = useLanguage();
   const small = n !== undefined && isSmallSample(n);
 
   return (
     <div
-      data-headline
+      data-cy={dataCy}
       className={cn(
         "min-w-0 rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4",
         small && "text-muted-foreground",
       )}
     >
       <p
-        data-slot="label"
+        data-cy="stats-headline-label"
         className="text-xs font-medium text-muted-foreground sm:text-sm"
       >
         {label}
       </p>
       <p
-        data-slot="value"
+        data-cy="stats-headline-value"
         className="mt-1 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl"
       >
         {value}
       </p>
       {subline && (
         <p
-          data-slot="subline"
+          data-cy="stats-headline-subline"
           className="text-xs text-muted-foreground break-words"
         >
           {subline}
@@ -53,14 +56,14 @@ export function HeadlineStat({
       )}
       {comparison && (
         <p
-          data-slot="comparison"
+          data-cy="stats-headline-comparison"
           className="text-xs text-muted-foreground tabular-nums"
         >
           {comparison}
         </p>
       )}
       {small && (
-        <p data-slot="sample" className="text-xs tabular-nums">
+        <p data-cy="stats-headline-sample" className="text-xs tabular-nums">
           {t("statsSample").replace("{0}", formatCount(n, lang))}
         </p>
       )}

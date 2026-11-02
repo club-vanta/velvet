@@ -7,18 +7,21 @@ export function DateField({
   min,
   max,
   onChange,
+  "data-cy": dataCy,
 }: {
   label: string;
   value: string;
   min?: string;
   max?: string;
   onChange: (value: string) => void;
+  "data-cy": string;
 }) {
   return (
     <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground sm:flex-none">
       {label}
       <Input
         type="date"
+        data-cy={dataCy}
         value={value}
         min={min}
         max={max}

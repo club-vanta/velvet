@@ -16,9 +16,11 @@ type WindowSummary = Pick<
 export function WindowStat({
   label,
   summary,
+  "data-cy": dataCy,
 }: {
   label: string;
   summary: WindowSummary | null;
+  "data-cy": string;
 }) {
   const { t, lang } = useLanguage();
   const degrees = (value: number | null) =>
@@ -43,5 +45,12 @@ export function WindowStat({
           .replace("{1}", felt)
       : (temperature ?? felt ?? undefined);
 
-  return <HeadlineStat label={label} value={value} subline={subline} />;
+  return (
+    <HeadlineStat
+      data-cy={dataCy}
+      label={label}
+      value={value}
+      subline={subline}
+    />
+  );
 }

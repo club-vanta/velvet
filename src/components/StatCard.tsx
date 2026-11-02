@@ -3,6 +3,7 @@ export function StatCard({
   headingId,
   heading = "label",
   children,
+  "data-cy": dataCy,
 }: {
   title: string;
   /** Gives the heading an id, so content inside can be labelled by it. */
@@ -10,9 +11,11 @@ export function StatCard({
   /** A short tracked label, or a sentence-case caption for a longer title. */
   heading?: "label" | "caption";
   children: React.ReactNode;
+  "data-cy"?: string;
 }) {
   return (
     <section
+      data-cy={dataCy}
       aria-label={headingId ? undefined : title}
       aria-labelledby={headingId}
       className="rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 space-y-2 sm:space-y-3 min-w-0"

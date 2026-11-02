@@ -45,26 +45,37 @@ export function NightAfterwards({
 
   return (
     <>
-      <div aria-hidden data-afterwards className="relative" {...containerProps}>
+      <div
+        aria-hidden
+        data-cy="stats-afterwards"
+        className="relative"
+        {...containerProps}
+      >
         <ol className="divide-y">
           {rows.map(({ meetup, faces }, row) => (
             <li
               key={meetup.meetup_id}
-              data-meetup={meetup.meetup_id}
+              data-cy={`stats-afterwards-${meetup.meetup_id}`}
               className="space-y-2 py-3 first:pt-0 last:pb-0"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                <p data-slot="event" className="text-sm font-medium">
+                <p
+                  data-cy="stats-afterwards-event"
+                  className="text-sm font-medium"
+                >
                   {meetup.name}
                 </p>
                 <p
-                  data-slot="date"
+                  data-cy="stats-afterwards-date"
                   className="text-xs text-muted-foreground tabular-nums"
                 >
                   {formatApiDate(meetup.date)}
                 </p>
               </div>
-              <p data-slot="came" className="text-xs text-muted-foreground">
+              <p
+                data-cy="stats-afterwards-came"
+                className="text-xs text-muted-foreground"
+              >
                 {cameLine(faces.length)}
               </p>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">

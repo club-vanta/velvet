@@ -24,7 +24,7 @@ export function NoShowGuestList({
         {guests.map((guest) => (
           <li
             key={guest.guest_id}
-            data-slot="guest"
+            data-cy={`stats-noshow-guest-${guest.guest_id}`}
             className="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
           >
             <StatsLink to={`/guests/${guest.guest_id}`}>
@@ -32,13 +32,13 @@ export function NoShowGuestList({
             </StatsLink>
             <span className="flex items-center justify-between gap-3 text-muted-foreground tabular-nums">
               <span className="min-w-0">
-                <span data-slot="missed">
+                <span data-cy="stats-noshow-guest-missed">
                   {t("statsNoShowGuestMissed")
                     .replace("{0}", formatCount(guest.no_show, lang))
                     .replace("{1}", formatCount(guest.expected, lang))}
                 </span>
                 {", "}
-                <span data-slot="last">
+                <span data-cy="stats-noshow-guest-last">
                   {t("statsNoShowGuestLast").replace(
                     "{0}",
                     formatEventDay(guest.last_no_show, withYear),
@@ -50,7 +50,10 @@ export function NoShowGuestList({
           </li>
         ))}
       </ul>
-      <StatsListMore count={total - guests.length} slot="guests-more" />
+      <StatsListMore
+        count={total - guests.length}
+        data-cy="stats-noshow-guests-more"
+      />
     </>
   );
 }

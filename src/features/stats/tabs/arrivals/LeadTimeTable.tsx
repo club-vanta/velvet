@@ -32,15 +32,15 @@ export function LeadTimeTable({
       </thead>
       <tbody className="divide-y">
         {rows.map((r) => (
-          <tr key={r.bucket} data-slot="lead-row">
+          <tr key={r.bucket} data-cy={`stats-lead-row-${r.bucket}`}>
             <th
               scope="row"
-              data-slot="bucket"
+              data-cy="stats-lead-bucket"
               className="py-1.5 text-left font-normal"
             >
               {labels.leadTime(r.bucket)}
             </th>
-            <td data-slot="signed-up" className="py-1.5 text-right">
+            <td data-cy="stats-lead-signed-up" className="py-1.5 text-right">
               {formatCount(r.signed_up, lang)}
             </td>
             <RateCell rate={r.no_show_rate} n={r.signed_up - r.cancelled} />

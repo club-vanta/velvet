@@ -22,7 +22,12 @@ export function MeteogramIconRow({ hours }: { hours: Hour[] }) {
                   media="(prefers-reduced-motion: reduce)"
                   srcSet={src.still}
                 />
-                <img src={src.animated} alt="" className="size-7 sm:size-9" />
+                <img
+                  data-cy="stats-weather-icon"
+                  src={src.animated}
+                  alt=""
+                  className="size-7 sm:size-9"
+                />
               </picture>
             ) : (
               <span className="size-7 sm:size-9" />

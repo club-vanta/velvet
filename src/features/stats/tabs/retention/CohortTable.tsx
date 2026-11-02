@@ -67,16 +67,20 @@ export function CohortTable({
             return (
               <tr
                 key={cohort.month}
+                data-cy={`stats-cohort-${cohort.month}`}
                 className={cn(small && "text-muted-foreground")}
               >
                 <th
                   scope="row"
-                  data-slot="month"
+                  data-cy="stats-cohort-month"
                   className="sticky left-0 bg-card py-1.5 pr-2 text-left font-normal whitespace-nowrap"
                 >
                   {formatCohortMonth(cohort.month, lang)}
                 </th>
-                <td data-slot="size" className="px-2 py-1.5 text-right">
+                <td
+                  data-cy="stats-cohort-size"
+                  className="px-2 py-1.5 text-right"
+                >
                   {formatCount(cohort.size, lang)}
                 </td>
                 {MONTHS_AFTER.map((m) => {
@@ -84,7 +88,7 @@ export function CohortTable({
                   return (
                     <td
                       key={m}
-                      data-slot="retention"
+                      data-cy="stats-cohort-retention"
                       className="px-2 py-1.5 text-right"
                       style={
                         rate === undefined || small

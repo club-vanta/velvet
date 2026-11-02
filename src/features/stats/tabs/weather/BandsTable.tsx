@@ -32,18 +32,18 @@ export function BandsTable({
       </thead>
       <tbody className="divide-y">
         {rows.map((r) => (
-          <tr key={r.band}>
+          <tr key={r.band} data-cy={`stats-band-${r.band}`}>
             <th
               scope="row"
-              data-slot="band"
+              data-cy="stats-band-name"
               className="py-1.5 text-left font-normal"
             >
               {t(BAND_LABEL[r.band])}
             </th>
-            <td data-slot="events" className="py-1.5 text-right">
+            <td data-cy="stats-band-events" className="py-1.5 text-right">
               {formatCount(r.events, lang)}
             </td>
-            <td data-slot="avg" className="py-1.5 text-right">
+            <td data-cy="stats-band-avg" className="py-1.5 text-right">
               {formatCount(roundAverage(r.avg_attended), lang)}
             </td>
             <RateCell rate={r.no_show_rate} n={r.events} />

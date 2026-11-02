@@ -26,7 +26,7 @@ export function MissDots({ guest }: { guest: NoShowGuest }) {
       {dots.slice(0, MAX_DOTS).map((missed, i) => (
         <span
           key={i}
-          data-slot={missed ? "dot-missed" : "dot-came"}
+          data-cy={missed ? "stats-dot-missed" : "stats-dot-came"}
           className={cn(
             "size-2 rounded-full",
             missed
@@ -36,7 +36,12 @@ export function MissDots({ guest }: { guest: NoShowGuest }) {
         />
       ))}
       {extra > 0 && (
-        <span className="text-xs text-muted-foreground">+{extra}</span>
+        <span
+          data-cy="stats-dots-extra"
+          className="text-xs text-muted-foreground"
+        >
+          +{extra}
+        </span>
       )}
     </span>
   );

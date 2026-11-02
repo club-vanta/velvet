@@ -17,7 +17,10 @@ function PaymentCount({
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd data-slot={slot} className="font-medium tabular-nums">
+      <dd
+        data-cy={`stats-payments-${slot}`}
+        className="font-medium tabular-nums"
+      >
         {value}
       </dd>
     </div>
@@ -49,7 +52,7 @@ export function PaymentsCounts({ payments }: { payments: Payments }) {
       </dl>
       {payments.cancelled_but_paid > 0 && (
         <p
-          data-slot="cancelled-paid"
+          data-cy="stats-payments-cancelled-paid"
           className="text-sm text-muted-foreground tabular-nums"
         >
           {t("statsCancelledButPaid").replace(
