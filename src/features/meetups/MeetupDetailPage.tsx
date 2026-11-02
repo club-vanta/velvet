@@ -77,7 +77,7 @@ export function MeetupDetailPage() {
   if (!activeOrg) return <NoActiveOrg />;
 
   return (
-    <div className="@container space-y-6">
+    <div className="@container space-y-6" data-cy="meetup-page">
       {meetupQ.isLoading ? (
         <MeetupHeaderSkeleton />
       ) : meetupQ.isError || !meetup ? (

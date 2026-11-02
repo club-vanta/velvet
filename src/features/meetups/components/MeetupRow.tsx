@@ -34,14 +34,14 @@ export function MeetupRow({ meetup }: { meetup: Meetup }) {
               "font-medium break-words outline-none after:absolute after:inset-0 after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset",
               timing === "past" && "text-foreground/85",
             )}
-            data-cy="meetup-row-link"
+            data-cy="meetup-link"
           >
             {meetup.name}
           </Link>
           <MeetupBadges meetup={meetup} timing={timing} />
         </div>
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
-          <span data-cy="meetup-row-date">
+          <span data-cy="meetup-when">
             {formatDate(meetup.date)}
             {/* The "Today" badge already says it for today's meetup. */}
             {timing !== "today" && <span> ({relativeDay(meetup.date)})</span>}

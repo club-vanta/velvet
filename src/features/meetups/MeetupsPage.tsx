@@ -35,7 +35,7 @@ export function MeetupsPage() {
   if (!activeOrg) return <NoActiveOrg />;
 
   return (
-    <div className="@container space-y-6">
+    <div className="@container space-y-6" data-cy="meetups-page">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t("meetups")}</h1>
         <Button onClick={() => setDialogOpen(true)} data-cy="meetups-new">
