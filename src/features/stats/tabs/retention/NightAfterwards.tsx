@@ -2,7 +2,7 @@ import type { components } from "@/api/types";
 import { formatApiDate } from "@/lib/format";
 import { useLanguage } from "@/lib/i18n";
 import { ChartTextTable } from "../../components/ChartTextTable";
-import { Face } from "./CrowdFace";
+import { Face } from "./Face";
 import { useFaceCard } from "./useFaceCard";
 import { formatCount, NO_VALUE } from "../../lib/statsFormat";
 

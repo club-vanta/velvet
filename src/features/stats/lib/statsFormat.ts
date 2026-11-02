@@ -74,6 +74,20 @@ export function spansYears(isos: string[]): boolean {
   return years.size > 1;
 }
 
+/**
+ * Per-event rows of a chart, in date order, each with the `day` its axis
+ * shows: dd/mm, or dd/mm/yy when the events span more than one year.
+ */
+export function withEventDays<T extends { date: string }>(
+  events: T[],
+): (T & { day: string })[] {
+  const withYear = spansYears(events.map((e) => e.date));
+  return sortByDate(events).map((e) => ({
+    ...e,
+    day: formatEventDay(e.date, withYear),
+  }));
+}
+
 /** Minutes from an event's start as `1:15`, or `-0:10` before it: an axis tick. */
 export function formatOffset(minutes: number): string {
   const whole = Math.round(minutes);

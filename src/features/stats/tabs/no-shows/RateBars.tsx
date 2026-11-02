@@ -1,5 +1,6 @@
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { ColumnHeader } from "../../components/ColumnHeader";
 import { formatCount, formatRate, isSmallSample } from "../../lib/statsFormat";
 
 export type RateRow = {
@@ -34,18 +35,17 @@ export function RateBars({
   dimSmallSamples?: boolean;
 }) {
   const { t, lang } = useLanguage();
-  const head = "pb-1.5 text-xs font-medium text-muted-foreground";
 
   return (
     <table aria-labelledby={labelledBy} className="w-full text-sm tabular-nums">
       <thead>
         <tr>
-          <th scope="col" className={cn(head, "text-left")}>
+          <ColumnHeader align="left" className="pt-0">
             {groupHeader}
-          </th>
-          <th scope="col" className={cn(head, "text-right")}>
+          </ColumnHeader>
+          <ColumnHeader align="right" className="pt-0">
             {rateHeader}
-          </th>
+          </ColumnHeader>
         </tr>
       </thead>
       <tbody>

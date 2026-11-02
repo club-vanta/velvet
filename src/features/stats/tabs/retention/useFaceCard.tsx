@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import type { components } from "@/api/types";
-import { FaceCard, type Align, type Shown } from "./CrowdFace";
+import { FaceCard, type Align, type Shown } from "./FaceCard";
 
 type NightGuest = components["schemas"]["NightGuestPublic"];
 

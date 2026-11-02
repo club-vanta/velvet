@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,6 +9,7 @@ import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { formatEventDay } from "../lib/statsFormat";
 import { PRESETS, type RangePreset } from "../lib/statsPeriod";
 import type { useStatsFilters } from "../hooks/useStatsFilters";
+import { DateField } from "./DateField";
 
 type Filters = ReturnType<typeof useStatsFilters>;
 
@@ -23,35 +23,6 @@ const PRESET_LABELS: Record<RangePreset, TranslationKey> = {
 };
 
 const ALL_EVENTS = "all";
-
-function DateField({
-  label,
-  value,
-  min,
-  max,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  min?: string;
-  max?: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground sm:flex-none">
-      {label}
-      <Input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => {
-          if (e.target.value) onChange(e.target.value);
-        }}
-      />
-    </label>
-  );
-}
 
 export function StatsFilterBar({ filters }: { filters: Filters }) {
   const { t } = useLanguage();

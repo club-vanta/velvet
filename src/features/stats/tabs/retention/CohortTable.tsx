@@ -1,6 +1,7 @@
 import type { components } from "@/api/types";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { ColumnHeader } from "../../components/ColumnHeader";
 import {
   formatCohortMonth,
   formatCount,
@@ -38,7 +39,6 @@ export function CohortTable({
   labelledBy: string;
 }) {
   const { t, lang } = useLanguage();
-  const head = "px-2 py-1.5 text-xs font-medium text-muted-foreground";
 
   return (
     <div className="overflow-x-auto">
@@ -48,19 +48,16 @@ export function CohortTable({
       >
         <thead>
           <tr className="border-b">
-            <th
-              scope="col"
-              className={cn(head, "sticky left-0 bg-card pl-0 text-left")}
-            >
+            <ColumnHeader align="left" className="sticky left-0 bg-card pr-2">
               {t("statsCohortMonth")}
-            </th>
-            <th scope="col" className={cn(head, "text-right")}>
+            </ColumnHeader>
+            <ColumnHeader align="right" className="px-2">
               {t("statsCohortSize")}
-            </th>
+            </ColumnHeader>
             {MONTHS_AFTER.map((m) => (
-              <th key={m} scope="col" className={cn(head, "text-right")}>
+              <ColumnHeader key={m} align="right" className="px-2">
                 +{m}
-              </th>
+              </ColumnHeader>
             ))}
           </tr>
         </thead>

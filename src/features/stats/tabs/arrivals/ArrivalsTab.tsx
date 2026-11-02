@@ -1,211 +1,36 @@
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import type { components } from "@/api/types";
-import { useArrivalsStats } from "../../api/useArrivalsStats";
-import { useLanguage } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
-import { ChartCard } from "../../components/ChartCard";
-import { useGroupLabels } from "../../lib/groupLabels";
-import { BAR_END_RIGHT, BAR_END_UP, BAR_GAP } from "../../lib/chartMarks";
-import { ChartTextTable } from "../../components/ChartTextTable";
-import { HeadlineStat } from "../../components/HeadlineStat";
-import { RateCell } from "../../components/RateCell";
 import { StatsNote } from "@/components/StatsNote";
+import { useLanguage } from "@/lib/i18n";
+import { useArrivalsStats } from "../../api/useArrivalsStats";
+import { ChartCard } from "../../components/ChartCard";
+import { ChartEmptyNote } from "../../components/ChartEmptyNote";
+import { HeadlineStat } from "../../components/HeadlineStat";
+import { StatsEmptyState } from "../../components/StatsEmptyState";
+import { StatsTabGate } from "../../components/StatsTabGate";
+import { ViewToggle } from "../../components/ViewToggle";
+import { useComparisonLine } from "../../hooks/useComparisonLine";
+import { useUrlView } from "../../hooks/useUrlView";
 import { headlineGrid } from "../../lib/headlineGrid";
-import { StatsEmptyState, StatsTabGate } from "../../components/StatsTabState";
 import {
   formatClockWindow,
   formatCount,
   formatDuration,
-  formatOffset,
-  minuteChange,
-  pointChange,
   formatRate,
+  minuteChange,
   NO_VALUE,
+  pointChange,
 } from "../../lib/statsFormat";
 import type { StatsPeriodChoice } from "../../lib/statsPeriod";
 import type { StatsTabProps } from "../../lib/statsTab";
-import { useComparisonLine } from "../../hooks/useComparisonLine";
-import { useUrlView } from "../../hooks/useUrlView";
-import { ViewToggle } from "../../components/ViewToggle";
+import { ArrivalCurve } from "./ArrivalCurve";
+import { CURVE_VIEWS } from "./curveView";
+import { LeadTimeChart } from "./LeadTimeChart";
+import { LeadTimeTable } from "./LeadTimeTable";
 
 type Arrivals = components["schemas"]["ArrivalStatsPublic"];
-type LeadRow = components["schemas"]["LeadTimeRowPublic"];
 
 /** Headline cards of the loaded tab; the skeleton shows the same count. */
 const HEADLINE_CARDS = 4;
-
-/**
- * The arrival curve by the local clock, summed over the meetups, or by the
- * time from each meetup's start, which lines up meetups that start at
- * different hours.
- */
-type CurveView = "clock" | "offset";
-
-const CURVE_VIEWS = ["clock", "offset"] as const;
-
-function ArrivalCurve({
-  data: { curve, clock_curve },
-  view,
-  labelledBy,
-}: {
-  data: Arrivals;
-  view: CurveView;
-  labelledBy: string;
-}) {
-  const { t, lang } = useLanguage();
-  const config: ChartConfig = {
-    arrivals: { label: t("statsArrivalsSeries"), color: "var(--chart-1)" },
-  };
-  const data =
-    view === "clock"
-      ? clock_curve.map((b) => ({ label: b.local_time, arrivals: b.arrivals }))
-      : curve.map((b) => ({
-          label: formatOffset(b.start_minute),
-          arrivals: b.arrivals,
-        }));
-
-  return (
-    <>
-      <ChartContainer config={config} className="aspect-auto h-64 w-full">
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-            minTickGap={24}
-          />
-          <YAxis
-            width={32}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar
-            dataKey="arrivals"
-            fill="var(--color-arrivals)"
-            radius={BAR_END_UP}
-            {...BAR_GAP}
-          />
-        </BarChart>
-      </ChartContainer>
-      <p className="text-center text-xs text-muted-foreground">
-        {t(
-          view === "clock"
-            ? "statsArrivalAxisClock"
-            : "statsArrivalAxisFromStart",
-        )}
-      </p>
-      <ChartTextTable
-        labelledBy={labelledBy}
-        headers={[t("statsArrivalTimeHeader"), t("statsArrivalsSeries")]}
-        rows={data.map(({ label, arrivals }) => ({
-          key: label,
-          cells: [label, formatCount(arrivals, lang)],
-        }))}
-      />
-    </>
-  );
-}
-
-function LeadTimeChart({ rows }: { rows: LeadRow[] }) {
-  const { t } = useLanguage();
-  const labels = useGroupLabels();
-  const config: ChartConfig = {
-    signed_up: { label: t("statsSeriesSignedUp"), color: "var(--chart-2)" },
-  };
-  const data = rows.map((r) => ({
-    label: labels.leadTime(r.bucket),
-    signed_up: r.signed_up,
-  }));
-
-  return (
-    <ChartContainer config={config} className="aspect-auto h-56 w-full">
-      <BarChart data={data} layout="vertical">
-        <CartesianGrid horizontal={false} />
-        <XAxis
-          type="number"
-          allowDecimals={false}
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis
-          type="category"
-          dataKey="label"
-          width={80}
-          tickLine={false}
-          axisLine={false}
-          interval={0}
-        />
-        <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar
-          dataKey="signed_up"
-          fill="var(--color-signed_up)"
-          radius={BAR_END_RIGHT}
-        />
-      </BarChart>
-    </ChartContainer>
-  );
-}
-
-/** Sign-ups and the no-show rate of each lead-time bucket; a rate from few people is dimmed with its n. */
-function LeadTimeTable({
-  rows,
-  labelledBy,
-}: {
-  rows: LeadRow[];
-  labelledBy: string;
-}) {
-  const { t, lang } = useLanguage();
-  const labels = useGroupLabels();
-  const head = "py-1.5 text-xs font-medium text-muted-foreground";
-
-  return (
-    <table
-      aria-labelledby={labelledBy}
-      className="mt-3 w-full text-sm tabular-nums"
-    >
-      <thead>
-        <tr className="border-b">
-          <th scope="col" className={cn(head, "text-left")}>
-            {t("statsLeadTimeHeader")}
-          </th>
-          <th scope="col" className={cn(head, "text-right")}>
-            {t("statsSeriesSignedUp")}
-          </th>
-          <th scope="col" className={cn(head, "text-right")}>
-            {t("statsNoShowRate")}
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-y">
-        {rows.map((r) => (
-          <tr key={r.bucket} data-slot="lead-row">
-            <th
-              scope="row"
-              data-slot="bucket"
-              className="py-1.5 text-left font-normal"
-            >
-              {labels.leadTime(r.bucket)}
-            </th>
-            <td data-slot="signed-up" className="py-1.5 text-right">
-              {formatCount(r.signed_up, lang)}
-            </td>
-            <RateCell rate={r.no_show_rate} n={r.signed_up - r.cancelled} />
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 function ArrivalsContent({
   data,
@@ -315,9 +140,7 @@ function ArrivalsContent({
       <ChartCard title={t("statsArrivalCurve")}>
         {(headingId) =>
           summary.arrivals === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {t("statsNoArrivals")}
-            </p>
+            <ChartEmptyNote>{t("statsNoArrivals")}</ChartEmptyNote>
           ) : (
             <ArrivalCurve data={data} view={curveView} labelledBy={headingId} />
           )
@@ -336,9 +159,7 @@ function ArrivalsContent({
       <ChartCard title={t("statsLeadTime")}>
         {(headingId) =>
           lead_time.every((r) => r.signed_up === 0) ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              {t("statsNoSignups")}
-            </p>
+            <ChartEmptyNote>{t("statsNoSignups")}</ChartEmptyNote>
           ) : (
             <>
               <LeadTimeChart rows={lead_time} />

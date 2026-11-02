@@ -2,7 +2,7 @@ import type { components } from "@/api/types";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ChartTextTable } from "../../components/ChartTextTable";
-import { Face } from "./CrowdFace";
+import { Face } from "./Face";
 import {
   bandStyle,
   FADED,
