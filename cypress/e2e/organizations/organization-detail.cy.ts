@@ -38,8 +38,7 @@ describe("Organization detail", () => {
         cy.getBySel("org-edit-submit").should("be.disabled");
         cy.getByRole("textbox", { name: "Name" })
           .should("have.value", "Club Vanta")
-          .clear()
-          .type("Vanta Club ");
+          .type("{selectall}Vanta Club ");
         stubOrganization(renamed);
         stubAllOrganizations([renamed]);
         cy.getBySel("org-edit-submit").should("have.text", "Save").click();
@@ -63,7 +62,7 @@ describe("Organization detail", () => {
       }).as("updateOrg");
 
       openEditDialog().within(() => {
-        cy.getByRole("textbox", { name: "Slug" }).clear().type("vanta");
+        cy.getByRole("textbox", { name: "Slug" }).type("{selectall}vanta");
         cy.getBySel("org-edit-submit").click();
       });
 
@@ -90,7 +89,7 @@ describe("Organization detail", () => {
       }).as("updateOrg");
 
       openEditDialog().within(() => {
-        cy.getByRole("textbox", { name: "Slug" }).clear().type("nocturna");
+        cy.getByRole("textbox", { name: "Slug" }).type("{selectall}nocturna");
         cy.getBySel("org-edit-submit").click();
       });
 

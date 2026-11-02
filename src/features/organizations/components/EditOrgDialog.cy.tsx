@@ -28,7 +28,7 @@ describe("<EditOrgDialog />", () => {
       params: { org_id: org.id },
     }).as("updateOrg");
 
-    cy.getByRole("textbox", { name: "Slug" }).clear().type("vanta");
+    cy.getByRole("textbox", { name: "Slug" }).type("{selectall}vanta");
     cy.getBySel("org-edit-submit").click();
 
     cy.wait("@updateOrg")
