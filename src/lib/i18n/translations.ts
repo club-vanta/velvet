@@ -65,3 +65,8 @@ export const translations = {
 } satisfies Record<Lang, Record<string, string>>;
 
 export type TranslationKey = keyof typeof translations.en;
+
+/** The string for `key` in `lang`. Pure, so code outside React can use it. */
+export function translate(lang: Lang, key: TranslationKey): string {
+  return translations[lang][key];
+}

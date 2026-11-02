@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from "react";
-import { translations, type Lang, type TranslationKey } from "./translations";
+import { translate, type Lang, type TranslationKey } from "./translations";
+import { readStoredLang, storeLang } from "./storedLang";
 
 type LanguageContextValue = {
   lang: Lang;
@@ -10,16 +11,15 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const stored = (localStorage.getItem("lang") as Lang) ?? "es";
-  const [lang, setLangState] = useState<Lang>(stored);
+  const [lang, setLangState] = useState<Lang>(readStoredLang);
 
   function setLang(l: Lang) {
-    localStorage.setItem("lang", l);
+    storeLang(l);
     setLangState(l);
   }
 
   function t(key: TranslationKey): string {
-    return translations[lang][key] ?? translations.en[key] ?? key;
+    return translate(lang, key);
   }
 
   return (
