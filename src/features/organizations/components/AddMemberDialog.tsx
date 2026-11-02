@@ -44,6 +44,7 @@ export function AddMemberDialog({
         <div className="space-y-4 py-2">
           <Input
             placeholder={t("username")}
+            aria-label={t("username")}
             data-cy="org-member-search"
             value={search}
             onChange={(e) => {
@@ -86,7 +87,7 @@ export function AddMemberDialog({
                 )}
               >
                 <span>{u.username}</span>
-                <span className="text-xs opacity-50">#{u.id}</span>
+                <span className="text-xs text-muted-foreground">#{u.id}</span>
               </button>
             ))}
           </div>
