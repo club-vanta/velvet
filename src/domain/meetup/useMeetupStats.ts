@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useLanguage } from "@/lib/i18n";
 import { meetupStatsKey } from "@/api/queryKeys";
+import { DOOR_REFRESH_MS } from "./refresh";
 
 /**
- * A meetup's stats, refreshed every 30s so counts keep up with check-ins
+ * A meetup's stats, refreshed regularly so counts keep up with check-ins
  * made from other devices at the door.
  */
 export function useMeetupStats(orgId: string, meetupId: string) {
@@ -20,6 +21,6 @@ export function useMeetupStats(orgId: string, meetupId: string) {
       return data;
     },
     enabled: !!orgId && !!meetupId,
-    refetchInterval: 30_000,
+    refetchInterval: DOOR_REFRESH_MS,
   });
 }
