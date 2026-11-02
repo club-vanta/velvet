@@ -100,7 +100,7 @@ export function useGenerateRecoveryCode() {
       const { data, error } = await api.POST("/staff/{user_id}/recovery-code", {
         params: { path: { user_id: user.id } },
       });
-      if (error) throw new Error("Failed to generate recovery code");
+      if (error) throw new Error(t("failedGenerateCode"));
       return data.code;
     },
     // Network failures included: the admin only needs to know to try again.
