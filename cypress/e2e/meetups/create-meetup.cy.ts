@@ -1,6 +1,10 @@
 import { makeMeetup } from "../../../src/tests/factories";
 import { apiUrlPattern } from "../../support/commands/api";
-import { expectToast, stubMeetupList } from "../../support/routes/meetups";
+import {
+  checkDialogA11y,
+  expectToast,
+  stubMeetupList,
+} from "../../support/routes/meetups";
 
 const URL = "https://mazmo.net/eventos/alter-44";
 const CREATED = makeMeetup({
@@ -200,7 +204,7 @@ describe("Create a meetup", () => {
 
   it("has no accessibility violations in the dialog", () => {
     openDialog();
-    cy.checkA11yAA('[data-cy="new-meetup-dialog"]');
+    checkDialogA11y("new-meetup-dialog");
   });
 });
 

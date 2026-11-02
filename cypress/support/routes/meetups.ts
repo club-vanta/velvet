@@ -120,6 +120,20 @@ export function checkDialogA11y(dataCy: string): void {
   cy.checkA11yAA(`[data-cy="${dataCy}"]`);
 }
 
+/**
+ * Chrome reports "ResizeObserver loop completed with undelivered
+ * notifications" when a menu's popover observes a list that re-renders under
+ * it, as filtering with the menu open does. It is harmless, and Cypress fails
+ * the test on it. Belongs in the shared e2e support (requested); until then
+ * the specs that filter through a menu call this.
+ */
+export function ignoreResizeObserverLoop(): void {
+  cy.on(
+    "uncaught:exception",
+    (err) => !err.message.includes("ResizeObserver loop"),
+  );
+}
+
 /** Asserts the app showed a toast with exactly `title`. */
 export function expectToast(
   title: string,

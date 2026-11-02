@@ -6,6 +6,7 @@ import {
 } from "../../../src/tests/factories";
 import { formatDate } from "../../../src/lib/format";
 import {
+  checkDialogA11y,
   stubGuestProfile,
   stubMeetupPage,
   visitMeetup,
@@ -246,7 +247,7 @@ describe("Meetup detail", () => {
         "/guests/g-luna",
       );
     });
-    cy.checkA11yAA('[data-cy="guest-profile-sheet"]');
+    checkDialogA11y("guest-profile-sheet");
 
     cy.getBySel("guest-profile-open-full").click();
     cy.location("pathname").should("eq", "/guests/g-luna");
