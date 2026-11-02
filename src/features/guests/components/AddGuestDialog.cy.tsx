@@ -27,12 +27,10 @@ describe("<AddGuestDialog />", () => {
     cy.getBySel("add-guest-username").type("cindydark");
     cy.getBySel("add-guest-dialog-confirm").click();
 
-    cy.wait("@add")
-      .its("request.body")
-      .should("deep.equal", {
-        username: "cindydark",
-        instagram_username: null,
-      });
+    cy.wait("@add").its("request.body").should("deep.equal", {
+      username: "cindydark",
+      instagram_username: null,
+    });
     cy.get("@onClose").should("have.been.calledOnce");
   });
 
