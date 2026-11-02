@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const COPIED_MS = 2000;
 
@@ -7,13 +7,12 @@ const COPIED_MS = 2000;
  * successful copy so the button can say so.
  */
 export function useCopyToClipboard() {
-  const [copiedAt, setCopiedAt] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
+  // Started with the state change, not in an effect after the render, so the
+  // reset is always scheduled by the time "Copied!" shows.
+  const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => {
-    if (copiedAt === null) return;
-    const timer = setTimeout(() => setCopiedAt(null), COPIED_MS);
-    return () => clearTimeout(timer);
-  }, [copiedAt]);
+  useEffect(() => () => clearTimeout(resetTimer.current), []);
 
   function copy(text: string) {
     // A refused write (no permission) or a missing clipboard (plain http
@@ -21,10 +20,14 @@ export function useCopyToClipboard() {
     // screen to copy by hand.
     if (!navigator.clipboard) return;
     void navigator.clipboard.writeText(text).then(
-      () => setCopiedAt(Date.now()),
-      () => setCopiedAt(null),
+      () => {
+        clearTimeout(resetTimer.current);
+        resetTimer.current = setTimeout(() => setCopied(false), COPIED_MS);
+        setCopied(true);
+      },
+      () => setCopied(false),
     );
   }
 
-  return { copied: copiedAt !== null, copy };
+  return { copied, copy };
 }
