@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-/** The count on a nav link, read out as "3 pending approvals". */
+/** The count on a nav link, read out as "Pending approvals: 3". */
 export function PendingBadge({
   count,
   className,
@@ -18,8 +18,8 @@ export function PendingBadge({
       data-cy="shell-pending-badge"
       className={cn("px-1.5", className)}
     >
+      <span className="sr-only">{t("navPendingApprovals")}: </span>
       {count}
-      <span className="sr-only"> {t("navPendingApprovals")}</span>
     </Badge>
   );
 }

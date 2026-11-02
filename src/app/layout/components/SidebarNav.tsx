@@ -40,7 +40,9 @@ export function SidebarNav({
           }
         >
           <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-          <span className="flex-1">{t(item.label)}</span>
+          <span data-cy="shell-sidebar-label" className="flex-1">
+            {t(item.label)}
+          </span>
           <PendingBadge count={badges[item.id] ?? 0} />
         </NavLink>
       ))}

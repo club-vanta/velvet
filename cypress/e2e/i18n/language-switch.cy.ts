@@ -8,10 +8,8 @@ function expectShellCopy(copy: {
   toggle: string;
   menu: string;
 }) {
-  cy.getBySel("shell-sidebar").should(($nav) => {
-    expect(Cypress._.map($nav.find("a"), "textContent")).to.deep.equal(
-      copy.nav,
-    );
+  cy.getBySel("shell-sidebar-label").should(($labels) => {
+    expect(Cypress._.map($labels, "textContent")).to.deep.equal(copy.nav);
   });
   cy.getByRole("heading", { name: copy.heading }).should("be.visible");
   cy.getBySel("shell-logout").should("have.text", copy.logout);

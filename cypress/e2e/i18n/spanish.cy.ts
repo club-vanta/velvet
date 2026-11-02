@@ -121,17 +121,20 @@ describe("Spanish", () => {
       cy.getByRole("navigation", { name: "Navegación principal" }).should(
         "be.visible",
       );
-      cy.getBySel("shell-sidebar").should(($nav) => {
-        expect(Cypress._.map($nav.find("a"), "textContent")).to.deep.equal([
+      cy.getBySel("shell-sidebar-label").should(($labels) => {
+        expect(Cypress._.map($labels, "textContent")).to.deep.equal([
           "Panel",
           "Eventos",
           "Invitados",
           "Estadísticas",
-          "Staff1 aprobaciones pendientes",
+          "Staff",
           "Reg. Auditoría",
           "Organizaciones",
         ]);
       });
+      cy.getByRole("link", {
+        name: "Staff Aprobaciones pendientes: 1",
+      }).should("be.visible");
       cy.getByRole("button", { name: "Ocultar barra lateral" }).click();
       cy.getByRole("button", { name: "Mostrar barra lateral" }).should(
         "be.visible",

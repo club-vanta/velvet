@@ -18,8 +18,8 @@ describe("Pending approvals badge", () => {
     cy.wait("@pending");
     cy.getBySel("shell-sidebar-link-staff")
       .findBySel("shell-pending-badge")
-      .should("have.text", "2 pending approvals");
-    cy.getByRole("link", { name: "Staff 2 pending approvals" }).should(
+      .should("have.text", "Pending approvals: 2");
+    cy.getByRole("link", { name: "Staff Pending approvals: 2" }).should(
       "be.visible",
     );
   });
@@ -34,7 +34,7 @@ describe("Pending approvals badge", () => {
     cy.getBySel("shell-bottom-link-staff")
       .findBySel("shell-pending-badge")
       .should("be.visible")
-      .and("have.text", "2 pending approvals");
+      .and("have.text", "Pending approvals: 2");
   });
 
   it("shows no badge when nobody waits", () => {
