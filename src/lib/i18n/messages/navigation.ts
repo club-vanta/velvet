@@ -1,4 +1,4 @@
-// App navigation (sidebar, bottom nav, user menu).
+// App navigation (sidebar, bottom nav, top bar).
 // Every key needs an English and a Spanish string; `es` is typed against `en`
 // so a missing translation fails the typecheck.
 
@@ -9,9 +9,18 @@ export const en = {
   navGuests: "Guests",
   navStaff: "Staff",
   navAuditLog: "Audit Log",
+  navAuditLogShort: "Log",
+  navOrganizationsShort: "Orgs",
+  navPendingApprovals: "Pending approvals",
+  mainNavigation: "Main navigation",
   logout: "Logout",
   roleAdmin: "Admin",
   roleStaff: "Staff",
+  // Top bar
+  hideSidebar: "Hide sidebar",
+  showSidebar: "Show sidebar",
+  languageMenu: "Language",
+  organizationMenu: "Organization",
 };
 
 export const es: Record<keyof typeof en, string> = {
@@ -21,7 +30,16 @@ export const es: Record<keyof typeof en, string> = {
   navGuests: "Invitados",
   navStaff: "Staff",
   navAuditLog: "Reg. Auditoría",
+  navAuditLogShort: "Log",
+  navOrganizationsShort: "Orgs",
+  navPendingApprovals: "Aprobaciones pendientes",
+  mainNavigation: "Navegación principal",
   logout: "Cerrar sesión",
   roleAdmin: "Admin",
   roleStaff: "Staff",
+  // Top bar
+  hideSidebar: "Ocultar barra lateral",
+  showSidebar: "Mostrar barra lateral",
+  languageMenu: "Idioma",
+  organizationMenu: "Organización",
 };

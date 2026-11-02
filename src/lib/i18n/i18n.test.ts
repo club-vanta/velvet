@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 import { messageModules, translations } from "./translations";
+import { readStoredLang, storeLang } from "./storedLang";
 
 const RECOVERY_KEYS = [
   "forgotPassword",
@@ -80,5 +81,23 @@ describe("i18n — message modules", () => {
     for (const mod of Object.values(messageModules)) {
       expect(Object.keys(mod.es).sort()).toEqual(Object.keys(mod.en).sort());
     }
+  });
+});
+
+describe("readStoredLang", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("defaults to Spanish when nothing is stored", () => {
+    expect(readStoredLang()).toBe("es");
+  });
+
+  it("returns the language the viewer picked", () => {
+    storeLang("en");
+    expect(readStoredLang()).toBe("en");
+  });
+
+  it("falls back to Spanish for a value that is not a known language", () => {
+    localStorage.setItem("lang", "fr");
+    expect(readStoredLang()).toBe("es");
   });
 });

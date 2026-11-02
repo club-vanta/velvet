@@ -13,6 +13,8 @@ import {
   meetupKey,
   meetupsKey,
   meetupWeatherKey,
+  pendingStaffKey,
+  staffRootKey,
   statsOrgKey,
   statsRetentionKey,
   statsRootKey,
@@ -121,5 +123,22 @@ describe("invalidateGuestBan", () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: ["meetup-guests"] });
     expect(spy).toHaveBeenCalledWith({ queryKey: guestKey("g-1") });
     expect(spy).toHaveBeenCalledWith({ queryKey: statsOrgKey("org-1") });
+  });
+});
+
+describe("pendingStaffKey", () => {
+  it("sits under the staff root, so staff changes refresh the nav badge", async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(pendingStaffKey, []);
+
+    await queryClient.invalidateQueries({ queryKey: staffRootKey });
+
+    expect(queryClient.getQueryState(pendingStaffKey)?.isInvalidated).toBe(
+      true,
+    );
+  });
+
+  it("keeps the key the staff and dashboard pages read", () => {
+    expect(pendingStaffKey).toEqual(["staff", "pending"]);
   });
 });

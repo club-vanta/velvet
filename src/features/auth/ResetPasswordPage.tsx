@@ -1,119 +1,72 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
+import { useResetPassword } from "./api/useResetPassword";
+import { AuthError } from "./components/AuthError";
+import { AuthField } from "./components/AuthField";
+import { AuthLayout } from "./components/AuthLayout";
+import { AuthSuccess } from "./components/AuthSuccess";
 import { PasswordInput } from "./components/PasswordInput";
-import { api } from "@/api/client";
-import { extractApiError } from "@/api/errors";
+import { minCharsMessage } from "./lib/password";
+import { isRecoveryState } from "./lib/recoveryState";
 
+/** Step 2 of password recovery: set a new password with the verified code. */
 export function ResetPasswordPage() {
   const { t } = useLanguage();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as { username: string; code: string } | null;
-
+  const { state } = useLocation();
+  const reset = useResetPassword();
   const [newPassword, setNewPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
-  const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!state?.username || !state?.code) {
-      navigate("/");
-    }
-  }, [state, navigate]);
-
-  if (!state?.username || !state?.code) return null;
-
+  // Only the forgot-password page can open this one (see RecoveryState).
+  if (!isRecoveryState(state)) return <Navigate to="/" replace />;
   const { username, code } = state;
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setIsPending(true);
-    try {
-      const { error } = await api.POST("/auth/reset-password", {
-        body: { username, code, new_password: newPassword },
-      });
-      if (error) {
-        setError(extractApiError(error, t("somethingWentWrong")));
-        return;
-      }
-      setSuccess(true);
-    } catch {
-      setError(t("somethingWentWrong"));
-    } finally {
-      setIsPending(false);
-    }
+    reset.mutate({ username, code, newPassword });
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl leading-none">
-              V
-            </span>
-          </div>
-          <div className="text-center space-y-0.5">
-            <h1 className="text-2xl font-semibold">Alter Tracker</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("forgotPasswordTitle")}
-            </p>
-          </div>
-        </div>
-
-        {success ? (
-          <div className="space-y-4">
-            <Alert>
-              <AlertDescription>
-                {t("passwordChanged").replace("{0}", username)}
-              </AlertDescription>
-            </Alert>
-            <Link
-              to="/"
-              className={buttonVariants({
-                variant: "outline",
-                className: "w-full",
-              })}
-            >
-              {t("backToLogin")}
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label htmlFor="new-password" className="text-sm font-medium">
-                {t("newPassword")}
-              </label>
+    <AuthLayout subtitle={t("forgotPasswordTitle")}>
+      {reset.isSuccess ? (
+        <AuthSuccess
+          message={t("passwordChanged").replace("{0}", username)}
+          name="reset"
+        />
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <AuthField
+            id="new-password"
+            label={t("newPassword")}
+            hint={minCharsMessage(t)}
+          >
+            {(control) => (
               <PasswordInput
-                id="new-password"
+                {...control}
+                data-cy="reset-password"
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                disabled={isPending}
+                disabled={reset.isPending}
                 required
-                minLength={15}
+                enforceMinLength
               />
-              <p className="text-xs text-muted-foreground">{t("minChars")}</p>
-            </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription className="whitespace-pre-line text-center">
-                  {error}
-                </AlertDescription>
-              </Alert>
             )}
+          </AuthField>
 
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? t("settingPassword") : t("setNewPassword")}
-            </Button>
-          </form>
-        )}
-      </div>
-    </main>
+          <AuthError message={reset.error?.message} data-cy="reset-error" />
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={reset.isPending}
+            data-cy="reset-submit"
+          >
+            {reset.isPending ? t("settingPassword") : t("setNewPassword")}
+          </Button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }

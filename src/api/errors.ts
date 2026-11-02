@@ -1,3 +1,19 @@
+import { readStoredLang } from "@/lib/i18n/storedLang";
+import { translate } from "@/lib/i18n/translations";
+
+/**
+ * The request never reached the API (offline, DNS, CORS). The api layer has
+ * no React context, so the message is looked up in the language the
+ * LanguageProvider persists: every screen that shows `error.message` (login
+ * alert, mutation toasts) shows it in the UI language.
+ */
+export class NetworkError extends Error {
+  constructor(options?: ErrorOptions) {
+    super(translate(readStoredLang(), "networkError"), options);
+    this.name = "NetworkError";
+  }
+}
+
 type PydanticErrorDetail = {
   loc: (string | number)[];
   msg: string;
@@ -88,18 +104,15 @@ export function extractApiError(
   if (isFastAPIError(error)) return error.detail;
 
   if (isPydanticError(error)) {
-    // juntamos todos los validation messages en una sola variable
+    // One message per invalid field, joined into one line.
     const validationMessages: string[] = error.detail
       .map((fieldError) => fieldError.msg)
       .filter((msg): msg is string => Boolean(msg));
 
-    // Si llegara a no haber validation messages, devolvemos el fallback
     if (validationMessages.length === 0) return fallbackErrorMessage;
-
-    // y despues retornamos todos los errores juntitos en un mismo string
     return validationMessages.join(", ");
   }
 
-  // Y si el error, POR ALGUNA RAZON, no tiene ningun formato conocido, devolvemos el fallback
+  // An unknown shape, such as an HTML page from a proxy.
   return fallbackErrorMessage;
 }

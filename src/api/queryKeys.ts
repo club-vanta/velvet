@@ -70,6 +70,16 @@ export const statsOperationsKey = (orgId: string, filters: StatsQuery | null) =>
 export const statsWeatherKey = (orgId: string, filters: StatsQuery | null) =>
   [...statsOrgKey(orgId), "weather", filters] as const;
 
+// Every organization (site admins only): the org switcher and the
+// organizations page share it.
+export const organizationsKey = ["organizations"] as const;
+
+// Staff accounts (site admins only). Staff changes invalidate the root, which
+// also refreshes the pending-approvals list behind the Shell's nav badge.
+export const staffRootKey = ["staff"] as const;
+
+export const pendingStaffKey = [...staffRootKey, "pending"] as const;
+
 // Address search results; the query is the trimmed text typed so far.
 export const geocodeKey = (orgId: string, q: string) =>
   ["geocode", orgId, q] as const;

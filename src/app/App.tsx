@@ -2,12 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
-import {
-  AuthProvider,
-  useAuth,
-  OrgProvider,
-  useIsOrgAdmin,
-} from "@/domain/session";
+import { AuthProvider, useAuth, OrgProvider } from "@/domain/session";
 import { LanguageProvider } from "@/lib/i18n";
 import {
   LoginPage,
@@ -15,6 +10,7 @@ import {
   ForgotPasswordPage,
   ResetPasswordPage,
 } from "@/features/auth";
+import { canAccess, useViewer, type Access } from "./access";
 import { Shell } from "./layout/Shell";
 import { DashboardPage } from "@/features/dashboard";
 import { MeetupsPage, MeetupDetailRoute } from "@/features/meetups";
@@ -41,10 +37,11 @@ function StatsPageFallback() {
   );
 }
 
+// Routes a viewer may not open are left out, so they fall through to the
+// dashboard. The nav (layout/navItems.ts) uses the same access levels.
 function AuthenticatedRoutes() {
-  const { user } = useAuth();
-  const isSiteAdmin = user?.role.name === "SITE_ADMIN";
-  const canSeeOrgs = useIsOrgAdmin();
+  const viewer = useViewer();
+  const can = (access: Access) => canAccess(access, viewer);
 
   return (
     <Shell>
@@ -54,7 +51,7 @@ function AuthenticatedRoutes() {
         <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
         <Route path="/guests" element={<GuestsPage />} />
         <Route path="/guests/:guestId" element={<GuestDetailPage />} />
-        {canSeeOrgs && (
+        {can("orgAdmin") && (
           <Route
             path="/stats"
             element={
@@ -64,12 +61,12 @@ function AuthenticatedRoutes() {
             }
           />
         )}
-        {isSiteAdmin && <Route path="/staff" element={<StaffPage />} />}
-        {canSeeOrgs && <Route path="/events" element={<EventsPage />} />}
-        {canSeeOrgs && (
+        {can("siteAdmin") && <Route path="/staff" element={<StaffPage />} />}
+        {can("orgAdmin") && <Route path="/events" element={<EventsPage />} />}
+        {can("orgAdmin") && (
           <Route path="/organizations" element={<OrganizationsPage />} />
         )}
-        {canSeeOrgs && (
+        {can("orgAdmin") && (
           <Route
             path="/organizations/:orgId"
             element={<OrganizationDetailPage />}

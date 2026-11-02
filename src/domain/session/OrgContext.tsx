@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { organizationsKey } from "@/api/queryKeys";
 import { useAuth } from "./AuthContext";
 
 export type ActiveOrg = {
@@ -32,9 +33,12 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
 
   const { data: allOrgsData, isLoading: allOrgsLoading } = useQuery({
-    queryKey: ["organizations"],
+    queryKey: organizationsKey,
+    // Same contract as the organizations page, which shares the key: throw
+    // on error instead of caching `undefined`.
     queryFn: async () => {
-      const { data } = await api.GET("/organizations/");
+      const { data, error } = await api.GET("/organizations/");
+      if (error) throw new Error("Failed to load organizations");
       return data;
     },
     enabled: !!user && isSiteAdmin,
