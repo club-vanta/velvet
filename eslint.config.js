@@ -3,6 +3,7 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import jsxA11y from "eslint-plugin-jsx-a11y";
+import pluginCypress from "eslint-plugin-cypress";
 import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
 
@@ -75,5 +76,29 @@ export default defineConfig([
     rules: restrict(
       upward(["app", "features", "domain", "components"], "lib, hooks and api"),
     ),
+  },
+  {
+    // Cypress specs and support code: the rules behind the Cypress
+    // best-practices guide (data-cy selectors, no arbitrary waits, no
+    // assigning command return values, no .pause()/.debug() left behind).
+    files: ["cypress/**/*.{ts,tsx}", "src/**/*.cy.tsx"],
+    extends: [pluginCypress.configs.recommended],
+    rules: {
+      "cypress/require-data-selectors": "error",
+      "cypress/no-force": "error",
+      "cypress/no-pause": "error",
+      "cypress/no-debug": "error",
+      "cypress/no-and": "off",
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    // The selector commands are the one place that builds data-cy queries.
+    files: ["cypress/support/commands/selectors.ts"],
+    rules: { "cypress/require-data-selectors": "off" },
+  },
+  {
+    files: ["*.config.ts", "scripts/**/*.mjs", "cypress.config.ts"],
+    languageOptions: { globals: globals.node },
   },
 ]);

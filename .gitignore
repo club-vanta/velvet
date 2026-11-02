@@ -44,12 +44,17 @@ devenv.local.yaml
 # direnv
 .direnv
 
-# Playwright
+# Playwright MCP (browser automation in dev sessions)
 .playwright-mcp/
-playwright-report/
-test-results/
 
 # pre-commit
 .pre-commit-config.yaml
 .direnv
 .superpowers/
+
+# Cypress and coverage output
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+coverage/
+.nyc_output/

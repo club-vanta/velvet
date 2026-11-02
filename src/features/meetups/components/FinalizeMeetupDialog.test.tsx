@@ -10,7 +10,7 @@ import { meetupGuestsKey } from "@/api/queryKeys";
 import { LanguageProvider } from "@/lib/i18n";
 import { FinalizeMeetupDialog } from "./FinalizeMeetupDialog";
 import type { components } from "@/api/types";
-import { makeMeetup } from "@/tests/fixtures";
+import { makeMeetup } from "@/tests/factories";
 
 const mockApiGet = vi.fn();
 const mockApiPatch = vi.fn();

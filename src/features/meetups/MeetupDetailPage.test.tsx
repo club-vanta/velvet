@@ -7,7 +7,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { MeetupDetailPage } from "./MeetupDetailPage";
 import { MeetupDetailRoute } from "./MeetupDetailRoute";
 import type { components } from "@/api/types";
-import { makeMeetup } from "@/tests/fixtures";
+import { makeMeetup } from "@/tests/factories";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];

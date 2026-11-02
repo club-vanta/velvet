@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/lib/i18n";
+import { PasswordInput } from "./components/PasswordInput";
 import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
 
@@ -15,7 +14,6 @@ export function ResetPasswordPage() {
   const state = location.state as { username: string; code: string } | null;
 
   const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -90,31 +88,15 @@ export function ResetPasswordPage() {
               <label htmlFor="new-password" className="text-sm font-medium">
                 {t("newPassword")}
               </label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={isPending}
-                  required
-                  minLength={15}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              <PasswordInput
+                id="new-password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={isPending}
+                required
+                minLength={15}
+              />
               <p className="text-xs text-muted-foreground">{t("minChars")}</p>
             </div>
 

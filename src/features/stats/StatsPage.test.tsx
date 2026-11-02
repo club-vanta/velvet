@@ -12,7 +12,7 @@ import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { StatsPage } from "./StatsPage";
 import type { components } from "@/api/types";
-import { makeMeetup } from "@/tests/fixtures";
+import { makeMeetup } from "@/tests/factories";
 
 const mockApiGet = vi.fn();
 vi.mock("@/api/client", () => ({

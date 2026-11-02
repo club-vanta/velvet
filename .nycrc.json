@@ -1,0 +1,12 @@
+{
+  "report-dir": "coverage/cypress",
+  "reporter": ["html", "json", "text-summary"],
+  "extension": [".ts", ".tsx"],
+  "include": ["src/**"],
+  "exclude": [
+    "src/**/*.test.{ts,tsx}",
+    "src/**/*.cy.tsx",
+    "src/tests/**",
+    "src/api/types.ts"
+  ]
+}

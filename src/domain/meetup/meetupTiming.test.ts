@@ -6,7 +6,7 @@ import {
   meetupTiming,
 } from "./meetupTiming";
 import type { components } from "@/api/types";
-import { makeMeetup } from "@/tests/fixtures";
+import { makeMeetup } from "@/tests/factories";
 
 type Meetup = components["schemas"]["MeetupPublic"];
 

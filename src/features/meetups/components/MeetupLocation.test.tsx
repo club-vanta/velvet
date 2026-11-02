@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { LanguageProvider } from "@/lib/i18n";
-import { makeMeetup } from "@/tests/fixtures";
+import { makeMeetup } from "@/tests/factories";
 import { MeetupLocation } from "./MeetupLocation";
 
 const mockApiGet = vi.fn();

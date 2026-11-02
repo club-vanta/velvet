@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    name: Typecheck, lint, format, build, test
+    name: Typecheck, lint, format, build, unit tests
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -35,5 +35,57 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Unit tests
-        run: npm run test:run
+      - name: Unit tests (with coverage)
+        run: npm run test:coverage
+
+      - name: Upload unit coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage/unit
+
+  cypress:
+    name: Cypress (E2E and component)
+    runs-on: ubuntu-latest
+    env:
+      # Instrument the app so both suites report code coverage.
+      VITE_COVERAGE: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Stubbed E2E suite: the dev server runs in "e2e" mode, so the app talks
+      # to a host that does not exist and every API call is a cy.intercept stub.
+      - name: E2E tests
+        uses: cypress-io/github-action@v7
+        with:
+          start: npm run dev:e2e
+          wait-on: "http://localhost:5200"
+          browser: chrome
+
+      - name: Component tests
+        uses: cypress-io/github-action@v7
+        with:
+          install: false
+          component: true
+          browser: chrome
+
+      - name: Upload screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cypress
+          path: coverage/cypress
+          if-no-files-found: ignore

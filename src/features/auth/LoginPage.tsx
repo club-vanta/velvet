@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
+import { PasswordInput } from "./components/PasswordInput";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -14,7 +14,6 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +51,7 @@ export function LoginPage() {
             </label>
             <Input
               id="username"
+              data-cy="login-username"
               type="text"
               autoComplete="username"
               autoCapitalize="none"
@@ -66,41 +66,31 @@ export function LoginPage() {
             <label htmlFor="password" className="text-sm font-medium">
               {t("password")}
             </label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isPending}
-                required
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+            <PasswordInput
+              id="password"
+              data-cy="login-password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isPending}
+              required
+            />
           </div>
 
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" data-cy="login-error">
               <AlertDescription className="whitespace-pre-line text-center">
                 {error}
               </AlertDescription>
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isPending}
+            data-cy="login-submit"
+          >
             {isPending ? t("signingIn") : t("signIn")}
           </Button>
         </form>

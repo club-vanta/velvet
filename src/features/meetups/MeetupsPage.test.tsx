@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { LanguageProvider } from "@/lib/i18n";
 import { MeetupsPage } from "./MeetupsPage";
 import type { components } from "@/api/types";
-import { makeMeetup } from "@/tests/fixtures";
+import { makeMeetup } from "@/tests/factories";
 
 const mockApiGet = vi.fn();
 const mockApiPost = vi.fn();

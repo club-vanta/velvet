@@ -76,11 +76,14 @@ describe("ResetPasswordPage", () => {
     const user = userEvent.setup();
     renderPage();
     const input = screen.getByLabelText(/nueva contraseña/i);
-    const toggle = screen.getByRole("button", { name: "" }); // icon-only button
     expect(input).toHaveAttribute("type", "password");
-    await user.click(toggle);
+    await user.click(
+      screen.getByRole("button", { name: "Mostrar contraseña" }),
+    );
     expect(input).toHaveAttribute("type", "text");
-    await user.click(toggle);
+    await user.click(
+      screen.getByRole("button", { name: "Ocultar contraseña" }),
+    );
     expect(input).toHaveAttribute("type", "password");
   });
 

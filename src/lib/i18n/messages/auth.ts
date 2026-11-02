@@ -3,6 +3,8 @@
 // so a missing translation fails the typecheck.
 
 export const en = {
+  showPassword: "Show password",
+  hidePassword: "Hide password",
   // Login
   staffPortal: "Staff portal",
   username: "Username",
@@ -48,6 +50,8 @@ export const en = {
 };
 
 export const es: Record<keyof typeof en, string> = {
+  showPassword: "Mostrar contraseña",
+  hidePassword: "Ocultar contraseña",
   // Login
   staffPortal: "Portal de staff",
   username: "Usuario",
