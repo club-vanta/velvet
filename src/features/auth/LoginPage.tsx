@@ -1,113 +1,81 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
+import { useLogin } from "./api/useLogin";
+import { AuthError } from "./components/AuthError";
+import { AuthField } from "./components/AuthField";
+import { AuthFooterLink } from "./components/AuthFooterLink";
+import { AuthLayout } from "./components/AuthLayout";
 import { PasswordInput } from "./components/PasswordInput";
 
 export function LoginPage() {
-  const { login } = useAuth();
   const { t } = useLanguage();
+  const login = useLogin();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setIsPending(true);
-    try {
-      await login(username, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("somethingWentWrong"));
-    } finally {
-      setIsPending(false);
-    }
+    login.mutate({ username, password });
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl leading-none">
-              V
-            </span>
-          </div>
-          <div className="text-center space-y-0.5">
-            <h1 className="text-2xl font-semibold">Alter Tracker</h1>
-            <p className="text-sm text-muted-foreground">{t("staffPortal")}</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="username" className="text-sm font-medium">
-              {t("username")}
-            </label>
+    <AuthLayout subtitle={t("staffPortal")}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthField id="username" label={t("username")}>
+          {(control) => (
             <Input
-              id="username"
+              {...control}
               data-cy="login-username"
               type="text"
               autoComplete="username"
               autoCapitalize="none"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              disabled={isPending}
+              disabled={login.isPending}
               required
             />
-          </div>
+          )}
+        </AuthField>
 
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium">
-              {t("password")}
-            </label>
+        <AuthField id="password" label={t("password")}>
+          {(control) => (
             <PasswordInput
-              id="password"
+              {...control}
               data-cy="login-password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isPending}
+              disabled={login.isPending}
               required
             />
-          </div>
-
-          {error && (
-            <Alert variant="destructive" data-cy="login-error">
-              <AlertDescription className="whitespace-pre-line text-center">
-                {error}
-              </AlertDescription>
-            </Alert>
           )}
+        </AuthField>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isPending}
-            data-cy="login-submit"
-          >
-            {isPending ? t("signingIn") : t("signIn")}
-          </Button>
-        </form>
+        <AuthError message={login.error?.message} data-cy="login-error" />
 
-        <p className="text-center text-xs text-muted-foreground">
-          <Link to="/forgot-password" className="underline underline-offset-2">
-            {t("forgotPassword")}
-          </Link>
-        </p>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={login.isPending}
+          data-cy="login-submit"
+        >
+          {login.isPending ? t("signingIn") : t("signIn")}
+        </Button>
+      </form>
 
-        <p className="text-center text-xs text-muted-foreground">
-          {t("noAccount")}{" "}
-          <Link to="/signup" className="underline underline-offset-2">
-            {t("signUpLink")}
-          </Link>
-        </p>
-      </div>
-    </main>
+      <AuthFooterLink to="/forgot-password" data-cy="login-forgot-link">
+        {t("forgotPassword")}
+      </AuthFooterLink>
+
+      <AuthFooterLink
+        to="/signup"
+        prompt={t("noAccount")}
+        data-cy="login-signup-link"
+      >
+        {t("signUpLink")}
+      </AuthFooterLink>
+    </AuthLayout>
   );
 }

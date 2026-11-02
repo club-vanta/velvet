@@ -1,109 +1,82 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useLanguage } from "@/lib/i18n";
-import { api } from "@/api/client";
-import { extractApiError } from "@/api/errors";
+import { useVerifyRecoveryCode } from "./api/useVerifyRecoveryCode";
+import { AuthError } from "./components/AuthError";
+import { AuthField } from "./components/AuthField";
+import { AuthFooterLink } from "./components/AuthFooterLink";
+import { AuthLayout } from "./components/AuthLayout";
+import type { RecoveryState } from "./lib/recoveryState";
 
+/** Step 1 of password recovery: check the code a site admin generated. */
 export function ForgotPasswordPage() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const verify = useVerifyRecoveryCode();
   const [username, setUsername] = useState("");
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setIsPending(true);
-    try {
-      const { error } = await api.POST("/auth/verify-recovery-code", {
-        body: { username, code },
-      });
-      if (error) {
-        setError(extractApiError(error, t("invalidRecoveryCode")));
-        return;
-      }
-      navigate("/reset-password", { state: { username, code } });
-    } catch {
-      setError(t("somethingWentWrong"));
-    } finally {
-      setIsPending(false);
-    }
+    const state: RecoveryState = { username, code };
+    verify.mutate(state, {
+      onSuccess: () => navigate("/reset-password", { state }),
+    });
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl leading-none">
-              V
-            </span>
-          </div>
-          <div className="text-center space-y-0.5">
-            <h1 className="text-2xl font-semibold">Alter Tracker</h1>
-            <p className="text-sm text-muted-foreground">
-              {t("forgotPasswordTitle")}
-            </p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="username" className="text-sm font-medium">
-              {t("username")}
-            </label>
+    <AuthLayout subtitle={t("forgotPasswordTitle")}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthField id="username" label={t("username")}>
+          {(control) => (
             <Input
-              id="username"
+              {...control}
+              data-cy="forgot-username"
               type="text"
               autoComplete="username"
               autoCapitalize="none"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              disabled={isPending}
+              disabled={verify.isPending}
               required
             />
-          </div>
+          )}
+        </AuthField>
 
-          <div className="space-y-1">
-            <label htmlFor="code" className="text-sm font-medium">
-              {t("recoveryCodeLabel")}
-            </label>
+        <AuthField id="code" label={t("recoveryCodeLabel")}>
+          {(control) => (
             <Input
-              id="code"
+              {...control}
+              data-cy="forgot-code"
               type="text"
               inputMode="numeric"
+              autoComplete="one-time-code"
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              disabled={isPending}
+              disabled={verify.isPending}
               required
             />
-          </div>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription className="whitespace-pre-line text-center">
-                {error}
-              </AlertDescription>
-            </Alert>
           )}
+        </AuthField>
 
-          <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? t("verifying") : t("verifyCode")}
-          </Button>
-        </form>
+        <AuthError message={verify.error?.message} data-cy="forgot-error" />
 
-        <p className="text-center text-xs text-muted-foreground">
-          <Link to="/" className="underline underline-offset-2">
-            {t("backToLogin")}
-          </Link>
-        </p>
-      </div>
-    </main>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={verify.isPending}
+          data-cy="forgot-submit"
+        >
+          {verify.isPending ? t("verifying") : t("verifyCode")}
+        </Button>
+      </form>
+
+      <AuthFooterLink to="/" data-cy="forgot-back-to-login">
+        {t("backToLogin")}
+      </AuthFooterLink>
+    </AuthLayout>
   );
 }
