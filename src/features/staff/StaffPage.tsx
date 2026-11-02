@@ -1,10 +1,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
 import { useAllStaff, usePendingStaff } from "./api/useStaff";
+import { LoadError } from "./components/LoadError";
 import { StaffTable } from "./components/StaffTable";
 
 export function StaffPage() {
@@ -19,14 +18,11 @@ export function StaffPage() {
       <h1 className="text-2xl font-semibold">{t("staffManagement")}</h1>
 
       {allQ.isError && (
-        <Alert variant="destructive" data-cy="staff-error">
-          <AlertDescription className="flex items-center justify-between">
-            {t("failedLoadStaff")}
-            <Button variant="ghost" size="sm" onClick={() => allQ.refetch()}>
-              {t("retry")}
-            </Button>
-          </AlertDescription>
-        </Alert>
+        <LoadError
+          data-cy="staff-error"
+          message={t("failedLoadStaff")}
+          onRetry={() => allQ.refetch()}
+        />
       )}
 
       <Tabs defaultValue="all">
@@ -52,13 +48,22 @@ export function StaffPage() {
             users={allQ.data ?? []}
             currentUserId={user?.id}
             isLoading={allQ.isLoading}
+            isError={allQ.isError}
           />
         </TabsContent>
-        <TabsContent value="pending" className="mt-4">
+        <TabsContent value="pending" className="mt-4 space-y-4">
+          {pendingQ.isError && (
+            <LoadError
+              data-cy="staff-pending-error"
+              message={t("failedLoadPending")}
+              onRetry={() => pendingQ.refetch()}
+            />
+          )}
           <StaffTable
             users={pendingQ.data ?? []}
             currentUserId={user?.id}
             isLoading={pendingQ.isLoading}
+            isError={pendingQ.isError}
           />
         </TabsContent>
       </Tabs>

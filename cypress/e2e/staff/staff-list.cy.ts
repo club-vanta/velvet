@@ -97,6 +97,8 @@ describe("Staff list", () => {
     cy.wait("@getStaff");
 
     cy.getBySel("staff-error").should("contain.text", "Failed to load staff.");
+    // Loading failed: that is not the same as having no accounts.
+    cy.getBySel("staff-empty").should("not.exist");
     stubStaffPage();
     cy.getBySel("staff-error").within(() => {
       cy.getByRole("button", { name: "Retry" }).click();

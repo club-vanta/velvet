@@ -27,10 +27,13 @@ export function StaffTable({
   users,
   currentUserId,
   isLoading,
+  isError,
 }: {
   users: User[];
   currentUserId: number | undefined;
   isLoading: boolean;
+  /** A failed load is not an empty list, so the empty row stays hidden. */
+  isError: boolean;
 }) {
   const { t } = useLanguage();
   const [disableTarget, setDisableTarget] = useState<User | null>(null);
@@ -68,7 +71,7 @@ export function StaffTable({
                   ))}
                 </TableRow>
               ))}
-            {!isLoading && users.length === 0 && (
+            {!isLoading && !isError && users.length === 0 && (
               <TableRow>
                 <TableCell
                   colSpan={COLUMNS}
