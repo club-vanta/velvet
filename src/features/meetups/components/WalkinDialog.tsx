@@ -79,7 +79,8 @@ export function WalkinDialog({
               {t("failedLoadGuestListShort")}
             </p>
           )}
-          {!allGuestsQ.isLoading && candidates.length === 0 && (
+          {/* A failed load is not an empty directory. */}
+          {allGuestsQ.isSuccess && candidates.length === 0 && (
             <p
               className="text-sm text-muted-foreground text-center py-4 whitespace-pre-line"
               data-cy="walkin-empty"

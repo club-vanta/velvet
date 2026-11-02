@@ -157,6 +157,17 @@ describe("Add a walk-in", () => {
     );
   });
 
+  it("says the directory failed instead of claiming everyone is listed", () => {
+    cy.stubApiError("GET", "/guests/", { statusCode: 500 }).as("directory");
+    openPicker();
+
+    cy.getBySel("walkin-error").should(
+      "have.text",
+      "Failed to load guest list.",
+    );
+    cy.getBySel("walkin-empty").should("not.exist");
+  });
+
   it("shows placeholders while the directory loads", () => {
     cy.stubApi("GET", "/guests/", {
       body: { total: DIRECTORY.length, guests: DIRECTORY },
