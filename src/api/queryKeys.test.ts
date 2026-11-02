@@ -14,7 +14,7 @@ import {
   meetupsKey,
   meetupWeatherKey,
   pendingStaffKey,
-  staffRootKey,
+  staffKey,
   statsOrgKey,
   statsRetentionKey,
   statsRootKey,
@@ -131,7 +131,7 @@ describe("pendingStaffKey", () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(pendingStaffKey, []);
 
-    await queryClient.invalidateQueries({ queryKey: staffRootKey });
+    await queryClient.invalidateQueries({ queryKey: staffKey });
 
     expect(queryClient.getQueryState(pendingStaffKey)?.isInvalidated).toBe(
       true,
