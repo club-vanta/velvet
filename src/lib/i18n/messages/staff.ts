@@ -19,7 +19,7 @@ export const en = {
   statusDisabled: "Disabled",
   statusPending: "Pending",
   statusActive: "Active",
-  disableDialogTitle: "Disable",
+  disableDialogTitle: "Disable {0}?",
   disableReasonPlaceholder: "e.g. Left the organisation",
   disabling: "Disabling…",
   disableAccount: "Disable account",
@@ -28,6 +28,12 @@ export const en = {
   approvalRevoked: "Approval revoked",
   roleUpdated: "Role updated",
   accountReenabled: "Account re-enabled",
+  failedLoadPending: "Failed to load pending staff.",
+  failedApproval: "Failed to update approval status",
+  failedUpdateRole: "Failed to update role",
+  failedEnable: "Failed to enable account",
+  userDisabled: "{0} disabled",
+  roleOf: "Role of {0}",
 };
 
 export const es: Record<keyof typeof en, string> = {
@@ -47,7 +53,7 @@ export const es: Record<keyof typeof en, string> = {
   statusDisabled: "Deshabilitado",
   statusPending: "Pendiente",
   statusActive: "Activo",
-  disableDialogTitle: "¿Deshabilitar a",
+  disableDialogTitle: "¿Deshabilitar a {0}?",
   disableReasonPlaceholder: "Ej: Dejó la organización",
   disabling: "Deshabilitando…",
   disableAccount: "Deshabilitar cuenta",
@@ -56,4 +62,10 @@ export const es: Record<keyof typeof en, string> = {
   approvalRevoked: "Aprobación revocada",
   roleUpdated: "Rol actualizado",
   accountReenabled: "Cuenta reactivada",
+  failedLoadPending: "Error al cargar staff pendiente.",
+  failedApproval: "Error al actualizar la aprobación",
+  failedUpdateRole: "Error al actualizar el rol",
+  failedEnable: "Error al habilitar la cuenta",
+  userDisabled: "{0} deshabilitado",
+  roleOf: "Rol de {0}",
 };
