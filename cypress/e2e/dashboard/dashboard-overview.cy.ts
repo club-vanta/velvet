@@ -72,6 +72,14 @@ describe("Dashboard overview", () => {
       "contain.text",
       "Failed to load meetups.",
     );
+    // A failed load is neither "no meetups" nor a total of zero.
+    cy.getBySel("dashboard-meetups-empty").should("not.exist");
+    cy.getBySel("dashboard-total-meetups").should("not.exist");
+    cy.getBySel("dashboard-total-meetups-error").should("have.text", "—");
+    cy.getBySel("dashboard-total-meetups-failed").should(
+      "have.text",
+      "Could not load",
+    );
     stubDashboard({ meetups });
     cy.getBySel("dashboard-meetups-error").within(() => {
       cy.getByRole("button", { name: "Retry" }).click();
@@ -79,6 +87,21 @@ describe("Dashboard overview", () => {
     cy.wait("@getMeetups");
     cy.getBySel("dashboard-meetups-error").should("not.exist");
     cy.getBySel("dashboard-total-meetups").should("have.text", "6");
+  });
+
+  it("does not count guests as zero when they fail to load", () => {
+    stubDashboard({ meetups });
+    cy.stubApiError("GET", "/guests/", { statusCode: 500 }).as("getGuests");
+    cy.visit("/dashboard");
+    cy.wait("@getGuests");
+
+    cy.getBySel("dashboard-total-meetups").should("have.text", "6");
+    cy.getBySel("dashboard-total-guests").should("not.exist");
+    cy.getBySel("dashboard-total-guests-error").should("have.text", "—");
+    cy.getBySel("dashboard-total-guests-failed").should(
+      "have.text",
+      "Could not load",
+    );
   });
 
   it("opens the new meetup form from the shortcut", () => {

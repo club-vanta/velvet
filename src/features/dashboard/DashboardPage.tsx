@@ -59,11 +59,23 @@ export function DashboardPage() {
       )}
 
       <OrgTotals
-        meetups={{ value: meetupsQ.data?.total, loading: meetupsQ.isLoading }}
-        guests={{ value: guestsQ.data?.total, loading: guestsQ.isLoading }}
+        meetups={{
+          value: meetupsQ.data?.total,
+          loading: meetupsQ.isLoading,
+          error: meetupsQ.isError,
+        }}
+        guests={{
+          value: guestsQ.data?.total,
+          loading: guestsQ.isLoading,
+          error: guestsQ.isError,
+        }}
         pending={
           isSiteAdmin
-            ? { value: pendingQ.data?.length, loading: pendingQ.isLoading }
+            ? {
+                value: pendingQ.data?.length,
+                loading: pendingQ.isLoading,
+                error: pendingQ.isError,
+              }
             : undefined
         }
       />

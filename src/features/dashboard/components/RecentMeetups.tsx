@@ -53,7 +53,7 @@ export function RecentMeetups({
           </ul>
         )}
 
-        {!isLoading && meetups.length === 0 && (
+        {!isLoading && !isError && meetups.length === 0 && (
           <p
             className="px-4 py-8 text-center text-sm text-muted-foreground"
             data-cy="dashboard-meetups-empty"

@@ -4,10 +4,12 @@ import { Fact, FactStrip } from "@/components/FactStrip";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-export type Total = { value?: number; loading: boolean };
+export type Total = { value?: number; loading: boolean; error: boolean };
 
 function TotalValue({ total, cy }: { total: Total; cy: string }) {
   if (total.loading) return <Skeleton className="mt-1 h-6 w-10" />;
+  // A failed load is not zero; the fact's hint says it failed.
+  if (total.error) return <span data-cy={`${cy}-error`}>—</span>;
   return (
     <span className="tabular-nums" data-cy={cy}>
       {total.value ?? 0}
@@ -16,7 +18,8 @@ function TotalValue({ total, cy }: { total: Total; cy: string }) {
 }
 
 function PendingApprovals({ total }: { total: Total }) {
-  if (total.loading) return <Skeleton className="mt-1 h-6 w-10" />;
+  if (total.loading || total.error)
+    return <TotalValue total={total} cy="dashboard-pending-approvals" />;
   const value = total.value ?? 0;
   return (
     <Link
@@ -46,19 +49,32 @@ export function OrgTotals({
   pending?: Total;
 }) {
   const { t } = useLanguage();
+  const failed = (total: Total, cy: string) =>
+    total.error ? (
+      <span data-cy={`${cy}-failed`}>{t("totalFailed")}</span>
+    ) : null;
 
   return (
     <section className="overflow-hidden rounded-xl border bg-card">
       <h2 className="sr-only">{t("orgTotals")}</h2>
       <FactStrip cols={pending ? 3 : 2}>
-        <Fact label={t("totalMeetups")}>
+        <Fact
+          label={t("totalMeetups")}
+          hint={failed(meetups, "dashboard-total-meetups")}
+        >
           <TotalValue total={meetups} cy="dashboard-total-meetups" />
         </Fact>
-        <Fact label={t("totalGuests")}>
+        <Fact
+          label={t("totalGuests")}
+          hint={failed(guests, "dashboard-total-guests")}
+        >
           <TotalValue total={guests} cy="dashboard-total-guests" />
         </Fact>
         {pending && (
-          <Fact label={t("pendingApprovals")}>
+          <Fact
+            label={t("pendingApprovals")}
+            hint={failed(pending, "dashboard-pending-approvals")}
+          >
             <PendingApprovals total={pending} />
           </Fact>
         )}
