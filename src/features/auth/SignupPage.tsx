@@ -9,7 +9,6 @@ import { AuthFooterLink } from "./components/AuthFooterLink";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthSuccess } from "./components/AuthSuccess";
 import { PasswordInput } from "./components/PasswordInput";
-import { MIN_PASSWORD_LENGTH } from "./lib/password";
 
 export function SignupPage() {
   const { t } = useLanguage();
@@ -59,7 +58,7 @@ export function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={register.isPending}
               required
-              minLength={MIN_PASSWORD_LENGTH}
+              enforceMinLength
             />
           )}
         </AuthField>

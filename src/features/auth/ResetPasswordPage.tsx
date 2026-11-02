@@ -8,7 +8,6 @@ import { AuthField } from "./components/AuthField";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthSuccess } from "./components/AuthSuccess";
 import { PasswordInput } from "./components/PasswordInput";
-import { MIN_PASSWORD_LENGTH } from "./lib/password";
 import { isRecoveryState } from "./lib/recoveryState";
 
 /** Step 2 of password recovery: set a new password with the verified code. */
@@ -50,7 +49,7 @@ export function ResetPasswordPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={reset.isPending}
                 required
-                minLength={MIN_PASSWORD_LENGTH}
+                enforceMinLength
               />
             )}
           </AuthField>
