@@ -14,12 +14,16 @@ export function MemberRow({
   member,
   isSelf,
   isRemoving,
+  removeDisabled,
   onRoleChange,
   onRemove,
 }: {
   member: OrgMember;
   isSelf: boolean;
+  /** This member's removal is in flight. */
   isRemoving: boolean;
+  /** Any removal is in flight: one at a time. */
+  removeDisabled: boolean;
   onRoleChange: (role: string) => void;
   onRemove: () => void;
 }) {
@@ -46,7 +50,7 @@ export function MemberRow({
           className="text-destructive hover:text-destructive"
           data-cy="org-member-remove"
           onClick={onRemove}
-          disabled={isRemoving || isSelf}
+          disabled={removeDisabled || isSelf}
         >
           {isRemoving ? t("removing") : t("removeMember")}
         </Button>

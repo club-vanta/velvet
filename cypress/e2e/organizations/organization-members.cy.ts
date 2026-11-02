@@ -105,6 +105,31 @@ describe("Organization members", () => {
       cy.getBySelLike("org-member-row-").should("have.length", 2);
     });
 
+    it("marks only the member being removed while the request runs", () => {
+      cy.stubApi("DELETE", "/organizations/{org_id}/members/{user_id}", {
+        body: undefined,
+        statusCode: 204,
+        delay: 1000,
+      }).as("removeMember");
+      stubMembers([owner, luz]);
+
+      memberRow(mar.user_id).findBySel("org-member-remove").click();
+
+      memberRow(mar.user_id)
+        .findBySel("org-member-remove")
+        .should("have.text", "Removing…")
+        .and("be.disabled");
+      // One removal at a time, but the other rows keep their label.
+      memberRow(luz.user_id)
+        .findBySel("org-member-remove")
+        .should("have.text", "Remove")
+        .and("be.disabled");
+      cy.wait("@removeMember");
+      memberRow(luz.user_id)
+        .findBySel("org-member-remove")
+        .should("be.enabled");
+    });
+
     it("keeps the member and shows the reason when removal is refused", () => {
       cy.stubApiError("DELETE", "/organizations/{org_id}/members/{user_id}", {
         statusCode: 404,

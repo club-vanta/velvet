@@ -98,7 +98,10 @@ export function MembersSection({ orgId }: { orgId: string }) {
                 key={m.user_id}
                 member={m}
                 isSelf={m.user_id === user?.id}
-                isRemoving={remove.isPending}
+                isRemoving={
+                  remove.isPending && remove.variables?.user_id === m.user_id
+                }
+                removeDisabled={remove.isPending}
                 onRoleChange={(role) => updateRole.mutate({ member: m, role })}
                 onRemove={() => remove.mutate(m)}
               />
