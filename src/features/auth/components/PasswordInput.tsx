@@ -3,7 +3,11 @@ import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { MIN_PASSWORD_LENGTH } from "../lib/password";
+import {
+  MIN_PASSWORD_LENGTH,
+  minCharsMessage,
+  passwordLength,
+} from "../lib/password";
 
 type Props = Omit<React.ComponentProps<typeof Input>, "type" | "minLength"> & {
   /**
@@ -26,9 +30,9 @@ export function PasswordInput({
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (enforceMinLength) {
-      const { length } = e.target.value;
+      const length = passwordLength(e.target.value);
       const tooShort = length > 0 && length < MIN_PASSWORD_LENGTH;
-      e.target.setCustomValidity(tooShort ? t("minChars") : "");
+      e.target.setCustomValidity(tooShort ? minCharsMessage(t) : "");
     }
     onChange?.(e);
   }

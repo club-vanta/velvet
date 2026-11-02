@@ -15,7 +15,7 @@ export const en = {
   signUpLink: "Sign up",
   // Signup
   createAccount: "Create account",
-  minChars: "Minimum 15 characters.",
+  minChars: "Minimum {0} characters.",
   signingUp: "Signing up…",
   signUp: "Sign up",
   alreadyHaveAccount: "Already have an account?",
@@ -62,7 +62,7 @@ export const es: Record<keyof typeof en, string> = {
   signUpLink: "Registrate",
   // Signup
   createAccount: "Crear cuenta",
-  minChars: "Mínimo 15 caracteres.",
+  minChars: "Mínimo {0} caracteres.",
   signingUp: "Registrando…",
   signUp: "Registrarse",
   alreadyHaveAccount: "¿Ya tenés cuenta?",

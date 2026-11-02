@@ -9,6 +9,7 @@ import { AuthFooterLink } from "./components/AuthFooterLink";
 import { AuthLayout } from "./components/AuthLayout";
 import { AuthSuccess } from "./components/AuthSuccess";
 import { PasswordInput } from "./components/PasswordInput";
+import { minCharsMessage } from "./lib/password";
 
 export function SignupPage() {
   const { t } = useLanguage();
@@ -48,7 +49,11 @@ export function SignupPage() {
           )}
         </AuthField>
 
-        <AuthField id="password" label={t("password")} hint={t("minChars")}>
+        <AuthField
+          id="password"
+          label={t("password")}
+          hint={minCharsMessage(t)}
+        >
           {(control) => (
             <PasswordInput
               {...control}

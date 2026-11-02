@@ -73,4 +73,16 @@ describe("<PasswordInput />", () => {
       cy.get("@onChange").should("have.callCount", 15);
     });
   }
+
+  it("counts an emoji as one character, as the backend does", () => {
+    cy.mount(
+      <form>
+        <label htmlFor="pw">Password</label>
+        <PasswordInput id="pw" data-cy="field" enforceMinLength />
+      </form>,
+    );
+    // 8 emoji are 16 UTF-16 units, enough for the native minlength alone.
+    cy.getBySel("field").type("🔑".repeat(8));
+    cy.getBySel("field").should("match", ":invalid");
+  });
 });
