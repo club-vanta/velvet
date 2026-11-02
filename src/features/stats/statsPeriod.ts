@@ -14,8 +14,7 @@ export type CustomRange = { from: string; to: string };
 
 /** The period the user picked, as the filters name it rather than as dates. */
 export type StatsPeriodChoice =
-  | { preset: NamedPreset }
-  | { preset: "custom"; custom: CustomRange };
+  { preset: NamedPreset } | { preset: "custom"; custom: CustomRange };
 
 export function isRangePreset(value: string | null): value is RangePreset {
   return PRESETS.some((preset) => preset === value);

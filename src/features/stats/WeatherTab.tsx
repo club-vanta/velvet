@@ -105,8 +105,7 @@ function BandsChart({ rows }: { rows: Band[] }) {
         <ChartTooltip
           content={({ active, payload }) => {
             const item = payload?.[0]?.payload as
-              | (typeof data)[number]
-              | undefined;
+              (typeof data)[number] | undefined;
             if (!active || !item) return null;
             return (
               <TooltipBox>
