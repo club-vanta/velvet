@@ -11,6 +11,7 @@ export const en = {
   add: "Add",
   adding: "Adding…",
   reasonRequired: "Reason (required)",
+  networkError: "Could not reach the server.\nCheck your connection.",
 };
 
 export const es: Record<keyof typeof en, string> = {
@@ -22,4 +23,5 @@ export const es: Record<keyof typeof en, string> = {
   add: "Agregar",
   adding: "Agregando…",
   reasonRequired: "Motivo (requerido)",
+  networkError: "No se pudo conectar con el servidor.\nVerificá tu conexión.",
 };
