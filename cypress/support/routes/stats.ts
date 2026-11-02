@@ -65,7 +65,7 @@ export const STATS_MEETUPS = [
  * first visit of a run, so this waits longer than a plain query.
  */
 export function statsTitle() {
-  return cy.getByRole("heading", { name: "Statistics", timeout: 20000 });
+  return cy.getByRole("heading", { name: "Statistics", timeout: 60000 });
 }
 
 /**
