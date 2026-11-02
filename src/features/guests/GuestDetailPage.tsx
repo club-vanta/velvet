@@ -32,7 +32,7 @@ export function GuestDetailPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6" data-cy="guest-page">
       <Link
         to="/guests"
         data-cy="guest-back"

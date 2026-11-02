@@ -52,6 +52,7 @@ export function GuestAvatar({
         className,
       )}
       aria-hidden={alt === "" ? true : undefined}
+      data-cy="guest-avatar"
     >
       {showImage ? (
         <img

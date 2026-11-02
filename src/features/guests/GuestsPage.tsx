@@ -19,7 +19,7 @@ export function GuestsPage() {
   if (!activeOrg) return <NoOrganization />;
 
   return (
-    <div className="@container space-y-6">
+    <div className="@container space-y-6" data-cy="guests-page">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t("guests")}</h1>
         <div className="flex flex-wrap justify-end gap-2">

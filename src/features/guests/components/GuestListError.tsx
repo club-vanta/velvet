@@ -14,7 +14,7 @@ export function GuestListError({
   return (
     <Alert variant="destructive" data-cy="guests-error">
       <AlertDescription className="flex items-center justify-between">
-        {message}
+        <span data-cy="guests-error-message">{message}</span>
         <Button variant="ghost" size="sm" onClick={onRetry}>
           {t("retry")}
         </Button>

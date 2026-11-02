@@ -2,6 +2,7 @@
 // a complete object of the generated schema type; pass overrides for the
 // fields a test cares about. Never cast a partial object instead.
 export * from "./guest";
+export * from "./guests";
 export * from "./meetup";
 export * from "./schemas";
 export * from "./session";

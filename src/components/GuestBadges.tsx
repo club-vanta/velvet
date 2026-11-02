@@ -29,11 +29,19 @@ const GUEST_TYPE_CLASS: Record<Exclude<GuestType, "NORMAL">, string> = {
 export function GuestTypeBadge({ guestType }: { guestType: string }) {
   const { t } = useLanguage();
   if (!isGuestType(guestType)) {
-    return <Badge variant="outline">{guestType}</Badge>;
+    return (
+      <Badge variant="outline" data-cy="guest-type-badge">
+        {guestType}
+      </Badge>
+    );
   }
   if (guestType === "NORMAL") return null;
   return (
-    <Badge variant="outline" className={GUEST_TYPE_CLASS[guestType]}>
+    <Badge
+      variant="outline"
+      className={GUEST_TYPE_CLASS[guestType]}
+      data-cy="guest-type-badge"
+    >
       {t(GUEST_TYPE_LABEL[guestType])}
     </Badge>
   );
@@ -70,6 +78,7 @@ export function MazmoFlagBadges({
         <Badge
           variant="outline"
           className={cn("text-muted-foreground", className)}
+          data-cy="guest-badge-mazmo-deleted"
           title={t("mazmoDeletedHint")}
         >
           <UserX aria-hidden="true" />
@@ -81,6 +90,7 @@ export function MazmoFlagBadges({
           variant="outline"
           className={cn(MAZMO_FLAG_CLASS, className)}
           title={t("mazmoFlagHint")}
+          data-cy="guest-badge-mazmo-banned"
         >
           <TriangleAlert aria-hidden="true" />
           {t("mazmoBanned")}
@@ -91,6 +101,7 @@ export function MazmoFlagBadges({
           variant="outline"
           className={cn(MAZMO_FLAG_CLASS, className)}
           title={t("mazmoFlagHint")}
+          data-cy="guest-badge-mazmo-suspended"
         >
           <TriangleAlert aria-hidden="true" />
           {t("mazmoSuspended")}
@@ -115,6 +126,7 @@ export function PronounPill({
     <span
       title={`${t("pronouns")}: ${mazmoLabel(MAZMO_PRONOUN_LABEL, pronoun, t)}`}
       className="rounded-full border border-foreground/15 px-2 py-px text-xs font-medium"
+      data-cy="guest-pronoun"
     >
       <span className="sr-only">{t("pronouns")}: </span>
       {mazmoLabel(MAZMO_PRONOUN_SHORT, pronoun, t)}
