@@ -33,7 +33,12 @@ export function OrgRoleSelect({
       disabled={disabled}
     >
       <SelectTrigger className={className} {...triggerProps}>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue
+          placeholder={placeholder}
+          data-cy={
+            triggerProps["data-cy"] && `${triggerProps["data-cy"]}-value`
+          }
+        />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="STAFF">{t("roleStaff")}</SelectItem>
