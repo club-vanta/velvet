@@ -32,7 +32,7 @@ describe("Recovery codes", () => {
       delay: 300,
     }).as("generate");
     cy.window().then((win) => {
-      cy.stub(win.navigator.clipboard, "writeText").resolves().as("writeText");
+      cy.stub(win.navigator.clipboard, "writeText").as("writeText").resolves();
     });
 
     openRecoveryDialog().within(() => {
