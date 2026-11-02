@@ -15,6 +15,10 @@ export const meetupWeatherKey = (orgId: string, meetupId: string) =>
 export const meetupStatsKey = (orgId: string, meetupId: string) =>
   ["meetup-stats", orgId, meetupId] as const;
 
+// Every known guest (GET /guests/). The Guests page, the dashboard and the
+// walk-in picker share this one cache entry.
+export const allGuestsKey = ["guests"] as const;
+
 // Prefix of every per-guest identity query, so invalidating it also
 // refreshes the displayname history.
 export const guestKey = (guestId: string) => ["guest", guestId] as const;
@@ -101,7 +105,7 @@ export function invalidateMeetupGuests(
  * are the stats, which show displaynames and read Mazmo profiles.
  */
 export function invalidateAllGuestIdentities(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: ["guests"] });
+  void queryClient.invalidateQueries({ queryKey: allGuestsKey });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: bannedGuestsRootKey });
   void queryClient.invalidateQueries({ queryKey: ["guest"] });
@@ -118,7 +122,7 @@ export function invalidateGuestIdentity(
   queryClient: QueryClient,
   guestId: string,
 ): void {
-  void queryClient.invalidateQueries({ queryKey: ["guests"] });
+  void queryClient.invalidateQueries({ queryKey: allGuestsKey });
   void queryClient.invalidateQueries({ queryKey: bannedGuestsRootKey });
   void queryClient.invalidateQueries({ queryKey: ["meetup-guests"] });
   void queryClient.invalidateQueries({ queryKey: guestKey(guestId) });

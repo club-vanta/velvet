@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/lib/i18n";
 import { statsOrgKey } from "@/api/queryKeys";
-import { BanDialog } from "./GuestDialogs";
+import { BanDialog } from "./BanDialog";
 import { useUnbanGuest } from "../api/useUnbanGuest";
 import type { components } from "@/api/types";
 

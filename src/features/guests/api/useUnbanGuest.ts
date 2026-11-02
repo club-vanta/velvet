@@ -1,29 +1,30 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/api/client";
-import { extractApiError } from "@/api/errors";
-import { useLanguage } from "@/lib/i18n";
 import { invalidateGuestBan } from "@/api/queryKeys";
+import { useLanguage } from "@/lib/i18n";
+import { apiErrorMessage } from "../lib/apiErrorMessage";
+
+type GuestRef = { id: string; displayname: string };
 
 /**
- * Unban has no confirmation dialog (same as the Vanted tab), so it is a
- * hook rather than a dialog component.
+ * Lifts a guest's vant in `orgId` (org admins only). Unvanting has no
+ * confirmation dialog, so rows and the profile call this directly.
  */
 export function useUnbanGuest(orgId: string) {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (guest: { id: string; displayname: string }) => {
-      const { error } = await api.PATCH(
+    mutationFn: async (guest: GuestRef) => {
+      const { error, response } = await api.PATCH(
         "/organizations/{org_id}/guests/{guest_id}/unban",
-        {
-          params: {
-            path: { org_id: orgId, guest_id: guest.id },
-          },
-        },
+        { params: { path: { org_id: orgId, guest_id: guest.id } } },
       );
-      if (error) throw new Error(extractApiError(error, t("unbanFailed")));
+      if (error) {
+        throw new Error(
+          apiErrorMessage(response.status, error, {}, "unbanFailed", t),
+        );
+      }
       return guest;
     },
     onSuccess: (guest) => {
