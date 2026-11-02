@@ -98,7 +98,7 @@ export function useUpdateMemberRole(orgId: string) {
           body: { role },
         },
       );
-      if (error) throw new Error(extractApiError(error, t("roleUpdated")));
+      if (error) throw new Error(extractApiError(error, t("failedUpdateRole")));
     },
     onSuccess: () => {
       invalidate();
