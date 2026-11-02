@@ -53,6 +53,23 @@ Five agents worked in git worktrees (local branches
 (see the merge commits) together with their handoff files. Some of it is WIP:
 each area handoff says what is green and what is not.
 
+## State of the merged branch (not yet verified as a whole)
+
+All five area branches are merged. Typecheck passes on the merged tree. Not
+run yet on it: lint, Vitest, build, CT, E2E. Reported by the agents:
+
+- Vitest: 3 failures in `src/components/ReasonDialog.test.tsx` (also a timeout
+  under load) and 1 in GuestsPage tests.
+- Meetups: the last batch of Vitest tests is committed as wip and never ran;
+  the old meetups RTL tests are not deleted yet (see `meetups.md`).
+- Admin: flaky E2E "generates a code for the account and copies it"
+  (`staff-recovery-code.cy.ts`, 1 of 3 runs).
+- Auth/app: E2E `app/routes.cy.ts` "Routes for orgAdmin > opens every page of
+  the nav" timed out on the "Statistics" heading under load (stats is
+  lazy-loaded: check the timeout or wait on the stats requests).
+- Guests: final verification never ran (see `guests.md`).
+- Several CT runs were not repeated after the last review-fix commits.
+
 ## What remains, in order
 
 1. **Get the merged branch green.** Run, and fix what fails (start with the
