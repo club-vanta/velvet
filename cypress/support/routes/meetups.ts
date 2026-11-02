@@ -111,6 +111,15 @@ export function stubGuestProfile(row: MeetupGuest, meetups: Meetup[]): void {
   }).as("profileMeetups");
 }
 
+/**
+ * Scans a dialog for WCAG AA violations once its open animation is over, so
+ * axe reads its final colors rather than a frame of the fade-in.
+ */
+export function checkDialogA11y(dataCy: string): void {
+  cy.getBySel(dataCy).should("have.css", "opacity", "1");
+  cy.checkA11yAA(`[data-cy="${dataCy}"]`);
+}
+
 /** Asserts the app showed a toast with exactly `title`. */
 export function expectToast(
   title: string,

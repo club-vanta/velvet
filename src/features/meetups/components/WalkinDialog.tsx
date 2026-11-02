@@ -87,7 +87,10 @@ export function WalkinDialog({
               {query ? t("noEligibleGuests") : t("allGuestsOnList")}
             </p>
           )}
-          <div className="space-y-1 max-h-64 overflow-y-auto">
+          <div
+            className="space-y-1 max-h-64 overflow-y-auto"
+            data-cy="walkin-list"
+          >
             {visible?.map((guest) => (
               <WalkinCandidate
                 key={guest.id}

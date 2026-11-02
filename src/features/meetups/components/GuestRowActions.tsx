@@ -58,7 +58,11 @@ export function GuestRowActions({
       >
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent
+        align="end"
+        className="w-64"
+        data-cy="guest-actions-menu"
+      >
         <DropdownMenuItem onClick={() => ctx.onViewProfile(guest)}>
           <UserRound />
           {t("viewProfile")}
