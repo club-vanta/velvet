@@ -56,7 +56,7 @@ export function StaffRow({
       <TableCell>
         {can.changeRole ? (
           <Select
-            defaultValue={user.role.name}
+            value={user.role.name}
             onValueChange={(role) => isSiteRole(role) && onRoleChange(role)}
             disabled={pending.role}
           >
