@@ -31,10 +31,11 @@ export function OrgHeader({
         variant="ghost"
         size="sm"
         data-cy="org-back"
+        aria-label={t("backToOrgs")}
         onClick={() => navigate("/organizations")}
         className="h-8 w-8 p-0 mt-1 shrink-0"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
       </Button>
       <div className="flex-1 min-w-0">
         {isLoading ? (

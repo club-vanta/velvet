@@ -6,10 +6,12 @@ export const en = {
   // Organizations page
   createdAt: "Created",
   navOrganizations: "Organizations",
+  backToOrgs: "Back to organizations",
 };
 
 export const es: Record<keyof typeof en, string> = {
   // Organizations page
   createdAt: "Creado",
   navOrganizations: "Organizaciones",
+  backToOrgs: "Volver a organizaciones",
 };
