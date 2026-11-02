@@ -5,3 +5,4 @@ export * from "./guest";
 export * from "./meetup";
 export * from "./schemas";
 export * from "./session";
+export * from "./stats";
