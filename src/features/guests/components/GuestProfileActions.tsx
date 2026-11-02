@@ -1,14 +1,16 @@
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 import type { GuestAction } from "../lib/guestActions";
-import type { VantStatus } from "../lib/vantStatus";
+import { unlinkBlockedReason, type VantStatus } from "../lib/vantStatus";
 
 type Guest = components["schemas"]["GuestPublic"];
 
 /**
- * The buttons above a profile. Vant and unvant need the org's vant state,
- * so they only appear for org admins once it has loaded.
+ * The buttons above a profile. Vant, unvant and unlink need the org's vant
+ * state: vant and unvant only appear for org admins once it has loaded, and
+ * unlink stays disabled, saying why, until the guest is known not vanted.
  */
 export function GuestProfileActions({
   guest,
@@ -25,6 +27,8 @@ export function GuestProfileActions({
 }) {
   const { t } = useLanguage();
   const vanted = status === "vanted";
+  const unlinkBlocked = unlinkBlockedReason(status);
+  const hintId = useId();
   return (
     <>
       <Button
@@ -41,11 +45,8 @@ export function GuestProfileActions({
           size="sm"
           data-cy="guest-profile-unlink"
           onClick={() => onAction("unlink", guest)}
-          // The backend refuses to unlink a guest vanted in any org
-          // (ban-evasion guard). Only this org's vants are known here,
-          // so a vant elsewhere still ends in the backend's 409.
-          disabled={vanted}
-          title={vanted ? t("unlinkBlockedVanted") : undefined}
+          disabled={!!unlinkBlocked}
+          aria-describedby={unlinkBlocked ? hintId : undefined}
         >
           {t("unlinkMazmoAccount")}
         </Button>
@@ -81,6 +82,16 @@ export function GuestProfileActions({
             {t("ban")}
           </Button>
         ))}
+      {guest.mazmo_handle && unlinkBlocked && (
+        // A disabled button can't be focused, so the reason is on screen.
+        <p
+          id={hintId}
+          data-cy="guest-profile-unlink-hint"
+          className="basis-full text-xs text-muted-foreground"
+        >
+          {t(unlinkBlocked)}
+        </p>
+      )}
     </>
   );
 }

@@ -56,6 +56,7 @@ export const en = {
   unlinking: "Unlinking…",
   mazmoUnlinked: "Mazmo account unlinked",
   failedUnlinkMazmo: "Failed to unlink Mazmo account",
+  unlinkBlockedUnknown: "Can't unlink until the vant status has loaded.",
   // Guest profile
   backToGuests: "Guests",
   guestNotFound: "Guest not found",
@@ -121,6 +122,8 @@ export const es: Record<keyof typeof en, string> = {
   unlinking: "Desvinculando…",
   mazmoUnlinked: "Cuenta de Mazmo desvinculada",
   failedUnlinkMazmo: "No se pudo desvincular la cuenta de Mazmo",
+  unlinkBlockedUnknown:
+    "No se puede desvincular hasta que cargue el estado de vanteo.",
   // Guest profile
   backToGuests: "Invitados",
   guestNotFound: "No se encontró el invitado",

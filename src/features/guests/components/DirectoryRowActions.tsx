@@ -11,13 +11,14 @@ import {
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 import type { GuestAction } from "../lib/guestActions";
-import type { VantStatus } from "../lib/vantStatus";
+import { unlinkBlockedReason, type VantStatus } from "../lib/vantStatus";
 
 type Guest = components["schemas"]["GuestPublic"];
 
 /**
- * A directory row's "…" menu. Vant and unvant need the org's vant state, so
- * they only appear for org admins once it has loaded.
+ * A directory row's "…" menu. Vant, unvant and unlink need the org's vant
+ * state: vant and unvant only appear for org admins once it has loaded, and
+ * unlink stays disabled, saying why, until the guest is known not vanted.
  */
 export function DirectoryRowActions({
   guest,
@@ -33,6 +34,7 @@ export function DirectoryRowActions({
   onAction: (action: GuestAction, guest: Guest) => void;
 }) {
   const { t } = useLanguage();
+  const unlinkBlocked = unlinkBlockedReason(status);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -64,10 +66,28 @@ export function DirectoryRowActions({
           <DropdownMenuItem
             data-cy="guest-action-unlink"
             onClick={() => onAction("unlink", guest)}
-            // The backend refuses to unlink a vanted guest.
-            disabled={status === "vanted"}
+            disabled={!!unlinkBlocked}
+            // A disabled menu item stays focusable, so the reason it is
+            // disabled is read out with it.
+            aria-labelledby={`unlink-label-${guest.id}`}
+            aria-describedby={
+              unlinkBlocked ? `unlink-hint-${guest.id}` : undefined
+            }
           >
-            {t("unlinkMazmoAccount")}
+            <span className="flex flex-col gap-0.5">
+              <span id={`unlink-label-${guest.id}`}>
+                {t("unlinkMazmoAccount")}
+              </span>
+              {unlinkBlocked && (
+                <span
+                  id={`unlink-hint-${guest.id}`}
+                  data-cy="guest-action-unlink-hint"
+                  className="text-xs text-muted-foreground"
+                >
+                  {t(unlinkBlocked)}
+                </span>
+              )}
+            </span>
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem

@@ -114,6 +114,18 @@ export function shouldFitWidth(selector: string): void {
   });
 }
 
+/** Asserts the text screen readers hear as `selector`'s description. */
+export function shouldBeDescribedBy(selector: string, text: string): void {
+  cy.getBySel(selector).should(($el) => {
+    const doc = $el[0].ownerDocument;
+    const description = ($el.attr("aria-describedby") ?? "")
+      .split(" ")
+      .map((id) => doc.getElementById(id)?.textContent ?? "")
+      .join(" ");
+    expect(description).to.equal(text);
+  });
+}
+
 /** The toast the app showed last (sonner renders them in a live region). */
 export function lastToast(): Cypress.Chainable<JQuery<HTMLElement>> {
   return cy
