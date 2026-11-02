@@ -16,9 +16,12 @@ export function useCopyToClipboard() {
   }, [copiedAt]);
 
   function copy(text: string) {
-    void navigator.clipboard
-      .writeText(text)
-      .then(() => setCopiedAt(Date.now()));
+    // A refused write (no permission, insecure context) just never says
+    // "Copied!"; the code stays on screen to copy by hand.
+    void navigator.clipboard.writeText(text).then(
+      () => setCopiedAt(Date.now()),
+      () => setCopiedAt(null),
+    );
   }
 
   return { copied: copiedAt !== null, copy };
