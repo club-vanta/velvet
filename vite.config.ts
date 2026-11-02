@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { loadEnv } from "vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
@@ -47,6 +47,8 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: ["./src/tests/setup.ts"],
       passWithNoTests: true,
+      // Agent worktrees live in .claude/worktrees; their tests are not ours.
+      exclude: [...configDefaults.exclude, ".claude/**"],
       coverage: {
         provider: "istanbul",
         include: ["src/**/*.{ts,tsx}"],

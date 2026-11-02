@@ -23,8 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Git worktrees
+# Git worktrees (including the ones Claude Code agents create)
 .worktrees
+.claude/worktrees/
 
 # Terraform
 infra/terraform.tfvars

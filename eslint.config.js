@@ -25,7 +25,7 @@ const restrict = (...patterns) => ({
 });
 
 export default defineConfig([
-  globalIgnores(["dist", "coverage", ".nyc_output"]),
+  globalIgnores(["dist", "coverage", ".nyc_output", ".claude"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
