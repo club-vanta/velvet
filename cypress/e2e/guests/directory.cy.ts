@@ -139,6 +139,8 @@ describe("Guest directory", () => {
     cy.getBySel("guests-error-message")
       .should("have.text", "Failed to load guests.")
       .then(() => stubGuestsPage({ guests: [LUNA] }));
+    // A failed load is not an empty directory.
+    cy.getBySel("guests-empty").should("not.exist");
     cy.getBySel("guests-error").getByRole("button", { name: "Retry" }).click();
 
     cy.wait("@getGuests");

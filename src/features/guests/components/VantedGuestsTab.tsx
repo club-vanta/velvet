@@ -60,6 +60,7 @@ export function VantedGuestsTab({
         data-cy="guests-vanted"
         label={t("bannedGuests")}
         isLoading={isLoading}
+        isError={isError}
         total={total}
         shown={view.shown}
         emptyMessage={t("noBannedGuests")}

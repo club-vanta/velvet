@@ -69,6 +69,7 @@ export function AllGuestsTab({
         data-cy="guests-directory"
         label={t("allGuests")}
         isLoading={isLoading}
+        isError={isError}
         total={total}
         shown={view.shown}
         emptyMessage={t("noGuestsYet")}
