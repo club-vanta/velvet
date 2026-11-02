@@ -7,6 +7,7 @@ import { useLanguage } from "@/lib/i18n";
 import { useOrgEvents } from "./api/useOrgEvents";
 import { EventsTable } from "./components/EventsTable";
 import { EventTypeFilter } from "./components/EventTypeFilter";
+import { mergeEventPages } from "./lib/eventPages";
 
 export function EventsPage() {
   const { t } = useLanguage();
@@ -19,7 +20,7 @@ export function EventsPage() {
     (meetupsQ.data?.meetups ?? []).map((m) => [m.id, m.name]),
   );
   const eventsQ = useOrgEvents(orgId, eventType);
-  const events = eventsQ.data?.pages.flatMap((page) => page.events) ?? [];
+  const events = mergeEventPages(eventsQ.data?.pages ?? []);
 
   if (!activeOrg) {
     return (

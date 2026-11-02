@@ -83,6 +83,22 @@ describe("Filtering and paging the audit log", () => {
     cy.getBySel("events-load-more").should("not.exist");
   });
 
+  it("shows each event once when new ones shifted the next page", () => {
+    stubAuditLog({ events: makeEvents(50, 60), total: 63 });
+    cy.visit("/events");
+    cy.wait("@getEvents");
+
+    // Three check-ins were logged meanwhile: offset 50 starts at event 13,
+    // which the first page already showed.
+    stubAuditLog({ events: makeEvents(13, 13), total: 63 });
+    cy.getBySel("events-load-more").click();
+    cy.wait("@getEvents");
+
+    cy.getBySelLike("event-row-").should("have.length", 60);
+    cy.getBySel("event-row-11").should("have.length", 1);
+    cy.getBySel("event-row-1").should("exist");
+  });
+
   it("starts from the first page again when the filter changes", () => {
     stubAuditLog({ events: makeEvents(50, 60), total: 60 });
     cy.visit("/events");
