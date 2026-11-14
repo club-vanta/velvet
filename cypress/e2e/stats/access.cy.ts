@@ -1,4 +1,4 @@
-import type { Role } from "../../../src/tests/factories";
+import { makeMeetupStats, type Role } from "../../../src/tests/factories";
 import {
   freezeStatsToday,
   stubAttendance,
@@ -13,7 +13,11 @@ function signIn(role: Role) {
   freezeStatsToday();
   stubStatsMeetups();
   stubAttendance();
+  // The dashboard, where the nav tests start, shows today's meetup stats.
   cy.stubApi("GET", "/guests/", { body: { total: 0, guests: [] } });
+  cy.stubApi("GET", "/organizations/{org_id}/meetups/{meetup_id}/stats", {
+    body: makeMeetupStats(),
+  });
 }
 
 describe("Stats access", () => {

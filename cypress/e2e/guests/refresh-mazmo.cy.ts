@@ -97,7 +97,7 @@ describe("Refreshing guests from Mazmo", () => {
 
     lastToast().should(
       "have.text",
-      "No se pudo conectar con el servidor.\nVerificá tu conexión.",
+      "Could not reach the server.\nCheck your connection.",
     );
   });
 });

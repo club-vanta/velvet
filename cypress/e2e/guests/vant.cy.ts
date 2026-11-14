@@ -112,7 +112,7 @@ describe("Vanting a guest", () => {
 
       lastToast().should(
         "have.text",
-        "No se pudo conectar con el servidor.\nVerificá tu conexión.",
+        "Could not reach the server.\nCheck your connection.",
       );
       vantDialog().should("be.visible");
     });
