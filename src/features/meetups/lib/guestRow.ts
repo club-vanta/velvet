@@ -1,5 +1,6 @@
 import {
   isGuestType,
+  type GuestType,
   isPaymentExempt,
   PAYMENT_EXEMPT_REASON,
 } from "@/domain/guest";
@@ -30,6 +31,9 @@ export type GuestRowContext = GuestListMeetup & {
   onMarkPaid: (guest: MeetupGuest) => void;
   onUndoPayment: (guest: MeetupGuest) => void;
   onViewProfile: (guest: MeetupGuest) => void;
+  /** Whether a guest type change is in flight; every type menu waits. */
+  settingType: boolean;
+  onSetGuestType: (guest: MeetupGuest, type: GuestType) => void;
 };
 
 /**

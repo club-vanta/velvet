@@ -85,4 +85,22 @@ describe("<PasswordInput />", () => {
     cy.getBySel("field").type("🔑".repeat(8));
     cy.getBySel("field").should("match", ":invalid");
   });
+
+  it("checks a value set without typing", () => {
+    cy.mount(
+      <form>
+        <label htmlFor="pw">Password</label>
+        <PasswordInput
+          id="pw"
+          data-cy="field"
+          enforceMinLength
+          value="short"
+          onChange={() => {}}
+        />
+      </form>,
+    );
+    cy.getBySel("field")
+      .should("match", ":invalid")
+      .and("have.prop", "validationMessage", "Minimum 15 characters.");
+  });
 });

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { extractApiError } from "@/api/errors";
-import { invalidateMeetup } from "@/api/queryKeys";
+import { invalidateMeetup, meetupStatsKey, statsOrgKey } from "@/api/queryKeys";
 import { useLanguage } from "@/lib/i18n";
 
 /** Makes the meetup a paid event (`true`) or a free one (`false`). */
@@ -23,6 +23,13 @@ export function useSetPaymentRequirement(orgId: string, meetupId: string) {
         );
       return data;
     },
-    onSuccess: () => invalidateMeetup(queryClient, orgId, meetupId),
+    onSuccess: () => {
+      invalidateMeetup(queryClient, orgId, meetupId);
+      // Paid and unpaid counts depend on whether the meetup charges a fee.
+      void queryClient.invalidateQueries({
+        queryKey: meetupStatsKey(orgId, meetupId),
+      });
+      void queryClient.invalidateQueries({ queryKey: statsOrgKey(orgId) });
+    },
   });
 }

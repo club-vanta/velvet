@@ -6,3 +6,4 @@ export {
   useOrg,
   type ActiveOrg,
 } from "./OrgContext";
+export { useAllOrganizations } from "./useAllOrganizations";

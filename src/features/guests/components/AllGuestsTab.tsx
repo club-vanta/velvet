@@ -36,6 +36,9 @@ export function AllGuestsTab({
     [bannedQ.data],
   );
   const view = useDirectoryView(data?.guests, vantedIds);
+  // "Vanted only" needs the org's vant list. Until it loads, or when it
+  // failed, nobody is known to be vanted, which must not read as "no match".
+  const vantFilterUnknown = view.filters.vantedOnly && !bannedQ.isSuccess;
   const unban = useUnbanGuest(orgId);
   const total = data?.guests.length ?? 0;
 
@@ -50,6 +53,12 @@ export function AllGuestsTab({
         <GuestListError
           message={t("failedLoadGuests")}
           onRetry={() => void refetch()}
+        />
+      )}
+      {vantFilterUnknown && bannedQ.isError && (
+        <GuestListError
+          message={t("failedLoadBanned")}
+          onRetry={() => void bannedQ.refetch()}
         />
       )}
       {!isLoading && total > 0 && (
@@ -68,8 +77,8 @@ export function AllGuestsTab({
       <GuestList
         data-cy="guests-directory"
         label={t("allGuests")}
-        isLoading={isLoading}
-        isError={isError}
+        isLoading={isLoading || (vantFilterUnknown && !bannedQ.isError)}
+        isError={isError || (vantFilterUnknown && bannedQ.isError)}
         total={total}
         shown={view.shown}
         emptyMessage={t("noGuestsYet")}

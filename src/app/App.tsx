@@ -14,7 +14,7 @@ import { canAccess, useViewer, type Access } from "./access";
 import { Shell } from "./layout/Shell";
 import { DashboardPage } from "@/features/dashboard";
 import { MeetupsPage, MeetupDetailRoute } from "@/features/meetups";
-import { GuestsPage, GuestDetailPage } from "@/features/guests";
+import { GuestsPage, GuestDetailRoute } from "@/features/guests";
 import { StaffPage } from "@/features/staff";
 import { EventsPage } from "@/features/events";
 import {
@@ -50,7 +50,7 @@ function AuthenticatedRoutes() {
         <Route path="/meetups" element={<MeetupsPage />} />
         <Route path="/meetups/:id" element={<MeetupDetailRoute />} />
         <Route path="/guests" element={<GuestsPage />} />
-        <Route path="/guests/:guestId" element={<GuestDetailPage />} />
+        <Route path="/guests/:guestId" element={<GuestDetailRoute />} />
         {can("orgAdmin") && (
           <Route
             path="/stats"

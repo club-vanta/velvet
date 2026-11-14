@@ -1,5 +1,4 @@
 import { useId } from "react";
-import { toast } from "sonner";
 import { MoreHorizontal, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,6 @@ import {
   isGuestType,
 } from "@/domain/guest";
 import type { components } from "@/api/types";
-import { useSetGuestType } from "../api/useSetGuestType";
 import type { GuestRowContext } from "../lib/guestRow";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -40,9 +38,8 @@ export function GuestRowActions({
 }) {
   const { t } = useLanguage();
   const lockedHintId = useId();
-  const setType = useSetGuestType(ctx.orgId, ctx.meetupId);
   const currentType = guest.rsvp.guest_type;
-  const typeLocked = ctx.isFinalized || setType.isPending;
+  const typeLocked = ctx.isFinalized || ctx.settingType;
 
   return (
     <DropdownMenu>
@@ -80,18 +77,7 @@ export function GuestRowActions({
                 value={currentType}
                 onValueChange={(value: string) => {
                   if (!isGuestType(value) || value === currentType) return;
-                  setType.mutate(
-                    { guestId: guest.guest.id, guestType: value },
-                    {
-                      onSuccess: (data) =>
-                        toast.success(
-                          t("guestTypeChanged")
-                            .replace("{0}", data.guest.displayname)
-                            .replace("{1}", t(GUEST_TYPE_LABEL[value])),
-                        ),
-                      onError: (err) => toast.error(err.message),
-                    },
-                  );
+                  ctx.onSetGuestType(guest, value);
                 }}
               >
                 {GUEST_TYPES.map((type) => (

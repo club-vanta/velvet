@@ -82,10 +82,12 @@ describe("<FeaturedMeetup />", () => {
     cy.getBySel("dashboard-stat-rsvps").should("have.text", "0");
   });
 
-  it("has no accessibility violations", () => {
-    mountFeatured("today");
-    cy.wait("@getStats");
-    cy.getBySel("dashboard-stat-rsvps").should("be.visible");
-    cy.checkA11yAA();
-  });
+  for (const timing of ["today", "upcoming"] as const) {
+    it(`has no accessibility violations for a meetup ${timing}`, () => {
+      mountFeatured(timing);
+      cy.wait("@getStats");
+      cy.getBySel("dashboard-stat-rsvps").should("be.visible");
+      cy.checkA11yAA();
+    });
+  }
 });

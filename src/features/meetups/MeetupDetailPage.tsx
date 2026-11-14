@@ -1,11 +1,13 @@
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { GUEST_TYPE_LABEL, type GuestType } from "@/domain/guest";
 import { useIsOrgAdmin, useOrg } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
 import type { components } from "@/api/types";
 import { useCheckInGuest } from "./api/useCheckInGuest";
 import { useMeetup } from "./api/useMeetup";
 import { useMeetupGuests } from "./api/useMeetupGuests";
+import { useSetGuestType } from "./api/useSetGuestType";
 import { GuestList } from "./components/GuestList";
 import { GuestListToolbar } from "./components/GuestListToolbar";
 import { GuestProfileSheet } from "./components/GuestProfileSheet";
@@ -39,6 +41,8 @@ export function MeetupDetailPage() {
   const meetupQ = useMeetup(orgId, meetupId);
   const guestsQ = useMeetupGuests(orgId, meetupId);
   const checkIn = useCheckInGuest(orgId, meetupId);
+  // One mutation for the page, not one per row: the list can hold 1000+.
+  const setType = useSetGuestType(orgId, meetupId);
   const dialogs = useMeetupDialogs();
   const profile = useProfileSheet();
 
@@ -59,6 +63,21 @@ export function MeetupDetailPage() {
     });
   }
 
+  function setGuestType(guest: MeetupGuest, guestType: GuestType) {
+    setType.mutate(
+      { guestId: guest.guest.id, guestType },
+      {
+        onSuccess: (data) =>
+          toast.success(
+            t("guestTypeChanged")
+              .replace("{0}", data.guest.displayname)
+              .replace("{1}", t(GUEST_TYPE_LABEL[guestType])),
+          ),
+        onError: (err) => toast.error(err.message),
+      },
+    );
+  }
+
   const ctx: GuestRowContext = {
     orgId,
     meetupId,
@@ -72,6 +91,8 @@ export function MeetupDetailPage() {
     onMarkPaid: (guest) => dialogs.open({ kind: "markPaid", guest }),
     onUndoPayment: (guest) => dialogs.open({ kind: "undoPayment", guest }),
     onViewProfile: profile.show,
+    settingType: setType.isPending,
+    onSetGuestType: setGuestType,
   };
 
   if (!activeOrg) return <NoActiveOrg />;
@@ -98,7 +119,10 @@ export function MeetupDetailPage() {
               isOrgAdmin={isOrgAdmin}
               onAddWalkin={() => dialogs.open({ kind: "walkin" })}
               onTogglePayment={() =>
-                dialogs.open({ kind: "paymentRequirement" })
+                dialogs.open({
+                  kind: "paymentRequirement",
+                  enabling: !meetup.requires_payment,
+                })
               }
               onFinalize={() => dialogs.open({ kind: "finalize" })}
             />

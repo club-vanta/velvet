@@ -122,7 +122,7 @@ describe("meetup mutations", () => {
     );
   });
 
-  it("the payment requirement refreshes the meetup and the meetup list", async () => {
+  it("the payment requirement refreshes the meetup, the list and the stats", async () => {
     mockPatch.mockResolvedValue({ data: makeMeetup(), error: undefined });
     const { result, invalidated } = setup(() =>
       useSetPaymentRequirement("org-1", "meetup-1"),
@@ -134,6 +134,8 @@ describe("meetup mutations", () => {
     expect(invalidated()).toEqual([
       meetupKey("org-1", "meetup-1"),
       meetupsKey("org-1"),
+      meetupStatsKey("org-1", "meetup-1"),
+      statsOrgKey("org-1"),
     ]);
   });
 

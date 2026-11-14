@@ -3,11 +3,10 @@ import { api } from "@/api/client";
 import {
   memberOrganizationsKey,
   organizationKey,
-  organizationsKey,
   orgMembersKey,
   userSearchKey,
 } from "@/api/queryKeys";
-import { useAuth, useOrg } from "@/domain/session";
+import { useAllOrganizations, useAuth, useOrg } from "@/domain/session";
 import { useLanguage } from "@/lib/i18n";
 
 /**
@@ -22,15 +21,7 @@ export function useVisibleOrganizations() {
   const isSiteAdmin = user?.role.name === "SITE_ADMIN";
   const memberOrgIds = memberOrgs.map((o) => o.org_id);
 
-  const allQ = useQuery({
-    queryKey: organizationsKey,
-    queryFn: async () => {
-      const { data, error } = await api.GET("/organizations/");
-      if (error) throw new Error(t("failedLoadOrgs"));
-      return data;
-    },
-    enabled: isSiteAdmin,
-  });
+  const allQ = useAllOrganizations({ enabled: isSiteAdmin });
 
   const memberQ = useQuery({
     queryKey: memberOrganizationsKey(memberOrgIds),

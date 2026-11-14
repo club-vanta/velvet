@@ -45,12 +45,7 @@ export function MeetupDialogs({
     case "walkin":
       return <WalkinDialog {...props} alreadyRsvped={rsvpedIds} />;
     case "paymentRequirement":
-      return (
-        <PaymentRequirementDialog
-          {...props}
-          enabling={!meetup?.requires_payment}
-        />
-      );
+      return <PaymentRequirementDialog {...props} enabling={dialog.enabling} />;
     case "finalize":
       return (
         meetup && (

@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, it, expect, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { components } from "@/api/types";
+import { LanguageProvider } from "@/lib/i18n";
 import { makeMembership, makeOrg, makeUser } from "@/tests/factories";
 import { OrgProvider, useIsOrgAdmin, useOrg } from "./OrgContext";
 
@@ -30,9 +31,11 @@ vi.mock("./AuthContext", () => ({
 function renderInProvider<T>(hook: () => T) {
   return renderHook(hook, {
     wrapper: ({ children }) => (
-      <QueryClientProvider client={new QueryClient()}>
-        <OrgProvider>{children}</OrgProvider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <OrgProvider>{children}</OrgProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     ),
   });
 }

@@ -33,7 +33,7 @@ export function GuestList({
       {!isLoading && !isError && total === 0 && (
         <GuestListEmpty>{emptyMessage}</GuestListEmpty>
       )}
-      {!isLoading && total > 0 && shown === 0 && (
+      {!isLoading && !isError && total > 0 && shown === 0 && (
         <GuestListEmpty>{noMatchMessage}</GuestListEmpty>
       )}
       {children}

@@ -126,6 +126,8 @@ export function makeGuestRowContext(
     onMarkPaid: noop,
     onUndoPayment: noop,
     onViewProfile: noop,
+    settingType: false,
+    onSetGuestType: noop,
     ...overrides,
   };
 }

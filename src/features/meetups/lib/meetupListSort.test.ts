@@ -39,4 +39,13 @@ describe("sortMeetups", () => {
     expect(sortMeetups(list, { col: "date", dir: "desc" })).toEqual([a, b]);
     expect(list).toEqual([b, a]);
   });
+
+  it("files Ñ after N, like every other name list", () => {
+    const n = makeMeetup({ id: "n", name: "Noche" });
+    const enie = makeMeetup({ id: "ñ", name: "Ñandú night" });
+    const o = makeMeetup({ id: "o", name: "Otoño" });
+    expect(
+      sortMeetups([o, enie, n], { col: "name", dir: "asc" }).map((m) => m.id),
+    ).toEqual(["n", "ñ", "o"]);
+  });
 });

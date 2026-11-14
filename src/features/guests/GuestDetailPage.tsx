@@ -14,7 +14,10 @@ import { vantStatus } from "./lib/vantStatus";
 
 type Guest = components["schemas"]["GuestPublic"];
 
-/** /guests/:guestId: one guest's profile, with the actions on it. */
+/**
+ * /guests/:guestId: one guest's profile, with the actions on it. Rendered
+ * by GuestDetailRoute, keyed by the guest id.
+ */
 export function GuestDetailPage() {
   const { t } = useLanguage();
   const { guestId = "" } = useParams<{ guestId: string }>();
@@ -43,7 +46,6 @@ export function GuestDetailPage() {
       </Link>
 
       <GuestProfile
-        key={guestId}
         guestId={guestId}
         orgId={orgId}
         orgName={activeOrg.org_name}

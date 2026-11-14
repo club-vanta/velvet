@@ -1,4 +1,4 @@
-import type { SortDir } from "@/lib/sortNames";
+import { nameComparer, type SortDir } from "@/lib/sortNames";
 import type { components } from "@/api/types";
 
 type Meetup = components["schemas"]["MeetupPublic"];
@@ -26,7 +26,12 @@ export function sortMeetups(
   sort: NonNullable<MeetupSort>,
 ): Meetup[] {
   const sign = sort.dir === "asc" ? 1 : -1;
+  // Names go by the shared Spanish collation; ISO dates compare as text.
+  const compare =
+    sort.col === "name"
+      ? nameComparer()
+      : (x: string, y: string) => x.localeCompare(y);
   return meetups
     .slice()
-    .sort((a, b) => sign * a[sort.col].localeCompare(b[sort.col]));
+    .sort((a, b) => sign * compare(a[sort.col], b[sort.col]));
 }

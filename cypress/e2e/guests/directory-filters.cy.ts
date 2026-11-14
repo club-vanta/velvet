@@ -2,6 +2,7 @@ import { makeGuest, makeMazmoProfile } from "../../../src/tests/factories";
 import {
   shouldListNames,
   stubGuestsPage,
+  stubBannedGuests,
   vanted,
   shouldBeSettled,
 } from "../../support/routes/guests";
@@ -133,5 +134,35 @@ describe("Guest directory filters", () => {
     cy.getBySel("list-filter").click();
     shouldBeSettled("menu");
     cy.checkA11yAA();
+  });
+});
+
+describe("The Vanted filter without the org's vant list", () => {
+  beforeEach(() => {
+    cy.loginAs("orgAdmin");
+  });
+
+  it("says the vant list failed instead of matching nobody", () => {
+    cy.stubApi("GET", "/guests/", {
+      body: { total: 2, guests: [DANI, ANA] },
+    }).as("getGuests");
+    cy.stubApiError("GET", "/organizations/{org_id}/guests/banned", {
+      statusCode: 500,
+    }).as("getBanned");
+    cy.visit("/guests");
+    cy.wait(["@getGuests", "@getBanned"]);
+
+    toggle("Vanted");
+    cy.getBySel("guests-error-message").should(
+      "have.text",
+      "Failed to load vanted guests.",
+    );
+    cy.getBySel("guests-empty").should("not.exist");
+
+    stubBannedGuests([vanted(DANI)]);
+    cy.getBySel("guests-error").getByRole("button", { name: "Retry" }).click();
+    cy.wait("@getBanned");
+    shouldListNames("guests-directory", ["Dani"]);
+    cy.getBySel("guests-error").should("not.exist");
   });
 });

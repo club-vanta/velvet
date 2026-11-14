@@ -28,38 +28,31 @@ describe("<GuestRowActions />", () => {
     cy.get("@onViewProfile").should("have.been.calledOnceWith", LUNA);
   });
 
-  it("sends the picked guest type for this RSVP", () => {
-    cy.stubApi(
-      "PATCH",
-      "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/type",
-      {
-        body: makeMeetupGuest({
-          guest: LUNA.guest,
-          rsvp: { guest_type: "VENDOR" },
-        }),
-        params: { org_id: "org-1", meetup_id: "meetup-1", guest_id: "g-luna" },
-      },
-    ).as("setType");
-    open();
+  it("asks for the picked guest type for this RSVP", () => {
+    open({ onSetGuestType: cy.spy().as("onSetGuestType") });
     option(/^Regular/).should("have.attr", "aria-checked", "true");
     option(/^Vendor/)
       .should("contain.text", "Runs a stand at the event, no entry fee")
       .click();
-    cy.wait("@setType")
-      .its("request.body")
-      .should("deep.equal", { guest_type: "VENDOR" });
+    cy.get("@onSetGuestType").should(
+      "have.been.calledOnceWith",
+      LUNA,
+      "VENDOR",
+    );
   });
 
-  it("sends nothing when the current type is picked again", () => {
-    cy.stubApi(
-      "PATCH",
-      "/organizations/{org_id}/meetups/{meetup_id}/guests/{guest_id}/type",
-      { body: LUNA },
-    ).as("setType");
-    open();
+  it("asks for nothing when the current type is picked again", () => {
+    open({ onSetGuestType: cy.spy().as("onSetGuestType") });
     option(/^Regular/).click();
     cy.getBySel("guest-actions-menu").should("not.exist");
-    cy.get("@setType.all").should("have.length", 0);
+    cy.get("@onSetGuestType").should("not.have.been.called");
+  });
+
+  it("locks the types while a type change runs", () => {
+    open({ settingType: true });
+    cy.getByRole("menuitemradio", { native: false }).each(($item) =>
+      expect($item).to.have.attr("aria-disabled", "true"),
+    );
   });
 
   it("offers staff only the profile", () => {
