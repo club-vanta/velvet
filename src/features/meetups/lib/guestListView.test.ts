@@ -3,6 +3,7 @@ import {
   DEFAULT_GUEST_FILTERS,
   DEFAULT_GUEST_SORT,
   activeGuestFilters,
+  toggleGuestSort,
   viewGuestList,
 } from "./guestListView";
 import type { components } from "@/api/types";
@@ -136,5 +137,40 @@ describe("viewGuestList", () => {
         ),
       ),
     ).toEqual(["Walkin in", "Walkin out"]);
+  });
+
+  it("keeps guests with the same name and RSVP time in id order", () => {
+    const sameTime = { rsvp_time: "2026-08-01T12:00:00Z" };
+    const list = [
+      mg(2, "Same", sameTime),
+      mg(1, "Same", sameTime),
+      mg(3, "Earliest", { rsvp_time: "2026-07-01T12:00:00Z" }),
+    ];
+    const byRsvp = { key: "rsvp", dir: "asc" } as const;
+    expect(
+      viewGuestList(list, DEFAULT_GUEST_FILTERS, byRsvp, false).map(
+        (g) => g.guest.id,
+      ),
+    ).toEqual(["id-3", "id-1", "id-2"]);
+  });
+});
+
+describe("toggleGuestSort", () => {
+  it("flips the direction of the active column", () => {
+    expect(toggleGuestSort({ key: "name", dir: "asc" }, "name")).toEqual({
+      key: "name",
+      dir: "desc",
+    });
+    expect(toggleGuestSort({ key: "name", dir: "desc" }, "name")).toEqual({
+      key: "name",
+      dir: "asc",
+    });
+  });
+
+  it("starts another column ascending", () => {
+    expect(toggleGuestSort({ key: "name", dir: "desc" }, "rsvp")).toEqual({
+      key: "rsvp",
+      dir: "asc",
+    });
   });
 });
