@@ -33,49 +33,42 @@ export function MeetupLocation({
   const [changing, setChanging] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const changeRef = useRef<HTMLButtonElement>(null);
-  // Set when a save starts: once the saved location renders, focus moves to
-  // the control that replaced the one just used.
-  const focusAfterSave = useRef(false);
+  // The control to focus once it renders. Moving focus in a click or save
+  // callback is too early: the control appears on the next render.
+  const focusNext = useRef<"search" | "change" | null>(null);
 
   useEffect(() => {
-    if (!focusAfterSave.current) return;
-    focusAfterSave.current = false;
-    (hasLocation ? changeRef : searchRef).current?.focus();
-  }, [hasLocation, label]);
+    const target = focusNext.current;
+    const element = (target === "change" ? changeRef : searchRef).current;
+    if (!target || !element) return;
+    element.focus();
+    focusNext.current = null;
+  });
 
   const save = (
     location: components["schemas"]["MeetupLocationUpdate"],
     successMessage: string,
   ) => {
-    // Saving the location already shown renders nothing new, so the
-    // focus moves now rather than on the next location.
-    const unchanged =
-      location.location_label === label &&
-      location.latitude === latitude &&
-      location.longitude === longitude;
-    focusAfterSave.current = !unchanged;
     setLocation.mutate(location, {
       onSuccess: () => {
+        // A saved address leaves "Change location"; a removed one, the search.
+        focusNext.current =
+          location.location_label === null ? "search" : "change";
         setChanging(false);
         toast.success(successMessage);
-        if (unchanged) requestAnimationFrame(() => changeRef.current?.focus());
       },
-      onError: (err) => {
-        focusAfterSave.current = false;
-        toast.error(err.message);
-      },
+      onError: (err) => toast.error(err.message),
     });
   };
 
-  // The control to focus next appears on the next render.
   const startChange = () => {
+    focusNext.current = "search";
     setChanging(true);
-    requestAnimationFrame(() => searchRef.current?.focus());
   };
 
   const cancelChange = () => {
+    focusNext.current = "change";
     setChanging(false);
-    requestAnimationFrame(() => changeRef.current?.focus());
   };
 
   return (
