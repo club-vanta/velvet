@@ -138,6 +138,7 @@ describe("<AddressSearch />", () => {
     respond();
     mount();
     box().type("Av.");
+    options().should("have.length", 2);
     cy.press(Cypress.Keyboard.Keys.DOWN);
     options().eq(0).should("have.attr", "aria-selected", "true");
     respond([CALLAO]);

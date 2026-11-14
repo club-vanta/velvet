@@ -14,6 +14,10 @@ const HEADINGS = {
 
 type NavId = keyof typeof HEADINGS;
 
+// App lazy-loads the stats page (recharts). On a cold dev server Vite
+// compiles that chunk on the first visit, which can outlast the default 4 s.
+const LAZY_PAGE_TIMEOUT = 15_000;
+
 const NAV: Record<Role, NavId[]> = {
   staff: ["dashboard", "meetups", "guests"],
   orgAdmin: [
@@ -79,7 +83,10 @@ for (const role of ["staff", "orgAdmin", "siteAdmin"] as const) {
           "aria-current",
           "page",
         );
-        cy.getByRole("heading", { name: HEADINGS[id] }).should("be.visible");
+        cy.getByRole("heading", {
+          name: HEADINGS[id],
+          ...(id === "stats" && { timeout: LAZY_PAGE_TIMEOUT }),
+        }).should("be.visible");
       }
     });
 

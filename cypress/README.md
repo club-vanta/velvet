@@ -15,6 +15,11 @@ Vitest stays in place for pure logic (`lib/`, `domain/`, hooks, formatters). See
 Interactive mode: run `npm run dev:e2e` in one terminal and `npm run cy:open` in
 another.
 
+The npm scripts run Cypress with `TZ=UTC`, like the CI runners, because some
+specs expect clock times of UTC fixtures. If you call `npx cypress` directly,
+prefix it with `TZ=UTC`. Run locally with Chrome or Chromium
+(`--browser chromium`), as CI does: headless Electron can hang on screenshots.
+
 ## Layout
 
 ```

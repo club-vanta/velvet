@@ -48,12 +48,11 @@ describe("Recovery codes", () => {
       native: false,
     }).within(() => {
       cy.getBySel("staff-recovery-code").should("have.text", "042567");
-      cy.clock();
       cy.getBySel("staff-recovery-copy").should("have.text", "Copy").click();
       cy.get("@writeText").should("have.been.calledOnceWith", "042567");
+      // The 2 s reset to "Copy" is covered with fake timers in
+      // useCopyToClipboard.test.ts; a frozen clock here made the spec flaky.
       cy.getBySel("staff-recovery-copy").should("have.text", "Copied!");
-      cy.tick(2000);
-      cy.getBySel("staff-recovery-copy").should("have.text", "Copy");
       cy.getBySel("staff-recovery-close").click();
     });
     cy.getByRole("dialog", { native: false }).should("not.exist");
