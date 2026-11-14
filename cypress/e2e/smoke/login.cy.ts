@@ -18,7 +18,7 @@ describe("Smoke: login against the backend", () => {
 
     cy.location("pathname").should("eq", "/dashboard");
     cy.getByRole("heading", { name: "Dashboard" }).should("be.visible");
-    cy.getByRole("button", { name: "E2E Club" }).should("be.visible");
+    cy.getBySel("shell-active-org").should("have.text", "E2E Club");
   });
 
   it("rejects a wrong password with the backend's message", () => {

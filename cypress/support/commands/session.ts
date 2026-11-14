@@ -78,13 +78,21 @@ Cypress.Commands.add("loginWithPassword", (username, password) => {
   cy.session(
     ["real", username],
     () => {
-      cy.visit("/");
+      // Token first, then the page: an app loaded without a token asks
+      // /auth/userinfo, and that 401 would clear a token stored after it.
       cy.request({
         method: "POST",
         url: `${apiUrl()}/auth/token`,
         form: true,
         body: { username, password },
-      }).then(({ body }) => seedStorage(body.access_token, "en"));
+      }).then(({ body }) => {
+        cy.visit("/", {
+          onBeforeLoad(win) {
+            win.localStorage.setItem(TOKEN_KEY, body.access_token);
+            win.localStorage.setItem("lang", "en");
+          },
+        });
+      });
     },
     {
       cacheAcrossSpecs: true,
