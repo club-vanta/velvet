@@ -53,12 +53,12 @@ src/
 cypress/                   E2E specs, support commands; see cypress/README.md
 ```
 
-Rules (ESLint enforces the first two with `no-restricted-imports`):
+Rules (ESLint enforces the first two with `no-restricted-imports`, and the file size with `max-lines`):
 
 - **Layers only import to the right:** `app → features → components → domain → hooks / lib / api`. A feature never imports another feature's internals.
 - **Cross a boundary through `index.ts`:** `import { GuestProfile } from "@/features/guests"`, never `@/features/guests/components/GuestProfile`. Inside a feature, use relative imports. `features/stats/index.ts` exports only the page, because App lazy-loads it to keep recharts out of the main bundle.
 - **Where does new code go?** Used by one feature: inside it. Used by two or more features: `domain/<entity>/` if it is domain logic or data, `components/` if it is UI. Generic (no domain words): `lib/` or `hooks/`.
-- **Keep files small.** A component file over ~300 lines has more than one job: split it into `components/`. Pages compose components and own the page's state; they do not render long inline JSX for dialogs, rows or sections.
+- **Keep files small.** A component file over ~300 lines has more than one job: split it into `components/`. ESLint (`max-lines`) fails a `.tsx` file over 300 lines of code, except tests and the generated `components/ui/`. Pages compose components and own the page's state; they do not render long inline JSX for dialogs, rows or sections.
 - **Testing:** see `cypress/README.md`. Cypress component tests (`*.cy.tsx`, next to the component) for components, Cypress E2E (`cypress/e2e/<feature>/`) for user flows, Vitest (`*.test.ts`) for pure logic and hooks.
 
 ---

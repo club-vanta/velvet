@@ -78,6 +78,19 @@ export default defineConfig([
     ),
   },
   {
+    // A component file this long has more than one job (CLAUDE.md, "Keep
+    // files small"): split it into components/. shadcn/ui files are
+    // generated, so they keep the upstream shape.
+    files: ["src/**/*.tsx"],
+    ignores: ["**/*.test.tsx", "**/*.cy.tsx", "src/components/ui/**"],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 300, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
     // Cypress specs and support code: the rules behind the Cypress
     // best-practices guide (data-cy selectors, no arbitrary waits, no
     // assigning command return values, no .pause()/.debug() left behind).
