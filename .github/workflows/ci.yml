@@ -154,7 +154,10 @@ jobs:
         run: |
           uv sync --frozen
           uv run alembic upgrade head
-          nohup uv run uvicorn app.main:app --port 8000 > "$RUNNER_TEMP/backend.log" 2>&1 &
+          # Run uvicorn from the venv, not through uv run: a uv process left
+          # running holds the uv cache lock, and setup-uv prunes the cache when
+          # the job ends.
+          nohup .venv/bin/uvicorn app.main:app --port 8000 > "$RUNNER_TEMP/backend.log" 2>&1 &
 
       - uses: actions/setup-node@v4
         with:
