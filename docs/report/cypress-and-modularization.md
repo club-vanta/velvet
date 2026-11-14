@@ -84,8 +84,9 @@ testing conventions.
 | Cypress smoke (real API) | 3     | 4     | `npm run test:smoke` |
 | Vitest (logic and hooks) | 54    | 409   | `npm run test:run`   |
 
-CI runs typecheck, lint, format, build and Vitest in one job, and the
-Cypress E2E and component suites in another, both with coverage.
+CI runs typecheck, lint, format, build and Vitest in one job, the Cypress
+E2E and component suites with coverage in another, and the smoke suite
+against a real backend and Postgres in a third.
 
 Every deleted React Testing Library test has a counterpart in the new suites.
 [rtl-migration-map.md](rtl-migration-map.md) lists them by file: 168 titles
@@ -104,7 +105,7 @@ npm run coverage    # all suites with coverage, merged into coverage/all
 ```
 
 The smoke suite needs a local backend; `cypress/README.md`, "Smoke suite",
-explains how to start it and seed it.
+explains how to start it and seed it. CI starts one for it.
 
 ## Coverage
 
@@ -178,6 +179,18 @@ Each fix has a test that fails without it.
   org switcher and organizations page share one organizations query, each
   with translated errors.
 
+**Backend time zones** (backend PR)
+
+- The app now opens every Postgres connection in UTC. Before, a server
+  whose `TimeZone` was not UTC (any developer machine in Argentina) shifted
+  meetup times by three hours, and five weather tests failed there.
+- The models declare `timestamptz` like the migrations, so the test
+  database has the production schema. Four tests that expected dates
+  without a zone now expect the `Z` that production returns.
+- The backend CI runs its tests and its Postgres in
+  `America/Argentina/Buenos_Aires`, so a test that only passes in UTC fails
+  there.
+
 **Test infrastructure**
 
 - The real-backend login stored its token after the app's own unauthenticated
@@ -207,9 +220,6 @@ Each fix has a test that fails without it.
 - `eslint-plugin-react-hooks` needs an `overrides` entry for `zod` and
   `zod-validation-error`, and `cypress-axe` one to accept Cypress 16. Both are
   in `package.json` and can go when upstream catches up.
-- Three backend weather tests (`tests/test_weather.py`,
-  `tests/test_weather_worker.py`) fail on a local machine outside UTC. They
-  are not part of this change; the backend CI runs in UTC.
 - The Electron browser bundled with Cypress hangs on screenshots in some
   Linux setups. Run locally with Chrome or Chromium, as CI does.
 
@@ -218,7 +228,6 @@ Each fix has a test that fails without it.
 - Decide the colors for the two contrast issues above.
 - Drop the `package.json` overrides once `eslint-plugin-react-hooks` and
   `cypress-axe` support the current versions.
-- Run the smoke suite in CI against a backend service container.
 - Fix the coverage merge so both suites use the same instrumentation, for
   example by running Vitest with the same Istanbul settings as the Vite
   plugin, or by reporting the suites separately.

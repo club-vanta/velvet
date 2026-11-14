@@ -156,3 +156,8 @@ which resets an isolated "E2E Club" organization (two accounts, two meetups,
 two guests) and returns its IDs, so every test starts from the same state. The
 script refuses to touch a database that is not on localhost. The password is
 read with `cy.env()`, so it never reaches the browser bundle or the repo.
+
+CI runs the suite in the `smoke` job of `.github/workflows/ci.yml`: Postgres as
+a service container, the backend checked out next to velvet (its branch with
+the same name when there is one, otherwise `main`), migrated and started with
+uvicorn.
