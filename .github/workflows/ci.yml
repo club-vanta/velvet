@@ -113,6 +113,8 @@ jobs:
       JWT_SIGNING_KEY: ci-signing-key-not-used-in-production
       # Only for the throwaway accounts that scripts/seed_e2e.py creates.
       E2E_PASSWORD: ci-smoke-password-not-a-secret
+      # Chrome, like the other Cypress jobs (package.json reads VELVET_BROWSER).
+      VELVET_BROWSER: chrome
 
     # Side by side, as on a developer machine: cypress.config.ts finds the
     # backend at ../alter-tracker-backend.

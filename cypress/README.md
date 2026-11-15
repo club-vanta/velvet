@@ -17,8 +17,14 @@ another.
 
 The npm scripts run Cypress with `TZ=UTC`, like the CI runners, because some
 specs expect clock times of UTC fixtures. If you call `npx cypress` directly,
-prefix it with `TZ=UTC`. Run locally with Chrome or Chromium
-(`--browser chromium`), as CI does: headless Electron can hang on screenshots.
+prefix it with `TZ=UTC`. Run locally with Chrome or Chromium, as CI does:
+headless Electron can hang on screenshots. Every Cypress script reads the
+browser from `VELVET_BROWSER` when it is set, so pass it instead of
+editing the command:
+
+```bash
+VELVET_BROWSER=chromium npm run test:e2e
+```
 
 ## Layout
 
