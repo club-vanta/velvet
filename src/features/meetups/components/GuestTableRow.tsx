@@ -26,6 +26,9 @@ export function GuestTableRow({
   const { rsvp } = guest;
   return (
     <TableRow
+      // Deliberately below WCAG AA: dimming a cancelled RSVP to 50% puts its text at
+      // 2.65:1, under the 4.5:1 minimum. The row also reads "Cancelled", so the state
+      // does not depend on the contrast; the dimming only pushes it out of the way.
       className={rsvp.cancelled_rsvp ? "opacity-50" : ""}
       data-cy={`guest-row-${guest.guest.id}`}
     >
