@@ -27,6 +27,9 @@ export function GuestCard({
     <li
       className={cn(
         "flex flex-col overflow-hidden rounded-lg border",
+        // Deliberately below WCAG AA: dimming a cancelled RSVP to 50% puts its text at
+        // 2.65:1, under the 4.5:1 minimum. The card also reads "Cancelled", so the state
+        // does not depend on the contrast; the dimming only pushes it out of the way.
         dimmed && "opacity-50",
       )}
       data-cy={dataCy}

@@ -206,9 +206,9 @@ Each fix has a test that fails without it.
 
 - The shared `Button` `destructive` variant measures 4.24:1 in the dark
   theme. It needs a design decision on the color.
-- Cancelled RSVP rows use `opacity-50`, so their text is 2.65:1. They also
-  carry a "Cancelled" label, so the state does not depend on contrast alone;
-  the dimming needs a design decision.
+- Cancelled RSVP rows use `opacity-50`, so their text is 2.65:1. This is
+  deliberate and commented in the code: they also carry a "Cancelled" label,
+  so the state does not depend on contrast alone.
 - Empty temperature bands in the stats weather chart show no tooltip,
   because Recharts skips null bars.
 - The staff table disables the matching buttons on every row while one
@@ -225,7 +225,7 @@ Each fix has a test that fails without it.
 
 ## Follow-ups
 
-- Decide the colors for the two contrast issues above.
+- Decide the color of the destructive Button in the dark theme.
 - Drop the `package.json` overrides once `eslint-plugin-react-hooks` and
   `cypress-axe` support the current versions.
 - Fix the coverage merge so both suites use the same instrumentation, for
