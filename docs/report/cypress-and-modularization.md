@@ -164,6 +164,8 @@ Each fix has a test that fails without it.
   and after a language switch.
 - A disabled "Unlink Mazmo account" is explained through `aria-describedby`
   and waits for the vant status.
+- The destructive `Button` in the dark theme is a solid wine red with white
+  text (7.8:1); red text on a red tint was 4.24:1 on dialog footers.
 - AA contrast fixed for the meetup relative date, group counts and add-member
   search. The Shell logout button has an accessible name on phones.
 - The vant reason is trimmed before it is sent.
@@ -204,8 +206,6 @@ Each fix has a test that fails without it.
 
 ## Known issues, not fixed
 
-- The shared `Button` `destructive` variant measures 4.24:1 in the dark
-  theme. It needs a design decision on the color.
 - Cancelled RSVP rows use `opacity-50`, so their text is 2.65:1. This is
   deliberate and commented in the code: they also carry a "Cancelled" label,
   so the state does not depend on contrast alone.
@@ -225,7 +225,6 @@ Each fix has a test that fails without it.
 
 ## Follow-ups
 
-- Decide the color of the destructive Button in the dark theme.
 - Drop the `package.json` overrides once `eslint-plugin-react-hooks` and
   `cypress-axe` support the current versions.
 - Fix the coverage merge so both suites use the same instrumentation, for

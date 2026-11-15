@@ -262,10 +262,7 @@ describe("Linking and unlinking Mazmo", () => {
       cy.getBySel("guest-profile-unlink").click();
       unlinkDialog().should("be.visible");
       shouldBeSettled("dialog");
-      // Known issue outside this feature: the shared destructive Button is
-      // 4.24:1 on the dark dialog background (src/components/ui/button.tsx).
-      // Everything but the footer is scanned until that is fixed there.
-      cy.checkA11yAA('[role="dialog"] > :not([data-slot="dialog-footer"])');
+      cy.checkA11yAA('[role="dialog"]');
     });
   });
 });
