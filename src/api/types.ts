@@ -2010,11 +2010,7 @@ export interface components {
      * @enum {string}
      */
     GuestAttendanceStatus:
-      | "ATTENDED"
-      | "WALKIN"
-      | "CANCELLED"
-      | "NO_SHOW"
-      | "UPCOMING";
+      "ATTENDED" | "WALKIN" | "CANCELLED" | "NO_SHOW" | "UPCOMING";
     /**
      * GuestAttendanceSummary
      * @description Counts of a guest's meetups in one org by status.

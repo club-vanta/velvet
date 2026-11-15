@@ -1,0 +1,120 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import { formatEventDay } from "../lib/statsFormat";
+import { PRESETS, type RangePreset } from "../lib/statsPeriod";
+import type { useStatsFilters } from "../hooks/useStatsFilters";
+import { DateField } from "./DateField";
+
+type Filters = ReturnType<typeof useStatsFilters>;
+
+const PRESET_LABELS: Record<RangePreset, TranslationKey> = {
+  "30d": "statsRangeLast30",
+  "3m": "statsRangeLast3m",
+  "12m": "statsRangeLast12m",
+  ytd: "statsRangeYtd",
+  all: "statsRangeAll",
+  custom: "statsRangeCustom",
+};
+
+const ALL_EVENTS = "all";
+
+export function StatsFilterBar({ filters }: { filters: Filters }) {
+  const { t } = useLanguage();
+  const {
+    preset,
+    custom,
+    meetupId,
+    events,
+    setPreset,
+    setCustom,
+    setMeetupId,
+  } = filters;
+
+  const selected = events.find(({ meetup }) => meetup.id === meetupId);
+  const eventName = selected
+    ? eventLabel(selected.meetup)
+    : t("statsAllEvents");
+  const presetName = t(PRESET_LABELS[preset]);
+
+  return (
+    <div data-cy="stats-filters" className="flex flex-wrap items-end gap-3">
+      <Select
+        value={preset}
+        onValueChange={(v) => v && setPreset(v as RangePreset)}
+      >
+        <SelectTrigger
+          data-cy="stats-period"
+          className="w-full sm:w-48"
+          aria-label={`${t("statsPeriodLabel")}: ${presetName}`}
+        >
+          <SelectValue>{presetName}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {PRESETS.map((p) => (
+            <SelectItem key={p} value={p} data-cy={`stats-period-${p}`}>
+              {t(PRESET_LABELS[p])}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {custom && (
+        <div className="flex w-full gap-3 sm:w-auto">
+          <DateField
+            label={t("statsRangeFrom")}
+            data-cy="stats-range-from"
+            value={custom.from}
+            max={custom.to}
+            onChange={(from) => setCustom({ from, to: custom.to }, "from")}
+          />
+          <DateField
+            label={t("statsRangeTo")}
+            data-cy="stats-range-to"
+            value={custom.to}
+            min={custom.from}
+            onChange={(to) => setCustom({ from: custom.from, to }, "to")}
+          />
+        </div>
+      )}
+
+      <Select
+        value={meetupId ?? ALL_EVENTS}
+        onValueChange={(v) =>
+          setMeetupId(v && v !== ALL_EVENTS ? v : undefined)
+        }
+      >
+        <SelectTrigger
+          data-cy="stats-event"
+          className="w-full sm:w-64"
+          aria-label={`${t("statsEventLabel")}: ${eventName}`}
+        >
+          <SelectValue>{eventName}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL_EVENTS} data-cy="stats-event-all">
+            {t("statsAllEvents")}
+          </SelectItem>
+          {events.map((event) => (
+            <SelectItem
+              key={event.meetup.id}
+              value={event.meetup.id}
+              data-cy={`stats-event-${event.meetup.id}`}
+            >
+              {eventLabel(event.meetup)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function eventLabel(meetup: { name: string; date: string }): string {
+  return `${meetup.name} · ${formatEventDay(meetup.date)}`;
+}

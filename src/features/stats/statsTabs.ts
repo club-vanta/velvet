@@ -1,13 +1,13 @@
 import type { ComponentType } from "react";
 import type { TranslationKey } from "@/lib/i18n";
-import { ArrivalsTab } from "./ArrivalsTab";
-import { AttendanceTab } from "./AttendanceTab";
-import { DemographicsTab } from "./DemographicsTab";
-import { NoShowsTab } from "./NoShowsTab";
-import { OperationsTab } from "./OperationsTab";
-import { RetentionTab } from "./RetentionTab";
-import type { StatsTabProps } from "./statsTab";
-import { WeatherTab } from "./WeatherTab";
+import { ArrivalsTab } from "./tabs/arrivals/ArrivalsTab";
+import { AttendanceTab } from "./tabs/attendance/AttendanceTab";
+import { DemographicsTab } from "./tabs/demographics/DemographicsTab";
+import { NoShowsTab } from "./tabs/no-shows/NoShowsTab";
+import { OperationsTab } from "./tabs/operations/OperationsTab";
+import { RetentionTab } from "./tabs/retention/RetentionTab";
+import type { StatsTabProps } from "./lib/statsTab";
+import { WeatherTab } from "./tabs/weather/WeatherTab";
 
 /** The stats tabs in display order: the one list the URL, triggers and panels follow. */
 export const STATS_TABS = [

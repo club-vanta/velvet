@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    name: Typecheck, lint, format, build, test
+    name: Typecheck, lint, format, build, unit tests
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -35,5 +35,151 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Unit tests
-        run: npm run test:run
+      - name: Unit tests (with coverage)
+        run: npm run test:coverage
+
+      - name: Upload unit coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage/unit
+
+  cypress:
+    name: Cypress (E2E and component)
+    runs-on: ubuntu-latest
+    env:
+      # Instrument the app so both suites report code coverage.
+      VITE_COVERAGE: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Stubbed E2E suite: the dev server runs in "e2e" mode, so the app talks
+      # to a host that does not exist and every API call is a cy.intercept stub.
+      - name: E2E tests
+        uses: cypress-io/github-action@v7
+        with:
+          start: npm run dev:e2e
+          wait-on: "http://localhost:5200"
+          browser: chrome
+
+      - name: Component tests
+        uses: cypress-io/github-action@v7
+        with:
+          install: false
+          component: true
+          browser: chrome
+
+      - name: Upload screenshots of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cypress
+          path: coverage/cypress
+          if-no-files-found: ignore
+
+  smoke:
+    name: Cypress smoke (real backend)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: alter_event_tracker
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/alter_event_tracker
+      JWT_SIGNING_KEY: ci-signing-key-not-used-in-production
+      # Only for the throwaway accounts that scripts/seed_e2e.py creates.
+      E2E_PASSWORD: ci-smoke-password-not-a-secret
+
+    # Side by side, as on a developer machine: cypress.config.ts finds the
+    # backend at ../alter-tracker-backend.
+    defaults:
+      run:
+        working-directory: velvet
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: velvet
+
+      # Test against the backend branch with the same name when there is one,
+      # so a change that spans both repos runs together; otherwise main.
+      - name: Pick the backend branch
+        id: backend
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if git ls-remote --exit-code --heads https://github.com/club-vanta/alter-tracker-backend "$BRANCH" >/dev/null; then
+            echo "ref=$BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          repository: club-vanta/alter-tracker-backend
+          ref: ${{ steps.backend.outputs.ref }}
+          path: alter-tracker-backend
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: alter-tracker-backend/uv.lock
+
+      - name: Start the backend
+        working-directory: alter-tracker-backend
+        run: |
+          uv sync --frozen
+          uv run alembic upgrade head
+          # Run uvicorn from the venv, not through uv run: a uv process left
+          # running holds the uv cache lock, and setup-uv prunes the cache when
+          # the job ends.
+          nohup .venv/bin/uvicorn app.main:app --port 8000 > "$RUNNER_TEMP/backend.log" 2>&1 &
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: velvet/package-lock.json
+
+      # test:smoke starts the dev server in "smoke" mode against localhost:8000
+      # and seeds the backend before each test (cypress.config.ts, db:seed).
+      - name: Smoke tests
+        uses: cypress-io/github-action@v7
+        with:
+          working-directory: velvet
+          wait-on: "http://localhost:8000/docs"
+          command: npm run test:smoke
+
+      - name: Upload the backend log and failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-debug
+          path: |
+            ${{ runner.temp }}/backend.log
+            velvet/cypress/screenshots
+          if-no-files-found: ignore

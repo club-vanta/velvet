@@ -21,6 +21,7 @@ type ReasonDialogProps = {
   isPending: boolean;
   onConfirm: (reason: string) => void;
   onClose: () => void;
+  "data-cy"?: string;
 };
 
 export function ReasonDialog({
@@ -31,6 +32,7 @@ export function ReasonDialog({
   isPending,
   onConfirm,
   onClose,
+  "data-cy": dataCy,
 }: ReasonDialogProps) {
   const { t } = useLanguage();
   const [reason, setReason] = useState("");
@@ -40,7 +42,7 @@ export function ReasonDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent data-cy={dataCy}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -54,19 +56,21 @@ export function ReasonDialog({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
+            data-cy="reason-input"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground" data-cy="reason-count">
             {trimmed.length}/{MAX_REASON}
           </p>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} data-cy="dialog-cancel">
             {t("cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={() => onConfirm(trimmed)}
             disabled={!isValid || isPending}
+            data-cy="dialog-confirm"
           >
             {isPending ? pendingLabel : confirmLabel}
           </Button>

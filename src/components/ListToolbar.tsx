@@ -41,6 +41,7 @@ export function ListToolbarRow({
         />
         <Input
           type="search"
+          data-cy="list-search"
           placeholder={t("searchGuestList")}
           aria-label={t("searchGuestList")}
           value={search}
@@ -95,12 +96,21 @@ export function FilterMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" className={TRIGGER_CLASS} />}
+        render={
+          <Button
+            variant="outline"
+            className={TRIGGER_CLASS}
+            data-cy="list-filter"
+          />
+        }
       >
         <ListFilter aria-hidden="true" />
         {t("filterGuests")}
         {activeCount > 0 && (
-          <span className="rounded-full bg-foreground px-1.5 text-xs font-semibold text-background tabular-nums">
+          <span
+            data-cy="list-filter-count"
+            className="rounded-full bg-foreground px-1.5 text-xs font-semibold text-background tabular-nums"
+          >
             {activeCount}
           </span>
         )}
@@ -133,7 +143,13 @@ export function SortMenu<K extends string>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="outline" className={TRIGGER_CLASS} />}
+        render={
+          <Button
+            variant="outline"
+            className={TRIGGER_CLASS}
+            data-cy="list-sort"
+          />
+        }
       >
         <ArrowDownUp aria-hidden="true" />
         <span className="sr-only">{t("sortBy")}:</span>
@@ -186,6 +202,7 @@ export function FilterChips({
         <button
           key={chip.key}
           type="button"
+          data-cy={`list-chip-${chip.key}`}
           onClick={chip.onRemove}
           aria-label={t("removeFilter").replace("{0}", chip.label)}
           className="inline-flex h-7 items-center gap-1 rounded-full border bg-muted/40 pr-2 pl-3 text-xs font-medium transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
@@ -194,13 +211,22 @@ export function FilterChips({
           <X className="size-3.5 text-muted-foreground" aria-hidden="true" />
         </button>
       ))}
-      <span className="text-muted-foreground tabular-nums" aria-live="polite">
+      <span
+        className="text-muted-foreground tabular-nums"
+        aria-live="polite"
+        data-cy="list-count"
+      >
         {t("showingGuests")
           .replace("{0}", String(shown))
           .replace("{1}", String(total))}
       </span>
       {chips.length > 0 && (
-        <Button variant="ghost" size="sm" onClick={onClear}>
+        <Button
+          variant="ghost"
+          size="sm"
+          data-cy="list-clear-filters"
+          onClick={onClear}
+        >
           {t("clearFilters")}
         </Button>
       )}
@@ -257,7 +283,12 @@ export function ShowMoreButton({
   if (count <= 0) return null;
   return (
     <div className="flex justify-center">
-      <Button ref={observe} variant="outline" onClick={onShowMore}>
+      <Button
+        ref={observe}
+        variant="outline"
+        data-cy="list-show-more"
+        onClick={onShowMore}
+      >
         {t("showMoreCount").replace("{0}", String(count))}
       </Button>
     </div>

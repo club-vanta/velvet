@@ -1,4 +1,5 @@
 import createClient, { type Middleware } from "openapi-fetch";
+import { NetworkError } from "./errors";
 import type { paths } from "./types";
 
 // Run `npm run generate:api` to regenerate types from the backend OpenAPI schema.
@@ -27,15 +28,11 @@ const authMiddleware: Middleware = {
   },
 };
 
+// fetch() rejects with a TypeError when the request never got a response.
+// Any other error (an aborted request) is rethrown as is.
 const networkErrorMiddleware: Middleware = {
-  onError({ error, request }) {
-    if (error instanceof TypeError) {
-      console.error("[network error]", request.method, request.url, error);
-      throw new Error(
-        "No se pudo conectar con el servidor.\nVerificá tu conexión.",
-      );
-    }
-    throw error;
+  onError({ error }) {
+    if (error instanceof TypeError) return new NetworkError({ cause: error });
   },
 };
 
@@ -64,7 +61,3 @@ export const api = createClient<paths>({
 api.use(authMiddleware);
 api.use(networkErrorMiddleware);
 api.use(unauthorizedMiddleware);
-
-export const API_BASE_URL: string =
-  import.meta.env.VITE_API_BASE_URL ??
-  "https://api-alter-tracker.club-vanta.com";
