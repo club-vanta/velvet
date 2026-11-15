@@ -135,7 +135,8 @@ E2E.
 `npm run coverage` runs Vitest with coverage, then both Cypress suites against
 an instrumented app (`VITE_COVERAGE=true`, `vite-plugin-istanbul` with
 `@cypress/code-coverage`), and merges everything into `coverage/all/index.html`.
-Per-suite reports are in `coverage/unit` and `coverage/cypress`.
+Per-suite reports are in `coverage/unit` and `coverage/cypress`. The merge takes
+Vitest's data for `.ts` files only (see `scripts/merge-coverage.mjs` for why).
 
 ## Smoke suite (real backend)
 

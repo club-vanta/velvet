@@ -115,16 +115,17 @@ Measured on the final commit with `npm run coverage` (Chromium, UTC):
 | ----------------------------- | ---------- | -------- | --------- | ----- |
 | Cypress (E2E and component)   | 97.3%      | 89.2%    | 97.3%     | 98.3% |
 | Vitest (logic and hooks only) | 9.0%       | 6.3%     | 22.8%     | 12.8% |
-| Combined (`coverage/all`)     | 88.2%      | 85.0%    | 95.1%     | 84.5% |
+| Combined (`coverage/all`)     | 97.4%      | 89.2%    | 97.5%     | 98.4% |
 
 The Vitest figure is low by design: Vitest now covers only pure logic and
 hooks, and Cypress covers components and pages.
 
-The combined figure is lower than Cypress alone, which a union of the two
-should not be. Vitest and the Vite plugin instrument the same files with
-different statement maps, and `scripts/merge-coverage.mjs` merges them by
-file, so the combined report is not reliable yet. Use the Cypress figure
-until the merge is fixed (see Follow-ups).
+The combined report takes Vitest's coverage of `.ts` files only. The React
+Compiler rewrites `.tsx` files before they are instrumented, and Vitest and
+the Vite plugin map that output back to different source locations, so
+merging Vitest's `.tsx` data added uncovered duplicate statements and pulled
+the total down to 88%. Vitest tests no components, so the `.tsx` data it
+leaves out is almost all misses.
 
 ## Bugs found and fixed
 
@@ -227,6 +228,3 @@ Each fix has a test that fails without it.
 
 - Drop the `package.json` overrides once `eslint-plugin-react-hooks` and
   `cypress-axe` support the current versions.
-- Fix the coverage merge so both suites use the same instrumentation, for
-  example by running Vitest with the same Istanbul settings as the Vite
-  plugin, or by reporting the suites separately.
