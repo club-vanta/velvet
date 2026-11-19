@@ -186,9 +186,14 @@ describe("Login", () => {
       .its("localStorage")
       .invoke("getItem", "auth_token")
       .should("be.null");
-    // A reload must not sign in a user who was told sign-in failed.
+    // A reload must not sign in a user who was told sign-in failed. A fresh
+    // alias catches only the reload's request: @userinfo may also hold the
+    // login's own request, or the first page load's when the app boots slowly.
+    cy.stubApiError("GET", "/auth/userinfo", { statusCode: 401 }).as(
+      "reloadUserinfo",
+    );
     cy.reload();
-    cy.wait("@userinfo")
+    cy.wait("@reloadUserinfo")
       .its("request.headers")
       .should("not.have.property", "authorization");
     cy.getBySel("login-username").should("be.visible");
