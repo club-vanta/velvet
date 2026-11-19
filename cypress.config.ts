@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { defineConfig } from "cypress";
 import registerCodeCoverageTasks from "@cypress/code-coverage/task";
+import cypressSplit from "cypress-split";
 
 // Stubbed E2E runs point the app at a host that does not exist, so a request
 // that no test stubbed fails loudly instead of reaching a real backend.
@@ -37,6 +38,22 @@ const tasks = {
   },
 };
 
+/**
+ * On CI each job runs one share of the specs: SPLIT is the number of jobs and
+ * SPLIT_INDEX this job's index (see .github/workflows/ci.yml). Shares are cut
+ * by the spec durations in `timingsFile`, so the jobs finish close together.
+ * Without SPLIT this does nothing. cypress-split may set config.specPattern,
+ * so setupNodeEvents must return config after calling it.
+ */
+function splitSpecs(
+  on: Cypress.PluginEvents,
+  config: Cypress.PluginConfigOptions,
+  timingsFile: string,
+) {
+  process.env.SPLIT_FILE ??= timingsFile;
+  cypressSplit(on, config);
+}
+
 export default defineConfig({
   // Public, non-secret values read with Cypress.expose(). Override from the CLI
   // with --expose, e.g. the smoke suite passes apiUrl and realBackend.
@@ -50,7 +67,9 @@ export default defineConfig({
   },
   viewportWidth: 1280,
   viewportHeight: 800,
-  retries: { runMode: 2, openMode: 0 },
+  // Retries hide nothing on CI, where a flaky failure would block a merge,
+  // but locally they triple the wait on a test that is really broken.
+  retries: { runMode: process.env.CI ? 2 : 0, openMode: 0 },
   video: false,
   screenshotOnRunFailure: true,
   e2e: {
@@ -64,6 +83,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       registerCodeCoverageTasks(on, config);
       on("task", tasks);
+      splitSpecs(on, config, "cypress/timings/e2e.json");
       return config;
     },
   },
@@ -88,6 +108,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       registerCodeCoverageTasks(on, config);
       on("task", tasks);
+      splitSpecs(on, config, "cypress/timings/component.json");
       return config;
     },
   },

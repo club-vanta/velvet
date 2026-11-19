@@ -12,8 +12,11 @@ Two suites run on Cypress 16, and both follow the
 Vitest stays in place for pure logic (`lib/`, `domain/`, hooks, formatters). See
 "Which tool" below.
 
-Interactive mode: run `npm run dev:e2e` in one terminal and `npm run cy:open` in
-another.
+`npm run test:e2e` builds the app in "e2e" mode and serves the build
+(`serve:e2e`): Cypress reloads the app on every visit, and a build loads in a
+fraction of the time the dev server needs, which halves the suite. Interactive
+mode keeps the dev server for hot reload: run `npm run dev:e2e` in one terminal
+and `npm run cy:open` in another.
 
 The npm scripts run Cypress with `TZ=UTC`, like the CI runners, because some
 specs expect clock times of UTC fixtures. If you call `npx cypress` directly,
@@ -26,11 +29,48 @@ editing the command:
 VELVET_BROWSER=chromium npm run test:e2e
 ```
 
+## Running less, and faster
+
+A full run takes minutes (about 9 for E2E and 9 for component on a laptop).
+While you work, run only what your change touches:
+
+- `VELVET_SPEC` runs the specs you name, comma separated, in either suite:
+
+  ```bash
+  VELVET_SPEC=cypress/e2e/meetups/first-time.cy.ts npm run test:e2e
+  VELVET_SPEC=src/features/meetups/components/MeetupStats.cy.tsx npm run test:ct
+  ```
+
+- `npm run test:ct:changed` and `npm run test:e2e:changed` run the specs
+  affected by your changes against `main`, committed or not.
+  [find-cypress-specs](https://github.com/bahmutov/find-cypress-specs) follows
+  the imports, so a component spec runs when anything it imports changed.
+  Tracing all of `src/` takes about two minutes. The E2E specs import only
+  `cypress/` and the factories, so a change to app code alone selects no E2E
+  spec: run the feature's flows with `VELVET_SPEC`, and the whole suite before
+  you open a PR.
+
+Failed tests are retried twice on CI only (`CI` is set there), so locally a
+broken test fails on the first attempt.
+
+On CI the suites run in parallel jobs (three for E2E, two for component).
+[cypress-split](https://github.com/bahmutov/cypress-split) gives each job a
+share of the specs, balanced by the durations in `cypress/timings/*.json`. A
+spec missing from those files counts as the average, so new specs need nothing.
+When the shares drift apart, refresh the files with a full local run of each
+suite with one split, and commit them:
+
+```bash
+SPLIT=1 SPLIT_INDEX=0 npm run test:e2e
+SPLIT=1 SPLIT_INDEX=0 npm run test:ct
+```
+
 ## Layout
 
 ```
-cypress.config.ts            E2E + component config, coverage tasks
+cypress.config.ts            E2E + component config, coverage tasks, CI split
 cypress/
+  timings/*.json             spec durations that balance the CI split jobs
   e2e/<feature>/*.cy.ts      one spec per user flow, grouped by feature
   e2e/smoke/*.cy.ts          real-backend suite (excluded from test:e2e)
   support/

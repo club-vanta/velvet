@@ -1,0 +1,472 @@
+{
+  "durations": [
+    {
+      "spec": "src/app/layout/Shell.cy.tsx",
+      "duration": 2774
+    },
+    {
+      "spec": "src/app/layout/components/BottomNav.cy.tsx",
+      "duration": 1938
+    },
+    {
+      "spec": "src/app/layout/components/LanguageMenu.cy.tsx",
+      "duration": 2516
+    },
+    {
+      "spec": "src/app/layout/components/LogoutButton.cy.tsx",
+      "duration": 2004
+    },
+    {
+      "spec": "src/app/layout/components/OrgSwitcher.cy.tsx",
+      "duration": 2554
+    },
+    {
+      "spec": "src/app/layout/components/PendingBadge.cy.tsx",
+      "duration": 1874
+    },
+    {
+      "spec": "src/app/layout/components/SidebarNav.cy.tsx",
+      "duration": 1985
+    },
+    {
+      "spec": "src/app/layout/components/SidebarToggle.cy.tsx",
+      "duration": 2204
+    },
+    {
+      "spec": "src/components/FactStrip.cy.tsx",
+      "duration": 1755
+    },
+    {
+      "spec": "src/components/GuestAvatar.cy.tsx",
+      "duration": 2256
+    },
+    {
+      "spec": "src/components/GuestBadges.cy.tsx",
+      "duration": 1989
+    },
+    {
+      "spec": "src/components/ListToolbar.cy.tsx",
+      "duration": 3251
+    },
+    {
+      "spec": "src/components/ReasonDialog.cy.tsx",
+      "duration": 3473
+    },
+    {
+      "spec": "src/components/StatCard.cy.tsx",
+      "duration": 1594
+    },
+    {
+      "spec": "src/components/WeatherDetails.cy.tsx",
+      "duration": 1934
+    },
+    {
+      "spec": "src/components/ui/input-with-prefix.cy.tsx",
+      "duration": 1854
+    },
+    {
+      "spec": "src/features/auth/ForgotPasswordPage.cy.tsx",
+      "duration": 4135
+    },
+    {
+      "spec": "src/features/auth/LoginPage.cy.tsx",
+      "duration": 2049
+    },
+    {
+      "spec": "src/features/auth/ResetPasswordPage.cy.tsx",
+      "duration": 3753
+    },
+    {
+      "spec": "src/features/auth/SignupPage.cy.tsx",
+      "duration": 2930
+    },
+    {
+      "spec": "src/features/auth/components/AuthError.cy.tsx",
+      "duration": 1694
+    },
+    {
+      "spec": "src/features/auth/components/AuthField.cy.tsx",
+      "duration": 1598
+    },
+    {
+      "spec": "src/features/auth/components/AuthSuccess.cy.tsx",
+      "duration": 1628
+    },
+    {
+      "spec": "src/features/auth/components/PasswordInput.cy.tsx",
+      "duration": 2795
+    },
+    {
+      "spec": "src/features/dashboard/components/FeaturedMeetup.cy.tsx",
+      "duration": 2131
+    },
+    {
+      "spec": "src/features/dashboard/components/OrgTotals.cy.tsx",
+      "duration": 1668
+    },
+    {
+      "spec": "src/features/dashboard/components/RecentMeetups.cy.tsx",
+      "duration": 1774
+    },
+    {
+      "spec": "src/features/events/components/EventTypeFilter.cy.tsx",
+      "duration": 1856
+    },
+    {
+      "spec": "src/features/events/components/EventsTable.cy.tsx",
+      "duration": 1887
+    },
+    {
+      "spec": "src/features/guests/GuestDetailRoute.cy.tsx",
+      "duration": 1738
+    },
+    {
+      "spec": "src/features/guests/components/AddGuestDialog.cy.tsx",
+      "duration": 3907
+    },
+    {
+      "spec": "src/features/guests/components/BanDialog.cy.tsx",
+      "duration": 1980
+    },
+    {
+      "spec": "src/features/guests/components/DirectoryRow.cy.tsx",
+      "duration": 1993
+    },
+    {
+      "spec": "src/features/guests/components/DirectoryRowActions.cy.tsx",
+      "duration": 3282
+    },
+    {
+      "spec": "src/features/guests/components/DirectoryToolbar.cy.tsx",
+      "duration": 2551
+    },
+    {
+      "spec": "src/features/guests/components/EditGuestDialog.cy.tsx",
+      "duration": 2240
+    },
+    {
+      "spec": "src/features/guests/components/GuestActionDialog.cy.tsx",
+      "duration": 2151
+    },
+    {
+      "spec": "src/features/guests/components/GuestDialog.cy.tsx",
+      "duration": 1955
+    },
+    {
+      "spec": "src/features/guests/components/GuestIdentity.cy.tsx",
+      "duration": 1737
+    },
+    {
+      "spec": "src/features/guests/components/GuestList.cy.tsx",
+      "duration": 1736
+    },
+    {
+      "spec": "src/features/guests/components/GuestListError.cy.tsx",
+      "duration": 1722
+    },
+    {
+      "spec": "src/features/guests/components/GuestMeetups.cy.tsx",
+      "duration": 3072
+    },
+    {
+      "spec": "src/features/guests/components/GuestProfile.cy.tsx",
+      "duration": 4086
+    },
+    {
+      "spec": "src/features/guests/components/GuestProfileActions.cy.tsx",
+      "duration": 2320
+    },
+    {
+      "spec": "src/features/guests/components/GuestProfileUnavailable.cy.tsx",
+      "duration": 1745
+    },
+    {
+      "spec": "src/features/guests/components/IdentityCard.cy.tsx",
+      "duration": 1715
+    },
+    {
+      "spec": "src/features/guests/components/LinkMazmoDialog.cy.tsx",
+      "duration": 3035
+    },
+    {
+      "spec": "src/features/guests/components/MazmoFlagAlerts.cy.tsx",
+      "duration": 1728
+    },
+    {
+      "spec": "src/features/guests/components/NameHistory.cy.tsx",
+      "duration": 1968
+    },
+    {
+      "spec": "src/features/guests/components/ProfileBackdrop.cy.tsx",
+      "duration": 1386
+    },
+    {
+      "spec": "src/features/guests/components/ProfileFacts.cy.tsx",
+      "duration": 1670
+    },
+    {
+      "spec": "src/features/guests/components/ProfileHandle.cy.tsx",
+      "duration": 1562
+    },
+    {
+      "spec": "src/features/guests/components/RefreshFromMazmoButton.cy.tsx",
+      "duration": 2301
+    },
+    {
+      "spec": "src/features/guests/components/UnlinkMazmoDialog.cy.tsx",
+      "duration": 1710
+    },
+    {
+      "spec": "src/features/guests/components/VantAlert.cy.tsx",
+      "duration": 1593
+    },
+    {
+      "spec": "src/features/guests/components/VantStatusError.cy.tsx",
+      "duration": 1698
+    },
+    {
+      "spec": "src/features/guests/components/VantedRow.cy.tsx",
+      "duration": 1817
+    },
+    {
+      "spec": "src/features/meetups/components/AddressSearch.cy.tsx",
+      "duration": 10013
+    },
+    {
+      "spec": "src/features/meetups/components/BanReason.cy.tsx",
+      "duration": 2557
+    },
+    {
+      "spec": "src/features/meetups/components/CheckInButton.cy.tsx",
+      "duration": 2032
+    },
+    {
+      "spec": "src/features/meetups/components/CheckInStatus.cy.tsx",
+      "duration": 1640
+    },
+    {
+      "spec": "src/features/meetups/components/ConfirmDialog.cy.tsx",
+      "duration": 2169
+    },
+    {
+      "spec": "src/features/meetups/components/DateTile.cy.tsx",
+      "duration": 1405
+    },
+    {
+      "spec": "src/features/meetups/components/FinalizeMeetupDialog.cy.tsx",
+      "duration": 2117
+    },
+    {
+      "spec": "src/features/meetups/components/FinalizedNote.cy.tsx",
+      "duration": 1604
+    },
+    {
+      "spec": "src/features/meetups/components/FirstTimeStat.cy.tsx",
+      "duration": 1647
+    },
+    {
+      "spec": "src/features/meetups/components/GuestCard.cy.tsx",
+      "duration": 1432
+    },
+    {
+      "spec": "src/features/meetups/components/GuestCardStatuses.cy.tsx",
+      "duration": 1935
+    },
+    {
+      "spec": "src/features/meetups/components/GuestIdentity.cy.tsx",
+      "duration": 1950
+    },
+    {
+      "spec": "src/features/meetups/components/GuestList.cy.tsx",
+      "duration": 2105
+    },
+    {
+      "spec": "src/features/meetups/components/GuestListToolbar.cy.tsx",
+      "duration": 3002
+    },
+    {
+      "spec": "src/features/meetups/components/GuestRowActions.cy.tsx",
+      "duration": 2895
+    },
+    {
+      "spec": "src/features/meetups/components/GuestStatusLine.cy.tsx",
+      "duration": 1687
+    },
+    {
+      "spec": "src/features/meetups/components/MarkPaidButton.cy.tsx",
+      "duration": 1588
+    },
+    {
+      "spec": "src/features/meetups/components/MazmoUrlLink.cy.tsx",
+      "duration": 1561
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupBadges.cy.tsx",
+      "duration": 1559
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupDialogs.cy.tsx",
+      "duration": 1479
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupGroup.cy.tsx",
+      "duration": 1722
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupLocation.cy.tsx",
+      "duration": 4678
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupRow.cy.tsx",
+      "duration": 1668
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupSortBar.cy.tsx",
+      "duration": 1787
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupStats.cy.tsx",
+      "duration": 3463
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupToolbar.cy.tsx",
+      "duration": 2426
+    },
+    {
+      "spec": "src/features/meetups/components/MeetupWeather.cy.tsx",
+      "duration": 3119
+    },
+    {
+      "spec": "src/features/meetups/components/NewMeetupDialog.cy.tsx",
+      "duration": 2641
+    },
+    {
+      "spec": "src/features/meetups/components/PaymentStatus.cy.tsx",
+      "duration": 1837
+    },
+    {
+      "spec": "src/features/meetups/components/RetryAlert.cy.tsx",
+      "duration": 1645
+    },
+    {
+      "spec": "src/features/meetups/components/SortableHead.cy.tsx",
+      "duration": 1722
+    },
+    {
+      "spec": "src/features/meetups/components/WalkinCandidate.cy.tsx",
+      "duration": 1717
+    },
+    {
+      "spec": "src/features/meetups/components/WalkinDialog.cy.tsx",
+      "duration": 3252
+    },
+    {
+      "spec": "src/features/meetups/components/WeatherRefreshButton.cy.tsx",
+      "duration": 2750
+    },
+    {
+      "spec": "src/features/organizations/components/AddMemberDialog.cy.tsx",
+      "duration": 3019
+    },
+    {
+      "spec": "src/features/organizations/components/CreateOrgDialog.cy.tsx",
+      "duration": 2883
+    },
+    {
+      "spec": "src/features/organizations/components/EditOrgDialog.cy.tsx",
+      "duration": 2255
+    },
+    {
+      "spec": "src/features/organizations/components/MemberRow.cy.tsx",
+      "duration": 2012
+    },
+    {
+      "spec": "src/features/organizations/components/OrgHeader.cy.tsx",
+      "duration": 1780
+    },
+    {
+      "spec": "src/features/staff/StaffPage.cy.tsx",
+      "duration": 1724
+    },
+    {
+      "spec": "src/features/staff/components/DisableDialog.cy.tsx",
+      "duration": 2277
+    },
+    {
+      "spec": "src/features/staff/components/RecoveryCodeDialog.cy.tsx",
+      "duration": 2235
+    },
+    {
+      "spec": "src/features/staff/components/StaffRow.cy.tsx",
+      "duration": 2430
+    },
+    {
+      "spec": "src/features/staff/components/StaffTable.cy.tsx",
+      "duration": 2038
+    },
+    {
+      "spec": "src/features/stats/components/ChartTextTable.cy.tsx",
+      "duration": 1671
+    },
+    {
+      "spec": "src/features/stats/components/DateField.cy.tsx",
+      "duration": 1703
+    },
+    {
+      "spec": "src/features/stats/components/HeadlineStat.cy.tsx",
+      "duration": 1689
+    },
+    {
+      "spec": "src/features/stats/components/StatsErrorState.cy.tsx",
+      "duration": 1847
+    },
+    {
+      "spec": "src/features/stats/components/StatsListMore.cy.tsx",
+      "duration": 1491
+    },
+    {
+      "spec": "src/features/stats/components/ViewToggle.cy.tsx",
+      "duration": 1733
+    },
+    {
+      "spec": "src/features/stats/tabs/arrivals/ArrivalsTab.cy.tsx",
+      "duration": 5733
+    },
+    {
+      "spec": "src/features/stats/tabs/attendance/AttendanceTab.cy.tsx",
+      "duration": 4747
+    },
+    {
+      "spec": "src/features/stats/tabs/demographics/DemographicsTab.cy.tsx",
+      "duration": 4677
+    },
+    {
+      "spec": "src/features/stats/tabs/no-shows/NoShowsTab.cy.tsx",
+      "duration": 5657
+    },
+    {
+      "spec": "src/features/stats/tabs/no-shows/RateBars.cy.tsx",
+      "duration": 2512
+    },
+    {
+      "spec": "src/features/stats/tabs/operations/OperationsTab.cy.tsx",
+      "duration": 5070
+    },
+    {
+      "spec": "src/features/stats/tabs/retention/CohortTable.cy.tsx",
+      "duration": 1831
+    },
+    {
+      "spec": "src/features/stats/tabs/retention/RetentionTab.cy.tsx",
+      "duration": 8551
+    },
+    {
+      "spec": "src/features/stats/tabs/weather/MeteogramTooltip.cy.tsx",
+      "duration": 1564
+    },
+    {
+      "spec": "src/features/stats/tabs/weather/WeatherTab.cy.tsx",
+      "duration": 9928
+    }
+  ]
+}

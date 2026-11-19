@@ -16,7 +16,8 @@ export default defineConfig(({ mode }) => {
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
       // Code coverage for Cypress runs: instruments src/ only when
-      // VITE_COVERAGE=true (the cy:coverage scripts set it).
+      // VITE_COVERAGE=true (the cy:coverage scripts and CI set it), in the dev
+      // server and in the build test:e2e serves. Production builds never set it.
       istanbul({
         include: "src/*",
         exclude: [
@@ -28,6 +29,9 @@ export default defineConfig(({ mode }) => {
         ],
         extension: [".ts", ".tsx"],
         requireEnv: true,
+        // Only for coverage builds: once applied to a build, the plugin turns
+        // source maps on, and production must not ship them.
+        forceBuildInstrument: process.env.VITE_COVERAGE === "true",
       }),
     ],
     server: {
