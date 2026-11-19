@@ -30,7 +30,7 @@ export function BanReason({
             data-cy="ban-reason-author"
           >
             <span aria-hidden="true">– </span>
-            <span className="sr-only">{t("banReasonBy")} </span>
+            <span className="sr-only">{t("vantedBy")} </span>
             {ban.banned_by.username}
           </figcaption>
         )}

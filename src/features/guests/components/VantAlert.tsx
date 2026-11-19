@@ -6,7 +6,7 @@ import type { components } from "@/api/types";
 
 type BannedGuest = components["schemas"]["BannedGuestPublic"];
 
-/** The guest's vant in this org: why, and since when. */
+/** The guest's vant in this org: why, since when, and who vanted. */
 export function VantAlert({
   ban,
   orgName,
@@ -15,6 +15,7 @@ export function VantAlert({
   orgName?: string;
 }) {
   const { t } = useLanguage();
+  const since = formatFullDateTime(ban.banned_at);
   return (
     <Alert variant="destructive" data-cy="guest-vant-alert">
       <ShieldBan />
@@ -28,7 +29,11 @@ export function VantAlert({
           {ban.banned_reason}
         </p>
         <p className="text-xs" data-cy="guest-vant-since">
-          {t("vantedSince").replace("{0}", formatFullDateTime(ban.banned_at))}
+          {ban.banned_by
+            ? t("vantedSinceBy")
+                .replace("{0}", since)
+                .replace("{1}", ban.banned_by.username)
+            : t("vantedSince").replace("{0}", since)}
         </p>
       </AlertDescription>
     </Alert>
