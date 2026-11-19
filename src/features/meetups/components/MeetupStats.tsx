@@ -5,26 +5,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/domain/meetup";
 import { cn } from "@/lib/utils";
+import { FirstTimeStat } from "./FirstTimeStat";
 import { StatRows } from "./StatRows";
 
-/** The meetup's live numbers: check-ins, guest types and, if paid, payments. */
+// Static class names, so Tailwind sees each one.
+const XL_COLUMNS: Record<number, string> = {
+  3: "xl:grid-cols-3",
+  4: "xl:grid-cols-4",
+};
+
+/**
+ * The meetup's live numbers: check-ins, newcomers when there are any, guest
+ * types and, if paid, payments. The newcomers come from the guest list the
+ * page already holds, not from the stats request.
+ */
 export function MeetupStats({
   orgId,
   meetupId,
   requiresPayment,
+  firstTime,
 }: {
   orgId: string;
   meetupId: string;
   requiresPayment: boolean;
+  firstTime?: { total: number; arrived: number; onShowOnly: () => void };
 }) {
   const { t } = useLanguage();
 
   const statsQ = useMeetupStats(orgId, meetupId);
 
-  const cardCount = requiresPayment ? 3 : 2;
+  const showFirstTime = firstTime !== undefined && firstTime.total > 0;
+  const cardCount = 2 + Number(requiresPayment) + Number(showFirstTime);
   const gridClass = cn(
     "grid gap-2 sm:gap-3 grid-cols-2",
-    cardCount === 3 && "xl:grid-cols-3",
+    XL_COLUMNS[cardCount],
   );
 
   if (statsQ.isLoading) {
@@ -104,6 +118,14 @@ export function MeetupStats({
           ]}
         />
       </StatCard>
+
+      {showFirstTime && (
+        <FirstTimeStat
+          total={firstTime.total}
+          arrived={firstTime.arrived}
+          onShowOnly={firstTime.onShowOnly}
+        />
+      )}
 
       <StatCard title={t("statsGuestTypes")}>
         <StatRows

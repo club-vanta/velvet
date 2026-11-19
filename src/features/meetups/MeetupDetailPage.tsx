@@ -22,6 +22,7 @@ import { RetryAlert } from "./components/RetryAlert";
 import { useGuestListView } from "./hooks/useGuestListView";
 import { useMeetupDialogs } from "./hooks/useMeetupDialogs";
 import { useProfileSheet } from "./hooks/useProfileSheet";
+import { countFirstTime } from "./lib/firstTime";
 import { checkedInMessage, type GuestRowContext } from "./lib/guestRow";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
@@ -51,6 +52,7 @@ export function MeetupDetailPage() {
   const allGuests = guestsQ.data?.guests ?? [];
   const list = useGuestListView(allGuests, requiresPayment);
   const hasGuests = !guestsQ.isLoading && allGuests.length > 0;
+  const firstTime = countFirstTime(allGuests);
 
   function checkInGuest(guest: MeetupGuest) {
     if (guest.guest.is_banned) {
@@ -143,6 +145,11 @@ export function MeetupDetailPage() {
           orgId={orgId}
           meetupId={meetupId}
           requiresPayment={requiresPayment}
+          firstTime={{
+            ...firstTime,
+            onShowOnly: () =>
+              list.setFilters({ ...list.filters, firstTimeOnly: true }),
+          }}
         />
       )}
 

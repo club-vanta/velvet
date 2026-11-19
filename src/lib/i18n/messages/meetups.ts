@@ -163,6 +163,9 @@ export const en = {
   statsNotArrived: "Not arrived",
   statsWalkins: "Walk-ins",
   statsGuestTypes: "Guest types",
+  meetupNewGuests: "New",
+  meetupNewArrived: "{0} already arrived",
+  meetupShowOnlyNew: "Show only new guests",
   statsExemptHint: "Exempt guests don't count as paid or pending.",
   statsCancellations: "Cancelled RSVPs",
   statsRefundHint:
@@ -332,6 +335,9 @@ export const es: Record<keyof typeof en, string> = {
   statsNotArrived: "Por llegar",
   statsWalkins: "Discretos",
   statsGuestTypes: "Tipos de invitado",
+  meetupNewGuests: "Nuevos",
+  meetupNewArrived: "{0} ya llegaron",
+  meetupShowOnlyNew: "Ver solo nuevos",
   statsExemptHint: "Los exentos no cuentan como pagados ni pendientes.",
   statsCancellations: "RSVPs cancelados",
   statsRefundHint:
