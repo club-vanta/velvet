@@ -24,20 +24,30 @@ export function VantedRow({
     <GuestRow data-cy={`vanted-row-${guest.id}`}>
       <GuestIdentity guest={guest} isBanned />
       <div className="flex items-end justify-between gap-3 @3xl:contents">
-        <dl className="min-w-0 space-y-1 text-sm @3xl:contents">
-          <div className="text-xs text-muted-foreground @3xl:w-52 @3xl:shrink-0 @3xl:whitespace-nowrap">
-            <dt className="inline font-medium">{t("bannedAt")}</dt>{" "}
-            <dd className="inline" data-cy="vanted-at">
-              {formatDateTime(guest.banned_at)}
-            </dd>
-          </div>
-          <div className="@3xl:w-72 @3xl:shrink-0">
+        <div className="min-w-0 space-y-1 text-sm @3xl:contents">
+          <dl className="space-y-0.5 text-xs text-muted-foreground @3xl:w-52 @3xl:shrink-0 @3xl:whitespace-nowrap">
+            <div>
+              <dt className="inline font-medium">{t("bannedAt")}</dt>{" "}
+              <dd className="inline" data-cy="vanted-at">
+                {formatDateTime(guest.banned_at)}
+              </dd>
+            </div>
+            {guest.banned_by && (
+              <div>
+                <dt className="inline font-medium">{t("vantedBy")}</dt>{" "}
+                <dd className="inline" data-cy="vanted-by">
+                  {guest.banned_by.username}
+                </dd>
+              </div>
+            )}
+          </dl>
+          <dl className="@3xl:w-72 @3xl:shrink-0">
             <dt className="sr-only">{t("reason")}</dt>
             <dd className="break-words" data-cy="vanted-reason">
               {guest.banned_reason}
             </dd>
-          </div>
-        </dl>
+          </dl>
+        </div>
         {canUnban && (
           <Button
             variant="outline"

@@ -9,11 +9,11 @@ const ZOE = makeBannedGuest({
   banned_reason: "Took photos without consent",
 });
 
-function mount(canUnban: boolean, unbanPending = false) {
+function mount(canUnban: boolean, unbanPending = false, guest = ZOE) {
   cy.mount(
     <ul className="@container">
       <VantedRow
-        guest={ZOE}
+        guest={guest}
         canUnban={canUnban}
         unbanPending={unbanPending}
         onUnban={cy.spy().as("onUnban")}
@@ -23,7 +23,7 @@ function mount(canUnban: boolean, unbanPending = false) {
 }
 
 describe("<VantedRow />", () => {
-  it("shows the vanted guest, when and why, and unvants on click", () => {
+  it("shows the vanted guest, when, by whom and why, and unvants on click", () => {
     mount(true);
     cy.getBySel("vanted-row-b-zoe").within(() => {
       cy.getBySel("guest-badge-vanted").should("have.text", "Vanted");
@@ -31,6 +31,7 @@ describe("<VantedRow />", () => {
         "have.text",
         formatDateTime("2026-09-01T03:00:00Z"),
       );
+      cy.getBySel("vanted-by").should("have.text", "owner");
       cy.getBySel("vanted-reason").should(
         "have.text",
         "Took photos without consent",
@@ -38,6 +39,12 @@ describe("<VantedRow />", () => {
       cy.getByRole("button", { name: "Unvant" }).click();
     });
     cy.get("@onUnban").should("have.been.calledOnceWith", ZOE);
+  });
+
+  it("leaves out who vanted when the author isn't recorded", () => {
+    mount(false, false, { ...ZOE, banned_by_id: null, banned_by: null });
+    cy.getBySel("vanted-at").should("exist");
+    cy.getBySel("vanted-by").should("not.exist");
   });
 
   it("disables Unvant while an unvant runs", () => {
