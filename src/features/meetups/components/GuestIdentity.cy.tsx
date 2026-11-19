@@ -52,6 +52,21 @@ describe("<GuestIdentity />", () => {
     );
   });
 
+  it("badges a guest on their first visit, first in the row", () => {
+    mount(
+      makeMeetupGuest({ prior_visits: 0, rsvp: { guest_type: "INVITED" } }),
+    );
+    cy.getBySel("guest-first-time-badge").should("have.text", "First time");
+    cy.getBySel("guest-badges").should("have.text", "First timeInvited");
+  });
+
+  it("does not badge a returning guest or new staff as first time", () => {
+    mount(makeMeetupGuest({ prior_visits: 2 }));
+    cy.getBySel("guest-first-time-badge").should("not.exist");
+    mount(makeMeetupGuest({ prior_visits: 0, rsvp: { guest_type: "STAFF" } }));
+    cy.getBySel("guest-first-time-badge").should("not.exist");
+  });
+
   it("shows no badges for a regular RSVP", () => {
     mount();
     cy.getBySel("guest-badges").should("have.text", "").and("not.be.visible");

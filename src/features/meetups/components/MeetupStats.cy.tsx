@@ -20,13 +20,19 @@ const STATS = makeMeetupStats({
   payment: { paid_count: 5, unpaid_count: 2, exempt_from_payment_count: 5 },
 });
 
-function mount(requiresPayment = true) {
+function mount(
+  requiresPayment = true,
+  firstTime?: { total: number; arrived: number },
+) {
   cy.mount(
     <div data-cy="wrap">
       <MeetupStats
         orgId="org-1"
         meetupId="meetup-1"
         requiresPayment={requiresPayment}
+        firstTime={
+          firstTime && { ...firstTime, onShowOnly: cy.spy().as("onShowOnly") }
+        }
       />
     </div>,
     { as: "staff" },
@@ -86,6 +92,40 @@ describe("<MeetupStats />", () => {
     cy.getBySel("meetup-stats-error").findBySel("retry").click();
     cy.wait("@stats");
     cy.getBySel("meetup-stats").should("be.visible");
+  });
+
+  it("adds the new guests card when someone comes for the first time", () => {
+    cy.stubApi("GET", PATH, { body: STATS }).as("stats");
+    mount(true, { total: 2, arrived: 1 });
+    cy.wait("@stats");
+    cy.getBySel("meetup-stats-first-time").should("have.text", "2");
+    cy.getByRole("button", { name: "Show only new guests" }).click();
+    cy.get("@onShowOnly").should("have.been.calledOnce");
+  });
+
+  it("keeps the new guests card when the stats fail, since it reads the list", () => {
+    cy.stubApiError("GET", PATH, { statusCode: 500 }).as("stats");
+    mount(true, { total: 2, arrived: 1 });
+    cy.wait("@stats");
+    cy.getBySel("meetup-stats-error").should("be.visible");
+    cy.getBySel("meetup-stats-first-time").should("have.text", "2");
+    cy.getByRole("button", { name: "Show only new guests" }).click();
+    cy.get("@onShowOnly").should("have.been.calledOnce");
+  });
+
+  it("leaves out the new guests card when nobody is new", () => {
+    cy.stubApi("GET", PATH, { body: STATS }).as("stats");
+    mount(true, { total: 0, arrived: 0 });
+    cy.wait("@stats");
+    cy.getBySel("meetup-stats").should("be.visible");
+    cy.getBySel("meetup-stats-first-time").should("not.exist");
+  });
+
+  it("keeps a placeholder for the new guests card while loading", () => {
+    cy.stubApi("GET", PATH, { body: STATS, delay: 500 }).as("stats");
+    mount(true, { total: 2, arrived: 0 });
+    cy.getBySel("meetup-stats-loading").children().should("have.length", 4);
+    cy.wait("@stats");
   });
 
   it("shows placeholders while loading", () => {

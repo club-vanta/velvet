@@ -5,26 +5,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupStats } from "@/domain/meetup";
 import { cn } from "@/lib/utils";
+import { FirstTimeStat } from "./FirstTimeStat";
 import { StatRows } from "./StatRows";
 
-/** The meetup's live numbers: check-ins, guest types and, if paid, payments. */
+// Static class names, so Tailwind sees each one.
+const XL_COLUMNS: Record<number, string> = {
+  3: "xl:grid-cols-3",
+  4: "xl:grid-cols-4",
+};
+
+/**
+ * The meetup's live numbers: check-ins, newcomers when there are any, guest
+ * types and, if paid, payments. The newcomers come from the guest list the
+ * page already holds, not from the stats request.
+ */
 export function MeetupStats({
   orgId,
   meetupId,
   requiresPayment,
+  firstTime,
 }: {
   orgId: string;
   meetupId: string;
   requiresPayment: boolean;
+  firstTime?: { total: number; arrived: number; onShowOnly: () => void };
 }) {
   const { t } = useLanguage();
 
   const statsQ = useMeetupStats(orgId, meetupId);
 
-  const cardCount = requiresPayment ? 3 : 2;
+  const showFirstTime = firstTime !== undefined && firstTime.total > 0;
+  const cardCount = 2 + Number(requiresPayment) + Number(showFirstTime);
   const gridClass = cn(
     "grid gap-2 sm:gap-3 grid-cols-2",
-    cardCount === 3 && "xl:grid-cols-3",
+    XL_COLUMNS[cardCount],
   );
 
   if (statsQ.isLoading) {
@@ -37,21 +51,37 @@ export function MeetupStats({
     );
   }
 
+  // From the guest list, not the stats request, so it survives a failed one.
+  const firstTimeCard = showFirstTime && (
+    <FirstTimeStat
+      total={firstTime.total}
+      arrived={firstTime.arrived}
+      onShowOnly={firstTime.onShowOnly}
+    />
+  );
+
   if (statsQ.isError || !statsQ.data) {
     return (
-      <div
-        className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
-        data-cy="meetup-stats-error"
-      >
-        {t("failedLoadStats")}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => statsQ.refetch()}
-          data-cy="retry"
+      <div className="space-y-2 sm:space-y-3">
+        <div
+          className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
+          data-cy="meetup-stats-error"
         >
-          {t("retry")}
-        </Button>
+          {t("failedLoadStats")}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => statsQ.refetch()}
+            data-cy="retry"
+          >
+            {t("retry")}
+          </Button>
+        </div>
+        {firstTimeCard && (
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 xl:grid-cols-4">
+            {firstTimeCard}
+          </div>
+        )}
       </div>
     );
   }
@@ -104,6 +134,8 @@ export function MeetupStats({
           ]}
         />
       </StatCard>
+
+      {firstTimeCard}
 
       <StatCard title={t("statsGuestTypes")}>
         <StatRows

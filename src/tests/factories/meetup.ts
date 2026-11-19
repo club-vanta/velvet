@@ -43,11 +43,14 @@ export function makeMeetupGuest(
   overrides: {
     guest?: Partial<Schema<"GuestWithBanPublic">>;
     rsvp?: Partial<Schema<"RsvpPublic">>;
+    prior_visits?: number;
   } = {},
 ): Schema<"MeetupGuestPublic"> {
   return {
     guest: makeGuestWithBan(overrides.guest),
     rsvp: makeRsvp(overrides.rsvp),
+    // A returning guest by default, so only tests about newcomers see the badge.
+    prior_visits: overrides.prior_visits ?? 1,
   };
 }
 

@@ -1,0 +1,260 @@
+{
+  "durations": [
+    {
+      "spec": "cypress/e2e/app/bottom-nav.cy.ts",
+      "duration": 2918
+    },
+    {
+      "spec": "cypress/e2e/app/org-switcher.cy.ts",
+      "duration": 3469
+    },
+    {
+      "spec": "cypress/e2e/app/pending-badge.cy.ts",
+      "duration": 2524
+    },
+    {
+      "spec": "cypress/e2e/app/routes.cy.ts",
+      "duration": 5776
+    },
+    {
+      "spec": "cypress/e2e/app/session.cy.ts",
+      "duration": 2341
+    },
+    {
+      "spec": "cypress/e2e/app/sidebar.cy.ts",
+      "duration": 2386
+    },
+    {
+      "spec": "cypress/e2e/auth/forgot-password.cy.ts",
+      "duration": 6311
+    },
+    {
+      "spec": "cypress/e2e/auth/login.cy.ts",
+      "duration": 8156
+    },
+    {
+      "spec": "cypress/e2e/auth/logout.cy.ts",
+      "duration": 3365
+    },
+    {
+      "spec": "cypress/e2e/auth/reset-password.cy.ts",
+      "duration": 6028
+    },
+    {
+      "spec": "cypress/e2e/auth/signup.cy.ts",
+      "duration": 5871
+    },
+    {
+      "spec": "cypress/e2e/dashboard/dashboard-overview.cy.ts",
+      "duration": 5991
+    },
+    {
+      "spec": "cypress/e2e/dashboard/dashboard-roles.cy.ts",
+      "duration": 2739
+    },
+    {
+      "spec": "cypress/e2e/dashboard/featured-meetup.cy.ts",
+      "duration": 6121
+    },
+    {
+      "spec": "cypress/e2e/events/audit-log-filter.cy.ts",
+      "duration": 3712
+    },
+    {
+      "spec": "cypress/e2e/events/audit-log.cy.ts",
+      "duration": 5328
+    },
+    {
+      "spec": "cypress/e2e/guests/add-guest.cy.ts",
+      "duration": 9769
+    },
+    {
+      "spec": "cypress/e2e/guests/directory-filters.cy.ts",
+      "duration": 8087
+    },
+    {
+      "spec": "cypress/e2e/guests/directory-paging.cy.ts",
+      "duration": 5229
+    },
+    {
+      "spec": "cypress/e2e/guests/directory-search.cy.ts",
+      "duration": 4441
+    },
+    {
+      "spec": "cypress/e2e/guests/directory-sort.cy.ts",
+      "duration": 4445
+    },
+    {
+      "spec": "cypress/e2e/guests/directory.cy.ts",
+      "duration": 5570
+    },
+    {
+      "spec": "cypress/e2e/guests/edit-guest.cy.ts",
+      "duration": 7428
+    },
+    {
+      "spec": "cypress/e2e/guests/guest-profile.cy.ts",
+      "duration": 10703
+    },
+    {
+      "spec": "cypress/e2e/guests/mazmo-link.cy.ts",
+      "duration": 6980
+    },
+    {
+      "spec": "cypress/e2e/guests/refresh-mazmo.cy.ts",
+      "duration": 4226
+    },
+    {
+      "spec": "cypress/e2e/guests/roles.cy.ts",
+      "duration": 8736
+    },
+    {
+      "spec": "cypress/e2e/guests/unlink-blocked.cy.ts",
+      "duration": 5156
+    },
+    {
+      "spec": "cypress/e2e/guests/vant.cy.ts",
+      "duration": 9675
+    },
+    {
+      "spec": "cypress/e2e/guests/vanted-tab.cy.ts",
+      "duration": 5650
+    },
+    {
+      "spec": "cypress/e2e/i18n/language-switch.cy.ts",
+      "duration": 3403
+    },
+    {
+      "spec": "cypress/e2e/i18n/spanish.cy.ts",
+      "duration": 5296
+    },
+    {
+      "spec": "cypress/e2e/meetups/check-in.cy.ts",
+      "duration": 13383
+    },
+    {
+      "spec": "cypress/e2e/meetups/create-meetup.cy.ts",
+      "duration": 8165
+    },
+    {
+      "spec": "cypress/e2e/meetups/finalize.cy.ts",
+      "duration": 4982
+    },
+    {
+      "spec": "cypress/e2e/meetups/first-time.cy.ts",
+      "duration": 2201
+    },
+    {
+      "spec": "cypress/e2e/meetups/guest-list.cy.ts",
+      "duration": 14583
+    },
+    {
+      "spec": "cypress/e2e/meetups/guest-type.cy.ts",
+      "duration": 4697
+    },
+    {
+      "spec": "cypress/e2e/meetups/location.cy.ts",
+      "duration": 10107
+    },
+    {
+      "spec": "cypress/e2e/meetups/meetup-detail.cy.ts",
+      "duration": 11971
+    },
+    {
+      "spec": "cypress/e2e/meetups/meetups-list.cy.ts",
+      "duration": 5501
+    },
+    {
+      "spec": "cypress/e2e/meetups/payments.cy.ts",
+      "duration": 10685
+    },
+    {
+      "spec": "cypress/e2e/meetups/sync.cy.ts",
+      "duration": 4724
+    },
+    {
+      "spec": "cypress/e2e/meetups/walk-in.cy.ts",
+      "duration": 8598
+    },
+    {
+      "spec": "cypress/e2e/meetups/weather.cy.ts",
+      "duration": 6846
+    },
+    {
+      "spec": "cypress/e2e/organizations/add-member.cy.ts",
+      "duration": 5450
+    },
+    {
+      "spec": "cypress/e2e/organizations/organization-create.cy.ts",
+      "duration": 4049
+    },
+    {
+      "spec": "cypress/e2e/organizations/organization-detail.cy.ts",
+      "duration": 7752
+    },
+    {
+      "spec": "cypress/e2e/organizations/organization-members.cy.ts",
+      "duration": 6888
+    },
+    {
+      "spec": "cypress/e2e/organizations/organizations-list.cy.ts",
+      "duration": 6573
+    },
+    {
+      "spec": "cypress/e2e/staff/staff-access.cy.ts",
+      "duration": 2311
+    },
+    {
+      "spec": "cypress/e2e/staff/staff-approval.cy.ts",
+      "duration": 4205
+    },
+    {
+      "spec": "cypress/e2e/staff/staff-disable.cy.ts",
+      "duration": 4412
+    },
+    {
+      "spec": "cypress/e2e/staff/staff-list.cy.ts",
+      "duration": 5399
+    },
+    {
+      "spec": "cypress/e2e/staff/staff-recovery-code.cy.ts",
+      "duration": 4706
+    },
+    {
+      "spec": "cypress/e2e/staff/staff-role.cy.ts",
+      "duration": 2854
+    },
+    {
+      "spec": "cypress/e2e/stats/access.cy.ts",
+      "duration": 4385
+    },
+    {
+      "spec": "cypress/e2e/stats/comparisons.cy.ts",
+      "duration": 3532
+    },
+    {
+      "spec": "cypress/e2e/stats/filters.cy.ts",
+      "duration": 22408
+    },
+    {
+      "spec": "cypress/e2e/stats/links.cy.ts",
+      "duration": 3890
+    },
+    {
+      "spec": "cypress/e2e/stats/retention.cy.ts",
+      "duration": 5072
+    },
+    {
+      "spec": "cypress/e2e/stats/tabs.cy.ts",
+      "duration": 45436
+    },
+    {
+      "spec": "cypress/e2e/stats/view-toggles.cy.ts",
+      "duration": 4297
+    },
+    {
+      "spec": "cypress/e2e/stats/weather.cy.ts",
+      "duration": 7184
+    }
+  ]
+}

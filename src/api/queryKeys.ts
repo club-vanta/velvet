@@ -6,8 +6,12 @@ export const meetupsKey = (orgId: string) => ["meetups", orgId] as const;
 export const meetupKey = (orgId: string, meetupId: string) =>
   ["meetup", orgId, meetupId] as const;
 
+/** Every meetup guest list of the org (the prefix of meetupGuestsKey). */
+export const orgMeetupGuestsKey = (orgId: string) =>
+  ["meetup-guests", orgId] as const;
+
 export const meetupGuestsKey = (orgId: string, meetupId: string) =>
-  ["meetup-guests", orgId, meetupId] as const;
+  [...orgMeetupGuestsKey(orgId), meetupId] as const;
 
 export const meetupWeatherKey = (orgId: string, meetupId: string) =>
   ["meetup-weather", orgId, meetupId] as const;
@@ -218,6 +222,17 @@ export function invalidateMeetups(
   orgId: string,
 ): void {
   void queryClient.invalidateQueries({ queryKey: meetupsKey(orgId) });
+}
+
+/**
+ * Finalizing or reopening a meetup changes which earlier visits count, so
+ * every guest list of the org may change its first-time guests.
+ */
+export function invalidateOrgMeetupGuests(
+  queryClient: QueryClient,
+  orgId: string,
+): void {
+  void queryClient.invalidateQueries({ queryKey: orgMeetupGuestsKey(orgId) });
 }
 
 /**
