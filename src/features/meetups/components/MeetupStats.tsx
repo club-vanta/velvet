@@ -51,21 +51,37 @@ export function MeetupStats({
     );
   }
 
+  // From the guest list, not the stats request, so it survives a failed one.
+  const firstTimeCard = showFirstTime && (
+    <FirstTimeStat
+      total={firstTime.total}
+      arrived={firstTime.arrived}
+      onShowOnly={firstTime.onShowOnly}
+    />
+  );
+
   if (statsQ.isError || !statsQ.data) {
     return (
-      <div
-        className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
-        data-cy="meetup-stats-error"
-      >
-        {t("failedLoadStats")}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => statsQ.refetch()}
-          data-cy="retry"
+      <div className="space-y-2 sm:space-y-3">
+        <div
+          className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm text-muted-foreground ring-1 ring-foreground/10"
+          data-cy="meetup-stats-error"
         >
-          {t("retry")}
-        </Button>
+          {t("failedLoadStats")}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => statsQ.refetch()}
+            data-cy="retry"
+          >
+            {t("retry")}
+          </Button>
+        </div>
+        {firstTimeCard && (
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 xl:grid-cols-4">
+            {firstTimeCard}
+          </div>
+        )}
       </div>
     );
   }
@@ -119,13 +135,7 @@ export function MeetupStats({
         />
       </StatCard>
 
-      {showFirstTime && (
-        <FirstTimeStat
-          total={firstTime.total}
-          arrived={firstTime.arrived}
-          onShowOnly={firstTime.onShowOnly}
-        />
-      )}
+      {firstTimeCard}
 
       <StatCard title={t("statsGuestTypes")}>
         <StatRows

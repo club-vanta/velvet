@@ -21,6 +21,23 @@ describe("<FirstTimeStat />", () => {
     );
   });
 
+  it("says one arrival in the singular", () => {
+    cy.mount(<FirstTimeStat total={4} arrived={1} onShowOnly={() => {}} />, {
+      lang: "es",
+    });
+    cy.getBySel("meetup-stats-first-time-arrived").should(
+      "have.text",
+      "1 ya llegó",
+    );
+    cy.mount(<FirstTimeStat total={4} arrived={3} onShowOnly={() => {}} />, {
+      lang: "es",
+    });
+    cy.getBySel("meetup-stats-first-time-arrived").should(
+      "have.text",
+      "3 ya llegaron",
+    );
+  });
+
   it("keeps the button inside a half-width card on a phone", () => {
     cy.viewport(375, 812);
     cy.mount(

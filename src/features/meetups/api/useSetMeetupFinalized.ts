@@ -4,6 +4,7 @@ import { extractApiError } from "@/api/errors";
 import {
   invalidateMeetup,
   invalidateMeetupGuests,
+  invalidateOrgMeetupGuests,
   meetupKey,
 } from "@/api/queryKeys";
 import { useLanguage } from "@/lib/i18n";
@@ -33,6 +34,9 @@ export function useSetMeetupFinalized(orgId: string, meetupId: string) {
       // Finalizing turns pending RSVPs into no-shows, reopening turns them
       // back, and only finalized meetups count in the org statistics.
       invalidateMeetupGuests(queryClient, orgId, meetupId);
+      // Prior visits count only finalized meetups, so the first-time guests
+      // of the org's later meetups change too.
+      invalidateOrgMeetupGuests(queryClient, orgId);
     },
   });
 }

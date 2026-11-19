@@ -19,7 +19,7 @@
     "check": "npm run typecheck && prettier --check . && eslint .",
     "generate:api": "openapi-typescript https://raw.githubusercontent.com/club-vanta/alter-tracker-backend/refs/heads/main/openapi.json -o src/api/types.ts && prettier --write src/api/types.ts",
     "dev:e2e": "vite --mode e2e --port 5200 --strictPort",
-    "serve:e2e": "vite build --mode e2e --outDir dist/e2e && vite preview --mode e2e --outDir dist/e2e --port 5200 --strictPort",
+    "serve:e2e": "vite build --mode e2e --outDir node_modules/.cache/velvet-e2e && vite preview --mode e2e --outDir node_modules/.cache/velvet-e2e --port 5200 --strictPort",
     "dev:smoke": "vite --mode smoke --port 5200 --strictPort",
     "cy:open": "TZ=UTC cypress open ${VELVET_BROWSER:+--browser $VELVET_BROWSER}",
     "cy:run:e2e": "TZ=UTC cypress run --e2e ${VELVET_BROWSER:+--browser $VELVET_BROWSER} ${VELVET_SPEC:+--spec $VELVET_SPEC}",

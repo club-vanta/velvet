@@ -103,6 +103,16 @@ describe("<MeetupStats />", () => {
     cy.get("@onShowOnly").should("have.been.calledOnce");
   });
 
+  it("keeps the new guests card when the stats fail, since it reads the list", () => {
+    cy.stubApiError("GET", PATH, { statusCode: 500 }).as("stats");
+    mount(true, { total: 2, arrived: 1 });
+    cy.wait("@stats");
+    cy.getBySel("meetup-stats-error").should("be.visible");
+    cy.getBySel("meetup-stats-first-time").should("have.text", "2");
+    cy.getByRole("button", { name: "Show only new guests" }).click();
+    cy.get("@onShowOnly").should("have.been.calledOnce");
+  });
+
   it("leaves out the new guests card when nobody is new", () => {
     cy.stubApi("GET", PATH, { body: STATS }).as("stats");
     mount(true, { total: 0, arrived: 0 });

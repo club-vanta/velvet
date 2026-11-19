@@ -10,6 +10,7 @@ import {
   meetupKey,
   meetupsKey,
   meetupStatsKey,
+  orgMeetupGuestsKey,
   statsOrgKey,
   statsRootKey,
 } from "@/api/queryKeys";
@@ -155,11 +156,14 @@ describe("meetup mutations", () => {
       expect(client.getQueryData(meetupKey("org-1", "meetup-1"))).toEqual(
         answer,
       );
-      // Pending RSVPs become no-shows (or back), so the list refreshes too.
+      // Pending RSVPs become no-shows (or back), so the list refreshes too,
+      // and so do the lists of the org's other meetups, whose guests'
+      // prior visits count only finalized meetups.
       expect(invalidated()).toEqual([
         meetupKey("org-1", "meetup-1"),
         meetupsKey("org-1"),
         ...RSVP_KEYS,
+        orgMeetupGuestsKey("org-1"),
       ]);
     },
   );

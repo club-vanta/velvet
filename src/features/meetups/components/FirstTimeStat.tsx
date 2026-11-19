@@ -29,7 +29,9 @@ export function FirstTimeStat({
         className="text-sm text-muted-foreground"
         data-cy="meetup-stats-first-time-arrived"
       >
-        {t("meetupNewArrived").replace("{0}", String(arrived))}
+        {arrived === 1
+          ? t("meetupNewArrivedOne")
+          : t("meetupNewArrived").replace("{0}", String(arrived))}
       </p>
       {/* Half a phone screen is narrow: let the label wrap, not overflow. */}
       <Button

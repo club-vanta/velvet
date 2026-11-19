@@ -147,8 +147,13 @@ export function MeetupDetailPage() {
           requiresPayment={requiresPayment}
           firstTime={{
             ...firstTime,
+            // The card counts active RSVPs only, so show the same guests.
             onShowOnly: () =>
-              list.setFilters({ ...list.filters, firstTimeOnly: true }),
+              list.setFilters({
+                ...list.filters,
+                firstTimeOnly: true,
+                rsvp: "active",
+              }),
           }}
         />
       )}
