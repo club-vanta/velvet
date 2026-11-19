@@ -71,6 +71,28 @@ describe("<GuestListToolbar />", () => {
     cy.checkA11yAA('[data-cy="toolbar"]');
   });
 
+  it("filters to first-time guests", () => {
+    mount();
+    cy.getByRole("button", { name: "Filter" }).click();
+    cy.getByRole("menuitemcheckbox", {
+      name: "First time",
+      native: false,
+    }).click();
+    cy.get("@onFilters").should("have.been.calledOnceWith", {
+      ...DEFAULT_GUEST_FILTERS,
+      firstTimeOnly: true,
+    });
+  });
+
+  it("shows the first-time filter as a chip that removes it", () => {
+    mount({ ...DEFAULT_GUEST_FILTERS, firstTimeOnly: true });
+    cy.getByRole("button", { name: "Remove filter: First time" }).click();
+    cy.get("@onFilters").should(
+      "have.been.calledOnceWith",
+      DEFAULT_GUEST_FILTERS,
+    );
+  });
+
   it("ignores a payment filter left over from a paid meetup", () => {
     mount({ ...DEFAULT_GUEST_FILTERS, payment: "unpaid" }, false);
     cy.getByRole("button", { name: "Filter" }).should("be.visible");

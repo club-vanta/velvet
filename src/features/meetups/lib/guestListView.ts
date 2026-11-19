@@ -1,5 +1,6 @@
 import { isPaymentExempt, type GuestType } from "@/domain/guest";
 import { nameComparer, type SortDir } from "@/lib/sortNames";
+import { isFirstTime } from "./firstTime";
 
 export type { SortDir };
 import type { components } from "@/api/types";
@@ -37,6 +38,7 @@ export type GuestFilters = {
   payment: "all" | "paid" | "unpaid" | "exempt";
   walkinOnly: boolean;
   bannedOnly: boolean;
+  firstTimeOnly: boolean;
 };
 
 export const DEFAULT_GUEST_FILTERS: GuestFilters = {
@@ -46,6 +48,7 @@ export const DEFAULT_GUEST_FILTERS: GuestFilters = {
   payment: "all",
   walkinOnly: false,
   bannedOnly: false,
+  firstTimeOnly: false,
 };
 
 /**
@@ -82,6 +85,7 @@ function matches(
   }
   if (f.walkinOnly && !rsvp.is_walkin) return false;
   if (f.bannedOnly && !guest.is_banned) return false;
+  if (f.firstTimeOnly && !isFirstTime(mg)) return false;
   return true;
 }
 

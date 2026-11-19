@@ -2409,6 +2409,11 @@ export interface components {
     MeetupGuestPublic: {
       guest: components["schemas"]["GuestWithBanPublic"];
       rsvp: components["schemas"]["RsvpPublic"];
+      /**
+       * Prior Visits
+       * @description Finalized meetups of the org, started before this one, that the guest attended as an audience guest (NORMAL or INVITED). 0 means this is their first time: the same rule as the stats FIRST_TIME visit history.
+       */
+      prior_visits: number;
     };
     /**
      * MeetupListResponse

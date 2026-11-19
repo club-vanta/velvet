@@ -9,6 +9,8 @@ import {
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { components } from "@/api/types";
+import { isFirstTime } from "../lib/firstTime";
+import { FirstTimeBadge } from "./FirstTimeBadge";
 
 type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
 
@@ -18,7 +20,7 @@ type MeetupGuest = components["schemas"]["MeetupGuestPublic"];
  * name, in the same text column.
  */
 export function GuestIdentity({
-  guest: { guest, rsvp },
+  guest: mg,
   onViewProfile,
   meta,
 }: {
@@ -27,6 +29,7 @@ export function GuestIdentity({
   meta?: ReactNode;
 }) {
   const { t } = useLanguage();
+  const { guest, rsvp } = mg;
   return (
     <div className="flex items-center gap-3 min-w-0">
       <GuestAvatar
@@ -58,6 +61,7 @@ export function GuestIdentity({
           className="flex items-center gap-1.5 flex-wrap empty:hidden"
           data-cy="guest-badges"
         >
+          {isFirstTime(mg) && <FirstTimeBadge />}
           <GuestTypeBadge guestType={rsvp.guest_type} />
           {rsvp.cancelled_rsvp && (
             <Badge variant="outline">{t("rsvpCancelled")}</Badge>

@@ -14,6 +14,7 @@ function mg(
   n: number,
   name: string,
   rsvp: Partial<MeetupGuest["rsvp"]> = {},
+  priorVisits = 1,
 ): MeetupGuest {
   return {
     guest: {
@@ -37,6 +38,7 @@ function mg(
       guest_type: "NORMAL",
       ...rsvp,
     },
+    prior_visits: priorVisits,
   };
 }
 
@@ -137,6 +139,35 @@ describe("viewGuestList", () => {
         ),
       ),
     ).toEqual(["Walkin in", "Walkin out"]);
+  });
+
+  it("keeps only first-time guests with the first-time filter", () => {
+    const list = [
+      mg(1, "Regular", {}, 3),
+      mg(2, "Newcomer", {}, 0),
+      mg(3, "New staff", { guest_type: "STAFF" }, 0),
+    ];
+    const filters = { ...DEFAULT_GUEST_FILTERS, firstTimeOnly: true };
+    expect(
+      names(viewGuestList(list, filters, DEFAULT_GUEST_SORT, false)),
+    ).toEqual(["Newcomer"]);
+    expect(activeGuestFilters(filters, false)).toEqual(["firstTimeOnly"]);
+  });
+
+  it("combines the first-time filter with the RSVP filter", () => {
+    const list = [
+      mg(1, "New active", {}, 0),
+      mg(2, "New cancelled", { cancelled_rsvp: true }, 0),
+      mg(3, "Old cancelled", { cancelled_rsvp: true }, 2),
+    ];
+    const filters = {
+      ...DEFAULT_GUEST_FILTERS,
+      firstTimeOnly: true,
+      rsvp: "cancelled" as const,
+    };
+    expect(
+      names(viewGuestList(list, filters, DEFAULT_GUEST_SORT, false)),
+    ).toEqual(["New cancelled"]);
   });
 
   it("keeps guests with the same name and RSVP time in id order", () => {

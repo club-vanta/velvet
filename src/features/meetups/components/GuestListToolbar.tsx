@@ -93,6 +93,7 @@ export function GuestListToolbar({
     payment: t(PAYMENT_LABEL[filters.payment]),
     walkinOnly: t("filterWalkins"),
     bannedOnly: t("filterBanned"),
+    firstTimeOnly: t("filterFirstTime"),
   };
 
   return (
@@ -158,6 +159,12 @@ export function GuestListToolbar({
               onCheckedChange={(v: boolean) => set("bannedOnly", v)}
             >
               {t("filterBanned")}
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={filters.firstTimeOnly}
+              onCheckedChange={(v: boolean) => set("firstTimeOnly", v)}
+            >
+              {t("filterFirstTime")}
             </DropdownMenuCheckboxItem>
           </DropdownMenuGroup>
         </FilterMenu>
