@@ -31,7 +31,13 @@ export function FirstTimeStat({
       >
         {t("meetupNewArrived").replace("{0}", String(arrived))}
       </p>
-      <Button variant="outline" size="sm" onClick={onShowOnly}>
+      {/* Half a phone screen is narrow: let the label wrap, not overflow. */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-auto w-full whitespace-normal py-1.5"
+        onClick={onShowOnly}
+      >
         <Sparkles aria-hidden="true" />
         {t("meetupShowOnlyNew")}
       </Button>
