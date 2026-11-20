@@ -53,6 +53,25 @@ describe("<MeetupWeather />", () => {
     );
   });
 
+  it("sums the night up in words and an icon over the values", () => {
+    respond(OK);
+    mount(true, "es");
+    cy.getBySel("weather-summary-text").should(
+      "have.text",
+      "Noche cálida, con lluvia",
+    );
+    cy.getBySel("weather-summary")
+      .find("img")
+      .should("have.attr", "data-icon", "rain")
+      .and("have.attr", "alt", "");
+  });
+
+  it("leaves the summary out without weather", () => {
+    respond(makeMeetupWeatherStatus({ status: "PENDING", weather: null }));
+    mount();
+    cy.getBySel("weather-summary").should("not.exist");
+  });
+
   it("formats numbers with the Spanish separator", () => {
     respond(OK);
     mount(true, "es");
