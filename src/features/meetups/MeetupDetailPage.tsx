@@ -136,8 +136,10 @@ export function MeetupDetailPage() {
           orgId={orgId}
           meetupId={meetupId}
           isOrgAdmin={isOrgAdmin}
+          // Keep the attendance slide while the list loads, so the weather
+          // does not show alone and then get replaced by it.
           stats={
-            hasGuests
+            hasGuests || guestsQ.isLoading
               ? {
                   requiresPayment,
                   firstTime: {

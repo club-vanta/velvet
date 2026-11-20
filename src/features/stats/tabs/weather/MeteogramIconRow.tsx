@@ -1,6 +1,7 @@
 import type { components } from "@/api/types";
+import { WeatherIcon } from "@/components/WeatherIcon";
 import { Y_AXIS_WIDTH } from "./meteogramLayout";
-import { WEATHER_ICON_SRC, weatherIcon } from "./weatherIcon";
+import { weatherIcon } from "./weatherIcon";
 
 type Hour = components["schemas"]["WeatherHourPublic"];
 
@@ -13,22 +14,14 @@ export function MeteogramIconRow({ hours }: { hours: Hour[] }) {
     <div className="flex" style={{ paddingLeft: Y_AXIS_WIDTH }}>
       {hours.map((h) => {
         const icon = weatherIcon(h.weather_code, h.is_day);
-        const src = icon && WEATHER_ICON_SRC[icon.name];
         return (
           <div key={h.time} className="flex flex-1 justify-center">
-            {icon && src ? (
-              <picture>
-                <source
-                  media="(prefers-reduced-motion: reduce)"
-                  srcSet={src.still}
-                />
-                <img
-                  data-cy="stats-weather-icon"
-                  src={src.animated}
-                  alt=""
-                  className="size-7 sm:size-9"
-                />
-              </picture>
+            {icon ? (
+              <WeatherIcon
+                name={icon.name}
+                data-cy="stats-weather-icon"
+                className="size-7 sm:size-9"
+              />
             ) : (
               <span className="size-7 sm:size-9" />
             )}

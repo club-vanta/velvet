@@ -15,6 +15,9 @@ const WIDE_COLUMNS: Record<number, string> = {
   4: "@3xl:grid-cols-4",
 };
 
+/** A card alone on a phone's last row spans it, until the cards fit in one. */
+const WIDE_CARD = "col-span-2 @2xl:col-span-1";
+
 /**
  * The meetup's live numbers: check-ins, newcomers when there are any, guest
  * types and, if paid, payments. The newcomers come from the guest list the
@@ -37,6 +40,9 @@ export function MeetupStats({
 
   const showFirstTime = firstTime !== undefined && firstTime.total > 0;
   const cardCount = 2 + Number(requiresPayment) + Number(showFirstTime);
+  // With an odd count, the last card sits alone on a phone's second row: it
+  // takes the full width and lays its rows out in two columns, so it is short.
+  const lastAlone = cardCount % 2 === 1;
   const gridClass = cn(
     "grid gap-2 sm:gap-3 grid-cols-2",
     WIDE_COLUMNS[cardCount],
@@ -46,7 +52,13 @@ export function MeetupStats({
     return (
       <div className={gridClass} data-cy="meetup-stats-loading">
         {Array.from({ length: cardCount }).map((_, i) => (
-          <Skeleton key={i} className="h-28 sm:h-32 rounded-xl" />
+          <Skeleton
+            key={i}
+            className={cn(
+              "h-28 sm:h-32 rounded-xl",
+              lastAlone && i === cardCount - 1 && WIDE_CARD,
+            )}
+          />
         ))}
       </div>
     );
@@ -88,10 +100,7 @@ export function MeetupStats({
   }
 
   const { attendance, cancellations, guest_types, payment } = statsQ.data;
-  // With an odd count, the last card sits alone on a phone's second row: it
-  // takes the full width and lays its rows out in two columns, so it is short.
-  const lastAlone = cardCount % 2 === 1;
-  const wideCard = "col-span-2 @2xl:col-span-1";
+  // Payment, when shown, is always the last card; guest types otherwise.
   const typesAlone = lastAlone && !requiresPayment;
   const paymentAlone = lastAlone && requiresPayment;
   const percent =
@@ -146,7 +155,7 @@ export function MeetupStats({
 
       <StatCard
         title={t("statsGuestTypes")}
-        className={typesAlone ? wideCard : undefined}
+        className={typesAlone ? WIDE_CARD : undefined}
       >
         <StatRows
           twoColumns={typesAlone}
@@ -182,7 +191,7 @@ export function MeetupStats({
       {requiresPayment && (
         <StatCard
           title={t("payment")}
-          className={paymentAlone ? wideCard : undefined}
+          className={paymentAlone ? WIDE_CARD : undefined}
         >
           <StatRows
             twoColumns={paymentAlone}

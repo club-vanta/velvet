@@ -9,8 +9,8 @@ import { WeatherSummary } from "./WeatherSummary";
 
 /**
  * The weather of the first six hours of a meetup, or why it is not there yet.
- * A StatCard like the meetup stats beside it; org admins can fetch it again
- * once the backend says it is ready.
+ * A StatCard like the meetup stats, in the slide next to theirs; org admins
+ * can fetch it again once the backend says it is ready.
  */
 export function MeetupWeather({
   orgId,

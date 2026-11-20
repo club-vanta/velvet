@@ -1,15 +1,21 @@
 import type { components } from "@/api/types";
+import type { WeatherIconName } from "@/components/WeatherIcon";
 import type { TranslationKey } from "@/lib/i18n";
 
 type Weather = components["schemas"]["MeetupWeatherPublic"];
 
-export type SummaryIcon =
-  "rain" | "wind" | "thermometer-colder" | "thermometer" | "thermometer-warmer";
+type SummaryIcon = Extract<
+  WeatherIconName,
+  "rain" | "wind" | "thermometer-colder" | "thermometer" | "thermometer-warmer"
+>;
 
 /** From here the wind reads as windy: Beaufort 5, a fresh breeze. */
 export const WINDY_KMH = 29;
 
-/** The stats temperature bands (below 10, 10, 15, 20, 25 °C and up), as words. */
+/**
+ * The stats temperature bands as words: the same lower bounds, inclusive, as
+ * the backend's band_for_temperature, applied to the same avg_temperature.
+ */
 const TEMPERATURE_WORDS: [below: number, key: TranslationKey][] = [
   [10, "weatherNightCold"],
   [15, "weatherNightCool"],
@@ -22,7 +28,8 @@ const TEMPERATURE_WORDS: [below: number, key: TranslationKey][] = [
  * A meetup's weather in a few words and one icon, from the averages the
  * meetup page already has. There is no sky condition here (no cloud cover or
  * weather code), so the icon only claims what the numbers show: rain, wind,
- * or the temperature. A missing value drops its part.
+ * or the temperature. A missing rain or wind value drops its words; without a
+ * temperature there are no words at all, since they start with the night.
  */
 export function weatherSummary(weather: Weather): {
   icon: SummaryIcon | null;
