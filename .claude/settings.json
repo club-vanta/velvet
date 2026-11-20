@@ -1,0 +1,9 @@
+{
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official-nix": true,
+    "a11y-audit@claude-skills-nix": true,
+    "apple-hig-expert@claude-skills-nix": true,
+    "pw@claude-skills-nix": true,
+    "demo-video@claude-skills-nix": true
+  }
+}
