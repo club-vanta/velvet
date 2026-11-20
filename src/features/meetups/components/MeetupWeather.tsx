@@ -5,6 +5,7 @@ import { WeatherDetails } from "@/components/WeatherDetails";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupWeather } from "../api/useMeetupWeather";
 import { WeatherRefreshButton } from "./WeatherRefreshButton";
+import { WeatherSummary } from "./WeatherSummary";
 
 /**
  * The weather of the first six hours of a meetup, or why it is not there yet.
@@ -70,6 +71,7 @@ export function MeetupWeather({
 
   return (
     <StatCard title={t("weatherTitle")}>
+      {weather && <WeatherSummary weather={weather} />}
       <WeatherDetails
         status={status}
         weather={weather}
