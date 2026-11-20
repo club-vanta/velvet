@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { ArrowDownUp, ListFilter, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -261,15 +261,26 @@ export function ShowMoreButton({
   onShowMore: () => void;
 }) {
   const { t } = useLanguage();
+  // Pages added so far. An IntersectionObserver only reports changes from its
+  // last reading, and a new page can leave the button near the screen (short
+  // rows, a tall screen) or move it away and back between two readings (a
+  // fast scroll). Either way it never reports again and loading stops. So
+  // each page gets a fresh observer, which reports where the button is now.
+  const [pages, setPages] = useState(0);
+  const showMore = useCallback(() => {
+    setPages((n) => n + 1);
+    onShowMore();
+  }, [onShowMore]);
+
   // A callback ref, so the observer attaches whenever the button mounts,
-  // including when a new search brings it back. Stable, so re-renders don't
-  // re-observe (a fresh observer reports at once and would load a page).
+  // including when a new search brings it back. It changes only with a new
+  // page, so re-renders don't re-observe (a fresh observer reports at once).
   const observe = useCallback(
     (el: HTMLButtonElement | null) => {
       if (!el || typeof IntersectionObserver === "undefined") return;
       const observer = new IntersectionObserver(
         (entries) => {
-          if (entries.some((e) => e.isIntersecting)) onShowMore();
+          if (entries.some((e) => e.isIntersecting)) showMore();
         },
         // The margin only applies relative to whatever scrolls.
         { root: scrollParent(el), rootMargin: "800px 0px" },
@@ -277,7 +288,9 @@ export function ShowMoreButton({
       observer.observe(el);
       return () => observer.disconnect();
     },
-    [onShowMore],
+    // pages is not read, only changes the ref so it observes afresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [showMore, pages],
   );
 
   if (count <= 0) return null;
@@ -287,7 +300,7 @@ export function ShowMoreButton({
         ref={observe}
         variant="outline"
         data-cy="list-show-more"
-        onClick={onShowMore}
+        onClick={showMore}
       >
         {t("showMoreCount").replace("{0}", String(count))}
       </Button>

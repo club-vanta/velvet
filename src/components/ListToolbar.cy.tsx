@@ -39,6 +39,22 @@ function SortHarness({ onSort }: { onSort: (sort: Sort) => void }) {
   );
 }
 
+/** One 10px row per page, under a ShowMoreButton, up to `total` rows. */
+function ShortPages({ total }: { total: number }) {
+  const [shown, setShown] = useState(1);
+  return (
+    <div>
+      {Array.from({ length: shown }, (_, i) => (
+        <div key={i} style={{ height: 10 }} data-cy={`short-row-${i}`} />
+      ))}
+      <ShowMoreButton
+        count={total - shown}
+        onShowMore={() => setShown((n) => Math.min(total, n + 1))}
+      />
+    </div>
+  );
+}
+
 describe("<ListToolbarRow />", () => {
   it("reports what is typed in its labelled search field", () => {
     cy.mount(
@@ -189,6 +205,14 @@ describe("<ShowMoreButton />", () => {
     cy.mount(<ShowMoreButton count={50} onShowMore={cy.spy().as("more")} />);
     cy.getBySel("list-show-more").should("have.text", "Show 50 more");
     cy.get("@more").should("have.been.called");
+  });
+
+  it("keeps loading while a new page leaves it near the screen", () => {
+    // Pages so short that the button never leaves the observer's margin:
+    // it only sees "near" once, so it must look again after each page.
+    cy.mount(<ShortPages total={5} />);
+    cy.getBySelLike("short-row-").should("have.length", 5);
+    cy.getBySel("list-show-more").should("not.exist");
   });
 
   it("works by click where IntersectionObserver is missing", () => {
