@@ -88,6 +88,12 @@ export function MeetupStats({
   }
 
   const { attendance, cancellations, guest_types, payment } = statsQ.data;
+  // With an odd count, the last card sits alone on a phone's second row: it
+  // takes the full width and lays its rows out in two columns, so it is short.
+  const lastAlone = cardCount % 2 === 1;
+  const wideCard = "col-span-2 @2xl:col-span-1";
+  const typesAlone = lastAlone && !requiresPayment;
+  const paymentAlone = lastAlone && requiresPayment;
   const percent =
     attendance.total_rsvps > 0
       ? Math.round((attendance.arrived_count / attendance.total_rsvps) * 100)
@@ -138,8 +144,12 @@ export function MeetupStats({
 
       {firstTimeCard}
 
-      <StatCard title={t("statsGuestTypes")}>
+      <StatCard
+        title={t("statsGuestTypes")}
+        className={typesAlone ? wideCard : undefined}
+      >
         <StatRows
+          twoColumns={typesAlone}
           rows={[
             {
               id: "normal",
@@ -170,8 +180,12 @@ export function MeetupStats({
       </StatCard>
 
       {requiresPayment && (
-        <StatCard title={t("payment")}>
+        <StatCard
+          title={t("payment")}
+          className={paymentAlone ? wideCard : undefined}
+        >
           <StatRows
+            twoColumns={paymentAlone}
             rows={[
               { id: "paid", label: t("paid"), value: payment.paid_count },
               {

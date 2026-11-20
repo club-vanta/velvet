@@ -1,8 +1,11 @@
+import { cn } from "@/lib/utils";
+
 export function StatCard({
   title,
   headingId,
   heading = "label",
   children,
+  className,
   "data-cy": dataCy,
 }: {
   title: string;
@@ -11,6 +14,8 @@ export function StatCard({
   /** A short tracked label, or a sentence-case caption for a longer title. */
   heading?: "label" | "caption";
   children: React.ReactNode;
+  /** Placement in the parent layout, such as a grid span. */
+  className?: string;
   "data-cy"?: string;
 }) {
   return (
@@ -18,7 +23,10 @@ export function StatCard({
       data-cy={dataCy}
       aria-label={headingId ? undefined : title}
       aria-labelledby={headingId}
-      className="rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 space-y-2 sm:space-y-3 min-w-0"
+      className={cn(
+        "rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 space-y-2 sm:space-y-3 min-w-0",
+        className,
+      )}
     >
       <h2
         id={headingId}

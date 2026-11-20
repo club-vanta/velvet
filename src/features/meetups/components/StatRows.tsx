@@ -1,8 +1,13 @@
 import { cn } from "@/lib/utils";
 
-/** Labelled counts inside a stat card, one row each. */
+/**
+ * Labelled counts inside a stat card, one row each. `twoColumns` lays them out
+ * in two columns until the page fits all the cards in one row, for a card that
+ * spans the whole width on a phone.
+ */
 export function StatRows({
   rows,
+  twoColumns = false,
 }: {
   rows: {
     /** Names the value for tests: `stat-<id>`. */
@@ -12,9 +17,16 @@ export function StatRows({
     dotClass?: string;
     emphasis?: boolean;
   }[];
+  twoColumns?: boolean;
 }) {
   return (
-    <dl className="space-y-1 text-sm">
+    <dl
+      className={cn(
+        "space-y-1 text-sm",
+        twoColumns &&
+          "grid grid-cols-2 gap-x-6 gap-y-1 space-y-0 @2xl:block @2xl:space-y-1",
+      )}
+    >
       {rows.map((row) => (
         <div key={row.id} className="flex items-center justify-between gap-2">
           <dt className="flex items-center gap-2 text-muted-foreground min-w-0">
