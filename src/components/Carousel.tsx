@@ -103,7 +103,8 @@ export function Carousel({
             aria-label={slide.label}
             // Hidden slides leave the tab order, so focus never lands off screen.
             inert={i !== active}
-            className="w-full shrink-0 snap-start snap-always"
+            // The track clips overflow, so keep 1px of room for card rings.
+            className="w-full shrink-0 snap-start snap-always p-px"
             data-cy={`carousel-slide-${slide.id}`}
           >
             {slide.content}
