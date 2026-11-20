@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 import { FirstTimeStat } from "./FirstTimeStat";
 import { StatRows } from "./StatRows";
 
-// Static class names, so Tailwind sees each one.
-const XL_COLUMNS: Record<number, string> = {
-  3: "xl:grid-cols-3",
-  4: "xl:grid-cols-4",
+// One row once the page is wide enough, so the stats stay short. Static class
+// names, so Tailwind sees each one.
+const WIDE_COLUMNS: Record<number, string> = {
+  3: "@2xl:grid-cols-3",
+  4: "@3xl:grid-cols-4",
 };
 
 /**
@@ -38,7 +39,7 @@ export function MeetupStats({
   const cardCount = 2 + Number(requiresPayment) + Number(showFirstTime);
   const gridClass = cn(
     "grid gap-2 sm:gap-3 grid-cols-2",
-    XL_COLUMNS[cardCount],
+    WIDE_COLUMNS[cardCount],
   );
 
   if (statsQ.isLoading) {
@@ -78,7 +79,7 @@ export function MeetupStats({
           </Button>
         </div>
         {firstTimeCard && (
-          <div className="grid gap-2 sm:gap-3 grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 @3xl:grid-cols-4">
             {firstTimeCard}
           </div>
         )}

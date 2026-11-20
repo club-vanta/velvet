@@ -13,6 +13,8 @@ export const en = {
   adding: "Adding…",
   reasonRequired: "Reason (required)",
   networkError: "Could not reach the server.\nCheck your connection.",
+  carouselPrevious: "Previous",
+  carouselNext: "Next",
 };
 
 export const es: Record<keyof typeof en, string> = {
@@ -26,4 +28,6 @@ export const es: Record<keyof typeof en, string> = {
   adding: "Agregando…",
   reasonRequired: "Motivo (requerido)",
   networkError: "No se pudo conectar con el servidor.\nVerificá tu conexión.",
+  carouselPrevious: "Anterior",
+  carouselNext: "Siguiente",
 };
