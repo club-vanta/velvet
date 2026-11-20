@@ -262,6 +262,12 @@ describe(
         { body: makeMeetupWeather(), params: { meetup_id: "m-1" } },
       ).as("refresh");
       cy.getBySel("carousel-tab-weather").click();
+      // The track scrolls smoothly: let it settle on the weather slide first.
+      cy.getBySel("carousel-slide-weather")
+        .parent()
+        .should(($track) => {
+          expect($track[0].scrollLeft).to.be.closeTo($track[0].clientWidth, 1);
+        });
       cy.getBySel("weather-refresh").click();
       cy.wait("@refresh");
       expectToast("Weather updated");
