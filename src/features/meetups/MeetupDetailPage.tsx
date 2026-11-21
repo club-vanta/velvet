@@ -14,9 +14,8 @@ import { GuestProfileSheet } from "./components/GuestProfileSheet";
 import { MeetupDialogs } from "./components/MeetupDialogs";
 import { MeetupHeader } from "./components/MeetupHeader";
 import { MeetupHeaderSkeleton } from "./components/MeetupHeaderSkeleton";
-import { MeetupStats } from "./components/MeetupStats";
+import { MeetupSummary } from "./components/MeetupSummary";
 import { MeetupToolbar } from "./components/MeetupToolbar";
-import { MeetupWeather } from "./components/MeetupWeather";
 import { NoActiveOrg } from "./components/NoActiveOrg";
 import { RetryAlert } from "./components/RetryAlert";
 import { useGuestListView } from "./hooks/useGuestListView";
@@ -133,28 +132,29 @@ export function MeetupDetailPage() {
       )}
 
       {meetupQ.isSuccess && (
-        <MeetupWeather
+        <MeetupSummary
           orgId={orgId}
           meetupId={meetupId}
-          canRefresh={isOrgAdmin}
-        />
-      )}
-
-      {meetupQ.isSuccess && hasGuests && (
-        <MeetupStats
-          orgId={orgId}
-          meetupId={meetupId}
-          requiresPayment={requiresPayment}
-          firstTime={{
-            ...firstTime,
-            // The card counts active RSVPs only, so show the same guests.
-            onShowOnly: () =>
-              list.setFilters({
-                ...list.filters,
-                firstTimeOnly: true,
-                rsvp: "active",
-              }),
-          }}
+          isOrgAdmin={isOrgAdmin}
+          // Keep the attendance slide while the list loads, so the weather
+          // does not show alone and then get replaced by it.
+          stats={
+            hasGuests || guestsQ.isLoading
+              ? {
+                  requiresPayment,
+                  firstTime: {
+                    ...firstTime,
+                    // The card counts active RSVPs only, so show the same guests.
+                    onShowOnly: () =>
+                      list.setFilters({
+                        ...list.filters,
+                        firstTimeOnly: true,
+                        rsvp: "active",
+                      }),
+                  },
+                }
+              : undefined
+          }
         />
       )}
 

@@ -5,11 +5,12 @@ import { WeatherDetails } from "@/components/WeatherDetails";
 import { useLanguage } from "@/lib/i18n";
 import { useMeetupWeather } from "../api/useMeetupWeather";
 import { WeatherRefreshButton } from "./WeatherRefreshButton";
+import { WeatherSummary } from "./WeatherSummary";
 
 /**
  * The weather of the first six hours of a meetup, or why it is not there yet.
- * A StatCard like the meetup stats beside it; org admins can fetch it again
- * once the backend says it is ready.
+ * A StatCard like the meetup stats, in the slide next to theirs; org admins
+ * can fetch it again once the backend says it is ready.
  */
 export function MeetupWeather({
   orgId,
@@ -70,6 +71,7 @@ export function MeetupWeather({
 
   return (
     <StatCard title={t("weatherTitle")}>
+      {weather && <WeatherSummary weather={weather} />}
       <WeatherDetails
         status={status}
         weather={weather}

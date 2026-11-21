@@ -8,11 +8,15 @@ import { cn } from "@/lib/utils";
 import { FirstTimeStat } from "./FirstTimeStat";
 import { StatRows } from "./StatRows";
 
-// Static class names, so Tailwind sees each one.
-const XL_COLUMNS: Record<number, string> = {
-  3: "xl:grid-cols-3",
-  4: "xl:grid-cols-4",
+// One row once the page is wide enough, so the stats stay short. Static class
+// names, so Tailwind sees each one.
+const WIDE_COLUMNS: Record<number, string> = {
+  3: "@2xl:grid-cols-3",
+  4: "@3xl:grid-cols-4",
 };
+
+/** A card alone on a phone's last row spans it, until the cards fit in one. */
+const WIDE_CARD = "col-span-2 @2xl:col-span-1";
 
 /**
  * The meetup's live numbers: check-ins, newcomers when there are any, guest
@@ -36,16 +40,25 @@ export function MeetupStats({
 
   const showFirstTime = firstTime !== undefined && firstTime.total > 0;
   const cardCount = 2 + Number(requiresPayment) + Number(showFirstTime);
+  // With an odd count, the last card sits alone on a phone's second row: it
+  // takes the full width and lays its rows out in two columns, so it is short.
+  const lastAlone = cardCount % 2 === 1;
   const gridClass = cn(
     "grid gap-2 sm:gap-3 grid-cols-2",
-    XL_COLUMNS[cardCount],
+    WIDE_COLUMNS[cardCount],
   );
 
   if (statsQ.isLoading) {
     return (
       <div className={gridClass} data-cy="meetup-stats-loading">
         {Array.from({ length: cardCount }).map((_, i) => (
-          <Skeleton key={i} className="h-28 sm:h-32 rounded-xl" />
+          <Skeleton
+            key={i}
+            className={cn(
+              "h-28 sm:h-32 rounded-xl",
+              lastAlone && i === cardCount - 1 && WIDE_CARD,
+            )}
+          />
         ))}
       </div>
     );
@@ -78,7 +91,7 @@ export function MeetupStats({
           </Button>
         </div>
         {firstTimeCard && (
-          <div className="grid gap-2 sm:gap-3 grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 @3xl:grid-cols-4">
             {firstTimeCard}
           </div>
         )}
@@ -87,6 +100,9 @@ export function MeetupStats({
   }
 
   const { attendance, cancellations, guest_types, payment } = statsQ.data;
+  // Payment, when shown, is always the last card; guest types otherwise.
+  const typesAlone = lastAlone && !requiresPayment;
+  const paymentAlone = lastAlone && requiresPayment;
   const percent =
     attendance.total_rsvps > 0
       ? Math.round((attendance.arrived_count / attendance.total_rsvps) * 100)
@@ -137,8 +153,12 @@ export function MeetupStats({
 
       {firstTimeCard}
 
-      <StatCard title={t("statsGuestTypes")}>
+      <StatCard
+        title={t("statsGuestTypes")}
+        className={typesAlone ? WIDE_CARD : undefined}
+      >
         <StatRows
+          twoColumns={typesAlone}
           rows={[
             {
               id: "normal",
@@ -169,8 +189,12 @@ export function MeetupStats({
       </StatCard>
 
       {requiresPayment && (
-        <StatCard title={t("payment")}>
+        <StatCard
+          title={t("payment")}
+          className={paymentAlone ? WIDE_CARD : undefined}
+        >
           <StatRows
+            twoColumns={paymentAlone}
             rows={[
               { id: "paid", label: t("paid"), value: payment.paid_count },
               {

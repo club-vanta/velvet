@@ -65,6 +65,58 @@ describe("<MeetupStats />", () => {
     cy.checkA11yAA('[data-cy="wrap"]');
   });
 
+  describe("a card left alone on a phone's second row", () => {
+    // The page is the container the columns respond to.
+    function mountIn(width: number, requiresPayment: boolean) {
+      cy.mount(
+        <div className="@container" style={{ width }}>
+          <MeetupStats
+            orgId="org-1"
+            meetupId="meetup-1"
+            requiresPayment={requiresPayment}
+            firstTime={{ total: 3, arrived: 1, onShowOnly: cy.spy() }}
+          />
+        </div>,
+        { as: "staff" },
+      );
+      cy.wait("@stats");
+    }
+    const width = (name: string) =>
+      cy
+        .getByRole("region", { name })
+        .then(($el) => Math.round($el[0].getBoundingClientRect().width));
+    const columns = (name: string) =>
+      cy
+        .getByRole("region", { name })
+        .find("dl")
+        .then(($dl) => getComputedStyle($dl[0]).gridTemplateColumns.split(" "));
+
+    beforeEach(() => {
+      cy.stubApi("GET", PATH, { body: STATS }).as("stats");
+    });
+
+    it("takes the full width and two columns of rows", () => {
+      mountIn(343, false);
+      width("Guest types").should("eq", 343);
+      columns("Guest types").should("have.length", 2);
+      width("Check-ins").should("be.lessThan", 343 / 2);
+    });
+
+    it("joins the other cards in one row once there is room", () => {
+      mountIn(900, false);
+      width("Guest types").should("be.lessThan", 900 / 2);
+      cy.getByRole("region", { name: "Guest types" })
+        .find("dl")
+        .should("have.css", "display", "block");
+    });
+
+    it("leaves every card at half width when the count is even", () => {
+      mountIn(343, true);
+      width("Guest types").should("be.lessThan", 343 / 2);
+      width("Payment").should("be.lessThan", 343 / 2);
+    });
+  });
+
   it("leaves out the payment card on a free meetup", () => {
     cy.stubApi("GET", PATH, { body: STATS }).as("stats");
     mount(false);

@@ -1,5 +1,6 @@
 import {
   makeMeetup,
+  makeMeetupGuestRows,
   makeMeetupWeather,
   makeMeetupWeatherStatus,
   type Role,
@@ -199,3 +200,77 @@ describe("Weather by role", () => {
     );
   });
 });
+
+describe(
+  "Meetup weather beside the stats, on a phone",
+  { viewportWidth: 375, viewportHeight: 812 },
+  () => {
+    beforeEach(() => {
+      cy.loginAs("orgAdmin");
+      stubMeetupPage({
+        meetup: MEETUP,
+        guests: makeMeetupGuestRows(3),
+        weather: OK,
+      });
+      visitMeetup("m-1");
+      cy.wait(["@stats", "@weather"]);
+    });
+
+    it("opens on attendance and moves to the weather from its tab", () => {
+      cy.getBySel("carousel-tab-attendance").should(
+        "have.attr",
+        "aria-current",
+        "true",
+      );
+      cy.getBySel("meetup-stats").should("be.visible");
+
+      cy.getBySel("carousel-tab-weather").click();
+      cy.getBySel("carousel-tab-weather").should(
+        "have.attr",
+        "aria-current",
+        "true",
+      );
+      card().should("be.visible");
+      cy.getBySel("weather-summary-text").should(
+        "have.text",
+        "Warm night, with rain",
+      );
+      value("temperature").should("have.text", "22.5 °C");
+      cy.checkA11yAA('[data-cy="meetup-summary"]');
+    });
+
+    it("follows a swipe to the weather and back with the arrows", () => {
+      cy.getBySel("carousel-slide-attendance").parent().scrollTo("right");
+      cy.getBySel("carousel-tab-weather").should(
+        "have.attr",
+        "aria-current",
+        "true",
+      );
+      cy.getBySel("carousel-previous").click();
+      cy.getBySel("carousel-tab-attendance").should(
+        "have.attr",
+        "aria-current",
+        "true",
+      );
+      cy.getBySel("meetup-stats").should("be.visible");
+    });
+
+    it("refreshes the weather from its slide", () => {
+      cy.stubApi(
+        "POST",
+        "/organizations/{org_id}/meetups/{meetup_id}/weather/refresh",
+        { body: makeMeetupWeather(), params: { meetup_id: "m-1" } },
+      ).as("refresh");
+      cy.getBySel("carousel-tab-weather").click();
+      // The track scrolls smoothly: let it settle on the weather slide first.
+      cy.getBySel("carousel-slide-weather")
+        .parent()
+        .should(($track) => {
+          expect($track[0].scrollLeft).to.be.closeTo($track[0].clientWidth, 1);
+        });
+      cy.getBySel("weather-refresh").click();
+      cy.wait("@refresh");
+      expectToast("Weather updated");
+    });
+  },
+);
